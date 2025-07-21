@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "types:supabase": "npx supabase gen types typescript --project-id elkckropppmtzxqiwaem > src/types/database.ts"
+    "types:supabase": "npx supabase gen types typescript --project-id elkckropppmtzxqiwaem > src/types/database.ts",
+    "dump-schema": "./scripts/dump-schema.sh"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -40,6 +41,8 @@
     "@tabler/icons-react": "^3.34.0",
     "@tailwindcss/postcss": "^4.1.11",
     "@tailwindcss/vite": "^4.1.11",
+    "@tanstack/react-query": "^5.83.0",
+    "@tanstack/react-query-devtools": "^5.83.0",
     "@tanstack/react-table": "^8.21.3",
     "@tsparticles/engine": "^3.8.1",
     "@tsparticles/slim": "^3.8.1",
