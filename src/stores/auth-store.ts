@@ -1,103 +1,64 @@
 import { create } from "zustand";
-import { createClient } from "@/lib/supabase/client";
 import { queryClient } from "@/lib/query-client";
-import type { AuthStore } from "@/types";
+import { TokenManager } from "@/lib/auth/token-manager";
+import { authApi, sessionToTokenData } from "@/lib/api/auth";
+import type { AuthStore } from "@/types/auth";
 
 let isInitialized = false;
 
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   session: null,
+  profile: null,
+  permissions: null,
   loading: true,
   authenticated: false,
 
   setUser: (user) => set({ user, authenticated: !!user }),
-  setSession: (session) => set({ session, authenticated: !!session?.user }),
+  setSession: (session) => set({ session, authenticated: !!session }),
+  setProfile: (profile) => set({ profile }),
   setLoading: (loading) => set({ loading }),
 
   signIn: async (email: string, password: string) => {
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const response = await authApi.signIn(email, password);
 
-    if (error) {
-      return { error: error.message };
-    }
-
-    // Note: Profile will be fetched by React Query hook automatically
-    return { redirectPath: "/select-company" };
-  },
-
-  signUp: async (
-    email: string,
-    password: string,
-    fullName: string,
-    code: string
-  ) => {
-    // Validate signup code
-    const expectedCode = import.meta.env.VITE_SIGNUP_CODE;
-    if (!expectedCode || code !== expectedCode) {
-      return { error: "Invalid signup code" };
-    }
-
-    const supabase = createClient();
-
-    // Sign up the user
-    const { error: signUpError, data } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
-
-    if (signUpError) {
-      return { error: signUpError.message };
-    }
-
-    if (data.user) {
-      // Create profile with demo subscription tier
-      const profileData = {
-        id: data.user.id,
-        email: data.user.email!,
-        full_name: fullName,
-        subscription_tier: "demo" as const,
-        subscription_features: {
-          maxCompanies: 1,
-        },
-        onboarded: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert(profileData);
-
-      if (profileError) {
-        console.error("Profile creation error:", profileError);
-        // Continue anyway, as profile might be created by trigger
+      if (!response.success || !response.data) {
+        return { error: response.message || "Sign in failed" };
       }
 
-      return { redirectPath: "/welcome" };
-    }
+      const { user, profile, permissions, session } = response.data;
 
-    return { redirectPath: "/welcome" };
+      // Store tokens in TokenManager
+      const tokenData = sessionToTokenData(session);
+      TokenManager.setTokens(tokenData);
+
+      // Update store with enriched data
+      set({
+        user,
+        profile,
+        permissions,
+        session: tokenData,
+        authenticated: true,
+        loading: false,
+      });
+
+      return { redirectPath: "/select-company" };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Sign in failed";
+      return { error: message };
+    }
   },
 
   signOut: async () => {
     try {
-      const supabase = createClient();
-
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        throw error;
-      }
+      // Call backend to invalidate session
+      await authApi.signOut();
+    } catch (error) {
+      console.error("Sign out error:", error);
+    } finally {
+      // Always clear local state regardless of backend response
+      TokenManager.clearTokens();
 
       // Logout from Canny (commented out for now)
       // if (window.Canny) {
@@ -108,34 +69,25 @@ export const useAuthStore = create<AuthStore>((set) => ({
       set({
         user: null,
         session: null,
+        profile: null,
+        permissions: null,
         authenticated: false,
       });
 
       // Clear React Query cache to prevent data leakage between users
       queryClient.clear();
-    } catch {
-      // Even if logout fails, try to clear local state and stores
-      set({
-        user: null,
-        session: null,
-        authenticated: false,
-      });
-
-      // Still clear React Query cache to prevent data leakage
-      queryClient.clear();
     }
   },
 
   resetPassword: async (email: string) => {
-    const supabase = createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-
-    if (error) {
-      return { error: error.message };
+    try {
+      await authApi.resetPassword(email);
+      return {};
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Password reset failed";
+      return { error: message };
     }
-    return {};
   },
 
   // Profile methods removed - now handled by React Query useProfile hook
@@ -147,28 +99,39 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
     isInitialized = true;
 
-    const supabase = createClient();
+    // Check if we have stored tokens
+    const tokens = TokenManager.getTokens();
 
-    // Get initial session
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    if (!tokens) {
+      set({ loading: false, authenticated: false });
+      return;
+    }
 
-    const user = session?.user ?? null;
-    set({ session, user, loading: false, authenticated: !!user });
+    try {
+      // Validate session with backend
+      const response = await authApi.validateSession();
 
-    // Listen for auth changes
-    supabase.auth.onAuthStateChange(async (_, session) => {
-      const user = session?.user ?? null;
-      set({ session, user, loading: false, authenticated: !!user });
+      if (response.success && response.data) {
+        const { user, profile, permissions } = response.data;
 
-      // Clear React Query cache when user logs out or session expires
-      if (!user) {
-        queryClient.clear();
+        set({
+          user,
+          profile,
+          permissions,
+          session: tokens,
+          authenticated: true,
+          loading: false,
+        });
+      } else {
+        // Session invalid - clear tokens
+        TokenManager.clearTokens();
+        set({ loading: false, authenticated: false });
       }
-
-      // Note: Profile will be automatically fetched by React Query useProfile hook
-      // when user state changes. No need to fetch it here.
-    });
+    } catch (error) {
+      // Session validation failed - clear tokens
+      console.error("Session initialization failed:", error);
+      TokenManager.clearTokens();
+      set({ loading: false, authenticated: false });
+    }
   },
 }));

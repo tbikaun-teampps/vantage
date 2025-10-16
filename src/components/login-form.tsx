@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/stores/auth-store";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { IconAlertCircle, IconLoader } from "@tabler/icons-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,7 +43,8 @@ export function LoginForm({
       setLoading(false);
     } else {
       // Redirect to intended location or use auth store's redirect path
-      const from = (location.state as any)?.from || redirectPath || "/dashboard";
+      const from =
+        (location.state as any)?.from || redirectPath || "/select-company";
       navigate(from);
       // Don't set loading to false - let the page transition handle it
     }
@@ -138,15 +139,6 @@ export function LoginForm({
             </Button>
 
             {/* Reset Password Section */}
-
-            <div className="flex w-full items-center justify-center gap-1">
-              <span className="text-sm text-muted-foreground">
-                New to Vantage?
-              </span>
-              <Link to="/signup" className="text-sm font-bold underline dark:text-foreground bg-gradient-to-r from-[#eb59ff] to-[#032a83] bg-clip-text text-transparent hover:from-[#f472b6] hover:to-[#1e40af] transition-all duration-300">
-                Sign Up
-              </Link>
-            </div>
           </form>
         </div>
       </CardContent>

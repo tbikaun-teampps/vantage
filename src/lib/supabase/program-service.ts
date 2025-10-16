@@ -6,7 +6,7 @@ import type {
   ProgramPhase,
 } from "@/types/program";
 import type { ProgramUpdateFormData } from "@/pages/programs/detail/components/overview-tab/program-update-schema";
-import { getCurrentUserId } from "@/lib/auth/auth-utils";
+// import { getCurrentUserId } from "@/lib/auth/auth-utils";
 
 export class ProgramService {
   private supabase = createClient();
@@ -93,7 +93,7 @@ export class ProgramService {
 
   async createProgram(formData: CreateProgramFormData): Promise<Program> {
 
-    const currentUserId = await getCurrentUserId();
+    // const currentUserId = await getCurrentUserId();
 
     // Create the program with default values
     const { data: program, error: programError } = await this.supabase
@@ -103,7 +103,7 @@ export class ProgramService {
           name: formData.name,
           description: formData.description || null,
           company_id: formData.company_id,
-          created_by: currentUserId,
+          // created_by: currentUserId,
           is_deleted: false,
           is_demo: false,
           onsite_questionnaire_id: null,
@@ -252,7 +252,7 @@ export class ProgramService {
     }
   ): Promise<ProgramPhase> {
 
-    const currentUserId = await getCurrentUserId();
+    // const currentUserId = await getCurrentUserId();
 
     // Get program company_id
     const { data: program, error: programError } = await this.supabase
@@ -272,7 +272,7 @@ export class ProgramService {
         name: phaseData.name,
         sequence_number: phaseData.sequence_number,
         status: "scheduled",
-        created_by: currentUserId,
+        // created_by: currentUserId,
       })
       .select()
       .single();
@@ -437,7 +437,7 @@ export class ProgramService {
       throw new Error("No questions found in questionnaire");
     }
 
-    const currentUserId = await getCurrentUserId();
+    // const currentUserId = await getCurrentUserId();
 
     // Create interview(s)
     if (isPublic) {
@@ -452,7 +452,7 @@ export class ProgramService {
           questionIds,
           companyId: program.company_id,
           isPublic: true,
-          createdBy: currentUserId,
+          // createdBy: currentUserId,
           interviewType
         });
       }
@@ -467,7 +467,7 @@ export class ProgramService {
         questionIds,
         companyId: program.company_id,
         isPublic: false,
-        createdBy: currentUserId,
+        // createdBy: currentUserId,
         interviewType
       });
     }

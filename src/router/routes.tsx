@@ -4,7 +4,6 @@ export const routes = {
 
   // Auth routes
   login: "/login",
-  signup: "/signup",
   forgotPassword: "/forgot-password",
   welcome: "/welcome", // This is protected -- onboarding after authentication.
 

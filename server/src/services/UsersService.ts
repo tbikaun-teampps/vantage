@@ -76,4 +76,22 @@ export class UsersService {
 
     if (error) throw error;
   }
+
+  async updateProfile(
+    userId: string,
+    profileData: Partial<Profile>
+  ): Promise<Profile> {
+    const { data, error } = await this.supabase
+      .from("profiles")
+      .update({
+        ...profileData,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
 }

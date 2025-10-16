@@ -32,26 +32,3 @@ export function createClient() {
 
   return supabaseClient;
 }
-
-/**
- * Creates a Supabase client for public interview access using custom JWT
- * This is NOT a singleton - creates a new instance each time
- * @param token - The public interview JWT token
- */
-export function createPublicInterviewClient(token: string): SupabaseClient {
-  return createSupabaseClient(
-    import.meta.env.VITE_SUPABASE_URL!,
-    import.meta.env.VITE_SUPABASE_ANON_KEY!,
-    {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-      auth: {
-        persistSession: false, // Don't interfere with normal auth
-        autoRefreshToken: false,
-      },
-    }
-  );
-}

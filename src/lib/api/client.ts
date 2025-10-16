@@ -1,5 +1,6 @@
 import axios from "axios";
-import { createClient } from "@/lib/supabase/client";
+import { TokenManager } from "@/lib/auth/token-manager";
+import { routes } from "@/router/routes";
 
 // Determine the API base URL
 // In development with Vite proxy: use "/api" (proxied to VITE_API_BASE_URL)
@@ -30,6 +31,47 @@ const apiClient = axios.create({
   },
 });
 
+// Flag to prevent multiple concurrent refresh requests
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+// Helper function to refresh the token
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = TokenManager.getRefreshToken();
+
+  if (!refreshToken) {
+    return null;
+  }
+
+  try {
+    const response = await axios.post(
+      `${getApiBaseUrl()}/auth/refresh`,
+      { refresh_token: refreshToken },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    if (response.data.success && response.data.data) {
+      const { access_token, refresh_token, expires_at } = response.data.data;
+
+      // Update stored tokens
+      TokenManager.setTokens({
+        access_token,
+        refresh_token,
+        expires_at,
+      });
+
+      return access_token;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Token refresh failed:", error);
+    return null;
+  }
+}
+
 // Request interceptor to add authentication (JWT or public interview token)
 apiClient.interceptors.request.use(
   async (config) => {
@@ -42,7 +84,9 @@ apiClient.interceptors.request.use(
     if (interviewMatch) {
       // Check for interview token in sessionStorage
       const interviewId = interviewMatch[1];
-      const token = sessionStorage.getItem(`vantage_interview_token_${interviewId}`);
+      const token = sessionStorage.getItem(
+        `vantage_interview_token_${interviewId}`
+      );
 
       if (token) {
         // Use the interview token
@@ -51,13 +95,34 @@ apiClient.interceptors.request.use(
       // If no token, request will proceed without auth (e.g., for /auth endpoint)
     } else {
       // Standard authenticated request - add JWT token
-      const supabase = createClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      let accessToken = TokenManager.getAccessToken();
 
-      if (session?.access_token) {
-        config.headers.Authorization = `Bearer ${session.access_token}`;
+      // Check if token is expiring and refresh if needed
+      if (accessToken && TokenManager.isTokenExpiring()) {
+        // If already refreshing, wait for that request
+        if (isRefreshing && refreshPromise) {
+          accessToken = await refreshPromise;
+        } else {
+          // Start new refresh
+          isRefreshing = true;
+          refreshPromise = refreshAccessToken();
+          accessToken = await refreshPromise;
+          isRefreshing = false;
+          refreshPromise = null;
+        }
+
+        // If refresh failed, clear tokens and redirect to login
+        if (!accessToken) {
+          TokenManager.clearTokens();
+          if (!window.location.pathname.includes(routes.login)) {
+            window.location.href = routes.login;
+          }
+          return Promise.reject(new Error("Session expired"));
+        }
+      }
+
+      if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
       }
     }
 
@@ -73,25 +138,55 @@ apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
-    // Handle common HTTP errors
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Handle 401 Unauthorized errors
     if (error.response?.status === 401) {
-      // Handle unauthorized - clear interview token if on public interview page
+      // Check if on public interview page
       const currentPath = window.location.pathname;
       const interviewMatch = currentPath.match(/\/interview\/(\d+)/);
 
       if (interviewMatch) {
+        // Handle interview token expiry
         const interviewId = interviewMatch[1];
         sessionStorage.removeItem(`vantage_interview_token_${interviewId}`);
-        // Reload the page to show the access code form
         window.location.reload();
-      } else {
-        // Standard auth error
-        console.error("Unauthorized access");
+        return Promise.reject(error);
+      }
+
+      // For standard auth: Try to refresh token once
+      if (!originalRequest._retry) {
+        originalRequest._retry = true;
+
+        const refreshToken = TokenManager.getRefreshToken();
+        if (refreshToken) {
+          try {
+            const newAccessToken = await refreshAccessToken();
+
+            if (newAccessToken) {
+              // Retry the original request with new token
+              originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+              return apiClient(originalRequest);
+            }
+          } catch (refreshError) {
+            console.error(
+              "Token refresh failed in response interceptor:",
+              refreshError
+            );
+          }
+        }
+      }
+
+      // Refresh failed or not available - clear tokens and redirect to login
+      TokenManager.clearTokens();
+      if (!window.location.pathname.includes(routes.login)) {
+        window.location.href = routes.login;
       }
     } else if (error.response?.status === 500) {
       console.error("Server error:", error.response.data);
     }
+
     return Promise.reject(error);
   }
 );

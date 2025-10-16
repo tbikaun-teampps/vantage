@@ -74,6 +74,48 @@ export async function usersRoutes(fastify: FastifyInstance) {
     }
   );
   fastify.put(
+    "/profile",
+    {
+      schema: {
+        description: "Update user profile",
+        body: {
+          type: "object",
+          properties: {
+            full_name: { type: "string" },
+            // Add other updatable profile fields as needed
+          },
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              profile: { type: "object", additionalProperties: true },
+            },
+          },
+          401: usersSchemas.responses[401],
+          500: usersSchemas.responses[500],
+        },
+      },
+    },
+    async (request) => {
+      const { user } = request;
+      if (!user) {
+        throw new UnauthorizedError();
+      }
+
+      const profileData = request.body as Record<string, unknown>;
+      const usersService = new UsersService(request.supabaseClient);
+      const updatedProfile = await usersService.updateProfile(
+        user.id,
+        profileData
+      );
+
+      return { success: true, profile: updatedProfile };
+    }
+  );
+
+  fastify.put(
     "/onboarded",
     {
       schema: {

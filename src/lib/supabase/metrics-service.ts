@@ -1,6 +1,6 @@
 import { createClient } from "./client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database";
-import { getCurrentUserId } from "@/lib/auth/auth-utils";
+// import { getCurrentUserId } from "@/lib/auth/auth-utils";
 
 export type MetricDefinition = Tables<"metric_definitions">;
 export type CreateMetricDefinitionData = TablesInsert<"metric_definitions">;
@@ -112,7 +112,7 @@ export class MetricsService {
     metricId: number
   ): Promise<ProgramMetric> {
 
-    const currentUserId = await getCurrentUserId();
+    // const currentUserId = await getCurrentUserId();
 
     // Check if metric is already added to this program
     const { data: existing, error: checkError } = await this.supabase
@@ -136,7 +136,7 @@ export class MetricsService {
         {
           program_id: programId,
           metric_id: metricId,
-          created_by: currentUserId,
+          // created_by: currentUserId,
         },
       ])
       .select()
@@ -198,14 +198,14 @@ export class MetricsService {
     formData: CreateCalculatedMetricData
   ): Promise<CalculatedMetric> {
 
-    const currentUserId = await getCurrentUserId();
+    // const currentUserId = await getCurrentUserId();
 
     const { data: metric, error } = await this.supabase
       .from("calculated_metrics")
       .insert([
         {
           ...formData,
-          created_by: currentUserId,
+          // created_by: currentUserId,
         },
       ])
       .select()

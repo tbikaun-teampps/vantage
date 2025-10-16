@@ -11,7 +11,6 @@ import { InterviewLayout } from "@/layouts/InterviewLayout";
 
 import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/pages/auth/LoginPage";
-import { SignupPage } from "@/pages/auth/SignupPage";
 import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
 import { SelectCompanyPage } from "@/pages/SelectCompanyPage";
 import { DashboardPage } from "@/pages/dashboard/DashboardPage";
@@ -67,7 +66,6 @@ export function AppRouter() {
         {/* Auth routes */}
         <Route element={<AuthLayout />}>
           <Route path={routes.login} element={<LoginPage />} />
-          <Route path={routes.signup} element={<SignupPage />} />
           <Route
             path={routes.forgotPassword}
             element={<ForgotPasswordPage />}

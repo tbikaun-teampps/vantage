@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createClient } from "@/lib/supabase/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
+import { apiClient } from "@/lib/api/client";
 import type { UserProfile } from "@/types/assessment";
 
 // Query key factory for profile cache management
@@ -10,73 +10,53 @@ export const profileKeys = {
 };
 
 /**
- * Hook to fetch user profile with React Query
- * Automatically enabled when user is authenticated
+ * Hook to get user profile from auth store
+ * Profile is loaded on signin/initialize, no separate fetch needed
  */
 export function useProfile() {
-  const { user } = useAuthStore();
+  const { profile, loading, authenticated } = useAuthStore();
 
-  return useQuery({
-    queryKey: user ? profileKeys.detail(user.id) : ["profile", "null"],
-    queryFn: async () => {
-      if (!user) return null;
-
-      const supabase = createClient();
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (error) {
-        console.error("❌ Error fetching profile:", error);
-        throw new Error(`Failed to fetch profile: ${error.message}`);
-      }
-
-      return profile;
-    },
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 3,
-  });
+  return {
+    data: profile,
+    isLoading: loading,
+    error: !authenticated && !loading ? new Error("Not authenticated") : null,
+    isError: !authenticated && !loading,
+    isSuccess: !!profile,
+  };
 }
 
 /**
  * Hook for profile mutations
+ * Calls backend endpoints and updates auth store
  */
 export function useProfileActions() {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const authStore = useAuthStore();
+  const { user } = authStore;
 
   const updateProfileMutation = useMutation({
     mutationFn: async (profileData: Partial<UserProfile>) => {
       if (!user) throw new Error("User not authenticated");
 
-      const supabase = createClient();
-      const updateData = {
-        ...profileData,
-        updated_at: new Date().toISOString(),
-      };
+      const response = await apiClient.put<{
+        success: boolean;
+        profile: UserProfile;
+      }>("/users/profile", profileData);
 
-      const { error } = await supabase
-        .from("profiles")
-        .update(updateData)
-        .eq("id", user.id);
-
-      if (error) {
-        throw new Error(error.message);
+      if (!response.data.success) {
+        throw new Error("Failed to update profile");
       }
 
-      return updateData;
+      return response.data.profile;
     },
-    onSuccess: (updatedData) => {
-      if (!user) return;
+    onSuccess: (updatedProfile) => {
+      // Update auth store with new profile
+      authStore.setProfile(updatedProfile);
 
-      // Update cache optimistically
-      queryClient.setQueryData(
-        profileKeys.detail(user.id),
-        (old: UserProfile | null) => (old ? { ...old, ...updatedData } : null)
-      );
+      // Also update React Query cache
+      if (user) {
+        queryClient.setQueryData(profileKeys.detail(user.id), updatedProfile);
+      }
     },
   });
 
@@ -84,32 +64,31 @@ export function useProfileActions() {
     mutationFn: async () => {
       if (!user) throw new Error("User not authenticated");
 
-      const supabase = createClient();
-      const updateData = {
-        onboarded: true,
-        onboarded_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      // Mark as onboarded
+      await apiClient.put("/users/onboarded");
 
-      const { error } = await supabase
-        .from("profiles")
-        .update(updateData)
-        .eq("id", user.id);
+      // Fetch fresh profile with updated onboarded status
+      const response = await apiClient.get<{
+        success: boolean;
+        data: {
+          profile: UserProfile;
+        };
+      }>("/auth/session");
 
-      if (error) {
-        throw new Error(error.message);
+      if (!response.data.success || !response.data.data) {
+        throw new Error("Failed to fetch updated profile");
       }
 
-      return updateData;
+      return response.data.data.profile;
     },
-    onSuccess: (updatedData) => {
-      if (!user) return;
+    onSuccess: (updatedProfile) => {
+      // Update auth store
+      authStore.setProfile(updatedProfile);
 
-      // Update cache optimistically
-      queryClient.setQueryData(
-        profileKeys.detail(user.id),
-        (old: UserProfile | null) => (old ? { ...old, ...updatedData } : null)
-      );
+      // Update React Query cache
+      if (user) {
+        queryClient.setQueryData(profileKeys.detail(user.id), updatedProfile);
+      }
     },
   });
 
