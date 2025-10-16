@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Loader2, MessageCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useProgramById } from "@/hooks/useProgram";
-import { createClient } from "@/lib/supabase/client";
+// import { createClient } from "@/lib/supabase/client";
 
 interface InterviewScoreChangesProps {
   programId: number;
@@ -65,100 +65,100 @@ export function InterviewScoreChanges({
     : program?.onsite_questionnaire_id;
 
   // Fetch interview responses directly from Supabase
-  useEffect(() => {
-    if (!program || !questionnaireId || phases.length === 0)
-      return;
+  // useEffect(() => {
+  //   if (!program || !questionnaireId || phases.length === 0)
+  //     return;
 
-    const fetchInterviewResponses = async () => {
-      setLoading(true);
-      setError(null);
+  //   const fetchInterviewResponses = async () => {
+  //     setLoading(true);
+  //     setError(null);
 
-      try {
-        const supabase = createClient();
+  //     try {
+  //       const supabase = createClient();
 
-        // Fetch all interviews for this program that use the specified questionnaire
-        const { data: interviews, error: interviewsError } = await supabase
-          .from("interviews")
-          .select(
-            `
-            id,
-            program_phase_id,
-            program_phases!inner(
-              id,
-              name,
-              sequence_number
-            ),
-            interview_responses!inner(
-              id,
-              rating_score,
-              is_applicable,
-              questionnaire_question_id,
-              questionnaire_questions!inner(
-                id,
-                title,
-                questionnaire_step_id,
-                questionnaire_steps!inner(
-                  questionnaire_section_id,
-                  questionnaire_sections!inner(
-                    title
-                  )
-                )
-              )
-            )
-          `
-          )
-          .eq("program_id", programId)
-          .eq("questionnaire_id", questionnaireId)
-          .eq("is_deleted", false)
-          .not("interview_responses.rating_score", "is", null)
-          .eq("interview_responses.is_applicable", true)
-          .eq("interview_responses.is_deleted", false);
+  //       // Fetch all interviews for this program that use the specified questionnaire
+  //       const { data: interviews, error: interviewsError } = await supabase
+  //         .from("interviews")
+  //         .select(
+  //           `
+  //           id,
+  //           program_phase_id,
+  //           program_phases!inner(
+  //             id,
+  //             name,
+  //             sequence_number
+  //           ),
+  //           interview_responses!inner(
+  //             id,
+  //             rating_score,
+  //             is_applicable,
+  //             questionnaire_question_id,
+  //             questionnaire_questions!inner(
+  //               id,
+  //               title,
+  //               questionnaire_step_id,
+  //               questionnaire_steps!inner(
+  //                 questionnaire_section_id,
+  //                 questionnaire_sections!inner(
+  //                   title
+  //                 )
+  //               )
+  //             )
+  //           )
+  //         `
+  //         )
+  //         .eq("program_id", programId)
+  //         .eq("questionnaire_id", questionnaireId)
+  //         .eq("is_deleted", false)
+  //         .not("interview_responses.rating_score", "is", null)
+  //         .eq("interview_responses.is_applicable", true)
+  //         .eq("interview_responses.is_deleted", false);
 
-        if (interviewsError) {
-          throw interviewsError;
-        }
+  //       if (interviewsError) {
+  //         throw interviewsError;
+  //       }
 
-        // Transform the data into a flat array of responses with phase info
-        const responses: InterviewResponseData[] = [];
+  //       // Transform the data into a flat array of responses with phase info
+  //       const responses: InterviewResponseData[] = [];
 
-        interviews?.forEach((interview) => {
-          interview.interview_responses.forEach((response) => {
-            if (response.rating_score !== null) {
-              const question = (response as any).questionnaire_questions;
-              const step = question?.questionnaire_steps;
-              const section = step?.questionnaire_sections;
+  //       interviews?.forEach((interview) => {
+  //         interview.interview_responses.forEach((response) => {
+  //           if (response.rating_score !== null) {
+  //             const question = (response as any).questionnaire_questions;
+  //             const step = question?.questionnaire_steps;
+  //             const section = step?.questionnaire_sections;
               
-              responses.push({
-                id: response.id,
-                rating_score: response.rating_score,
-                interview_id: interview.id,
-                program_phase_id: interview.program_phase_id || 0,
-                phase_name: (interview.program_phases as any)?.name || null,
-                phase_sequence:
-                  (interview.program_phases as any)?.sequence_number || 0,
-                questionnaire_question_id: response.questionnaire_question_id || 0,
-                section_title: section?.title || 'Unknown Section',
-                question_title: question?.title || 'Unknown Question',
-              });
-            }
-          });
-        });
+  //             responses.push({
+  //               id: response.id,
+  //               rating_score: response.rating_score,
+  //               interview_id: interview.id,
+  //               program_phase_id: interview.program_phase_id || 0,
+  //               phase_name: (interview.program_phases as any)?.name || null,
+  //               phase_sequence:
+  //                 (interview.program_phases as any)?.sequence_number || 0,
+  //               questionnaire_question_id: response.questionnaire_question_id || 0,
+  //               section_title: section?.title || 'Unknown Section',
+  //               question_title: question?.title || 'Unknown Question',
+  //             });
+  //           }
+  //         });
+  //       });
 
-        setResponseData(responses);
-      } catch (error) {
-        console.error(`Failed to fetch ${type} interview responses:`, error);
-        setError(
-          error instanceof Error
-            ? error
-            : new Error(`Failed to fetch ${type} interview responses`)
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+  //       setResponseData(responses);
+  //     } catch (error) {
+  //       console.error(`Failed to fetch ${type} interview responses:`, error);
+  //       setError(
+  //         error instanceof Error
+  //           ? error
+  //           : new Error(`Failed to fetch ${type} interview responses`)
+  //       );
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    fetchInterviewResponses();
-  }, [program, programId, phases, questionnaireId, type]);
+  //   fetchInterviewResponses();
+  // }, [program, programId, phases, questionnaireId, type]);
 
   // Transform data for heatmap showing changes between phases
   const heatmapData = useMemo(() => {

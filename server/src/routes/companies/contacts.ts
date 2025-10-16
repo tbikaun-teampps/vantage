@@ -210,4 +210,21 @@ export async function contactsRoutes(fastify: FastifyInstance) {
       };
     }
   );
+
+  // Method for getting contacts by their role within a company.
+  fastify.get("/:companyId/contacts/roles/:roleId", async (request) => {
+    const { companyId, roleId } = request.params as {
+      companyId: string;
+      roleId: number;
+    };
+    const contacts = await request.companiesService!.getContactsByRole(
+      companyId,
+      roleId
+    );
+
+    return {
+      success: true,
+      data: contacts,
+    };
+  });
 }

@@ -26,9 +26,12 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { IconLoader } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { interviewService } from "@/lib/supabase/interview-service";
 import type { Role, CreateInterviewData } from "@/types/assessment";
-import { getRolesAssociatedWithAssessment } from "@/lib/api/interviews";
+import {
+  getRolesAssociatedWithAssessment,
+  validateAssessmentRolesForQuestionnaire,
+} from "@/lib/api/interviews";
+import { getContactsByRole } from "@/lib/api/contacts";
 
 interface Contact {
   id: number;
@@ -130,11 +133,10 @@ export function CreateInterviewDialog({
 
       setIsValidatingRoles(true);
       try {
-        const validation =
-          await interviewService.validateQuestionnaireHasApplicableRoles(
-            selectedAssessmentId,
-            selectedRoleIds
-          );
+        const validation = await validateAssessmentRolesForQuestionnaire(
+          selectedAssessmentId,
+          selectedRoleIds
+        );
 
         setHasApplicableQuestions(validation.isValid);
       } catch (error) {
@@ -155,7 +157,7 @@ export function CreateInterviewDialog({
         const roleId = selectedRoleIds[0]; // For public interviews, only one role is selected
         setIsLoadingContacts(true);
         try {
-          const contacts = await interviewService.getContactsByRole(roleId);
+          const contacts = await getContactsByRole(companyId, roleId);
           setAvailableContacts(contacts);
           // Reset selected contacts when role changes
           setSelectedContactIds([]);
@@ -172,7 +174,7 @@ export function CreateInterviewDialog({
       }
     }
     loadContacts();
-  }, [isPublic, showPublicOptions, selectedRoleIds]);
+  }, [isPublic, showPublicOptions, selectedRoleIds, companyId]);
 
   // Handle create interview
   const handleCreateInterview = async () => {

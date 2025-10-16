@@ -1,8 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { programService } from "@/lib/supabase/program-service";
-import type { CreateProgramFormData, Program, ProgramPhase } from "@/types/program";
+import type {
+  CreateProgramFormData,
+  Program,
+} from "@/types/program";
 import type { ProgramUpdateFormData } from "@/pages/programs/detail/components/overview-tab/program-update-schema";
 import { toast } from "sonner";
+import {
+  createProgram,
+  createPhase,
+  createProgramInterviews,
+  deletePhase,
+  deleteProgram,
+  getCurrentProgramPhase,
+  getProgramById,
+  getPrograms,
+  updatePhase,
+  updateProgram,
+  updateProgramOnsiteQuestionnaire,
+  updateProgramPresiteQuestionnaire,
+  type CreatePhaseData,
+  type UpdatePhaseData,
+} from "@/lib/api/programs";
 
 // Query key factory for cache management
 export const programKeys = {
@@ -13,15 +31,17 @@ export const programKeys = {
   details: () => [...programKeys.all, "detail"] as const,
   detail: (id: number) => [...programKeys.details(), id] as const,
   phases: () => [...programKeys.all, "phases"] as const,
-  currentPhase: (programId: number) => [...programKeys.phases(), "current", programId] as const,
+  currentPhase: (programId: number) =>
+    [...programKeys.phases(), "current", programId] as const,
 };
 
 // Hook to fetch programs with optional company filtering
-export function usePrograms(companyId?: string) {
+export function usePrograms(companyId: string) {
   return useQuery({
     queryKey: programKeys.list(companyId),
-    queryFn: () => programService.getPrograms(companyId),
+    queryFn: () => getPrograms(companyId),
     staleTime: 5 * 60 * 1000, // 5 minutes - program data changes moderately
+    enabled: !!companyId, // Only run if companyId is provided
   });
 }
 
@@ -29,7 +49,7 @@ export function usePrograms(companyId?: string) {
 export function useProgramById(id: number) {
   return useQuery({
     queryKey: programKeys.detail(id),
-    queryFn: () => programService.getProgramById(id),
+    queryFn: () => getProgramById(id),
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!id, // Only run if id is provided
   });
@@ -39,7 +59,7 @@ export function useProgramById(id: number) {
 export function useCurrentProgramPhase(programId: number) {
   return useQuery({
     queryKey: programKeys.currentPhase(programId),
-    queryFn: () => programService.getCurrentProgramPhase(programId),
+    queryFn: () => getCurrentProgramPhase(programId),
     staleTime: 2 * 60 * 1000, // 2 minutes - phase status changes more frequently
     enabled: !!programId, // Only run if programId is provided
   });
@@ -49,8 +69,7 @@ export function useCreateProgram() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateProgramFormData) =>
-      programService.createProgram(data),
+    mutationFn: (data: CreateProgramFormData) => createProgram(data),
     onSuccess: (program: Program) => {
       queryClient.invalidateQueries({ queryKey: ["programs"] });
       toast.success(`${program.name} has been created successfully.`);
@@ -72,7 +91,7 @@ export function useUpdateProgram() {
     }: {
       programId: number;
       updateData: ProgramUpdateFormData;
-    }) => programService.updateProgram(programId, updateData),
+    }) => updateProgram(programId, updateData),
     onSuccess: (program: Program) => {
       queryClient.invalidateQueries({
         queryKey: programKeys.detail(program.id),
@@ -97,11 +116,7 @@ export function useUpdateProgramOnsiteQuestionnaire() {
     }: {
       programId: number;
       questionnaireId: number | null;
-    }) =>
-      programService.updateProgramOnsiteQuestionnaire(
-        programId,
-        questionnaireId
-      ),
+    }) => updateProgramOnsiteQuestionnaire(programId, questionnaireId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: programKeys.detail(variables.programId),
@@ -133,11 +148,7 @@ export function useUpdateProgramPresiteQuestionnaire() {
     }: {
       programId: number;
       questionnaireId: number | null;
-    }) =>
-      programService.updateProgramPresiteQuestionnaire(
-        programId,
-        questionnaireId
-      ),
+    }) => updateProgramPresiteQuestionnaire(programId, questionnaireId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: programKeys.detail(variables.programId),
@@ -167,7 +178,7 @@ export function useDeleteProgram() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => programService.deleteProgram(id),
+    mutationFn: (id: number) => deleteProgram(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["programs"] });
       toast.success("Program has been deleted successfully.");
@@ -188,16 +199,8 @@ export function useUpdatePhase() {
       updateData,
     }: {
       phaseId: number;
-      updateData: {
-        name?: string | null;
-        status?: "scheduled" | "in_progress" | "completed" | "archived";
-        notes?: string | null;
-        planned_start_date?: string | null;
-        actual_start_date?: string | null;
-        planned_end_date?: string | null;
-        actual_end_date?: string | null;
-      };
-    }) => programService.updatePhase(phaseId, updateData),
+      updateData: UpdatePhaseData;
+    }) => updatePhase(phaseId, updateData),
     onSuccess: () => {
       // Invalidate program queries to refresh phase data
       queryClient.invalidateQueries({ queryKey: programKeys.all });
@@ -218,20 +221,16 @@ export function useCreatePhase() {
       phaseData,
     }: {
       programId: number;
-      phaseData: {
-        name?: string | null;
-        sequence_number: number;
-        activate?: boolean;
-      };
-    }) => programService.createPhase(programId, phaseData),
+      phaseData: CreatePhaseData;
+    }) => createPhase(programId, phaseData),
     onSuccess: (phase, variables) => {
       // Invalidate program queries to refresh phase data
       queryClient.invalidateQueries({ queryKey: programKeys.all });
-      
-      const message = variables.phaseData.activate 
+
+      const message = variables.phaseData.activate
         ? `Phase "${phase.name || `Phase ${phase.sequence_number}`}" created and activated successfully.`
         : `Phase "${phase.name || `Phase ${phase.sequence_number}`}" created successfully.`;
-      
+
       toast.success(message);
     },
     onError: (error) => {
@@ -245,7 +244,7 @@ export function useDeletePhase() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (phaseId: number) => programService.deletePhase(phaseId),
+    mutationFn: (phaseId: number) => deletePhase(phaseId),
     onSuccess: () => {
       // Invalidate program queries to refresh phase data
       queryClient.invalidateQueries({ queryKey: programKeys.all });
@@ -253,12 +252,19 @@ export function useDeletePhase() {
     },
     onError: (error) => {
       console.error("Failed to delete phase:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete phase. Please try again.";
-      
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to delete phase. Please try again.";
+
       if (errorMessage.includes("Cannot delete the only remaining phase")) {
-        toast.error("Cannot delete the only remaining phase. Programs must have at least one phase.");
+        toast.error(
+          "Cannot delete the only remaining phase. Programs must have at least one phase."
+        );
       } else if (errorMessage.includes("violates foreign key constraint")) {
-        toast.error("Cannot delete phase. Please remove associated interviews and calculated metrics first.");
+        toast.error(
+          "Cannot delete phase. Please remove associated interviews and calculated metrics first."
+        );
       } else {
         toast.error(errorMessage);
       }
@@ -284,28 +290,39 @@ export function useCreateProgramInterviews() {
       roleIds?: number[];
       contactIds: number[];
       interviewType: "onsite" | "presite";
-    }) => programService.createInterviews(
-      programId,
-      phaseId,
-      isPublic,
-      roleIds,
-      contactIds,
-      interviewType
-    ),
+    }) =>
+      createProgramInterviews({
+        programId,
+        phaseId,
+        isPublic,
+        roleIds,
+        contactIds,
+        interviewType,
+      }),
     onSuccess: (_, variables) => {
       // Invalidate relevant queries to refresh interview data
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
-      queryClient.invalidateQueries({ queryKey: programKeys.detail(variables.programId) });
-      
-      const interviewCount = variables.isPublic ? variables.contactIds.length : 1;
+      queryClient.invalidateQueries({
+        queryKey: programKeys.detail(variables.programId),
+      });
+
+      const interviewCount = variables.isPublic
+        ? variables.contactIds.length
+        : 1;
       const interviewText = interviewCount === 1 ? "interview" : "interviews";
-      const typeText = variables.interviewType === "onsite" ? "onsite" : "pre-assessment";
-      
-      toast.success(`${interviewCount} ${typeText} ${interviewText} created successfully.`);
+      const typeText =
+        variables.interviewType === "onsite" ? "onsite" : "pre-assessment";
+
+      toast.success(
+        `${interviewCount} ${typeText} ${interviewText} created successfully.`
+      );
     },
     onError: (error) => {
       console.error("Failed to create program interviews:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to create interviews. Please try again.";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to create interviews. Please try again.";
       toast.error(errorMessage);
     },
   });

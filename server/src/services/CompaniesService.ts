@@ -1587,7 +1587,7 @@ export class CompaniesService {
       .from("user_companies")
       .select("*")
       .eq("company_id", companyId)
-      .neq('role', 'interviewee')
+      .neq("role", "interviewee")
       .order("created_at", { ascending: true });
 
     if (error) throw error;
@@ -1906,5 +1906,27 @@ export class CompaniesService {
     if (error) throw error;
 
     return data || [];
+  }
+
+  async getContactsByRole(companyId: string, roleId: number) {
+    const { data: contacts, error } = await this.supabase
+      .from("role_contacts")
+      .select(
+        `
+          contact:contacts(
+            id,
+            full_name,
+            email,
+            title,
+            phone
+          )
+        `
+      )
+      .eq("role_id", roleId)
+      .eq("contacts.is_deleted", false)
+      .eq('company_id', companyId)
+
+    if (error) throw error;
+    return contacts;
   }
 }

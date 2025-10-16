@@ -11,6 +11,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   session: null,
   profile: null,
   permissions: null,
+  companies: [],
   loading: true,
   authenticated: false,
 
@@ -27,7 +28,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
         return { error: response.message || "Sign in failed" };
       }
 
-      const { user, profile, permissions, session } = response.data;
+      const { user, profile, permissions, companies, session } = response.data;
 
       // Store tokens in TokenManager
       const tokenData = sessionToTokenData(session);
@@ -38,6 +39,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
         user,
         profile,
         permissions,
+        companies,
         session: tokenData,
         authenticated: true,
         loading: false,
@@ -71,6 +73,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
         session: null,
         profile: null,
         permissions: null,
+        companies: [],
         authenticated: false,
       });
 
@@ -112,12 +115,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
       const response = await authApi.validateSession();
 
       if (response.success && response.data) {
-        const { user, profile, permissions } = response.data;
+        const { user, profile, permissions, companies } = response.data;
 
         set({
           user,
           profile,
           permissions,
+          companies,
           session: tokens,
           authenticated: true,
           loading: false,

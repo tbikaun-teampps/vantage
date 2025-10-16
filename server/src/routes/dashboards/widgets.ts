@@ -129,4 +129,89 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
       });
     }
   );
+
+  // GET table data for widgets
+  // Route: /dashboards/widgets/:companyId/table
+  fastify.get(
+    "/:companyId/table",
+    {
+      schema: {
+        description: "Get table data for a widget",
+        params: {
+          type: "object",
+          properties: {
+            companyId: { type: "string" },
+          },
+          required: ["companyId"],
+        },
+        querystring: widgetSchemas.querystring.table,
+        response: {
+          200: widgetSchemas.responses.tableData,
+          401: commonResponseSchemas.responses[401],
+          500: commonResponseSchemas.responses[500],
+        },
+      },
+    },
+    async (request, reply) => {
+      const { companyId } = request.params as { companyId: string };
+      const { entityType, assessmentId, programId } = request.query as {
+        entityType: "actions" | "recommendations" | "comments";
+        assessmentId?: number;
+        programId?: number;
+      };
+
+      const widgetService = new WidgetService(
+        companyId,
+        request.supabaseClient
+      );
+      const data = await widgetService.getTableData(
+        entityType,
+        assessmentId,
+        programId
+      );
+
+      return reply.send({
+        success: true,
+        data,
+      });
+    }
+  );
+
+  // GET actions data for widgets
+  // Route: /dashboards/widgets/:companyId/actions
+  fastify.get(
+    "/:companyId/actions",
+    {
+      schema: {
+        description: "Get actions data for a widget",
+        params: {
+          type: "object",
+          properties: {
+            companyId: { type: "string" },
+          },
+          required: ["companyId"],
+        },
+        querystring: widgetSchemas.querystring.actions,
+        response: {
+          200: widgetSchemas.responses.actionsData,
+          401: commonResponseSchemas.responses[401],
+          500: commonResponseSchemas.responses[500],
+        },
+      },
+    },
+    async (request, reply) => {
+      const { companyId } = request.params as { companyId: string };
+
+      const widgetService = new WidgetService(
+        companyId,
+        request.supabaseClient
+      );
+      const data = await widgetService.getActionsData();
+
+      return reply.send({
+        success: true,
+        data,
+      });
+    }
+  );
 }

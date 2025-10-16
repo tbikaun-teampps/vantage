@@ -267,4 +267,207 @@ export class WidgetService {
       interviews: interviews || [],
     };
   }
+
+  async getTableData(
+    entityType: "actions" | "recommendations" | "comments",
+    assessmentId?: number,
+    programId?: number
+  ): Promise<{
+    rows: Array<Record<string, string | number>>;
+    columns: Array<{ key: string; label: string }>;
+    scope?: {
+      assessmentName?: string;
+      programName?: string;
+    };
+  }> {
+    switch (entityType) {
+      case "actions": {
+        let query = this.supabase
+          .from("interview_response_actions")
+          .select(
+            "*, interview:interview_id!inner(id, name, assessment:assessment_id(id, name)), response:interview_response_id(id, question:questionnaire_question_id(id, question_text))"
+          )
+          .eq("company_id", this.companyId)
+          .eq("is_deleted", false);
+
+        // Apply assessment scope filter if provided
+        if (assessmentId) {
+          query = query.eq("interview.assessment_id", assessmentId);
+        }
+
+        const { data, error } = await query.order("created_at", {
+          ascending: false,
+        });
+
+        if (error) throw error;
+
+        const columns = [
+          { key: "title", label: "Title" },
+          { key: "description", label: "Description" },
+          { key: "question", label: "Question" },
+          { key: "interview", label: "Interview" },
+          { key: "assessment", label: "Assessment" },
+          {
+            key: "createdAt",
+            label: "Created At",
+          },
+        ];
+        const rows =
+          data?.map((item) => ({
+            id: item.id,
+            interview: item.interview?.name || "-",
+            assessment: item.interview?.assessment?.name || "-",
+            question: item.response?.question?.question_text || "-",
+            title: item.title || "-",
+            description: item.description || "-",
+            createdAt: new Date(item.created_at).toLocaleDateString(),
+          })) || [];
+
+        let scope = undefined;
+        if (assessmentId) {
+          const { data: assessmentData } = await this.supabase
+            .from("assessments")
+            .select("name")
+            .eq("id", assessmentId)
+            .single();
+
+          if (assessmentData) {
+            scope = { assessmentName: assessmentData.name };
+          }
+        }
+
+        return { columns, rows, scope };
+      }
+      case "recommendations": {
+        let query = this.supabase
+          .from("recommendations")
+          .select("*")
+          .eq("company_id", this.companyId)
+          .eq("is_deleted", false);
+
+        // Apply program scope filter if provided
+        // Note: Recommendations are linked to programs, not assessments directly
+        if (programId) {
+          query = query.eq("program_id", programId);
+        }
+
+        const { data, error } = await query.order("created_at", {
+          ascending: false,
+        });
+
+        if (error) throw error;
+
+        const cols = [
+          {
+            key: "content",
+            label: "Content",
+          },
+          {
+            key: "context",
+            label: "Context",
+          },
+          {
+            key: "title",
+            label: "Title",
+          },
+          {
+            key: "priority",
+            label: "Priority",
+          },
+          {
+            key: "status",
+            label: "Status",
+          },
+        ];
+
+        const rows =
+          data?.map((item) => ({
+            id: item.id,
+            content: item.content,
+            context: item.context,
+            title: item.title,
+            priority: item.priority,
+            status: item.status,
+          })) || [];
+
+        let scope = undefined;
+        if (programId) {
+          const { data: programData } = await this.supabase
+            .from("programs")
+            .select("name")
+            .eq("id", programId)
+            .single();
+
+          if (programData) {
+            scope = { programName: programData.name };
+          }
+        }
+
+        return { columns: cols, rows, scope };
+      }
+      case "comments": {
+        let query = this.supabase
+          .from("interview_responses")
+          .select(
+            "*, interview:interview_id!inner(id, name, assessment:assessment_id(id, name)), question:questionnaire_question_id(id, question_text)"
+          )
+          .eq("company_id", this.companyId)
+          .neq("comments", null)
+          .neq("comments", "")
+          .eq("is_deleted", false);
+
+        // Apply assessment scope filter if provided
+        if (assessmentId) {
+          query = query.eq("interview.assessment_id", assessmentId);
+        }
+
+        const { data, error } = await query.order("created_at", {
+          ascending: false,
+        });
+
+        if (error) throw error;
+
+        const cols = [
+          {
+            key: "comments",
+            label: "Comments",
+          },
+          { key: "question", label: "Question" },
+          { key: "interview", label: "Interview" },
+          { key: "assessment", label: "Assessment" },
+        ];
+
+        const rows =
+          data?.map((item) => ({
+            id: item.id,
+            comments: item.comments || "-",
+            question: item.question?.question_text || "N/A",
+            interview: item.interview?.name || "N/A",
+            assessment: item.interview?.assessment?.name || "N/A",
+          })) || [];
+
+        let scope = undefined;
+        if (assessmentId) {
+          const { data: assessmentData } = await this.supabase
+            .from("assessments")
+            .select("name")
+            .eq("id", assessmentId)
+            .single();
+
+          if (assessmentData) {
+            scope = { assessmentName: assessmentData.name };
+          }
+        }
+
+        return { columns: cols, rows, scope };
+      }
+      default:
+        throw new Error(`Unsupported entity type: ${entityType}`);
+    }
+  }
+
+  async getActionsData(): Promise<string[]> {
+    // Placeholder implementation - return mock data for now
+    return ["hello", "world"];
+  }
 }

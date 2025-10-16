@@ -1,7 +1,7 @@
 import type { WidgetType } from "@/pages/dashboard/components/widgets/types";
 import { useCompanyFromUrl } from "../useCompanyFromUrl";
 import { useQuery } from "@tanstack/react-query";
-import { WidgetService } from "@/lib/services/widget-service";
+import { getMetricData, getActivityData, getActionsData, getTableData } from "@/lib/api/widgets";
 import type { WidgetConfig } from "../useDashboardLayouts";
 
 export { useMetricData } from "./useMetricData";
@@ -23,14 +23,15 @@ export function useWidgetData(widgetType: WidgetType, config: WidgetConfig) {
 
   console.log("fetching widget data:", { widgetType, config, companyId });
 
-  const widgetService = new WidgetService(companyId);
-
   const metricQuery = useQuery({
     queryKey: ["widget", "metric", config, companyId],
     queryFn: async () => {
       console.log("Query function starting");
       try {
-        const result = await widgetService.getMetricData(config);
+        if (!config?.metric?.metricType) {
+          throw new Error("Metric type is required");
+        }
+        const result = await getMetricData(companyId, config.metric.metricType, config.metric.title);
         console.log("Query function completed:", result);
         return result;
       } catch (error) {
@@ -38,26 +39,43 @@ export function useWidgetData(widgetType: WidgetType, config: WidgetConfig) {
         throw error;
       }
     },
-    enabled: widgetType === "metric" && isConfigured && !!companyId,
+    enabled: widgetType === "metric" && isConfigured && !!companyId && !!config?.metric?.metricType,
     retry: false, // Disable retries to see errors faster,
   });
 
   const activityQuery = useQuery({
     queryKey: ["widget", "activity", config, companyId],
-    queryFn: () => widgetService.getActivityData(config),
-    enabled: widgetType === "activity" && isConfigured && !!companyId,
+    queryFn: () => {
+      if (!config?.entity?.entityType) {
+        throw new Error("Entity type is required");
+      }
+      const entityType = config.entity.entityType as "interviews" | "assessments" | "programs";
+      return getActivityData(companyId, entityType);
+    },
+    enabled: widgetType === "activity" && isConfigured && !!companyId && !!config?.entity?.entityType,
   });
 
   const actionsQuery = useQuery({
     queryKey: ["widget", "actions", config, companyId],
-    queryFn: () => widgetService.getActionsData(config),
+    queryFn: () => getActionsData(companyId),
     enabled: widgetType === "actions" && isConfigured && !!companyId,
   });
 
   const tableQuery = useQuery({
     queryKey: ["widget", "table", config, companyId],
-    queryFn: () => widgetService.getTableData(config!),
-    enabled: widgetType === "table" && isConfigured && !!companyId,
+    queryFn: () => {
+      if (!config?.table?.entityType) {
+        throw new Error("Table entity type is required");
+      }
+      const entityType = config.table.entityType as "actions" | "recommendations" | "comments";
+      return getTableData(
+        companyId,
+        entityType,
+        config.scope?.assessmentId,
+        config.scope?.programId
+      );
+    },
+    enabled: widgetType === "table" && isConfigured && !!companyId && !!config?.table?.entityType,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 

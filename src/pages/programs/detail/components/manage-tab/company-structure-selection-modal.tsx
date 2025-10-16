@@ -28,7 +28,8 @@ import {
 import { useCompanyTree } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { useCreateProgramInterviews, useProgramById } from "@/hooks/useProgram";
-import { interviewService } from "@/lib/supabase/interview-service";
+import { getContactsByRole } from "@/lib/api/contacts";
+import { validateProgramQuestionnaireRoles } from "@/lib/api/interviews";
 import { toast } from "sonner";
 import {
   Select,
@@ -408,7 +409,7 @@ export function CompanyStructureSelectionModal({
         const roleIds = Array.from(selectedRoleIds).map((id) => Number(id));
 
         // Check if questionnaire has questions applicable to the selected roles
-        const result = await interviewService.validateProgramQuestionnaireHasApplicableRoles(
+        const result = await validateProgramQuestionnaireRoles(
           questionnaireId,
           roleIds
         );
@@ -441,7 +442,8 @@ export function CompanyStructureSelectionModal({
             );
             if (!roleNode) continue;
 
-            const roleContacts = await interviewService.getContactsByRole(
+            const roleContacts = await getContactsByRole(
+              companyId,
               Number(roleId)
             );
             roleContacts.forEach((contact) => {

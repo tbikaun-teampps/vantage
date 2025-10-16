@@ -337,4 +337,94 @@ export class ProgramService {
       throw error;
     }
   }
+
+  // ======= Program Objectives Methods =======
+
+  async getObjectivesByProgramId(programId: number) {
+    const { data: objectives, error } = await this.supabase
+      .from("program_objectives")
+      .select("*")
+      .eq("program_id", programId)
+      .eq("is_deleted", false)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    return objectives || [];
+  }
+
+  async createObjective(data: {
+    name: string;
+    description?: string;
+    program_id: number;
+  }) {
+    // Get company_id from the program
+    const { data: program, error: programError } = await this.supabase
+      .from("programs")
+      .select("company_id")
+      .eq("id", data.program_id)
+      .single();
+
+    if (programError) throw programError;
+    if (!program) throw new Error("Program not found");
+
+    const { data: objective, error } = await this.supabase
+      .from("program_objectives")
+      .insert({
+        name: data.name,
+        description: data.description,
+        program_id: data.program_id,
+        company_id: program.company_id,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return objective;
+  }
+
+  async updateObjective(
+    id: number,
+    data: {
+      name?: string;
+      description?: string;
+    }
+  ) {
+    const { data: objective, error } = await this.supabase
+      .from("program_objectives")
+      .update({
+        ...data,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("is_deleted", false)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return objective;
+  }
+
+  async deleteObjective(id: number): Promise<void> {
+    const { error } = await this.supabase
+      .from("program_objectives")
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (error) throw error;
+  }
+
+  async getObjectiveCount(programId: number): Promise<number> {
+    const { count, error} = await this.supabase
+      .from("program_objectives")
+      .select("*", { count: "exact", head: true })
+      .eq("program_id", programId)
+      .eq("is_deleted", false);
+
+    if (error) throw error;
+    return count || 0;
+  }
 }

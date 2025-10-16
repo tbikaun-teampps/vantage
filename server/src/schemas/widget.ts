@@ -28,6 +28,27 @@ export const widgetSchemas = {
         Type.String({ description: "Optional custom title for the metric" })
       ),
     }),
+
+    table: Type.Object({
+      entityType: Type.Union(
+        [
+          Type.Literal("actions"),
+          Type.Literal("recommendations"),
+          Type.Literal("comments"),
+        ],
+        { description: "The type of table data to fetch" }
+      ),
+      assessmentId: Type.Optional(
+        Type.Number({ description: "Optional assessment ID for filtering" })
+      ),
+      programId: Type.Optional(
+        Type.Number({ description: "Optional program ID for filtering" })
+      ),
+    }),
+
+    actions: Type.Object({
+      entityType: Type.String({ description: "The entity type for actions" }),
+    }),
   },
 
   responses: {
@@ -116,6 +137,32 @@ export const widgetSchemas = {
           ])
         ),
       }),
+    }),
+
+    tableData: Type.Object({
+      success: Type.Boolean(),
+      data: Type.Object({
+        rows: Type.Array(
+          Type.Record(Type.String(), Type.Union([Type.String(), Type.Number()]))
+        ),
+        columns: Type.Array(
+          Type.Object({
+            key: Type.String(),
+            label: Type.String(),
+          })
+        ),
+        scope: Type.Optional(
+          Type.Object({
+            assessmentName: Type.Optional(Type.String()),
+            programName: Type.Optional(Type.String()),
+          })
+        ),
+      }),
+    }),
+
+    actionsData: Type.Object({
+      success: Type.Boolean(),
+      data: Type.Array(Type.String()),
     }),
   },
 };

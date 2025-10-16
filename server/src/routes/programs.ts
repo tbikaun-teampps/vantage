@@ -194,4 +194,298 @@ export async function programRoutes(fastify: FastifyInstance) {
       }
     }
   );
+
+  // GET /programs/:id/objectives - Get objectives for a program
+  fastify.get(
+    "/:id/objectives",
+    {
+      schema: {
+        description: "Get all objectives for a program",
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "number" },
+          },
+          required: ["id"],
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: {
+                type: "array",
+                items: { type: "object" },
+              },
+            },
+          },
+          401: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+          500: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const programId = (request.params as { id: number }).id;
+      const programService = new ProgramService(request.supabaseClient);
+
+      const objectives = await programService.getObjectivesByProgramId(programId);
+
+      return reply.send({
+        success: true,
+        data: objectives,
+      });
+    }
+  );
+
+  // POST /programs/:id/objectives - Create objective for a program
+  fastify.post(
+    "/:id/objectives",
+    {
+      schema: {
+        description: "Create a new objective for a program",
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "number" },
+          },
+          required: ["id"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            description: { type: "string" },
+          },
+          required: ["name"],
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: { type: "object" },
+            },
+          },
+          401: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+          500: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const programId = (request.params as { id: number }).id;
+      const { name, description } = request.body as {
+        name: string;
+        description?: string;
+      };
+
+      const programService = new ProgramService(request.supabaseClient);
+      const objective = await programService.createObjective({
+        name,
+        description,
+        program_id: programId,
+      });
+
+      return reply.send({
+        success: true,
+        data: objective,
+      });
+    }
+  );
+
+  // PUT /programs/:id/objectives/:objectiveId - Update objective
+  fastify.put(
+    "/:id/objectives/:objectiveId",
+    {
+      schema: {
+        description: "Update a program objective",
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "number" },
+            objectiveId: { type: "number" },
+          },
+          required: ["id", "objectiveId"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            description: { type: "string" },
+          },
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: { type: "object" },
+            },
+          },
+          401: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+          500: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { objectiveId } = request.params as {
+        id: number;
+        objectiveId: number;
+      };
+      const updates = request.body as {
+        name?: string;
+        description?: string;
+      };
+
+      const programService = new ProgramService(request.supabaseClient);
+      const objective = await programService.updateObjective(
+        objectiveId,
+        updates
+      );
+
+      return reply.send({
+        success: true,
+        data: objective,
+      });
+    }
+  );
+
+  // DELETE /programs/:id/objectives/:objectiveId - Delete objective
+  fastify.delete(
+    "/:id/objectives/:objectiveId",
+    {
+      schema: {
+        description: "Delete a program objective",
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "number" },
+            objectiveId: { type: "number" },
+          },
+          required: ["id", "objectiveId"],
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+            },
+          },
+          401: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+          500: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { objectiveId } = request.params as {
+        id: number;
+        objectiveId: number;
+      };
+
+      const programService = new ProgramService(request.supabaseClient);
+      await programService.deleteObjective(objectiveId);
+
+      return reply.send({
+        success: true,
+      });
+    }
+  );
+
+  // GET /programs/:id/objectives/count - Get objective count
+  fastify.get(
+    "/:id/objectives/count",
+    {
+      schema: {
+        description: "Get the count of objectives for a program",
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "number" },
+          },
+          required: ["id"],
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: { type: "number" },
+            },
+          },
+          401: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+          500: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const programId = (request.params as { id: number }).id;
+      const programService = new ProgramService(request.supabaseClient);
+
+      const count = await programService.getObjectiveCount(programId);
+
+      return reply.send({
+        success: true,
+        data: count,
+      });
+    }
+  );
 }

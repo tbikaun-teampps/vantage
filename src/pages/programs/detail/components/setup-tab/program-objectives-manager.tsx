@@ -83,6 +83,7 @@ export function ProgramObjectivesManager({ programId }: ProgramObjectivesManager
     try {
       await updateObjectiveMutation.mutateAsync({
         id: editingId,
+        programId: programId,
         data: {
           name: formData.name.trim(),
           description: formData.description.trim() || undefined,

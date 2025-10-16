@@ -1571,6 +1571,94 @@ export class InterviewsService {
     }
   }
 
+  async validateProgramQuestionnaireHasApplicableRoles(
+    questionnaireId: number,
+    roleIds: number[]
+  ): Promise<{
+    isValid: boolean;
+    hasUniversalQuestions: boolean;
+  }> {
+    try {
+      // Get all questions for this questionnaire
+      const { data: steps } = await this.supabase
+        .from("questionnaire_steps")
+        .select("id")
+        .eq("questionnaire_id", questionnaireId)
+        .eq("is_deleted", false);
+
+      if (!steps || steps.length === 0) {
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const stepIds = steps.map((s) => s.id);
+
+      const { data: allQuestions } = await this.supabase
+        .from("questionnaire_questions")
+        .select("id")
+        .in("questionnaire_step_id", stepIds)
+        .eq("is_deleted", false);
+
+      if (!allQuestions || allQuestions.length === 0) {
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const allQuestionIds = allQuestions.map((q) => q.id);
+
+      // Get role restrictions for all questions
+      const { data: questionRoles } = await this.supabase
+        .from("questionnaire_question_roles")
+        .select("questionnaire_question_id, shared_role_id")
+        .in("questionnaire_question_id", allQuestionIds)
+        .eq("is_deleted", false);
+
+      // Check for universal questions (questions with no role restrictions)
+      const questionsWithRoles = new Set(
+        (questionRoles || []).map((qr) => qr.questionnaire_question_id)
+      );
+      const hasUniversalQuestions = allQuestionIds.some(
+        (id) => !questionsWithRoles.has(id)
+      );
+
+      // If we have universal questions, the questionnaire is always valid
+      if (hasUniversalQuestions) {
+        return { isValid: true, hasUniversalQuestions: true };
+      }
+
+      // Otherwise, check if any questions apply to the selected roles
+      if (roleIds.length === 0) {
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const { data: roles } = await this.supabase
+        .from("roles")
+        .select("shared_role_id")
+        .in("id", roleIds)
+        .not("shared_role_id", "is", null);
+
+      if (!roles || roles.length === 0) {
+        return { isValid: false, hasUniversalQuestions: false };
+      }
+
+      const sharedRoleIds = roles
+        .map((role) => role.shared_role_id)
+        .filter(Boolean);
+      const hasMatchingRoles = (questionRoles || []).some((qr) =>
+        sharedRoleIds.includes(qr.shared_role_id)
+      );
+
+      return {
+        isValid: hasMatchingRoles,
+        hasUniversalQuestions: false,
+      };
+    } catch (error) {
+      console.error(
+        "Error in validateProgramQuestionnaireHasApplicableRoles:",
+        error
+      );
+      return { isValid: false, hasUniversalQuestions: false };
+    }
+  }
+
   async getInterviews(
     companyId: string,
     assessmentId?: number,

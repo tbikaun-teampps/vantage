@@ -20,7 +20,11 @@ export async function sendInterviewReminder(
 ): Promise<EmailResponse> {
   try {
     const response = await apiClient.post<EmailResponse>(
-      `/emails/send-interview-reminder?interviewId=${interviewId}`
+      "/emails/send-interview-reminder",
+      null,
+      {
+        params: { interviewId },
+      }
     );
 
     return response.data;

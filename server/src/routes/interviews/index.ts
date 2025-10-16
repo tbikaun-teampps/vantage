@@ -1027,4 +1027,30 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
 
     return { success: true, data: { isValid } };
   });
+
+  // Method for validating that a program questionnaire has applicable questions for given role IDs
+  fastify.post(
+    "/questionnaires/:questionnaireId/validate-roles",
+    async (request, reply) => {
+      const { questionnaireId } = request.params as {
+        questionnaireId: number;
+      };
+      const { roleIds } = request.body as { roleIds: number[] };
+
+      if (!questionnaireId || !roleIds || roleIds.length === 0) {
+        return reply.status(400).send({
+          success: false,
+          error: "questionnaireId and roleIds are required",
+        });
+      }
+
+      const isValid =
+        await request.interviewsService!.validateProgramQuestionnaireHasApplicableRoles(
+          questionnaireId,
+          roleIds
+        );
+
+      return { success: true, data: { isValid } };
+    }
+  );
 }

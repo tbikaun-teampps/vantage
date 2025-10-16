@@ -14,6 +14,7 @@ export interface ApiResponse<T> {
 export interface MessageResponse {
   success: boolean;
   message: string;
+  error?: string;
 }
 
 // Map frontend entity types (with underscores) to backend API types (with hyphens)
@@ -134,4 +135,23 @@ export async function unlinkContact(
   }
 
   return { message: response.data.message };
+}
+
+/**
+ * Get contacts by their role within a company
+ */
+export async function getContactsByRole(
+  companyId: string,
+  roleId: number
+): Promise<Contact[]> {
+  const response = await apiClient.get<ApiResponse<{ contact: Contact }[]>>(
+    `/companies/${companyId}/contacts/roles/${roleId}`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to fetch contacts by role");
+  }
+
+  // The backend returns an array of objects with a 'contact' property, so we need to extract the contacts
+  return response.data.data.map((item) => item.contact);
 }

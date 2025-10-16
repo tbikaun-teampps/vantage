@@ -353,3 +353,50 @@ export async function getRolesAssociatedWithAssessment(
 
   return response.data.data;
 }
+
+/**
+ * Validate that an assessment's questionnaire has applicable questions for given role IDs
+ */
+export async function validateAssessmentRolesForQuestionnaire(
+  assessmentId: number,
+  roleIds: number[]
+): Promise<{ isValid: boolean; hasUniversalQuestions: boolean }> {
+  const response = await apiClient.post<
+    ApiResponse<{ isValid: { isValid: boolean; hasUniversalQuestions: boolean } }>
+  >("/interviews/assessment-roles/validate", {
+    assessmentId,
+    roleIds,
+  });
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error ||
+        "Failed to validate roles for assessment questionnaire"
+    );
+  }
+
+  return response.data.data.isValid;
+}
+
+/**
+ * Validate that a program questionnaire has applicable questions for given role IDs
+ */
+export async function validateProgramQuestionnaireRoles(
+  questionnaireId: number,
+  roleIds: number[]
+): Promise<{ isValid: boolean; hasUniversalQuestions: boolean }> {
+  const response = await apiClient.post<
+    ApiResponse<{ isValid: { isValid: boolean; hasUniversalQuestions: boolean } }>
+  >(`/interviews/questionnaires/${questionnaireId}/validate-roles`, {
+    roleIds,
+  });
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error ||
+        "Failed to validate roles for program questionnaire"
+    );
+  }
+
+  return response.data.data.isValid;
+}

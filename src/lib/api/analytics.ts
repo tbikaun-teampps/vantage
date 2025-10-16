@@ -32,9 +32,12 @@ export async function getOverallGeographicalMapFilters(
         aggregationMethods?: string[];
       };
     }>
-  >(
-    `/analytics/overall/geographical-map/filters?companyId=${companyId}&assessmentType=${assessmentType}`
-  );
+  >("/analytics/overall/geographical-map/filters", {
+    params: {
+      companyId,
+      assessmentType,
+    },
+  });
 
   if (!response.data.success) {
     throw new Error(
@@ -62,11 +65,6 @@ export async function getOverallOnsiteGeographicalMap(
     completionRate: number;
   }[]
 > {
-  let url = `/analytics/geographical-map/overall-onsite?companyId=${companyId}&questionnaireId=${questionnaireId}`;
-  if (assessmentId) {
-    url += `&assessmentId=${assessmentId}`;
-  }
-
   const response = await apiClient.get<
     ApiResponse<
       {
@@ -81,7 +79,13 @@ export async function getOverallOnsiteGeographicalMap(
         completionRate: number;
       }[]
     >
-  >(url);
+  >("/analytics/geographical-map/overall-onsite", {
+    params: {
+      companyId,
+      questionnaireId,
+      assessmentId,
+    },
+  });
 
   if (!response.data.success) {
     throw new Error(
@@ -110,11 +114,6 @@ export async function getOverallDesktopGeographicalMap(
     }[];
   }[]
 > {
-  let url = `/analytics/geographical-map/overall-desktop?companyId=${companyId}`;
-  if (assessmentId) {
-    url += `&assessmentId=${assessmentId}`;
-  }
-
   const response = await apiClient.get<
     ApiResponse<
       {
@@ -131,7 +130,12 @@ export async function getOverallDesktopGeographicalMap(
         }[];
       }[]
     >
-  >(url);
+  >("/analytics/geographical-map/overall-desktop", {
+    params: {
+      companyId,
+      assessmentId,
+    },
+  });
 
   if (!response.data.success) {
     throw new Error(
@@ -164,9 +168,9 @@ export async function getOverallHeatmapFilters(
         metrics: string[];
       };
     }>
-  >(
-    `/analytics/overall/heatmap/filters?companyId=${companyId}&assessmentType=${assessmentType}`
-  );
+  >(`/analytics/overall/heatmap/filters`, {
+    params: { companyId, assessmentType },
+  });
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch heatmap filters");
@@ -253,17 +257,6 @@ export async function getOverallOnsiteHeatmap(
     assessmentId: number | null;
   };
 }> {
-  let url = `/analytics/heatmap/overall-onsite?companyId=${companyId}&questionnaireId=${questionnaireId}`;
-  if (assessmentId) {
-    url += `&assessmentId=${assessmentId}`;
-  }
-  if (xAxis) {
-    url += `&xAxis=${xAxis}`;
-  }
-  if (yAxis) {
-    url += `&yAxis=${yAxis}`;
-  }
-
   const response = await apiClient.get<
     ApiResponse<{
       xLabels: string[];
@@ -317,7 +310,9 @@ export async function getOverallOnsiteHeatmap(
         assessmentId: number | null;
       };
     }>
-  >(url);
+  >("/analytics/heatmap/overall-onsite", {
+    params: { companyId, questionnaireId, assessmentId, xAxis, yAxis },
+  });
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch heatmap");
@@ -388,17 +383,6 @@ export async function getOverallDesktopHeatmap(
     assessmentId: number | null;
   };
 }> {
-  let url = `/analytics/heatmap/overall-desktop?companyId=${companyId}`;
-  if (assessmentId) {
-    url += `&assessmentId=${assessmentId}`;
-  }
-  if (xAxis) {
-    url += `&xAxis=${xAxis}`;
-  }
-  if (yAxis) {
-    url += `&yAxis=${yAxis}`;
-  }
-
   const response = await apiClient.get<
     ApiResponse<{
       xLabels: string[];
@@ -441,7 +425,9 @@ export async function getOverallDesktopHeatmap(
         assessmentId: number | null;
       };
     }>
-  >(url);
+  >("/analytics/heatmap/overall-desktop", {
+    params: { companyId, assessmentId, xAxis, yAxis },
+  });
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch heatmap");

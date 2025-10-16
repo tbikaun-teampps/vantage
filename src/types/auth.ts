@@ -33,6 +33,12 @@ export interface AuthUser {
   email: string;
 }
 
+// User company role (from user_companies table)
+export interface UserCompany {
+  id: string;
+  role: "owner" | "admin" | "viewer" | "interviewee";
+}
+
 // Backend auth response types
 export interface BackendAuthResponse {
   success: boolean;
@@ -40,6 +46,7 @@ export interface BackendAuthResponse {
     user: AuthUser;
     profile: UserProfile;
     permissions: UserPermissions;
+    companies: UserCompany[];
     session: {
       access_token: string;
       refresh_token: string;
@@ -55,6 +62,7 @@ export interface AuthState {
   session: TokenData | null;
   profile: UserProfile | null;
   permissions: UserPermissions | null;
+  companies: UserCompany[];
   loading: boolean;
   authenticated: boolean;
 }

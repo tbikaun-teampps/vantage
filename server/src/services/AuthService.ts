@@ -3,6 +3,11 @@ import type { Database } from "../types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
+interface UserCompany {
+  id: string;
+  role: "owner" | "admin" | "viewer" | "interviewee";
+}
+
 interface SignInResponse {
   success: boolean;
   data?: {
@@ -16,6 +21,7 @@ interface SignInResponse {
       features: string[];
       maxCompanies: number;
     };
+    companies: UserCompany[];
     session: {
       access_token: string;
       refresh_token: string;
@@ -138,6 +144,23 @@ export class AuthService {
       maxCompanies: tierConfig.maxCompanies,
     };
 
+    // Fetch user's companies with roles
+    const { data: userCompanies, error: companiesError } = await this.supabase
+      .from("user_companies")
+      .select("company_id, role")
+      .eq("user_id", authData.user.id)
+      .neq("role", "interviewee");
+
+    if (companiesError) {
+      console.error("Failed to fetch user companies:", companiesError);
+      // Don't fail auth if companies fetch fails, just return empty array
+    }
+
+    const companies: UserCompany[] = (userCompanies || []).map((uc) => ({
+      id: uc.company_id,
+      role: uc.role,
+    }));
+
     // Return enriched response
     return {
       success: true,
@@ -148,6 +171,7 @@ export class AuthService {
         },
         profile,
         permissions,
+        companies,
         session: {
           access_token: authData.session.access_token,
           refresh_token: authData.session.refresh_token,
@@ -302,6 +326,24 @@ export class AuthService {
         maxCompanies: tierConfig.maxCompanies,
       };
 
+      // Fetch user's companies with roles
+      const { data: userCompanies, error: companiesError } =
+        await this.supabase
+          .from("user_companies")
+          .select("company_id, role")
+          .eq("user_id", user.id)
+          .neq("role", "interviewee");
+
+      if (companiesError) {
+        console.error("Failed to fetch user companies:", companiesError);
+        // Don't fail auth if companies fetch fails, just return empty array
+      }
+
+      const companies: UserCompany[] = (userCompanies || []).map((uc) => ({
+        id: uc.company_id,
+        role: uc.role,
+      }));
+
       // Get fresh session data
       const { data: sessionData } = await this.supabase.auth.getSession();
 
@@ -315,6 +357,7 @@ export class AuthService {
           },
           profile,
           permissions,
+          companies,
           session: {
             access_token: token,
             refresh_token: sessionData.session?.refresh_token || "",
