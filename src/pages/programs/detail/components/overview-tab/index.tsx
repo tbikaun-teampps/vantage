@@ -5,9 +5,9 @@ import { useState, useMemo } from "react";
 import { DangerZone } from "./danger-zone";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
-import { ProgramMetricsLineChart } from "../analytics/program-metrics-line-chart";
+// import { ProgramMetricsLineChart } from "../analytics/program-metrics-line-chart";
 import { PresiteInterviewsLineChart, OnsiteInterviewsLineChart } from "../analytics/presite-interviews-line-chart";
-import { useProgramMetrics } from "@/hooks/useMetrics";
+// import { useProgramMetrics } from "@/hooks/useMetrics";
 
 export function DetailsTab({ program }) {
   const navigate = useCompanyAwareNavigate();
@@ -16,7 +16,7 @@ export function DetailsTab({ program }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   // Fetch program metrics to check if any are actually assigned
-  const { data: programMetrics } = useProgramMetrics(program?.id);
+  // const { data: programMetrics } = useProgramMetrics(program?.id);
 
   const handleProgramUpdate = async (updateData: ProgramUpdateFormData) => {
     if (program) {
@@ -53,17 +53,17 @@ export function DetailsTab({ program }) {
     const hasMultiplePhases = phases.length >= 2;
 
     // Check if each chart type is likely to have data
-    const hasMetricsData = hasMultiplePhases && 
-                          phases.some(phase => phase.id) && 
-                          programMetrics && 
-                          programMetrics.length > 0;
+    // const hasMetricsData = hasMultiplePhases && 
+    //                       phases.some(phase => phase.id) && 
+    //                       programMetrics && 
+    //                       programMetrics.length > 0;
     const hasPresiteData = hasMultiplePhases && program.presite_questionnaire_id;
     const hasOnsiteData = hasMultiplePhases && program.onsite_questionnaire_id;
 
     // Sort by data likelihood - charts with data first
-    if (hasMetricsData) {
-      charts.push({ type: 'metrics', component: <ProgramMetricsLineChart key="metrics" programId={program.id} /> });
-    }
+    // if (hasMetricsData) {
+    //   charts.push({ type: 'metrics', component: <ProgramMetricsLineChart key="metrics" programId={program.id} /> });
+    // }
     if (hasPresiteData) {
       charts.push({ type: 'presite', component: <PresiteInterviewsLineChart key="presite" programId={program.id} /> });
     }
@@ -72,9 +72,9 @@ export function DetailsTab({ program }) {
     }
 
     // Add charts without data at the end
-    if (!hasMetricsData) {
-      charts.push({ type: 'metrics', component: <ProgramMetricsLineChart key="metrics" programId={program.id} /> });
-    }
+    // if (!hasMetricsData) {
+    //   charts.push({ type: 'metrics', component: <ProgramMetricsLineChart key="metrics" programId={program.id} /> });
+    // }
     if (!hasPresiteData) {
       charts.push({ type: 'presite', component: <PresiteInterviewsLineChart key="presite" programId={program.id} /> });
     }

@@ -35,7 +35,7 @@ import {
 import type { ProgramWithRelations, ProgramPhase } from "@/types/program";
 import { Interviews } from "./interviews";
 import { useProgramValidation } from "@/hooks/useProgramValidation";
-import { CalculatedMetrics } from "@/components/metrics/calculated-metrics";
+// import { CalculatedMetrics } from "@/components/metrics/calculated-metrics";
 import { DeletePhaseConfirmationDialog } from "./delete-phase-confirmation-dialog";
 import { PhaseDetails } from "./phase-details";
 import {
@@ -102,13 +102,13 @@ function PhaseTabContent({
             questionnaireId={program.onsite_questionnaire?.id}
             interviewType="onsite"
           />
-          <CalculatedMetrics
+          {/* <CalculatedMetrics
             programId={program.id}
             programPhaseId={phase.id}
             companyId={program.company_id}
             title="Desktop Analysis Measurements"
             description="Calculated values for this assessment in the program"
-          />
+          /> */}
         </>
       )}
     </>

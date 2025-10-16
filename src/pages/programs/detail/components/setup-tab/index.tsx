@@ -5,7 +5,7 @@ import {
 import { ProgramObjectivesManager } from "./program-objectives-manager";
 import { OnsiteQuestionnaireSelection } from "./onsite-questionnaire-selection";
 import { PresiteQuestionnaireSelection } from "./presite-questionnaire-selection";
-import { Metrics } from "./desktop-metrics";
+// import { Metrics } from "./desktop-metrics";
 
 export function SetupTab({ program }) {
   const updateOnsiteQuestionnaireMutation =
@@ -47,7 +47,7 @@ export function SetupTab({ program }) {
         onOnsiteQuestionnaireUpdate={handleOnsiteQuestionnaireUpdate}
         isUpdating={updateOnsiteQuestionnaireMutation.isPending}
       />
-      <Metrics programId={program.id} />
+      {/* <Metrics programId={program.id} /> */}
     </div>
   );
 }

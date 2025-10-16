@@ -5,7 +5,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { MetricsDataUpload } from "@/components/metrics/metrics-data";
+// import { MetricsDataUpload } from "@/components/metrics/metrics-data";
 
 interface MetricsDataSheetProps {
   open: boolean;
@@ -33,10 +33,10 @@ export function MetricsDataSheet({
           </SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto">
-          <MetricsDataUpload
+          {/* <MetricsDataUpload
             programId={programId}
             programPhaseId={programPhaseId}
-          />
+          /> */}
         </div>
       </SheetContent>
     </Sheet>
