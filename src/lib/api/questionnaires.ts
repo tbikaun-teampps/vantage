@@ -689,7 +689,7 @@ export async function importQuestionnaire(data: {
     const formData = new FormData();
     formData.append("file", data.file);
     formData.append("name", data.name);
-    formData.append('company_id', data.companyId);
+    formData.append("company_id", data.companyId);
     if (data.description) {
       formData.append("description", data.description);
     }
