@@ -25,8 +25,10 @@ import { cn } from "@/lib/utils";
 import { importQuestionnaire } from "@/lib/api/questionnaires";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 export function NewQuestionnaireUploadTab() {
+  const companyId = useCompanyFromUrl();
   const navigate = useCompanyAwareNavigate();
   const queryClient = useQueryClient();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -99,6 +101,7 @@ export function NewQuestionnaireUploadTab() {
     try {
       const response = await importQuestionnaire({
         file: selectedFile,
+        companyId,
         name: name || selectedFile.name.replace(/\.(json|csv)$/, ""),
         description: description || undefined,
         guidelines: guidelines || undefined,
@@ -247,8 +250,8 @@ Operations and Processes,2,Process Management,1,Standard Operating Procedures,Ho
           Upload Questionnaire
         </CardTitle>
         <CardDescription>
-          Import a questionnaire from a CSV file. Note: applicable roles must be assigned
-            to the questionnaire after import.
+          Import a questionnaire from a CSV file. Note: applicable roles must be
+          assigned to the questionnaire after import.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -270,7 +273,8 @@ Operations and Processes,2,Process Management,1,Standard Operating Procedures,Ho
 
             <div className="space-y-2">
               <Label htmlFor="questionnaire-description">
-                Description <span className="text-muted-foreground">(optional)</span>
+                Description{" "}
+                <span className="text-muted-foreground">(optional)</span>
               </Label>
               <Textarea
                 id="questionnaire-description"
@@ -284,7 +288,8 @@ Operations and Processes,2,Process Management,1,Standard Operating Procedures,Ho
 
             <div className="space-y-2">
               <Label htmlFor="questionnaire-guidelines">
-                Guidelines <span className="text-muted-foreground">(optional)</span>
+                Guidelines{" "}
+                <span className="text-muted-foreground">(optional)</span>
               </Label>
               <Textarea
                 id="questionnaire-guidelines"

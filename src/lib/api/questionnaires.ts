@@ -681,6 +681,7 @@ export async function updateQuestionRoles(
 export async function importQuestionnaire(data: {
   file: File;
   name: string;
+  companyId: string;
   description?: string;
   guidelines?: string;
 }): Promise<Questionnaire> {
@@ -688,6 +689,7 @@ export async function importQuestionnaire(data: {
     const formData = new FormData();
     formData.append("file", data.file);
     formData.append("name", data.name);
+    formData.append("company_id", data.companyId);
     if (data.description) {
       formData.append("description", data.description);
     }
