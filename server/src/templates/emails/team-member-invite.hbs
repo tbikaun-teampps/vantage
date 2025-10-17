@@ -1,4 +1,4 @@
-{{> header title="Welcome to the Team!" subtitle=(concat "You've been added to " company_name) gradient="linear-gradient(135deg, #10b981 0%, #059669 100%)"}}
+{{> header title=title subtitle=(concat "You've been added to " company_name) gradient=gradient company_icon_url=company_icon_url}}
 
 <div class="content">
   <p>Hello {{member_name}},</p>
@@ -8,7 +8,7 @@
   {{#if invite_link}}
   <p>Click the button below to access your company workspace:</p>
 
-  {{> button text="Access Company" url=invite_link color="#10b981"}}
+  {{> button text="Access Company" url=invite_link color=button_color}}
 
   <p><strong>Alternative access:</strong> If the button doesn't work, copy and paste this link into your browser:</p>
   <p style="word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 14px;">

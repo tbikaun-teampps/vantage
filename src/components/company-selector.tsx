@@ -1,4 +1,8 @@
-import { IconBuildingFactory2, IconEye } from "@tabler/icons-react";
+import {
+  IconBuildingFactory2,
+  IconEye,
+  IconPalette,
+} from "@tabler/icons-react";
 import { useCompanies } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { companyRoutes } from "@/router/routes";
@@ -14,11 +18,23 @@ import {
 } from "./ui/select";
 import { Badge } from "./ui/badge";
 import { useNavigate } from "react-router-dom";
+import { ManageCompanyBrandingDialog } from "./forms/manage-company-branding-dialog";
+import { useState } from "react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function CompanySelector() {
   const navigate = useNavigate();
   const { data: companies = [], isLoading } = useCompanies();
   const companyId = useCompanyFromUrl();
+  const [brandingDialogOpen, setBrandingDialogOpen] = useState(false);
+  const [selectedCompanyForBranding, setSelectedCompanyForBranding] = useState<
+    (typeof companies)[number] | null
+  >(null);
+
+  const { hasFeature } = usePermissions();
+
+  // Check if user has permission to select companies
+  const canSelectCompany = hasFeature("select_company");
 
   // Helper function to get badge variant and text for user role
   const getRoleBadge = (role: string) => {
@@ -43,6 +59,18 @@ export default function CompanySelector() {
     navigate("/select-company");
   };
 
+  const handleManageBranding = () => {
+    // Find the current company
+    const currentCompany = companies.find((c) => c.id === companyId);
+    if (
+      currentCompany &&
+      (currentCompany.role === "admin" || currentCompany.role === "owner")
+    ) {
+      setSelectedCompanyForBranding(currentCompany);
+      setBrandingDialogOpen(true);
+    }
+  };
+
   if (isLoading && companies.length === 0) {
     return (
       <div className="px-2">
@@ -50,6 +78,10 @@ export default function CompanySelector() {
       </div>
     );
   }
+
+  const isOwnerOrAdminOfCompany = companies.find(
+    (c) => c.id === companyId && (c.role === "admin" || c.role === "owner")
+  );
 
   return (
     <div className="px-2" data-tour="company-selector">
@@ -62,13 +94,23 @@ export default function CompanySelector() {
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
-            <SelectLabel>Companies</SelectLabel>
+            <SelectLabel>
+              {canSelectCompany ? "Companies" : "Company"}
+            </SelectLabel>
             {companies.map((company) => (
               <SelectItem key={company.id} value={company.id.toString()}>
                 <div className="flex items-center justify-between w-full gap-2">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 flex items-center justify-center">
-                      <IconBuildingFactory2 className="w-3 h-3 text-gray-500 dark:text-gray-300" />
+                      {company.icon_url ? (
+                        <img
+                          src={company.icon_url}
+                          alt={company.name}
+                          className="w-4 h-4 object-contain"
+                        />
+                      ) : (
+                        <IconBuildingFactory2 className="w-3 h-3 text-gray-500 dark:text-gray-300" />
+                      )}
                     </div>
                     <span>{company.name}</span>
                   </div>
@@ -84,16 +126,34 @@ export default function CompanySelector() {
               </SelectItem>
             ))}
           </SelectGroup>
-          <SelectSeparator />
-          <div
-            className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm"
-            onClick={handleViewCompanies}
-          >
-            <IconEye className="w-4 h-4" />
-            <span>View Companies</span>
-          </div>
+          {(isOwnerOrAdminOfCompany || canSelectCompany) && <SelectSeparator />}
+          {canSelectCompany && (
+            <div
+              className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm"
+              onClick={handleViewCompanies}
+            >
+              <IconEye className="w-4 h-4" />
+              <span>View Companies</span>
+            </div>
+          )}
+          {isOwnerOrAdminOfCompany && (
+            <div
+              className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm"
+              onClick={handleManageBranding}
+            >
+              <IconPalette className="w-4 h-4" />
+              <span>Manage Company Branding</span>
+            </div>
+          )}
         </SelectContent>
       </Select>
+      {selectedCompanyForBranding && (
+        <ManageCompanyBrandingDialog
+          open={brandingDialogOpen}
+          onOpenChange={setBrandingDialogOpen}
+          company={selectedCompanyForBranding}
+        />
+      )}
     </div>
   );
 }

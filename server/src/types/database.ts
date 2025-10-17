@@ -564,6 +564,7 @@ export type Database = {
       };
       companies: {
         Row: {
+          branding: Json | null;
           code: string | null;
           created_at: string;
           created_by: string;
@@ -577,6 +578,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          branding?: Json | null;
           code?: string | null;
           created_at?: string;
           created_by?: string;
@@ -590,6 +592,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          branding?: Json | null;
           code?: string | null;
           created_at?: string;
           created_by?: string;
@@ -1206,6 +1209,7 @@ export type Database = {
           created_at: string;
           created_by: string;
           deleted_at: string | null;
+          due_date: string | null;
           enabled: boolean;
           id: number;
           interview_contact_id: number | null;
@@ -1229,6 +1233,7 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
+          due_date?: string | null;
           enabled?: boolean;
           id?: number;
           interview_contact_id?: number | null;
@@ -1252,6 +1257,7 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
+          due_date?: string | null;
           enabled?: boolean;
           id?: number;
           interview_contact_id?: number | null;

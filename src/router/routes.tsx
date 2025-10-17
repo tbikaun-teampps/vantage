@@ -9,6 +9,7 @@ export const routes = {
 
   // Company selection
   selectCompany: "/select-company",
+  enterpriseWelcome: "/enterprise-welcome",
 
   // Company-scoped routes
   dashboard: "/:companyId/dashboard",

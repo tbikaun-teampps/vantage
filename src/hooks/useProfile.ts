@@ -38,6 +38,7 @@ export function useProfileActions() {
     mutationFn: async (profileData: Partial<UserProfile>) => {
       if (!user) throw new Error("User not authenticated");
 
+      // Update the profile
       const response = await apiClient.put<{
         success: boolean;
         profile: UserProfile;
@@ -47,15 +48,33 @@ export function useProfileActions() {
         throw new Error("Failed to update profile");
       }
 
-      return response.data.profile;
+      // Fetch fresh session data to ensure all auth-related data is synced
+      const sessionResponse = await apiClient.get<{
+        success: boolean;
+        data: {
+          user: typeof user;
+          profile: UserProfile;
+          permissions: typeof authStore.permissions;
+          companies: typeof authStore.companies;
+        };
+      }>("/auth/session");
+
+      if (!sessionResponse.data.success || !sessionResponse.data.data) {
+        throw new Error("Failed to fetch updated session");
+      }
+
+      return sessionResponse.data.data;
     },
-    onSuccess: (updatedProfile) => {
-      // Update auth store with new profile
-      authStore.setProfile(updatedProfile);
+    onSuccess: (sessionData) => {
+      // Update auth store with complete session data
+      authStore.setUser(sessionData.user);
+      authStore.setProfile(sessionData.profile);
+      authStore.permissions = sessionData.permissions;
+      authStore.companies = sessionData.companies;
 
       // Also update React Query cache
       if (user) {
-        queryClient.setQueryData(profileKeys.detail(user.id), updatedProfile);
+        queryClient.setQueryData(profileKeys.detail(user.id), sessionData.profile);
       }
     },
   });

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useWelcomeStore, welcomeSteps } from "@/stores/welcome-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useProfileActions } from "@/hooks/useProfile";
 import {
   ChevronRight,
   ChevronLeft,
@@ -275,10 +276,8 @@ export function WelcomePage() {
     completeWelcome,
     setOnboardingChoice,
   } = useWelcomeStore();
-  const { markOnboarded, user, profile, loading, initialize } =
-    useAuthStore();
-
-  const [isMarkingComplete, setIsMarkingComplete] = React.useState(false);
+  const { user, profile, loading, initialize } = useAuthStore();
+  const { markOnboarded, isMarkingOnboarded } = useProfileActions();
 
   // Initialize auth store on mount
   React.useEffect(() => {
@@ -309,15 +308,9 @@ export function WelcomePage() {
   const canProceed = currentStep < 2 || (currentStep === 2 && onboardingChoice);
 
   const handleComplete = async () => {
-    setIsMarkingComplete(true);
     try {
-      // Mark user as onboarded
-      const { error } = await markOnboarded();
-
-      if (error) {
-        console.error("Failed to mark user as onboarded:", error);
-        return;
-      }
+      // Mark user as onboarded - this automatically updates auth store and cache
+      await markOnboarded();
 
       completeWelcome();
 
@@ -332,8 +325,6 @@ export function WelcomePage() {
       }, 100);
     } catch (error) {
       console.error("Failed to complete welcome:", error);
-    } finally {
-      setIsMarkingComplete(false);
     }
   };
 
@@ -399,10 +390,10 @@ export function WelcomePage() {
               {isLastStep ? (
                 <Button
                   onClick={handleComplete}
-                  disabled={!onboardingChoice || isMarkingComplete}
+                  disabled={!onboardingChoice || isMarkingOnboarded}
                   className="flex items-center space-x-2"
                 >
-                  {isMarkingComplete ? (
+                  {isMarkingOnboarded ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Opening Vantage...</span>

@@ -16,6 +16,7 @@ import {
 import type {
   CreateCompanyData,
   UpdateCompanyData,
+  UpdateBrandingData,
 } from "../../types/entities/companies";
 import { AssessmentFilters } from "../../types/entities/assessments";
 import { questionnaireSchemas } from "../../schemas/questionnaire";
@@ -913,6 +914,140 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       return {
         success: true,
         data: questionnaires,
+      };
+    }
+  );
+
+  // Upload or replace company icon
+  fastify.post(
+    "/:companyId/icon",
+    {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
+      schema: {
+        description: "Upload or replace company icon",
+        consumes: ["multipart/form-data"],
+        params: companySchemas.params.companyId,
+        response: {
+          200: companySchemas.responses.iconUpload,
+          400: commonResponseSchemas.responses[400],
+          401: commonResponseSchemas.responses[401],
+          403: commonResponseSchemas.responses[403],
+          404: commonResponseSchemas.responses[404],
+          500: commonResponseSchemas.responses[500],
+        },
+      },
+    },
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+
+      // Parse multipart form data
+      const parts = request.parts();
+      let fileBuffer: Buffer | null = null;
+      let fileName = "";
+      let mimeType = "";
+
+      for await (const part of parts) {
+        if (part.type === "file") {
+          fileName = part.filename;
+          mimeType = part.mimetype;
+          fileBuffer = await part.toBuffer();
+          break; // Only accept the first file
+        }
+      }
+
+      if (!fileBuffer) {
+        throw new BadRequestError("No file provided");
+      }
+
+      // Upload icon using service
+      const iconUrl = await request.companiesService!.updateCompanyIcon(
+        companyId,
+        fileBuffer,
+        fileName,
+        mimeType
+      );
+
+      return {
+        success: true,
+        data: {
+          icon_url: iconUrl,
+        },
+      };
+    }
+  );
+
+  // Remove company icon
+  fastify.delete(
+    "/:companyId/icon",
+    {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
+      schema: {
+        description: "Remove company icon",
+        params: companySchemas.params.companyId,
+        response: {
+          200: commonResponseSchemas.messageResponse,
+          401: commonResponseSchemas.responses[401],
+          403: commonResponseSchemas.responses[403],
+          404: commonResponseSchemas.responses[404],
+          500: commonResponseSchemas.responses[500],
+        },
+      },
+    },
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+
+      await request.companiesService!.removeCompanyIcon(companyId);
+
+      return {
+        success: true,
+        message: "Company icon removed successfully",
+      };
+    }
+  );
+
+  // Update company branding colors
+  fastify.patch(
+    "/:companyId/branding",
+    {
+      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
+      schema: {
+        description: "Update company branding colors",
+        params: companySchemas.params.companyId,
+        body: {
+          type: "object",
+          properties: {
+            primary: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
+            secondary: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
+            accent: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
+          },
+          additionalProperties: false,
+        },
+        response: {
+          200: companySchemas.responses.companyDetail,
+          400: commonResponseSchemas.responses[400],
+          401: commonResponseSchemas.responses[401],
+          403: commonResponseSchemas.responses[403],
+          404: commonResponseSchemas.responses[404],
+          500: commonResponseSchemas.responses[500],
+        },
+      },
+    },
+    async (request) => {
+      const { companyId } = request.params as { companyId: string };
+      const brandingData = request.body as UpdateBrandingData;
+
+      const company = await request.companiesService!.updateCompanyBranding(
+        companyId,
+        brandingData
+      );
+
+      if (!company) {
+        throw new NotFoundError("Company not found");
+      }
+
+      return {
+        success: true,
+        data: company,
       };
     }
   );

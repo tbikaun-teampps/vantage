@@ -1,22 +1,52 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { routes } from "./routes";
+import { companyRoutes } from "./routes";
 import { useAuthStore } from "@/stores/auth-store";
-import { Skeleton } from "@/components/ui/skeleton";
+import { usePermissions } from "@/hooks/usePermissions";
+import type { UserCompany } from "@/types/auth";
+import { LoadingSpinner } from "@/components/loader";
+
+/**
+ * Route permission configuration
+ * Defines which routes require specific feature permissions and where to redirect if denied
+ */
+interface RoutePermission {
+  path: string;
+  requiredFeature: string;
+  getRedirectPath: (companies: UserCompany[]) => string;
+}
+
+const ROUTE_PERMISSIONS: RoutePermission[] = [
+  {
+    path: routes.selectCompany,
+    requiredFeature: "select_company",
+    getRedirectPath: (companies) => {
+      // If user has companies, redirect to their first company's dashboard
+      if (companies.length > 0) {
+        return companyRoutes.dashboard(companies[0].id);
+      }
+      // If no companies (enterprise setup pending), redirect to enterprise welcome
+      return routes.enterpriseWelcome;
+    },
+  },
+  // Add more route permissions here as needed:
+  // {
+  //   path: routes.analytics,
+  //   requiredFeature: "advanced_analytics",
+  //   getRedirectPath: () => routes.dashboard
+  // }
+];
 
 export function ProtectedRoute() {
-  const { authenticated, loading, user, session } = useAuthStore();
+  const { authenticated, loading, user, session, companies } = useAuthStore();
+  const { hasFeature, isLoading: permissionsLoading } = usePermissions();
   const location = useLocation();
 
   // Show loading skeleton while auth is being determined
-  if (loading) {
+  if (loading || permissionsLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        <div className="space-y-4 w-96">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-32 w-full" />
-        </div>
+        <LoadingSpinner message="Loading..." />
       </div>
     );
   }
@@ -24,12 +54,19 @@ export function ProtectedRoute() {
   // Check for valid session and user
   if (!authenticated || !user || !session) {
     return (
-      <Navigate 
-        to={routes.login} 
-        state={{ from: location.pathname }}
-        replace 
-      />
+      <Navigate to={routes.login} state={{ from: location.pathname }} replace />
     );
+  }
+
+  // Check route permissions
+  for (const routePermission of ROUTE_PERMISSIONS) {
+    if (location.pathname === routePermission.path) {
+      // Check if user has the required feature permission
+      if (!hasFeature(routePermission.requiredFeature)) {
+        const redirectPath = routePermission.getRedirectPath(companies);
+        return <Navigate to={redirectPath} replace />;
+      }
+    }
   }
 
   return <Outlet />;

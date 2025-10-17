@@ -23,6 +23,8 @@ import type {
   CompanyTree,
   RoleLevel,
   JunctionTableContactRow,
+  UpdateBrandingData,
+  CompanyBranding,
 } from "../types/entities/companies.js";
 
 // Map EntityType to the corresponding return type
@@ -1924,9 +1926,192 @@ export class CompaniesService {
       )
       .eq("role_id", roleId)
       .eq("contacts.is_deleted", false)
-      .eq('company_id', companyId)
+      .eq("company_id", companyId);
 
     if (error) throw error;
     return contacts;
+  }
+
+  /**
+   * Upload or replace a company icon
+   * @param companyId - The company ID
+   * @param fileBuffer - The image file buffer
+   * @param fileName - The original file name
+   * @param mimeType - The file MIME type
+   * @returns The public URL of the uploaded icon
+   */
+  async updateCompanyIcon(
+    companyId: string,
+    fileBuffer: Buffer,
+    fileName: string,
+    mimeType: string
+  ): Promise<string> {
+    const bucketName = "company-icons";
+
+    // Validate file type
+    const allowedMimeTypes = ["image/jpeg", "image/png", "image/svg+xml"];
+    if (!allowedMimeTypes.includes(mimeType)) {
+      throw new Error(
+        "Invalid file type. Only JPG, PNG, and SVG images are allowed."
+      );
+    }
+
+    // Validate file size (2MB max)
+    const maxSize = 2 * 1024 * 1024;
+    if (fileBuffer.length > maxSize) {
+      throw new Error(
+        `File size must be less than 2MB. Current size: ${(fileBuffer.length / 1024 / 1024).toFixed(2)}MB`
+      );
+    }
+
+    // Get file extension
+    const extension = fileName.split(".").pop()?.toLowerCase() || "png";
+    const filePath = `${companyId}/icon.${extension}`;
+
+    // Get existing company data to check for old icon
+    const company = await this.getCompanyById(companyId);
+    if (!company) {
+      throw new Error("Company not found");
+    }
+
+    // Delete old icon from storage if it exists
+    if (company.icon_url) {
+      try {
+        // Extract file path from URL
+        const urlParts = company.icon_url.split(`${bucketName}/`);
+        if (urlParts.length > 1) {
+          const oldFilePath = urlParts[1];
+          await this.supabase.storage.from(bucketName).remove([oldFilePath]);
+        }
+      } catch (error) {
+        console.warn("Failed to delete old icon:", error);
+        // Continue with upload even if deletion fails
+      }
+    }
+
+    // Upload new icon to storage
+    const { error: uploadError } = await this.supabase.storage
+      .from(bucketName)
+      .upload(filePath, fileBuffer, {
+        contentType: mimeType,
+        upsert: true, // Overwrite if exists
+      });
+
+    if (uploadError) {
+      throw new Error(`Failed to upload icon: ${uploadError.message}`);
+    }
+
+    // Get public URL from the bucket
+    const {
+      data: { publicUrl },
+    } = this.supabase.storage.from(bucketName).getPublicUrl(filePath);
+
+    // Update company record with public URL
+    const { error: updateError } = await this.supabase
+      .from("companies")
+      .update({ icon_url: publicUrl })
+      .eq("id", companyId)
+      .eq("is_deleted", false);
+
+    if (updateError) {
+      // Clean up uploaded file if database update fails
+      await this.supabase.storage.from(bucketName).remove([filePath]);
+      throw new Error(`Failed to update company icon: ${updateError.message}`);
+    }
+
+    return publicUrl;
+  }
+
+  /**
+   * Remove a company icon
+   * @param companyId - The company ID
+   * @returns True if successful
+   */
+  async removeCompanyIcon(companyId: string): Promise<boolean> {
+    const bucketName = "company-icons";
+
+    // Get existing company data
+    const company = await this.getCompanyById(companyId);
+    if (!company) {
+      throw new Error("Company not found");
+    }
+
+    if (!company.icon_url) {
+      throw new Error("Company has no icon to remove");
+    }
+
+    // Extract file path from URL
+    const urlParts = company.icon_url.split(`${bucketName}/`);
+    if (urlParts.length > 1) {
+      const filePath = urlParts[1];
+
+      // Delete from storage
+      const { error: storageError } = await this.supabase.storage
+        .from(bucketName)
+        .remove([filePath]);
+
+      if (storageError) {
+        console.warn("Failed to delete icon from storage:", storageError);
+        // Continue with database update even if storage deletion fails
+      }
+    }
+
+    // Update company record to remove icon URL
+    const { error: updateError } = await this.supabase
+      .from("companies")
+      .update({ icon_url: null })
+      .eq("id", companyId)
+      .eq("is_deleted", false);
+
+    if (updateError) {
+      throw new Error(`Failed to remove company icon: ${updateError.message}`);
+    }
+
+    return true;
+  }
+
+  /**
+   * Update company branding colors
+   * @param companyId - The company ID
+   * @param brandingData - The branding colors to update
+   * @returns The updated company
+   */
+  async updateCompanyBranding(
+    companyId: string,
+    brandingData: UpdateBrandingData
+  ): Promise<Company | null> {
+    // Get existing company data
+    const company = await this.getCompanyById(companyId);
+    if (!company) {
+      throw new Error("Company not found");
+    }
+
+    // Get existing branding or initialize as empty object
+    const existingBranding: CompanyBranding =
+      company.branding && typeof company.branding === 'object' && !Array.isArray(company.branding)
+        ? (company.branding as unknown as CompanyBranding)
+        : { primary: null, secondary: null, accent: null };
+
+    // Merge existing branding with new data
+    const updatedBranding = {
+      primary: brandingData.primary !== undefined ? brandingData.primary : existingBranding.primary,
+      secondary: brandingData.secondary !== undefined ? brandingData.secondary : existingBranding.secondary,
+      accent: brandingData.accent !== undefined ? brandingData.accent : existingBranding.accent,
+    };
+
+    // Update company record with new branding
+    const { data, error } = await this.supabase
+      .from("companies")
+      .update({ branding: updatedBranding as unknown as Database['public']['Tables']['companies']['Update']['branding'] })
+      .eq("id", companyId)
+      .eq("is_deleted", false)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to update company branding: ${error.message}`);
+    }
+
+    return data;
   }
 }

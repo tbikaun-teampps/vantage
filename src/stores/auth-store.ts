@@ -45,6 +45,20 @@ export const useAuthStore = create<AuthStore>((set) => ({
         loading: false,
       });
 
+      // If user is an enterprise user, redirect to their company, they do not have company selection
+      // as this is set up for them.
+      if (profile.subscription_tier === "enterprise") {
+        // Enterprise users should only belong to one company
+        if (companies.length === 0) {
+          // User exists but company is not set up yet, redirect to a dedicated page
+          return { redirectPath: `/enterprise-welcome` };
+        } else {
+          // Redirect to the first company dashboard; they should only have one.
+          const companyId = companies[0].id;
+          return { redirectPath: `/${companyId}/dashboard` };
+        }
+      }
+
       return { redirectPath: "/select-company" };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Sign in failed";
@@ -92,8 +106,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
       return { error: message };
     }
   },
-
-  // Profile methods removed - now handled by React Query useProfile hook
 
   initialize: async () => {
     // Prevent multiple initializations
