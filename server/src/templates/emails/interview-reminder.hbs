@@ -1,34 +1,21 @@
-{{> header title="Interview Reminder" subtitle="Don't forget to complete your interview" gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"}}
+{{> header title=title subtitle="Don't forget to complete your interview" gradient=gradient company_icon_url=company_icon_url}}
 
 <div class="content">
   <p>Hello{{#if interviewee_name}} {{interviewee_name}}{{/if}},</p>
 
-  <p>This is a friendly reminder that you have an outstanding interview waiting to be completed{{#if due_date}} by <strong>{{due_date}}</strong>{{/if}}.</p>
-
-  <div class="details">
-    <h3>Interview Details:</h3>
-    <ul>
-      <li><strong>Interview:</strong> {{interview_name}}</li>
-      <li><strong>Assessment:</strong> {{assessment_name}}</li>
-      <li><strong>Access Code:</strong> <span style="font-family: monospace; background: #e9ecef; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 16px;">{{access_code}}</span></li>
-      {{#if company_name}}
-      <li><strong>Company:</strong> {{company_name}}</li>
-      {{/if}}
-    </ul>
-  </div>
+  <p>This is a friendly reminder that you have an outstanding interview{{#if company_name}} with <strong>{{company_name}}</strong>{{/if}} waiting to be completed{{#if due_date}} by <strong>{{due_date}}</strong>{{/if}}. The interview is <strong>{{interview_name}}</strong> for the <strong>{{assessment_name}}</strong> assessment.</p>
 
   <p>To complete your interview, click the button below:</p>
 
-  {{> button text="Complete Interview" url=interview_url color="#667eea"}}
+  {{> button text="Complete Interview" url=interview_url color=button_color}}
 
-  <p><strong>Alternative access:</strong> If the button doesn't work, copy and paste this link into your browser:</p>
-  <p style="word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 14px;">
-    {{interview_url}}
-  </p>
+  <p style="margin-top: 20px; color: #6c757d; font-size: 13px;"><strong>Alternative access:</strong> If the button doesn't work, copy and paste this link into your browser: {{interview_url}}</p>
 
-  <p>If you have any questions or need assistance, please contact{{#if sender_name}} <strong>{{sender_name}}</strong>{{/if}}{{#if sender_email}} at <a href="mailto:{{sender_email}}">{{sender_email}}</a>{{/if}}.</p>
+  <p style="margin-top: 20px; color: #6c757d; font-size: 13px;"><strong>Need your access code?</strong> If you navigate to the site directly: <span style="font-family: monospace; background: #f8f9fa; padding: 4px 8px; border-radius: 4px; font-weight: 600;">{{access_code}}</span></p>
 
   <p>Thank you for your time,{{#if sender_name}}<br><strong>{{sender_name}}</strong>{{/if}}{{#if company_name}}<br>{{company_name}}{{/if}}</p>
+
+  <p style="margin-top: 10px; padding-top: 10px; color: #6c757d; font-size: 12px;">If you have any questions or need assistance, please contact{{#if sender_name}} <strong>{{sender_name}}</strong>{{/if}}{{#if sender_email}} at <a href="mailto:{{sender_email}}">{{sender_email}}</a>{{/if}}.</p>
 </div>
 
 {{> footer}}

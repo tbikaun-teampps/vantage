@@ -1,6 +1,13 @@
 <div class="header" style="background: {{gradient}};">
-  <h1>{{title}}</h1>
+  <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 12px;">
+    <img src="{{vantage_logo_icon_url}}" alt="Vantage" style="height: 40px; width: auto; object-fit: contain;" />
+    {{#if company_icon_url}}
+    <span style="color: #000000; font-size: 24px; font-weight: 300;">×</span>
+    <img src="{{company_icon_url}}" alt="Company Logo" style="height: 40px; width: auto; object-fit: contain;" />
+    {{/if}}
+  </div>
+  <h1 style="color: #000000; margin: 0;">{{title}}</h1>
   {{#if subtitle}}
-  <p>{{subtitle}}</p>
+  <p style="color: #000000; margin: 10px 0 0 0;">{{subtitle}}</p>
   {{/if}}
 </div>

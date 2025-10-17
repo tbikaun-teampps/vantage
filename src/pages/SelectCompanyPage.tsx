@@ -10,7 +10,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { companyRoutes } from "@/router/routes";
-import { IconBuilding, IconPlus, IconTrash } from "@tabler/icons-react";
+import {
+  IconBuilding,
+  IconPlus,
+  IconTrash,
+  IconPalette,
+} from "@tabler/icons-react";
 import { useTourManager } from "@/lib/tours";
 import { useEffect, useState } from "react";
 import { Loader } from "@/components/loader";
@@ -24,6 +29,8 @@ import { DeleteDialog } from "@/components/settings/company";
 import { toast } from "sonner";
 import { SelectCompanyUserMenu } from "@/components/select-company-user-menu";
 import { getCompanies } from "@/lib/api/companies";
+import { ManageCompanyBrandingDialog } from "@/components/forms/manage-company-branding-dialog";
+import { cn } from "@/lib/utils";
 
 /**
  * Company selection page - shown when user needs to select a company
@@ -56,6 +63,10 @@ export function SelectCompanyPage() {
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [companyToDelete, setCompanyToDelete] = useState(null);
 
+  // Branding dialog state
+  const [showBrandingDialog, setShowBrandingDialog] = useState(false);
+  const [companyForBranding, setCompanyForBranding] = useState(null);
+
   const {
     data: companies,
     isLoading,
@@ -83,6 +94,12 @@ export function SelectCompanyPage() {
     event.stopPropagation(); // Prevent company selection when clicking delete
     setCompanyToDelete(company);
     setShowDeleteDialog(true);
+  };
+
+  const handleEditBrandingClick = (company: any, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent company selection when clicking edit
+    setCompanyForBranding(company);
+    setShowBrandingDialog(true);
   };
 
   const handleDeleteCompany = async () => {
@@ -203,9 +220,24 @@ export function SelectCompanyPage() {
                         className="justify-start p-4 h-auto w-full overflow-hidden"
                         onClick={() => handleCompanySelect(company.id)}
                       >
-                        <div className="flex items-center space-x-3 flex-1 pr-12 min-w-0">
-                          <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded flex-shrink-0">
-                            <IconBuilding className="w-4 h-4" />
+                        <div className="flex items-center space-x-3 flex-1 pr-16 min-w-0">
+                          <div
+                            className={cn(
+                              "flex items-center justify-center w-8 h-8 rounded flex-shrink-0",
+                              company.icon_url
+                                ? "bg-transparent"
+                                : "bg-primary/10"
+                            )}
+                          >
+                            {company.icon_url ? (
+                              <img
+                                src={company.icon_url}
+                                alt={company.name}
+                                className="w-6 h-6 object-contain"
+                              />
+                            ) : (
+                              <IconBuilding className="w-4 h-4" />
+                            )}
                           </div>
                           <div className="text-left flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1 justify-between">
@@ -239,11 +271,23 @@ export function SelectCompanyPage() {
                           </div>
                         </div>
                       </Button>
+                      {(company.role === "admin" ||
+                        company.role === "owner") && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="absolute right-12 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => handleEditBrandingClick(company, e)}
+                          title="Manage Branding"
+                        >
+                          <IconPalette className="w-4 h-4" />
+                        </Button>
+                      )}
                       {company.role === "owner" && (
                         <Button
                           variant="destructive"
                           size="sm"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity mr-2"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={(e) => handleDeleteClick(company, e)}
                           disabled={isDeleting}
                         >
@@ -297,15 +341,24 @@ export function SelectCompanyPage() {
           </CardContent>
         </Card>
         {companies && companies.length > 0 && (
-          <DeleteDialog
-            showDeleteDialog={showDeleteDialog}
-            handleDialogOpenChange={handleDialogOpenChange}
-            deleteConfirmationText={deleteConfirmationText}
-            setDeleteConfirmationText={setDeleteConfirmationText}
-            handleDeleteCompany={handleDeleteCompany}
-            isDeleting={isDeleting}
-            companyToDelete={companyToDelete}
-          />
+          <>
+            <DeleteDialog
+              showDeleteDialog={showDeleteDialog}
+              handleDialogOpenChange={handleDialogOpenChange}
+              deleteConfirmationText={deleteConfirmationText}
+              setDeleteConfirmationText={setDeleteConfirmationText}
+              handleDeleteCompany={handleDeleteCompany}
+              isDeleting={isDeleting}
+              companyToDelete={companyToDelete}
+            />
+            {companyForBranding && (
+              <ManageCompanyBrandingDialog
+                open={showBrandingDialog}
+                onOpenChange={setShowBrandingDialog}
+                company={companyForBranding}
+              />
+            )}
+          </>
         )}
       </div>
     </>

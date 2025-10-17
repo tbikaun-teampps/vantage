@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { useFeedbackActions } from "@/hooks/useFeedback";
 import { toast } from "sonner";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { useProfile } from "@/hooks/useProfile";
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
@@ -37,8 +38,22 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
 }) => {
   const [showDetails, setShowDetails] = React.useState(false);
   const [isSubmittingReport, setIsSubmittingReport] = React.useState(false);
-  const { submitErrorReport } = useFeedbackActions();
+  const { submitFeedback } = useFeedbackActions();
   const companyId = useCompanyFromUrl();
+  const { data: profile } = useProfile();
+
+  // Determine fallback route based on subscription tier and company ID
+  const isEnterprise = profile?.subscription_tier === "enterprise";
+  const fallbackRoute = companyId
+    ? `/${companyId}/dashboard`
+    : isEnterprise
+      ? "/enterprise-welcome"
+      : "/select-company";
+  const fallbackButtonText = companyId
+    ? "Go to Dashboard"
+    : isEnterprise
+      ? "Go to Welcome"
+      : "Select Company";
 
   const handleReportError = async () => {
     setIsSubmittingReport(true);
@@ -69,10 +84,10 @@ This error report was automatically generated from the application error boundar
     `.trim();
 
     try {
-      await submitErrorReport({
+      await submitFeedback({
         message: errorDetails,
         type: "bug",
-        page_url: window.location.href
+        page_url: window.location.href,
       });
 
       toast.success("Error report submitted successfully. Thank you!");
@@ -113,9 +128,9 @@ This error report was automatically generated from the application error boundar
               Try Again
             </Button>
             <Button variant="outline" asChild>
-              <Link to={companyId ? `/${companyId}/dashboard` : "/select-company"} className="flex items-center gap-2">
+              <Link to={fallbackRoute} className="flex items-center gap-2">
                 <Home className="h-4 w-4" />
-                {companyId ? "Go to Dashboard" : "Select Company"}
+                {fallbackButtonText}
               </Link>
             </Button>
             <Button

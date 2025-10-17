@@ -26,17 +26,11 @@ export const authApi = {
    * Sign in with email and password
    * Returns enriched user data with profile and permissions
    */
-  async signIn(
-    email: string,
-    password: string
-  ): Promise<BackendAuthResponse> {
-    const response = await apiClient.post<BackendAuthResponse>(
-      "/auth/signin",
-      {
-        email,
-        password,
-      }
-    );
+  async signIn(email: string, password: string): Promise<BackendAuthResponse> {
+    const response = await apiClient.post<BackendAuthResponse>("/auth/signin", {
+      email,
+      password,
+    });
     return response.data;
   },
 

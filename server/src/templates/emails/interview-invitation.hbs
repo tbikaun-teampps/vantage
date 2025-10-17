@@ -1,4 +1,4 @@
-{{> header title="Interview Invitation" subtitle="You've been invited to complete an interview" gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"}}
+{{> header title=title subtitle="You've been invited to complete an interview" gradient=gradient company_icon_url=company_icon_url}}
 
 <div class="content">
   <p>Hello{{#if interviewee_name}} {{interviewee_name}}{{/if}},</p>
@@ -11,15 +11,12 @@
       <li><strong>Interview:</strong> {{interview_name}}</li>
       <li><strong>Assessment:</strong> {{assessment_name}}</li>
       <li><strong>Access Code:</strong> <span style="font-family: monospace; background: #e9ecef; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 16px;">{{access_code}}</span></li>
-      {{#if interviewer_name}}
-      <li><strong>Interviewer:</strong> {{interviewer_name}}</li>
-      {{/if}}
     </ul>
   </div>
 
   <p>To begin your interview, click the button below:</p>
 
-  {{> button text="Start Interview" url=interview_url color="#667eea"}}
+  {{> button text="Start Interview" url=interview_url color=button_color}}
 
   <p><strong>Alternative access:</strong> If the button doesn't work, copy and paste this link into your browser:</p>
   <p style="word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 14px;">

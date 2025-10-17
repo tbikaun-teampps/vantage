@@ -258,14 +258,16 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         // Initialize email service
         const emailService = new EmailService(
           fastify.config.RESEND_API_KEY,
-          fastify.config.SITE_URL
+          fastify.config.SITE_URL,
+          fastify.config.VANTAGE_LOGO_FULL_URL,
+          fastify.config.VANTAGE_LOGO_ICON_URL,
+          fastify.supabase
         );
 
         // Send invitation emails to each contact
         const emailResults = await Promise.allSettled(
           interviews.map(async (interview) => {
             return emailService.sendInterviewInvitation(
-              request.supabaseClient,
               request.user.id,
               interview.id
             );

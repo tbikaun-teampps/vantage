@@ -20,8 +20,20 @@ export type CreateCompanyData = Pick<
 
 export type UpdateCompanyData = Pick<
   Database["public"]["Tables"]["companies"]["Update"],
-  "name" | "code" | "description"
+  "name" | "code" | "description" | "icon_url"
 >;
+
+export interface CompanyBranding {
+  primary: string | null;
+  secondary: string | null;
+  accent: string | null;
+}
+
+export interface UpdateBrandingData {
+  primary?: string;
+  secondary?: string;
+  accent?: string;
+}
 
 export type CompanyWithRole = Company & {
   role: Database["public"]["Tables"]["user_companies"]["Row"]["role"];

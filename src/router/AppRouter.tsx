@@ -38,6 +38,7 @@ import { ActionsPage } from "@/pages/actions/ActionsPage";
 import { PageNotFound } from "@/pages/PageNotFound";
 import { RecommendationsPage } from "@/pages/recommendations/RecommendationsPage";
 import { TeamPage } from "@/pages/TeamPage";
+import { EnterpriseWelcomePage } from "@/pages/enterprise/EnterpriseWelcomePage";
 
 import { AuthProvider } from "@/components/auth-provider";
 import { PublicInterviewAuthProvider } from "@/components/public-interview-auth-provider";
@@ -79,6 +80,12 @@ export function AppRouter() {
             <Route
               path={routes.selectCompany}
               element={<SelectCompanyPage />}
+            />
+
+            {/* Enterprise welcome page */}
+            <Route
+              path={routes.enterpriseWelcome}
+              element={<EnterpriseWelcomePage />}
             />
 
             {/* Protected route without dashboard layout */}

@@ -103,7 +103,156 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/auth/external/interview-token": {
+  "/auth/signin": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            /** Format: email */
+            email: string;
+            password: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/signout": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Sign out the current user and invalidate their session */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/refresh": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Refresh access token using refresh token */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            refresh_token: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/session": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Validate current session and return enriched user data with re-authorization check */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/external/interview-token": {
     parameters: {
       query?: never;
       header?: never;
@@ -144,7 +293,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/programs": {
+  "/programs": {
     parameters: {
       query?: never;
       header?: never;
@@ -208,7 +357,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/programs/{id}/interviews": {
+  "/programs/{id}/interviews": {
     parameters: {
       query?: never;
       header?: never;
@@ -300,7 +449,315 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}/entities": {
+  "/programs/{id}/objectives": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Get all objectives for a program */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              data?: Record<string, never>[];
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              error?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              error?: string;
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    /** @description Create a new objective for a program */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: number;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            name: string;
+            description?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              data?: Record<string, never>;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              error?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              error?: string;
+            };
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/programs/{id}/objectives/{objectiveId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** @description Update a program objective */
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: number;
+          objectiveId: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            name?: string;
+            description?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              data?: Record<string, never>;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              error?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              error?: string;
+            };
+          };
+        };
+      };
+    };
+    post?: never;
+    /** @description Delete a program objective */
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: number;
+          objectiveId: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              error?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              error?: string;
+            };
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/programs/{id}/objectives/count": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Get the count of objectives for a program */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              data?: number;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              error?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              error?: string;
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/companies/{companyId}/entities": {
     parameters: {
       query?: never;
       header?: never;
@@ -458,7 +915,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}/entities/{entityId}": {
+  "/companies/{companyId}/entities/{entityId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -628,7 +1085,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}/contacts": {
+  "/companies/{companyId}/contacts": {
     parameters: {
       query?: never;
       header?: never;
@@ -699,7 +1156,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}/contacts/{entityType}/{entityId}": {
+  "/companies/{companyId}/contacts/{entityType}/{entityId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -866,7 +1323,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}/contacts/{contactId}": {
+  "/companies/{companyId}/contacts/{contactId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -973,7 +1430,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}/contacts/{entityType}/{entityId}/{contactId}": {
+  "/companies/{companyId}/contacts/{entityType}/{entityId}/{contactId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -1060,7 +1517,43 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}/team": {
+  "/companies/{companyId}/contacts/roles/{roleId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          companyId: string;
+          roleId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/companies/{companyId}/team": {
     parameters: {
       query?: never;
       header?: never;
@@ -1242,7 +1735,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}/team/{userId}": {
+  "/companies/{companyId}/team/{userId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -1424,7 +1917,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies": {
+  "/companies": {
     parameters: {
       query?: never;
       header?: never;
@@ -1458,6 +1951,7 @@ export interface paths {
                 updated_at: string;
                 role: string;
                 is_demo: boolean;
+                icon_url?: string;
               }[];
             };
           };
@@ -1523,6 +2017,7 @@ export interface paths {
                 updated_at: string;
                 role: string;
                 is_demo: boolean;
+                icon_url?: string;
               };
             };
           };
@@ -1559,7 +2054,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}": {
+  "/companies/{companyId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -1594,6 +2089,7 @@ export interface paths {
                 updated_at: string;
                 role: string;
                 is_demo: boolean;
+                icon_url?: string;
               };
             };
           };
@@ -1671,6 +2167,7 @@ export interface paths {
                 created_at: string;
                 updated_at: string;
                 is_demo: boolean;
+                icon_url?: string;
               };
             };
           };
@@ -1780,7 +2277,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}/tree": {
+  "/companies/{companyId}/tree": {
     parameters: {
       query?: never;
       header?: never;
@@ -1845,7 +2342,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}/assessments": {
+  "/companies/{companyId}/assessments": {
     parameters: {
       query?: never;
       header?: never;
@@ -1892,7 +2389,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}/recommendations": {
+  "/companies/{companyId}/recommendations": {
     parameters: {
       query?: never;
       header?: never;
@@ -1957,7 +2454,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}/export": {
+  "/companies/{companyId}/export": {
     parameters: {
       query?: never;
       header?: never;
@@ -2022,7 +2519,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}/import": {
+  "/companies/{companyId}/import": {
     parameters: {
       query?: never;
       header?: never;
@@ -2057,7 +2554,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/companies/{companyId}/actions": {
+  "/companies/{companyId}/actions": {
     parameters: {
       query?: never;
       header?: never;
@@ -2092,7 +2589,258 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/shared/measurement-definitions": {
+  "/companies/{companyId}/questionnaires": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          companyId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string;
+                guidelines: string;
+                status: string;
+                created_at: string;
+                updated_at: string;
+                section_count: number;
+                step_count: number;
+                question_count: number;
+              }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/companies/{companyId}/icon": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Upload or replace company icon */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          companyId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                icon_url: string;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        403: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+      };
+    };
+    /** @description Remove company icon */
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          companyId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              message: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        403: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/shared/measurement-definitions": {
     parameters: {
       query?: never;
       header?: never;
@@ -2125,7 +2873,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/shared/roles": {
+  "/shared/roles": {
     parameters: {
       query?: never;
       header?: never;
@@ -2271,7 +3019,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/shared/roles/{roleId}": {
+  "/shared/roles/{roleId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -2447,7 +3195,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/{questionnaireId}/rating-scales": {
+  "/questionnaires/{questionnaireId}/rating-scales": {
     parameters: {
       query?: never;
       header?: never;
@@ -2522,7 +3270,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/{questionnaireId}/rating-scales/batch": {
+  "/questionnaires/{questionnaireId}/rating-scales/batch": {
     parameters: {
       query?: never;
       header?: never;
@@ -2548,7 +3296,7 @@ export interface paths {
               name: string;
               description?: string;
               value: number;
-              order_index?: number;
+              order_index: number;
             }[];
           };
         };
@@ -2620,7 +3368,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/{questionnaireId}/rating-scale": {
+  "/questionnaires/{questionnaireId}/rating-scale": {
     parameters: {
       query?: never;
       header?: never;
@@ -2645,7 +3393,6 @@ export interface paths {
             name: string;
             description?: string;
             value: number;
-            order_index?: number;
           };
         };
       };
@@ -2706,7 +3453,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/rating-scales/{ratingScaleId}": {
+  "/questionnaires/rating-scales/{ratingScaleId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -2863,7 +3610,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/sections": {
+  "/questionnaires/sections": {
     parameters: {
       query?: never;
       header?: never;
@@ -2933,7 +3680,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/sections/{sectionId}": {
+  "/questionnaires/sections/{sectionId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -3068,7 +3815,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/steps": {
+  "/questionnaires/steps": {
     parameters: {
       query?: never;
       header?: never;
@@ -3150,7 +3897,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/steps/{stepId}": {
+  "/questionnaires/steps/{stepId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -3282,7 +4029,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/questions": {
+  "/questionnaires/questions": {
     parameters: {
       query?: never;
       header?: never;
@@ -3367,7 +4114,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/questions/{questionId}": {
+  "/questionnaires/questions/{questionId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -3512,7 +4259,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/questions/{questionId}/duplicate": {
+  "/questionnaires/questions/{questionId}/duplicate": {
     parameters: {
       query?: never;
       header?: never;
@@ -3589,7 +4336,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/questions/{questionId}/rating-scales": {
+  "/questionnaires/questions/{questionId}/rating-scales": {
     parameters: {
       query?: never;
       header?: never;
@@ -3661,7 +4408,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/questions/{questionId}/rating-scales/{questionRatingScaleId}": {
+  "/questionnaires/questions/{questionId}/rating-scales/{questionRatingScaleId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -3803,7 +4550,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/questions/{questionId}/add-questionnaire-rating-scales": {
+  "/questionnaires/questions/{questionId}/add-questionnaire-rating-scales": {
     parameters: {
       query?: never;
       header?: never;
@@ -3818,12 +4565,18 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          questionnaireId: string;
           questionId: string;
         };
         cookie?: never;
       };
-      requestBody?: never;
+      requestBody: {
+        content: {
+          "application/json": {
+            questionnaireId: number;
+            questionId: number;
+          };
+        };
+      };
       responses: {
         /** @description Default Response */
         201: {
@@ -3869,7 +4622,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/questions/{questionId}/applicable-roles": {
+  "/questionnaires/questions/{questionId}/applicable-roles": {
     parameters: {
       query?: never;
       header?: never;
@@ -3962,133 +4715,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Default Response */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              data: {
-                id: number;
-                name: string;
-                description: string;
-                guidelines: string;
-                status: string;
-                created_at: string;
-                updated_at: string;
-                section_count: number;
-                step_count: number;
-                question_count: number;
-              }[];
-            };
-          };
-        };
-        /** @description Default Response */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-      };
-    };
-    put?: never;
-    /** @description Create a new questionnaire */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          "application/json": {
-            name: string;
-            description?: string;
-            guidelines?: string;
-            company_id?: string;
-            status?: "draft" | "active" | "under_review" | "archived";
-          };
-        };
-      };
-      responses: {
-        /** @description Default Response */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              data: {
-                id: number;
-                name: string;
-                description: string;
-                guidelines: string;
-                status: string;
-                created_at: string;
-                updated_at: string;
-              }[];
-            };
-          };
-        };
-        /** @description Default Response */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success: boolean;
-              error: string;
-            };
-          };
-        };
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/questionnaires/{questionnaireId}": {
+  "/questionnaires/{questionnaireId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -4268,7 +4895,76 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/{questionnaireId}/duplicate": {
+  "/questionnaires": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Create a new questionnaire */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            name: string;
+            description?: string;
+            guidelines?: string;
+            company_id?: string;
+            status?: "draft" | "active" | "under_review" | "archived";
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string;
+                guidelines: string;
+                status: string;
+                created_at: string;
+                updated_at: string;
+              }[];
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/questionnaires/{questionnaireId}/duplicate": {
     parameters: {
       query?: never;
       header?: never;
@@ -4341,7 +5037,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/{questionnaireId}/usage": {
+  "/questionnaires/{questionnaireId}/usage": {
     parameters: {
       query?: never;
       header?: never;
@@ -4376,7 +5072,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/questionnaires/import": {
+  "/questionnaires/import": {
     parameters: {
       query?: never;
       header?: never;
@@ -4409,7 +5105,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/users/me": {
+  "/users/me": {
     parameters: {
       query?: never;
       header?: never;
@@ -4484,7 +5180,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/users/subscription/{subscription_tier}": {
+  "/users/subscription/{subscription_tier}": {
     parameters: {
       query?: never;
       header?: never;
@@ -4548,7 +5244,78 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/users/onboarded": {
+  "/users/profile": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** @description Update user profile */
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            full_name?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              profile?: {
+                [key: string]: unknown;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/users/onboarded": {
     parameters: {
       query?: never;
       header?: never;
@@ -4610,7 +5377,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/assessments/{assessmentId}": {
+  "/assessments/{assessmentId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -4765,7 +5532,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/assessments/{assessmentId}/interviews": {
+  "/assessments/{assessmentId}/interviews": {
     parameters: {
       query?: never;
       header?: never;
@@ -4800,7 +5567,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/assessments/{assessmentId}/comments": {
+  "/assessments/{assessmentId}/comments": {
     parameters: {
       query?: never;
       header?: never;
@@ -4835,7 +5602,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/assessments/{assessmentId}/evidence": {
+  "/assessments/{assessmentId}/evidence": {
     parameters: {
       query?: never;
       header?: never;
@@ -4870,7 +5637,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/assessments/{assessmentId}/actions": {
+  "/assessments/{assessmentId}/actions": {
     parameters: {
       query?: never;
       header?: never;
@@ -4905,7 +5672,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/assessments/": {
+  "/assessments/": {
     parameters: {
       query?: never;
       header?: never;
@@ -5005,7 +5772,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/assessments/{assessmentId}/duplicate": {
+  "/assessments/{assessmentId}/duplicate": {
     parameters: {
       query?: never;
       header?: never;
@@ -5083,7 +5850,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/assessments/{assessmentId}/measurements": {
+  "/assessments/{assessmentId}/measurements": {
     parameters: {
       query?: never;
       header?: never;
@@ -5152,7 +5919,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/assessments/{assessmentId}/measurements/{measurementId}": {
+  "/assessments/{assessmentId}/measurements/{measurementId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -5214,7 +5981,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/assessments/{assessmentId}/measurements/bar-charts": {
+  "/assessments/{assessmentId}/measurements/bar-charts": {
     parameters: {
       query?: never;
       header?: never;
@@ -5260,71 +6027,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/analytics": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get: {
-      parameters: {
-        query?: {
-          company_id?: string;
-        };
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Default Response */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success?: boolean;
-              data?: Record<string, never>[];
-            };
-          };
-        };
-        /** @description Default Response */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success?: boolean;
-              error?: string;
-            };
-          };
-        };
-        /** @description Default Response */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success?: boolean;
-              error?: string;
-            };
-          };
-        };
-      };
-    };
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/analytics/overall/heatmap/filters": {
+  "/analytics/overall/heatmap/filters": {
     parameters: {
       query?: never;
       header?: never;
@@ -5335,6 +6038,7 @@ export interface paths {
       parameters: {
         query: {
           companyId: string;
+          assessmentType: "onsite" | "desktop";
         };
         header?: never;
         path?: never;
@@ -5351,7 +6055,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/analytics/overall/heatmap": {
+  "/analytics/heatmap/overall-onsite": {
     parameters: {
       query?: never;
       header?: never;
@@ -5478,7 +6182,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/analytics/overall/geographical-map": {
+  "/analytics/heatmap/overall-desktop": {
     parameters: {
       query?: never;
       header?: never;
@@ -5488,7 +6192,56 @@ export interface paths {
     get: {
       parameters: {
         query: {
-          companyId?: string;
+          companyId: string;
+          assessmentId?: string;
+          xAxis?:
+            | "business_unit"
+            | "region"
+            | "site"
+            | "asset_group"
+            | "work_group"
+            | "role"
+            | "role_level";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              error?: string;
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/analytics/geographical-map/overall-onsite": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query: {
+          companyId: string;
           assessmentId?: string;
           questionnaireId: string;
         };
@@ -5530,7 +6283,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/analytics/overall/geographical-map/filters": {
+  "/analytics/geographical-map/overall-desktop": {
     parameters: {
       query?: never;
       header?: never;
@@ -5541,6 +6294,35 @@ export interface paths {
       parameters: {
         query: {
           companyId: string;
+          assessmentId?: string;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: never;
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/analytics/overall/geographical-map/filters": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query: {
+          companyId: string;
+          assessmentType: "onsite" | "desktop";
         };
         header?: never;
         path?: never;
@@ -5565,7 +6347,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/dashboards/widgets/{companyId}/config-options": {
+  "/dashboards/widgets/{companyId}/config-options": {
     parameters: {
       query?: never;
       header?: never;
@@ -5646,7 +6428,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/dashboards/widgets/{companyId}/activity": {
+  "/dashboards/widgets/{companyId}/activity": {
     parameters: {
       query?: never;
       header?: never;
@@ -5721,7 +6503,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/dashboards/widgets/{companyId}/metrics": {
+  "/dashboards/widgets/{companyId}/metrics": {
     parameters: {
       query?: never;
       header?: never;
@@ -5820,7 +6602,159 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/dashboards/{companyId}": {
+  "/dashboards/widgets/{companyId}/table": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Get table data for a widget */
+    get: {
+      parameters: {
+        query: {
+          /** @description The type of table data to fetch */
+          entityType: "actions" | "recommendations" | "comments";
+          /** @description Optional assessment ID for filtering */
+          assessmentId?: number;
+          /** @description Optional program ID for filtering */
+          programId?: number;
+        };
+        header?: never;
+        path: {
+          companyId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                rows: {
+                  [key: string]: string | number;
+                }[];
+                columns: {
+                  key: string;
+                  label: string;
+                }[];
+                scope?: {
+                  assessmentName?: string;
+                  programName?: string;
+                };
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/dashboards/widgets/{companyId}/actions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Get actions data for a widget */
+    get: {
+      parameters: {
+        query: {
+          /** @description The entity type for actions */
+          entityType: string;
+        };
+        header?: never;
+        path: {
+          companyId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: string[];
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/dashboards/{companyId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -5987,7 +6921,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/dashboards/{companyId}/{dashboardId}": {
+  "/dashboards/{companyId}/{dashboardId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -6234,7 +7168,7 @@ export interface paths {
     };
     trace?: never;
   };
-  "/api/emails/send-interview-invitation": {
+  "/emails/send-interview-invitation": {
     parameters: {
       query?: never;
       header?: never;
@@ -6300,7 +7234,73 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/emails/send-team-member-invite": {
+  "/emails/send-interview-reminder": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Send an interview reminder email */
+    post: {
+      parameters: {
+        query: {
+          interviewId: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              message?: string;
+              messageId?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              error?: string;
+            };
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/emails/send-team-member-invite": {
     parameters: {
       query?: never;
       header?: never;
@@ -6375,7 +7375,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/emails/send-test-email": {
+  "/emails/send-test-email": {
     parameters: {
       query?: never;
       header?: never;
@@ -6447,7 +7447,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/feedback/": {
+  "/feedback/": {
     parameters: {
       query?: never;
       header?: never;
@@ -6519,7 +7519,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews": {
+  "/interviews": {
     parameters: {
       query?: never;
       header?: never;
@@ -6599,7 +7599,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews/public": {
+  "/interviews/public": {
     parameters: {
       query?: never;
       header?: never;
@@ -6680,7 +7680,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews/{interviewId}/structure": {
+  "/interviews/{interviewId}/structure": {
     parameters: {
       query?: never;
       header?: never;
@@ -6741,7 +7741,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews/{interviewId}/summary": {
+  "/interviews/{interviewId}/summary": {
     parameters: {
       query?: never;
       header?: never;
@@ -6768,7 +7768,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews/{interviewId}": {
+  "/interviews/{interviewId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -6882,7 +7882,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews/{interviewId}/progress": {
+  "/interviews/{interviewId}/progress": {
     parameters: {
       query?: never;
       header?: never;
@@ -6949,7 +7949,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews/{interviewId}/questions/{questionId}": {
+  "/interviews/{interviewId}/questions/{questionId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -6985,7 +7985,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews/responses/{responseId}/actions": {
+  "/interviews/responses/{responseId}/actions": {
     parameters: {
       query?: never;
       header?: never;
@@ -7057,7 +8057,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews/responses/{responseId}/actions/{actionId}": {
+  "/interviews/responses/{responseId}/actions/{actionId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -7131,7 +8131,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews/responses/{responseId}": {
+  "/interviews/responses/{responseId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -7165,7 +8165,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews/responses/{responseId}/comments": {
+  "/interviews/responses/{responseId}/comments": {
     parameters: {
       query?: never;
       header?: never;
@@ -7235,7 +8235,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews/responses/{responseId}/evidence": {
+  "/interviews/responses/{responseId}/evidence": {
     parameters: {
       query?: never;
       header?: never;
@@ -7309,7 +8309,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews/responses/{responseId}/evidence/{evidenceId}": {
+  "/interviews/responses/{responseId}/evidence/{evidenceId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -7345,7 +8345,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews/assessment-roles/{assessmentId}": {
+  "/interviews/assessment-roles/{assessmentId}": {
     parameters: {
       query?: never;
       header?: never;
@@ -7380,7 +8380,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/interviews/assessment-roles/validate": {
+  "/interviews/assessment-roles/validate": {
     parameters: {
       query?: never;
       header?: never;
@@ -7394,6 +8394,41 @@ export interface paths {
         query?: never;
         header?: never;
         path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/interviews/questionnaires/{questionnaireId}/validate-roles": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          questionnaireId: string;
+        };
         cookie?: never;
       };
       requestBody?: never;
@@ -7478,6 +8513,7 @@ export interface components {
       updated_at: string;
       role: string;
       is_demo: boolean;
+      icon_url?: string;
     };
     companyList: {
       success: boolean;
@@ -7490,6 +8526,7 @@ export interface components {
         updated_at: string;
         role: string;
         is_demo: boolean;
+        icon_url?: string;
       }[];
     };
     companyWithRoleDetail: {
@@ -7503,6 +8540,7 @@ export interface components {
         updated_at: string;
         role: string;
         is_demo: boolean;
+        icon_url?: string;
       };
     };
     companyDetail: {
@@ -7515,6 +8553,7 @@ export interface components {
         created_at: string;
         updated_at: string;
         is_demo: boolean;
+        icon_url?: string;
       };
     };
     entityList: {
@@ -7580,6 +8619,12 @@ export interface components {
           email: string;
           full_name: string | null;
         };
+      };
+    };
+    iconUpload: {
+      success: boolean;
+      data: {
+        icon_url: string;
       };
     };
     dashboard: {

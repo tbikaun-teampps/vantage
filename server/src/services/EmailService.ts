@@ -1,8 +1,43 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { TemplateService } from "./TemplateService.js";
+import { Database } from "../types/database.js";
+import {
+  BadRequestError,
+  InternalServerError,
+  NotFoundError,
+} from "../plugins/errorHandler.js";
 
 // Types for email service
+export interface CompanyBranding {
+  primary: string | null;
+  secondary: string | null;
+  accent: string | null;
+}
+
+// Type guard to safely check if Json is CompanyBranding
+function isCompanyBranding(value: unknown): value is CompanyBranding {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const obj = value as Record<string, unknown>;
+  return (
+    "primary" in obj &&
+    (typeof obj.primary === "string" || obj.primary === null) &&
+    "secondary" in obj &&
+    (typeof obj.secondary === "string" || obj.secondary === null) &&
+    "accent" in obj &&
+    (typeof obj.accent === "string" || obj.accent === null)
+  );
+}
+
+// Helper function to safely extract CompanyBranding from Json
+function extractCompanyBranding(
+  branding: unknown
+): CompanyBranding | undefined {
+  return isCompanyBranding(branding) ? branding : undefined;
+}
+
 export interface InterviewInvitationData {
   interviewee_email: string;
   interviewee_name?: string;
@@ -14,6 +49,8 @@ export interface InterviewInvitationData {
   sender_name?: string;
   sender_email: string;
   company_name?: string;
+  company_icon_url?: string;
+  company_branding?: CompanyBranding;
 }
 
 export interface InviteTeamMemberData {
@@ -22,6 +59,8 @@ export interface InviteTeamMemberData {
   role?: string;
   company_name?: string;
   invite_link?: string;
+  company_icon_url?: string;
+  company_branding?: CompanyBranding;
 }
 
 export interface TestEmailData {
@@ -36,6 +75,8 @@ export interface RoleChangeNotificationData {
   new_role: string;
   company_name?: string;
   changed_by_name?: string;
+  company_icon_url?: string;
+  company_branding?: CompanyBranding;
 }
 
 export interface InterviewReminderData {
@@ -49,6 +90,8 @@ export interface InterviewReminderData {
   sender_email?: string;
   company_name?: string;
   due_date?: string;
+  company_icon_url?: string;
+  company_branding?: CompanyBranding;
 }
 
 export interface EmailResponse {
@@ -61,24 +104,41 @@ export class EmailService {
   private resend: Resend;
   private siteUrl: string;
   private templateService: TemplateService;
+  private supabase?: SupabaseClient<Database>;
+  private vantageLogoFullUrl: string;
+  private vantageLogoIconUrl: string;
 
-  constructor(apiKey: string, siteUrl: string) {
+  constructor(
+    apiKey: string,
+    siteUrl: string,
+    vantageLogoFullUrl: string,
+    vantageLogoIconUrl: string,
+    supabase?: SupabaseClient<Database>
+  ) {
     this.resend = new Resend(apiKey);
     this.siteUrl = siteUrl;
+    this.vantageLogoFullUrl = vantageLogoFullUrl;
+    this.vantageLogoIconUrl = vantageLogoIconUrl;
     this.templateService = new TemplateService();
+    this.supabase = supabase;
   }
 
   async sendInterviewInvitation(
-    supabase: SupabaseClient,
     userId: string,
     interviewId: number
   ): Promise<EmailResponse> {
+    if (!this.supabase) {
+      console.error("Supabase client not initialized");
+      throw new InternalServerError("Failed to send email");
+    }
     // Fetch interview
-    const { data: interview, error: interviewError } = await supabase
+    const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
-      .select(`*, assessments(name), companies(name)`)
+      .select(`*, assessments(name), companies(name, icon_url, branding)`)
       .eq("id", interviewId)
-      .single();
+      .maybeSingle();
+
+    // console.log("interview data: ", interview);
 
     if (interviewError || !interview) {
       console.error("Failed to fetch interview:", interviewError);
@@ -88,8 +148,14 @@ export class EmailService {
       };
     }
 
+    // Validate interview has required contact ID
+    if (!interview.interview_contact_id) {
+      console.error("Interview has no assigned contact");
+      throw new BadRequestError("Interview has no assigned contact");
+    }
+
     // Get contact assigned to the interview
-    const { data: contact, error: contactError } = await supabase
+    const { data: contact, error: contactError } = await this.supabase
       .from("contacts")
       .select()
       .eq("id", interview.interview_contact_id)
@@ -109,7 +175,7 @@ export class EmailService {
     }?code=${interview.access_code}&email=${encodeURIComponent(contact.email)}`;
 
     // Fetch sender information
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await this.supabase
       .from("profiles")
       .select()
       .eq("id", userId)
@@ -123,32 +189,29 @@ export class EmailService {
       };
     }
 
-    const data: InterviewInvitationData = {
-      interviewee_email: contact.email,
-      interviewee_name: contact.full_name || contact.email.split("@")[0],
-      interview_name: interview.name,
-      assessment_name: interview.assessments.name,
-      access_code: interview.access_code,
-      interview_id: interview.id,
-      sender_email: profile.email,
-      sender_name: profile.full_name || profile.email.split("@")[0],
-      company_name: interview.companies.name,
-    };
+    const company_branding = extractCompanyBranding(
+      interview.companies.branding
+    );
 
-    console.log("Sending interview invitation with data:", data);
+    // console.log("Sending interview invitation with data:", data);
 
     // Prepare template data
     const templateData = {
-      interviewee_name: data.interviewee_name,
-      interview_name: data.interview_name,
-      assessment_name: data.assessment_name,
-      access_code: data.access_code,
-      interviewer_name: data.interviewer_name,
-      sender_name: data.sender_name,
-      sender_email: data.sender_email,
-      company_name: data.company_name,
+      interviewee_name: contact.email,
+      interview_name: contact.full_name || contact.email.split("@")[0],
+      assessment_name: interview.assessments!.name,
+      access_code: interview.access_code!,
+      sender_name: profile.full_name || profile.email.split("@")[0],
+      sender_email: profile.email,
+      company_name: interview.companies.name,
       interview_url: interviewUrl,
       title: "Interview Invitation",
+      company_icon_url: interview.companies.icon_url || undefined,
+      company_branding: company_branding,
+      button_color: company_branding?.primary || "#10b981",
+      gradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+      vantage_logo_full_url: this.vantageLogoFullUrl,
+      vantage_logo_icon_url: this.vantageLogoIconUrl,
     };
 
     // Render email content using templates
@@ -159,12 +222,10 @@ export class EmailService {
     );
 
     try {
-      const fromCompany = data.company_name ? ` from ${data.company_name}` : "";
-
       const emailResult = await this.resend.emails.send({
-        from: "Vantage <vantage@mail.teampps.com.au>",
-        to: [data.interviewee_email],
-        subject: `Interview Invitation${fromCompany}: ${data.interview_name}`,
+        from: `${interview.companies.name} via Vantage <vantage@mail.teampps.com.au>`,
+        to: [contact.email],
+        subject: `Interview Invitation from ${interview.companies.name}: ${interview.assessments!.name}`,
         html: htmlContent,
       });
 
@@ -193,10 +254,60 @@ export class EmailService {
   }
 
   async sendInterviewReminder(
-    data: InterviewReminderData
+    interviewId: number,
+    userId: string
   ): Promise<EmailResponse> {
+    if (!this.supabase) {
+      console.error("Supabase client not initialized");
+      throw new InternalServerError("Failed to send email");
+    }
+    // Fetch interview details (same as invitation endpoint)
+    const { data: interview, error: interviewError } = await this.supabase
+      .from("interviews")
+      .select(`*, assessments(name), companies(name, icon_url, branding)`)
+      .eq("id", interviewId)
+      .maybeSingle();
+
+    if (interviewError || !interview) {
+      throw new NotFoundError("Interview not found");
+    }
+
+    // Validate interview has required contact ID
+    if (!interview.interview_contact_id) {
+      throw new BadRequestError("Interview has no assigned contact");
+    }
+
+    // Get contact assigned to the interview
+    const { data: contact, error: contactError } = await this.supabase
+      .from("contacts")
+      .select()
+      .eq("id", interview.interview_contact_id)
+      .single();
+
+    if (contactError || !contact) {
+      throw new NotFoundError("Interviewee contact details not found");
+    }
+
+    // Fetch sender information
+    const { data: profile, error: profileError } = await this.supabase
+      .from("profiles")
+      .select()
+      .eq("id", userId)
+      .single();
+
+    if (profileError || !profile) {
+      throw new NotFoundError("Sender profile not found");
+    }
+
+    // Validate interview has required assessment and company data
+    if (!interview.assessments || !interview.companies) {
+      throw new BadRequestError(
+        "Interview missing required assessment or company data"
+      );
+    }
+
     // Validate required fields
-    if (!data.interviewee_email) {
+    if (!contact.email) {
       return {
         success: false,
         message: "Missing required 'interviewee_email' field",
@@ -205,7 +316,7 @@ export class EmailService {
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.interviewee_email)) {
+    if (!emailRegex.test(contact.email)) {
       return {
         success: false,
         message: "Invalid email address format",
@@ -214,25 +325,32 @@ export class EmailService {
 
     // Generate the public interview URL
     const interviewUrl = `${this.siteUrl}/external/interview/${
-      data.interview_id
-    }?code=${data.access_code}&email=${encodeURIComponent(
-      data.interviewee_email
-    )}`;
+      interview.id
+    }?code=${interview.access_code}&email=${encodeURIComponent(contact.email)}`;
 
-    console.log("Sending interview reminder with data:", data);
+    // Extract company branding safely
+    const companyBranding = extractCompanyBranding(
+      interview.companies.branding
+    );
 
     // Prepare template data
     const templateData = {
-      interviewee_name: data.interviewee_name,
-      interview_name: data.interview_name,
-      assessment_name: data.assessment_name,
-      access_code: data.access_code,
-      sender_name: data.sender_name,
-      sender_email: data.sender_email,
-      company_name: data.company_name,
-      due_date: data.due_date,
+      interviewee_name: contact.email,
+      interview_name: interview.name,
+      assessment_name: interview.assessments.name,
+      access_code: interview.access_code,
+      sender_name: profile.full_name || profile.email.split("@")[0],
+      sender_email: profile.email,
+      company_name: interview.companies.name,
+      due_date: interview.due_date,
       interview_url: interviewUrl,
       title: "Interview Reminder",
+      company_icon_url: interview.companies.icon_url,
+      company_branding: companyBranding,
+      button_color: companyBranding?.primary || "#f59e0b",
+      gradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+      vantage_logo_full_url: this.vantageLogoFullUrl,
+      vantage_logo_icon_url: this.vantageLogoIconUrl,
     };
 
     // Render email content using templates
@@ -243,9 +361,9 @@ export class EmailService {
 
     try {
       const emailResult = await this.resend.emails.send({
-        from: "Vantage <vantage@mail.teampps.com.au>",
-        to: [data.interviewee_email],
-        subject: `Reminder: Complete Your Interview - ${data.interview_name}`,
+        from: `${interview.companies.name} via Vantage <vantage@mail.teampps.com.au>`,
+        to: [contact.email],
+        subject: `Reminder: Complete Your Interview - ${interview.name}`,
         html: htmlContent,
       });
 
@@ -303,6 +421,12 @@ export class EmailService {
       role: data.role,
       invite_link: data.invite_link,
       title: "Team Invitation",
+      company_icon_url: data.company_icon_url,
+      company_branding: data.company_branding,
+      button_color: data.company_branding?.primary || "#10b981",
+      gradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+      vantage_logo_full_url: this.vantageLogoFullUrl,
+      vantage_logo_icon_url: this.vantageLogoIconUrl,
     };
 
     try {
@@ -312,7 +436,7 @@ export class EmailService {
       );
 
       const emailResult = await this.resend.emails.send({
-        from: "Vantage <vantage@mail.teampps.com.au>",
+        from: `${companyName} via Vantage <vantage@mail.teampps.com.au>`,
         to: [data.email],
         subject: `You've been added to ${companyName}`,
         html: htmlContent,
@@ -380,6 +504,12 @@ export class EmailService {
       company_name: companyName,
       changed_by_name: data.changed_by_name,
       title: "Role Update",
+      company_icon_url: data.company_icon_url,
+      company_branding: data.company_branding,
+      button_color: data.company_branding?.primary || "#3b82f6",
+      gradient: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+      vantage_logo_full_url: this.vantageLogoFullUrl,
+      vantage_logo_icon_url: this.vantageLogoIconUrl,
     };
 
     try {
@@ -389,7 +519,7 @@ export class EmailService {
       );
 
       const emailResult = await this.resend.emails.send({
-        from: "Vantage <vantage@mail.teampps.com.au>",
+        from: `${companyName} via Vantage <vantage@mail.teampps.com.au>`,
         to: [data.email],
         subject: `Your role has been updated in ${companyName}`,
         html: htmlContent,
@@ -447,6 +577,8 @@ export class EmailService {
       message: customMessage,
       timestamp: timestamp,
       title: "Test Email",
+      vantage_logo_full_url: this.vantageLogoFullUrl,
+      vantage_logo_icon_url: this.vantageLogoIconUrl,
     };
 
     try {

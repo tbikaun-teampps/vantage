@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -17,8 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { IconCheck } from "@tabler/icons-react";
-import { useProfile, useProfileActions, profileKeys } from "@/hooks/useProfile";
-import { companyKeys } from "@/hooks/useCompany";
+import { useProfile, useProfileActions } from "@/hooks/useProfile";
 import type { SubscriptionTier } from "@/types/auth";
 import { subscriptionPlans } from "@/pages/account/subscription/components/data";
 import { BRAND_COLORS } from "@/lib/brand";
@@ -36,7 +34,6 @@ export function SubscriptionModal({
   const { data: profile } = useProfile();
   const { updateProfile } = useProfileActions();
   const navigate = useCompanyAwareNavigate();
-  const queryClient = useQueryClient();
   const [updatingTier, setUpdatingTier] = useState<SubscriptionTier | null>(
     null
   );
@@ -49,14 +46,11 @@ export function SubscriptionModal({
     setUpdatingTier(tier);
     try {
       const plan = subscriptionPlans[tier];
+      // updateProfile now handles session refetch internally
       await updateProfile({
         subscription_tier: tier,
         subscription_features: plan.features,
       });
-
-      // Refresh profile and companies data after subscription change
-      await queryClient.refetchQueries({ queryKey: profileKeys.all });
-      await queryClient.refetchQueries({ queryKey: companyKeys.lists() });
 
       // Redirect to select-company page after any subscription change
       navigate("/select-company");

@@ -291,6 +291,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { displayVersion } = getVersionInfo();
   const { companyId } = useCurrentCompany();
 
+
   // Use company-specific sidebar data if we have a company ID
   const sidebarData = companyId
     ? getSidebarData(companyId)
@@ -327,9 +328,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <div className="mb-4">
-        <CompanySelector />
-      </div>
+        <div className="mb-4">
+          <CompanySelector />
+        </div>
       <SidebarContent>
         <div data-sidebar-section="monitor">
           <NavSection title="Monitor" items={sidebarData.navMonitor} />

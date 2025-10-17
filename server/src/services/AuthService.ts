@@ -33,22 +33,27 @@ interface SignInResponse {
 
 const SUBSCRIPTION_FEATURES = {
   demo: {
-    maxCompanies: 1,
+    maxCompanies: 0,
     features: ["interviews", "assessments", "basic_analytics"],
   },
   consultant: {
     maxCompanies: 999,
     features: [
+      "dashboard",
       "interviews",
       "assessments",
       "analytics",
       "recommendations",
       "advanced_features",
+      "create_company",
+      "select_company",
+      "custom_branding",
     ],
   },
   enterprise: {
     maxCompanies: 1,
     features: [
+      "dashboard",
       "interviews",
       "assessments",
       "analytics",
@@ -327,12 +332,11 @@ export class AuthService {
       };
 
       // Fetch user's companies with roles
-      const { data: userCompanies, error: companiesError } =
-        await this.supabase
-          .from("user_companies")
-          .select("company_id, role")
-          .eq("user_id", user.id)
-          .neq("role", "interviewee");
+      const { data: userCompanies, error: companiesError } = await this.supabase
+        .from("user_companies")
+        .select("company_id, role")
+        .eq("user_id", user.id)
+        .neq("role", "interviewee");
 
       if (companiesError) {
         console.error("Failed to fetch user companies:", companiesError);
