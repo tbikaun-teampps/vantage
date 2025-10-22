@@ -200,7 +200,7 @@ export class InterviewsService {
           // Must be set with user_metadata not app_metadata
           // see: https://github.com/supabase/auth/issues/1280
           user_metadata: {
-            account_type: "interview_only", // Flag for overriding profile subscription_tier default 'demo'. Instead sets as 'interview_only'
+            account_type: "interviewee", // Flag for overriding profile subscription_tier default 'demo'. Instead sets as 'interviewee'
           },
         });
         if (userError || !newUser) {

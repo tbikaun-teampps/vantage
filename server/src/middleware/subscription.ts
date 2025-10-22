@@ -61,9 +61,9 @@ export async function subscriptionTierMiddleware(
 
     request.subscriptionTier = profile.subscription_tier;
 
-    // If the user is a public interviewee (interview_only) only allow /interviews/* endpoints to be reached
+    // If the user is a public interviewee (interviewee) only allow /interviews/* endpoints to be reached
     if (
-      profile.subscription_tier === "interview_only" &&
+      profile.subscription_tier === "interviewee" &&
       !request.url.startsWith("/interviews/")
     ) {
       return reply.status(403).send({

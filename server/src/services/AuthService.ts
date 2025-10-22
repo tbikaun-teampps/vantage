@@ -62,7 +62,7 @@ const SUBSCRIPTION_FEATURES = {
       "custom_branding",
     ],
   },
-  interview_only: {
+  interviewee: {
     maxCompanies: 0,
     features: ["interview_access_only"],
   },
@@ -83,7 +83,7 @@ export class AuthService {
   /**
    * Sign in a user with email and password
    * Validates credentials, checks subscription tier, and returns enriched user data
-   * Blocks interview_only users from accessing the main application
+   * Blocks interviewee users from accessing the main application
    */
   async signIn(email: string, password: string): Promise<SignInResponse> {
     // Authenticate with Supabase
@@ -125,8 +125,8 @@ export class AuthService {
       };
     }
 
-    // CRITICAL: Block interview_only users from main app access
-    if (profile.subscription_tier === "interview_only") {
+    // CRITICAL: Block interviewee users from main app access
+    if (profile.subscription_tier === "interviewee") {
       // Sign them out immediately
       await this.supabase.auth.signOut();
 
@@ -310,8 +310,8 @@ export class AuthService {
         };
       }
 
-      // CRITICAL: Re-validate authorization - block interview_only users
-      if (profile.subscription_tier === "interview_only") {
+      // CRITICAL: Re-validate authorization - block interviewee users
+      if (profile.subscription_tier === "interviewee") {
         return {
           success: false,
           error: "Access Denied",
