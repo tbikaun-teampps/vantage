@@ -12,6 +12,7 @@ import './assessment-creation-tour';
 import './assessment-detail-tour';
 import './interview-management-tour';
 import './interview-detail-tour';
+import './interview-detail-mobile-tour';
 import './questionnaire-management-tour';
 import './questionnaire-creation-tour';
 import './questionnaire-editor-tour';

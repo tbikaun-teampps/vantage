@@ -336,3 +336,13 @@ html, body, * {
     min-height: 90vh;
   }
 }
+
+/* Hide scrollbar utility for cleaner horizontal scroll on mobile */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

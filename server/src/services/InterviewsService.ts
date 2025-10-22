@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "../types/database";
+import type { Database, Json } from "../types/database";
 import { createCustomSupabaseJWT } from "../lib/jwt";
 import type { QuestionnaireSectionFromDB } from "../types/entities/questionnaires";
 import type {
@@ -21,6 +21,7 @@ import {
   calculateRatingValueRange,
 } from "./utils";
 import { InternalServerError, NotFoundError } from "../plugins/errorHandler";
+import { EmailService } from "./EmailService";
 
 interface AssessmentWithQuestionnaire {
   id: number;
@@ -654,7 +655,7 @@ export class InterviewsService {
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
       .select(
-        "id,questionnaire_id, name, notes, status, is_public, assessment_id"
+        "id,questionnaire_id, name, notes, status, is_public, enabled, assessment_id"
       )
       .eq("id", interviewId)
       .eq("is_deleted", false)
@@ -662,6 +663,11 @@ export class InterviewsService {
 
     if (interviewError) throw interviewError;
     if (!interview) return null;
+
+    // Validate that public interviews are enabled
+    if (interview.is_public && !interview.enabled) {
+      throw new NotFoundError("Interview not found");
+    }
     if (!interview.questionnaire_id) {
       console.warn("Interview has no associated questionnaire");
       return { interview, questionnaire: [], firstQuestionId: null };
@@ -751,6 +757,8 @@ export class InterviewsService {
         status,
         notes,
         is_public,
+        enabled,
+        due_at,
         assessment:assessments(id, name),
         interviewer:profiles!interviewer_id(full_name, email),
         interviewee:profiles!interviewee_id(full_name, email),
@@ -769,13 +777,35 @@ export class InterviewsService {
     if (error) throw error;
     if (!interview) return null;
 
+    if (!interview.assessment) {
+      throw new InternalServerError(
+        "Unable to retrieve summary. Associated interview assessment not found"
+      );
+    }
+
+    // Validate that public interviews are enabled
+    if (interview.is_public && !interview.enabled) {
+      throw new NotFoundError("Interview not found");
+    }
+
+    // Get interview_overview from linked assessment
+    const { data: assessment, error: assessmentError } = await this.supabase
+      .from("assessments")
+      .select("interview_overview")
+      .eq("id", interview.assessment?.id)
+      .single();
+
+    if (assessmentError) throw assessmentError;
+
     // Build the response object with explicit type mapping
     const response: InterviewSummary = {
       id: interview.id,
       name: interview.name,
       status: interview.status,
       notes: interview.notes,
+      overview: assessment?.interview_overview ?? null,
       is_public: interview.is_public,
+      due_at: interview.due_at,
       // If public, hide interviewer details
       interviewer: interview.is_public ? null : interview.interviewer,
       // Always include interviewee
@@ -790,27 +820,31 @@ export class InterviewsService {
     };
 
     // For private interviews, fetch and add company information
-    if (!interview.is_public && interview.assessment) {
+    if (interview.assessment) {
       const { data: assessment, error: assessmentError } = await this.supabase
         .from("assessments")
         .select("company_id")
         .eq("id", interview.assessment.id)
         .eq("is_deleted", false)
-        .single();
+        .maybeSingle();
 
       if (assessmentError) throw assessmentError;
 
       if (assessment) {
         const { data: company, error: companyError } = await this.supabase
           .from("companies")
-          .select("name")
+          .select("name, icon_url, branding")
           .eq("id", assessment.company_id)
-          .single();
+          .maybeSingle();
 
         if (companyError) throw companyError;
 
         if (company) {
-          response.company = { name: company.name };
+          response.company = {
+            name: company.name,
+            icon_url: company.icon_url,
+            branding: company.branding,
+          };
         }
       }
     }
@@ -828,13 +862,18 @@ export class InterviewsService {
     // Get interview basic info
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
-      .select("id, questionnaire_id, name, assessment_id, is_public")
+      .select("id, questionnaire_id, name, assessment_id, is_public, enabled")
       .eq("id", interviewId)
       .eq("is_deleted", false)
       .maybeSingle();
 
     if (interviewError) throw interviewError;
     if (!interview || !interview.questionnaire_id) return null;
+
+    // Validate that public interviews are enabled
+    if (interview.is_public && !interview.enabled) {
+      throw new NotFoundError("Interview not found");
+    }
 
     // Fetch the questionnaire structure
     const { data: questionnaire, error: questionnaireError } =
@@ -927,6 +966,7 @@ export class InterviewsService {
           interview_responses(
             *,
             is_applicable,
+            is_unknown,
             response_roles:interview_response_roles(
               role:roles(*)
             )
@@ -943,17 +983,20 @@ export class InterviewsService {
     const isPublicInterview = data.is_public;
 
     const totalQuestions = data?.interview_responses?.length || 0;
-    // Answered questions are those that have interview_responses.rating_score AND at least one response role
-    // If the interview is public (single role), then just need rating_score
-    // TODO: review
+    // Answered questions are those that have:
+    // - rating_score set OR is_unknown marked as true
+    // - For private interviews, also need at least one response role
+    // If the interview is public (single role), then just need rating_score or is_unknown
     const answeredQuestions = data?.interview_responses
-      ? data.interview_responses.filter((response) =>
-          isPublicInterview
-            ? response.rating_score !== null
-            : response.rating_score !== null &&
-              response.response_roles &&
-              response.response_roles.length > 0
-        ).length
+      ? data.interview_responses.filter((response) => {
+          const hasAnswer =
+            response.rating_score !== null || response.is_unknown === true;
+          return isPublicInterview
+            ? hasAnswer
+            : hasAnswer &&
+                response.response_roles &&
+                response.response_roles.length > 0;
+        }).length
       : 0;
 
     const progressPercentage =
@@ -998,6 +1041,7 @@ export class InterviewsService {
         is_applicable: boolean;
         has_rating_score: boolean;
         has_roles: boolean;
+        is_unknown: boolean;
       }
     > = {};
     if (data?.interview_responses) {
@@ -1007,6 +1051,7 @@ export class InterviewsService {
           rating_score: response.rating_score,
           is_applicable: response.is_applicable,
           has_rating_score: response.rating_score !== null,
+          is_unknown: response.is_unknown,
           has_roles: isPublicInterview
             ? true
             : response.response_roles && response.response_roles.length > 0, // Default true for public interviews as the role is associated at interview creation. Also interviewees do not have access to the roles table.
@@ -1032,13 +1077,18 @@ export class InterviewsService {
     // First, get the interview to determine company context
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
-      .select("id, company_id")
+      .select("id, company_id, is_public, enabled")
       .eq("id", interviewId)
       .eq("is_deleted", false)
       .maybeSingle();
 
     if (interviewError) throw interviewError;
     if (!interview) return null;
+
+    // Validate that public interviews are enabled
+    if (interview.is_public && !interview.enabled) {
+      throw new NotFoundError("Interview not found");
+    }
 
     // Fetch the question details along with any existing response
     const { data: interviewQuestion, error } = await this.supabase
@@ -1230,6 +1280,7 @@ export class InterviewsService {
         `
         id,
         rating_score,
+        is_unknown,
         response_roles:interview_response_roles(
           id,
           role:roles(
@@ -1252,7 +1303,8 @@ export class InterviewsService {
       breadcrumbs: {
         section: `${interviewQuestion.step.section.order_index}. ${interviewQuestion.step.section.title}`,
         step: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}. ${interviewQuestion.step.title}`,
-        question: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index}. ${interviewQuestion.title}`,
+        question: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index + 1}. ${interviewQuestion.title}`,
+        // TODO: review why question index is off by one here
       },
       options: {
         applicable_roles: groupedRoles,
@@ -1272,7 +1324,8 @@ export class InterviewsService {
   async updateInterviewResponse(
     responseId: number,
     rating_score?: number | null,
-    role_ids?: number[] | null
+    role_ids?: number[] | null,
+    is_unknown?: boolean | null
   ) {
     // First, verify the response exists and get current data
     const { data: existingResponse, error: fetchError } = await this.supabase
@@ -1285,11 +1338,31 @@ export class InterviewsService {
       throw new NotFoundError("Interview response not found");
     }
 
-    // Update the response with new rating_score if provided
+    // Build update object for rating_score and is_unknown
+    // These fields are mutually exclusive - if one is set, clear the other
+    const updates: { rating_score?: number | null; is_unknown?: boolean } = {};
+
     if (rating_score !== undefined) {
+      updates.rating_score = rating_score;
+      // Clear is_unknown when setting a rating
+      if (rating_score !== null) {
+        updates.is_unknown = false;
+      }
+    }
+
+    if (is_unknown !== undefined) {
+      updates.is_unknown = is_unknown ?? false;
+      // Clear rating_score when marking as unknown
+      if (is_unknown === true) {
+        updates.rating_score = null;
+      }
+    }
+
+    // Update the response if there are changes to apply
+    if (Object.keys(updates).length > 0) {
       const { error: updateError } = await this.supabase
         .from("interview_responses")
-        .update({ rating_score })
+        .update(updates)
         .eq("id", responseId);
 
       if (updateError) throw updateError;
@@ -1329,6 +1402,7 @@ export class InterviewsService {
         `
         id,
         rating_score,
+        is_unknown,
         response_roles:interview_response_roles(
           id,
           role:roles(id)
@@ -2013,7 +2087,7 @@ export class InterviewsService {
     // Validate interview is enabled
     if (!interview.enabled) {
       console.log("Interview is not enabled");
-      throw new Error("This interview has been disabled");
+      throw new NotFoundError("This interview has been disabled");
     }
 
     // Validate access code
@@ -2055,6 +2129,76 @@ export class InterviewsService {
       `Generated public interview token for interviewId=${interviewId}, email=${email}`
     );
     return token;
+  }
+
+  /**
+   * Placeholder for completing an interview
+   *
+   * For private interviews, sets the status to 'completed' and completed_at timestamp
+   * For public interviews, sets the status to 'completed', completed_at timestamp
+   * and disables further access (enabled = false), and sends a summary interview emai
+   * to the interview contact email address.
+   */
+  async completeInterview(
+    interviewId: number,
+    emailService: EmailService,
+    feedback?: object
+  ) {
+    if (!this.supabaseAdmin) {
+      throw new InternalServerError("Unable to complete interview");
+    }
+    const { data: interview, error: interviewError } = await this.supabaseAdmin
+      .from("interviews")
+      .select("id, is_public")
+      .eq("id", interviewId)
+      .eq("is_deleted", false)
+      .maybeSingle();
+
+    if (interviewError) throw interviewError;
+    if (!interview) throw new NotFoundError("Interview not found");
+
+    // Update status and completed_at timestamp
+    // Uses admin client to bypass RLS for public interviews
+    const { error: updateError } = await this.supabaseAdmin
+      .from("interviews")
+      .update({
+        status: "completed" as InterviewStatus,
+        completed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        // For public interviews, also disable further access
+        ...(interview.is_public ? { enabled: false } : {}),
+      })
+      .eq("id", interviewId);
+
+    if (updateError) throw updateError;
+
+    if (interview.is_public) {
+      // Send email
+      await emailService.sendInterviewSummary(interviewId);
+      console.log(`Public interview completed. Summary email sent.`);
+    }
+
+    // Save feedback if provided
+    if (feedback) {
+      const { error: feedbackError } = await this.supabaseAdmin
+        .from("feedback")
+        .insert({
+          message: `Feedback for interview ID ${interviewId}`,
+          page_url: "",
+          type: "post_interview_survey",
+          data: feedback as Json,
+        });
+
+      // Log but do not block completion on feedback save error
+      if (feedbackError) {
+        console.error(
+          `Failed to save feedback for interview ID ${interviewId}:`,
+          feedbackError
+        );
+      }
+    }
+
+    return;
   }
 }
 

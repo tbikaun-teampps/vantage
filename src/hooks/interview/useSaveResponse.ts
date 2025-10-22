@@ -5,9 +5,10 @@ import { toast } from "sonner";
 interface SaveResponseData {
   interviewId: number;
   responseId: number;
-  // questionId: number;
+  questionId: number;
   rating_score?: number | null;
   role_ids?: number[] | null;
+  is_unknown?: boolean | null;
 }
 
 interface InterviewProgress {
@@ -27,10 +28,12 @@ export function useSaveInterviewResponse() {
       responseId,
       rating_score,
       role_ids,
+      is_unknown,
     }: SaveResponseData) => {
       return updateInterviewResponse(responseId, {
         rating_score,
         role_ids,
+        is_unknown,
       });
     },
     onSuccess: async (data, variables) => {

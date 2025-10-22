@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { SubscriptionModal } from "./subscription-modal";
+import { SubscriptionModal } from "./account/subscription-modal";
 
 export const DemoBanner = () => {
   const { data: profile } = useProfile();

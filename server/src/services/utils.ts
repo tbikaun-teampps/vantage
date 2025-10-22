@@ -23,7 +23,11 @@ export function calculateRatingValueRange(
     max: Math.max(...values),
   };
 }
-
+/**
+ * Calculates the completion rate of interview responses.
+ * @param responses
+ * @returns Completion rate as a number between 0 and 1.
+ */
 export function calculateCompletionRate(
   responses: InterviewResponse[]
 ): number {
@@ -31,9 +35,10 @@ export function calculateCompletionRate(
     return 0;
   }
 
-  // Only consider applicable responses
+  // Only consider applicable responses and those that are not marked as unknown
   const applicableResponses = responses.filter(
-    (response) => response.is_applicable !== false
+    (response) =>
+      response.is_applicable !== false && response.is_unknown !== true
   );
 
   if (applicableResponses.length === 0) {
@@ -47,7 +52,11 @@ export function calculateCompletionRate(
 
   return completedResponses.length / applicableResponses.length;
 }
-
+/**
+ * Calculates the average score from interview responses.
+ * @param responses 
+ * @returns Average score as a number.
+ */
 export function calculateAverageScore(responses: InterviewResponse[]): number {
   if (!responses || responses.length === 0) {
     return 0;

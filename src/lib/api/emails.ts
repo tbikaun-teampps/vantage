@@ -61,3 +61,26 @@ export async function sendTeamMemberInvite(
     };
   }
 }
+
+export async function sendInterviewSummary(
+  interviewId: number
+): Promise<EmailResponse> {
+  try {
+    const response = await apiClient.post<EmailResponse>(
+      "/emails/send-interview-summary",
+      null,
+      { params: { interviewId } }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Email service error:", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to send interview summary email",
+    };
+  }
+}

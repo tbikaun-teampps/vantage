@@ -24,8 +24,8 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
 import { useProfile } from "@/hooks/useProfile";
 import { useTheme } from "@/hooks/use-theme";
-import { SubscriptionModal } from "./subscription-modal";
-import { AccountModal } from "./account-modal";
+import { SubscriptionModal } from "./account/subscription-modal";
+import { AccountModal } from "./account/account-modal";
 
 export function SelectCompanyUserMenu() {
   const { user, signOut } = useAuthStore();

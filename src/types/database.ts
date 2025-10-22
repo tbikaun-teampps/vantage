@@ -86,6 +86,7 @@ export type Database = {
           deleted_at: string | null;
           description: string | null;
           id: number;
+          interview_overview: string | null;
           is_deleted: boolean;
           name: string;
           questionnaire_id: number | null;
@@ -107,6 +108,7 @@ export type Database = {
           deleted_at?: string | null;
           description?: string | null;
           id?: number;
+          interview_overview?: string | null;
           is_deleted?: boolean;
           name: string;
           questionnaire_id?: number | null;
@@ -128,6 +130,7 @@ export type Database = {
           deleted_at?: string | null;
           description?: string | null;
           id?: number;
+          interview_overview?: string | null;
           is_deleted?: boolean;
           name?: string;
           questionnaire_id?: number | null;
@@ -773,6 +776,7 @@ export type Database = {
         Row: {
           created_at: string;
           created_by: string;
+          data: Json | null;
           id: number;
           message: string;
           page_url: string;
@@ -781,6 +785,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           created_by?: string;
+          data?: Json | null;
           id?: number;
           message: string;
           page_url: string;
@@ -789,6 +794,7 @@ export type Database = {
         Update: {
           created_at?: string;
           created_by?: string;
+          data?: Json | null;
           id?: number;
           message?: string;
           page_url?: string;
@@ -1086,6 +1092,7 @@ export type Database = {
           interview_id: number;
           is_applicable: boolean;
           is_deleted: boolean;
+          is_unknown: boolean;
           questionnaire_question_id: number;
           rating_score: number | null;
           updated_at: string;
@@ -1101,6 +1108,7 @@ export type Database = {
           interview_id: number;
           is_applicable?: boolean;
           is_deleted?: boolean;
+          is_unknown?: boolean;
           questionnaire_question_id: number;
           rating_score?: number | null;
           updated_at?: string;
@@ -1116,6 +1124,7 @@ export type Database = {
           interview_id?: number;
           is_applicable?: boolean;
           is_deleted?: boolean;
+          is_unknown?: boolean;
           questionnaire_question_id?: number;
           rating_score?: number | null;
           updated_at?: string;
@@ -1206,10 +1215,11 @@ export type Database = {
           assessment_id: number | null;
           assigned_role_id: number | null;
           company_id: string;
+          completed_at: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
-          due_date: string | null;
+          due_at: string | null;
           enabled: boolean;
           id: number;
           interview_contact_id: number | null;
@@ -1230,10 +1240,11 @@ export type Database = {
           assessment_id?: number | null;
           assigned_role_id?: number | null;
           company_id: string;
+          completed_at?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
-          due_date?: string | null;
+          due_at?: string | null;
           enabled?: boolean;
           id?: number;
           interview_contact_id?: number | null;
@@ -1254,10 +1265,11 @@ export type Database = {
           assessment_id?: number | null;
           assigned_role_id?: number | null;
           company_id?: string;
+          completed_at?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
-          due_date?: string | null;
+          due_at?: string | null;
           enabled?: boolean;
           id?: number;
           interview_contact_id?: number | null;
@@ -3017,7 +3029,12 @@ export type Database = {
         | "archived";
       assessment_types: "onsite" | "desktop";
       company_role: "owner" | "admin" | "viewer" | "interviewee";
-      feedback_types: "bug" | "feature" | "general" | "suggestion";
+      feedback_types:
+        | "bug"
+        | "feature"
+        | "general"
+        | "suggestion"
+        | "post_interview_survey";
       interview_statuses: "pending" | "in_progress" | "completed" | "cancelled";
       measurement_alignment_levels: "question" | "step" | "section";
       measurement_providers: "SAP" | "other";
@@ -3188,7 +3205,13 @@ export const Constants = {
       ],
       assessment_types: ["onsite", "desktop"],
       company_role: ["owner", "admin", "viewer", "interviewee"],
-      feedback_types: ["bug", "feature", "general", "suggestion"],
+      feedback_types: [
+        "bug",
+        "feature",
+        "general",
+        "suggestion",
+        "post_interview_survey",
+      ],
       interview_statuses: ["pending", "in_progress", "completed", "cancelled"],
       measurement_alignment_levels: ["question", "step", "section"],
       measurement_providers: ["SAP", "other"],

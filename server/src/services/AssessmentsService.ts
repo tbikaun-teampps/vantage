@@ -168,6 +168,7 @@ export class AssessmentsService {
       is_deleted: assessmentData.is_deleted,
       deleted_at: assessmentData.deleted_at,
       location,
+      interview_overview: assessmentData.interview_overview,
     };
 
     // Get questionnaire structure only for onsite assessments

@@ -11,7 +11,7 @@ import {
 import type {
   MeasurementInstance,
   EnrichedMeasurementInstance,
-} from "@/pages/assessments/desktop/detail/types";
+} from "@/types/assessment-measurements";
 // import type { AssessmentMeasurement } from "@/pages/assessments/desktop/detail/types";
 
 // Query key factory for assessment measurements

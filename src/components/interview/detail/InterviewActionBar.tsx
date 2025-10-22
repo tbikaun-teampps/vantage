@@ -4,7 +4,7 @@ import {
   IconChevronRight,
   IconCircle,
   IconCircleCheckFilled,
-  IconFilter,
+  // IconFilter,
   IconX,
   IconDeviceFloppy,
   IconSearch,
@@ -14,8 +14,7 @@ import {
 } from "@tabler/icons-react";
 import { Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useParams, useSearchParams } from "react-router-dom";
-import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { useParams } from "react-router-dom";
 import { Button } from "../../ui/button";
 import {
   DropdownMenu,
@@ -24,160 +23,65 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../ui/select";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "../../ui/select";
 import { Badge } from "../../ui/badge";
 import { Input } from "../../ui/input";
 import { cn } from "@/lib/utils";
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState } from "react";
 import { Separator } from "../../ui/separator";
-
-interface InterviewStructure {
-  interview: {
-    id: number;
-    name: string;
-    questionnaire_id: number;
-    assessment_id: number;
-    is_public: boolean;
-  };
-  sections: Array<{
-    id: number;
-    title: string;
-    order_index: number;
-    steps: Array<{
-      id: number;
-      title: string;
-      order_index: number;
-      questions: Array<{
-        id: number;
-        title: string;
-        order_index: number;
-      }>;
-    }>;
-  }>;
-}
-
-interface InterviewProgress {
-  status: "pending" | "in_progress" | "completed";
-  total_questions: number;
-  answered_questions: number;
-  progress_percentage: number;
-  responses: Record<
-    number,
-    {
-      id: number;
-      rating_score: number | null;
-      is_applicable: boolean;
-      has_roles: boolean;
-    }
-  >;
-}
+import { useInterviewStructure } from "@/hooks/interview/useInterviewStructure";
+import { useInterviewProgress } from "@/hooks/interview/useInterviewProgress";
+import { useInterviewNavigation } from "@/hooks/interview/useInterviewNavigation";
 
 interface InterviewActionBarProps {
-  structure: InterviewStructure;
-  progress: InterviewProgress;
   isSaving: boolean;
   isDirty: boolean;
   onSave?: () => void;
   isPublic?: boolean;
+  onComplete?: () => void;
 }
 
 export function InterviewActionBar({
-  structure,
-  progress,
   isSaving,
   isDirty,
   onSave,
   isPublic = false,
+  onComplete,
 }: InterviewActionBarProps) {
   const { id: interviewId } = useParams();
-  const [searchParams] = useSearchParams();
-  const navigate = useCompanyAwareNavigate();
   const isMobile = useIsMobile();
 
-  const sections = structure.sections;
-  const responses = progress.responses;
+  // Use interview navigation hook
+  const {
+    allQuestions,
+    currentIndex,
+    totalQuestions,
+    isFirst,
+    isLast,
+    isLoading,
+    onPrevious,
+    onNext,
+    goToQuestion,
+  } = useInterviewNavigation(parseInt(interviewId!), isPublic);
 
-  // Get all questions from sections
-  const allQuestions = useMemo(() => {
-    const questions = [];
-    for (const section of sections) {
-      for (const step of section.steps) {
-        for (const question of step.questions) {
-          // Only include applicable questions
-          const response = responses[question.id];
-          if (response && response.is_applicable !== false) {
-            questions.push(question);
-          }
-        }
-      }
-    }
-    return questions;
-  }, [sections, responses]);
+  const { data: structure, isLoading: isLoadingStructure } =
+    useInterviewStructure(parseInt(interviewId!));
 
-  const isLoading = false; // No loading state needed - data passed as props
-
-  // Derive current question index from URL
-  const currentIndex = useMemo(() => {
-    const questionIdParam = searchParams.get("question");
-    if (!questionIdParam || allQuestions.length === 0) {
-      return 0;
-    }
-    const questionId = parseInt(questionIdParam, 10);
-    const questionIndex = allQuestions.findIndex((q) => q.id === questionId);
-    return questionIndex >= 0 ? questionIndex : 0;
-  }, [searchParams, allQuestions]);
-
-  const totalQuestions = allQuestions.length;
-  const isFirst = currentIndex === 0;
-  const isLast = currentIndex === totalQuestions - 1;
-
-  // Navigation functions
-  const goToQuestion = useCallback(
-    (questionId: number) => {
-      const params = new URLSearchParams(searchParams.toString());
-      const firstQuestionId = allQuestions[0]?.id;
-
-      // First question has no query param for clean URLs
-      if (questionId === firstQuestionId) {
-        params.delete("question");
-      } else {
-        params.set("question", questionId.toString());
-      }
-
-      const queryString = params.toString();
-      navigate(
-        `${isPublic ? "/external/interview" : "/assessments/onsite/interviews"}/${interviewId}${queryString ? `?${queryString}` : ""}`
-      );
-    },
-    [allQuestions, searchParams, navigate, interviewId, isPublic]
+  const { data: progress, isLoading: isLoadingProgress } = useInterviewProgress(
+    parseInt(interviewId!)
   );
 
-  const onPrevious = useCallback(() => {
-    if (currentIndex > 0) {
-      const prevQuestion = allQuestions[currentIndex - 1];
-      if (prevQuestion) {
-        goToQuestion(prevQuestion.id);
-      }
-    }
-  }, [currentIndex, allQuestions, goToQuestion]);
-
-  const onNext = useCallback(() => {
-    if (currentIndex < totalQuestions - 1) {
-      const nextQuestion = allQuestions[currentIndex + 1];
-      if (nextQuestion) {
-        goToQuestion(nextQuestion.id);
-      }
-    }
-  }, [currentIndex, totalQuestions, allQuestions, goToQuestion]);
+  const sections = structure?.sections ?? [];
+  const responses = progress?.responses ?? {};
 
   // Local UI state for filters
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  // const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -189,15 +93,15 @@ export function InterviewActionBar({
   }, []);
 
   // Get unique role names for filter
-  const availableRoles = useMemo(() => {
-    const roleNames = new Set<string>();
-    allQuestionnaireRoles.forEach((role) => {
-      if (role.shared_role?.name) {
-        roleNames.add(role.shared_role.name);
-      }
-    });
-    return Array.from(roleNames).sort();
-  }, [allQuestionnaireRoles]);
+  // const availableRoles = useMemo(() => {
+  //   const roleNames = new Set<string>();
+  //   allQuestionnaireRoles.forEach((role) => {
+  //     if (role.shared_role?.name) {
+  //       roleNames.add(role.shared_role.name);
+  //     }
+  //   });
+  //   return Array.from(roleNames).sort();
+  // }, [allQuestionnaireRoles]);
 
   // Filter sections based on selected roles and search query
   const filteredSections = useMemo(() => {
@@ -208,11 +112,11 @@ export function InterviewActionBar({
         questionResponse && questionResponse.is_applicable !== false;
 
       // Check if question matches selected roles
-      const roleMatch =
-        selectedRoles.length === 0 ||
-        allQuestionnaireRoles.some((role) =>
-          selectedRoles.includes(role.shared_role?.name)
-        );
+      // const roleMatch =
+      //   selectedRoles.length === 0 ||
+      //   allQuestionnaireRoles.some((role) =>
+      //     selectedRoles.includes(role.shared_role?.name)
+      //   );
 
       // Check if question matches search query
       const searchMatch =
@@ -222,7 +126,7 @@ export function InterviewActionBar({
           ?.toLowerCase()
           .includes(searchQuery.toLowerCase());
 
-      return isApplicable && roleMatch && searchMatch;
+      return isApplicable && searchMatch; // roleMatch
     };
 
     return sections
@@ -236,20 +140,25 @@ export function InterviewActionBar({
           .filter((step: any) => step.questions.length > 0),
       }))
       .filter((section) => section.steps.length > 0);
-  }, [sections, selectedRoles, allQuestionnaireRoles, searchQuery, responses]);
+  }, [sections, allQuestionnaireRoles, searchQuery, responses]); // selectedRoles
 
-  const clearRoleFilter = () => {
-    setSelectedRoles([]);
-  };
+  // const clearRoleFilter = () => {
+  //   setSelectedRoles([]);
+  // };
 
   const clearSearch = () => {
     setSearchQuery("");
   };
 
-  const clearAllFilters = () => {
-    setSelectedRoles([]);
-    setSearchQuery("");
-  };
+  // const clearAllFilters = () => {
+  //   setSelectedRoles([]);
+  //   setSearchQuery("");
+  // };
+
+  // Early return after all hooks are called
+  if (isLoadingStructure || !structure || isLoadingProgress || !progress) {
+    return null;
+  }
 
   // Calculate completion progress for sections and steps
   const getSectionProgress = (section: any) => {
@@ -267,7 +176,9 @@ export function InterviewActionBar({
 
         totalQuestions++;
         const isAnswered =
-          questionResponse.rating_score != null && questionResponse.has_roles;
+          (questionResponse.rating_score != null &&
+            questionResponse.has_roles) ||
+          questionResponse.is_unknown;
         if (isAnswered) answeredQuestions++;
       }
     }
@@ -289,7 +200,8 @@ export function InterviewActionBar({
 
       totalQuestions++;
       const isAnswered =
-        questionResponse.rating_score != null && questionResponse.has_roles;
+        (questionResponse.rating_score != null && questionResponse.has_roles) ||
+        questionResponse.is_unknown;
       if (isAnswered) answeredQuestions++;
     }
 
@@ -441,7 +353,7 @@ export function InterviewActionBar({
                   </div>
 
                   {/* Role filter */}
-                  {!isPublic && availableRoles.length > 0 && (
+                  {/* {!isPublic && availableRoles.length > 0 && (
                     <div className="space-y-2">
                       <Select
                         value={
@@ -499,7 +411,7 @@ export function InterviewActionBar({
                         </div>
                       )}
                     </div>
-                  )}
+                  )} */}
                 </div>
                 <div className="overflow-y-auto max-h-80 scroll-pt-10">
                   {filteredSections.map((section, sectionIndex) => {
@@ -554,9 +466,10 @@ export function InterviewActionBar({
                                 const questionResponse =
                                   responses[stepQuestion.id];
                                 const isAnswered =
-                                  questionResponse &&
-                                  questionResponse.rating_score != null &&
-                                  questionResponse.has_roles;
+                                  (questionResponse &&
+                                    questionResponse.rating_score != null &&
+                                    questionResponse.has_roles) ||
+                                  questionResponse.is_unknown;
                                 const currentQuestion =
                                   allQuestions[currentIndex];
                                 const isCurrent =
@@ -601,8 +514,14 @@ export function InterviewActionBar({
             </DropdownMenu>
 
             <Button
-              onClick={onNext}
-              disabled={isLast || isLoading}
+              onClick={() => {
+                if (isLast && onComplete) {
+                  onComplete();
+                } else {
+                  onNext();
+                }
+              }}
+              disabled={(isLast && !onComplete) || isLoading}
               className={`h-10 ${isMobile ? "w-8 p-0" : "w-10 p-0"}`}
             >
               <IconChevronRight

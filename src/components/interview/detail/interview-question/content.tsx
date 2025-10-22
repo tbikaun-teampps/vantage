@@ -1,5 +1,5 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { IconInfoCircle, IconQuestionMark } from "@tabler/icons-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface InterviewQuestionContentProps {
   question: {
@@ -11,32 +11,35 @@ interface InterviewQuestionContentProps {
 export function InterviewQuestionContent({
   question,
 }: InterviewQuestionContentProps) {
+  const isMobile = useIsMobile();
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-tour="interview-question">
       {question.context ? (
         // Traditional layout when context exists
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className={cn("flex flex-col", isMobile ? "px-2" : "")}>
           {/* Question Text */}
-          <Alert>
-            <IconQuestionMark />
-            <AlertTitle>Question</AlertTitle>
-            <AlertDescription>
-              <div className="text-foreground whitespace-pre-line">
-                {question.question_text}
-              </div>
-            </AlertDescription>
-          </Alert>
+          <div className="text-left">
+            <h2
+              className={cn(
+                "font-bold text-foreground leading-relaxed whitespace-pre-line",
+                isMobile ? "text-sm" : "text-xl"
+              )}
+            >
+              {question.question_text}
+            </h2>
+          </div>
 
           {/* Context */}
-          <Alert className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/30 dark:border-blue-800/30">
-            <IconInfoCircle className="text-blue-500" />
-            <AlertTitle>Context</AlertTitle>
-            <AlertDescription>
-              <div className="text-foreground whitespace-pre-line">
-                {question.context}
-              </div>
-            </AlertDescription>
-          </Alert>
+          <div className="text-left">
+            <p
+              className={cn(
+                "text-muted-foreground whitespace-pre-line mt-2",
+                isMobile ? "text-xs" : "text-sm"
+              )}
+            >
+              {question.context}
+            </p>
+          </div>
         </div>
       ) : (
         // Typeform-style centered layout when no context

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { AccessCodeForm } from "@/components/public/AccessCodeForm";
-import InterviewDetailPage from "@/pages/assessments/onsite/interviews/detail/InterviewDetailPage";
-import { apiClient } from "@/lib/api/client";
+import {InterviewDetailPage} from "@/pages/interview/InterviewDetailPage";
+import { authApi } from "@/lib/api/auth";
 import { toast } from "sonner";
 import { UnauthorizedPage } from "@/pages/UnauthorizedPage";
 import { ExternalInterviewLayout } from "@/layouts/ExternalInterviewLayout";
@@ -35,13 +35,11 @@ export function ExternalInterviewPage() {
 
     try {
       // Call the auth endpoint to get a token
-      const response = await apiClient.post(`/auth/external/interview-token`, {
-        interviewId: Number(id),
-        email: emailAddress,
-        accessCode,
-      });
-
-      const { token } = response.data.data;
+      const { token } = await authApi.getExternalInterviewToken(
+        Number(id),
+        emailAddress,
+        accessCode
+      );
 
       // Store auth in the public interview store
       setAuth(token, id, emailAddress);
@@ -49,13 +47,8 @@ export function ExternalInterviewPage() {
       toast.success("Access granted! Loading your interview...");
     } catch (error) {
       const errorMessage =
-        (error as { response?: { status?: number } }).response?.status ===
-          401 ||
-        (error as { response?: { status?: number } }).response?.status === 403
-          ? "Invalid access code or email address"
-          : error instanceof Error
-            ? error.message
-            : "Failed to validate access";
+        (error as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error ?? "Failed to validate access";
 
       setValidationError(errorMessage);
       toast.error(errorMessage);

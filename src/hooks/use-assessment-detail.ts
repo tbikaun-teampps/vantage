@@ -64,6 +64,17 @@ export function useAssessmentDetail(assessmentId: number) {
     [assessment, updateAssessment]
   );
 
+  const handleInterviewOverviewChange = useCallback(
+    async (newOverview: string) => {
+      if (!assessment) return;
+
+      await updateAssessment(assessment.id, {
+        interview_overview: newOverview.trim() || undefined,
+      });
+    },
+    [assessment, updateAssessment]
+  );
+
   const handleDelete = useCallback(async () => {
     if (!assessment) return;
 
@@ -108,6 +119,7 @@ export function useAssessmentDetail(assessmentId: number) {
     handleStatusChange,
     handleNameChange,
     handleDescriptionChange,
+    handleInterviewOverviewChange,
     setShowDeleteDialog,
     handleDelete,
   };

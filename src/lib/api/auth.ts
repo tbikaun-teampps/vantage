@@ -71,6 +71,26 @@ export const authApi = {
   async resetPassword(email: string): Promise<void> {
     await apiClient.post("/auth/reset-password", { email });
   },
+
+  /**
+   * Get external interview access token
+   * Validates access code and email, returns JWT for public interview access
+   */
+  async getExternalInterviewToken(
+    interviewId: number,
+    email: string,
+    accessCode: string
+  ): Promise<{ token: string }> {
+    const response = await apiClient.post<{
+      success: boolean;
+      data: { token: string };
+    }>("/auth/external/interview-token", {
+      interviewId,
+      email,
+      accessCode,
+    });
+    return response.data.data;
+  },
 };
 
 /**

@@ -30,8 +30,8 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useProfile } from "@/hooks/useProfile";
 import { useTheme } from "@/hooks/use-theme";
 import showDisabledToast from "@/components/disabled-toast";
-import { SubscriptionModal } from "@/components/subscription-modal";
-import { AccountModal } from "@/components/account-modal";
+import { SubscriptionModal } from "@/components/account/subscription-modal";
+import { AccountModal } from "@/components/account/account-modal";
 import { useState } from "react";
 
 export function NavUser() {

@@ -1,4 +1,4 @@
-import type { WidgetType } from "@/pages/dashboard/components/widgets/types";
+import type { WidgetType } from "@/components/dashboard/widgets/types";
 import { useCompanyFromUrl } from "../useCompanyFromUrl";
 import { useQuery } from "@tanstack/react-query";
 import { getMetricData, getActivityData, getActionsData, getTableData } from "@/lib/api/widgets";

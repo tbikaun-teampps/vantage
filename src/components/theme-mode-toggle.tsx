@@ -6,8 +6,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function ThemeModeToggle() {
   const { setTheme } = useTheme();
@@ -33,5 +38,51 @@ export function ThemeModeToggle() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+export function ThemeModeTabSelector() {
+  const { theme, setTheme } = useTheme();
+
+  return (
+    <Tabs
+      value={theme}
+      onValueChange={(value) => setTheme(value as "light" | "dark" | "system")}
+    >
+      <TabsList className="w-full">
+        <TabsTrigger value="light" className="flex-1">
+          Light
+        </TabsTrigger>
+        <TabsTrigger value="dark" className="flex-1">
+          Dark
+        </TabsTrigger>
+        <TabsTrigger value="system" className="flex-1">
+          System
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
+  );
+}
+
+export function ThemeModeDropdownMenuItem({label}: {label?: string}) {
+  const { setTheme } = useTheme();
+
+  return (
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger>{label || "Theme"}</DropdownMenuSubTrigger>
+      <DropdownMenuPortal>
+        <DropdownMenuSubContent>
+          <DropdownMenuItem onClick={() => setTheme("light")}>
+            Light
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme("dark")}>
+            Dark
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme("system")}>
+            System
+          </DropdownMenuItem>
+        </DropdownMenuSubContent>
+      </DropdownMenuPortal>
+    </DropdownMenuSub>
   );
 }
