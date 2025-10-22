@@ -268,9 +268,9 @@ export class InterviewsService {
       // Create interview with the contact's role
       const interviewData: CreateInterviewData = {
         assessment_id,
-        interviewer_id: null, // Public interviews have no interviewer
+        interviewer_id: null, // Individual interviews have no interviewer
         name,
-        is_public: true,
+        is_individual: true,
         enabled: true,
         access_code: accessCode,
         interview_contact_id: contactId,
@@ -655,7 +655,7 @@ export class InterviewsService {
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
       .select(
-        "id,questionnaire_id, name, notes, status, is_public, enabled, assessment_id"
+        "id,questionnaire_id, name, notes, status, is_individual, enabled, assessment_id"
       )
       .eq("id", interviewId)
       .eq("is_deleted", false)
@@ -664,8 +664,8 @@ export class InterviewsService {
     if (interviewError) throw interviewError;
     if (!interview) return null;
 
-    // Validate that public interviews are enabled
-    if (interview.is_public && !interview.enabled) {
+    // Validate that individual interviews are enabled
+    if (interview.is_individual && !interview.enabled) {
       throw new NotFoundError("Interview not found");
     }
     if (!interview.questionnaire_id) {
@@ -756,7 +756,7 @@ export class InterviewsService {
         name,
         status,
         notes,
-        is_public,
+        is_individual,
         enabled,
         due_at,
         assessment:assessments(id, name),
@@ -783,8 +783,8 @@ export class InterviewsService {
       );
     }
 
-    // Validate that public interviews are enabled
-    if (interview.is_public && !interview.enabled) {
+    // Validate that individual interviews are enabled
+    if (interview.is_individual && !interview.enabled) {
       throw new NotFoundError("Interview not found");
     }
 
@@ -804,15 +804,15 @@ export class InterviewsService {
       status: interview.status,
       notes: interview.notes,
       overview: assessment?.interview_overview ?? null,
-      is_public: interview.is_public,
+      is_individual: interview.is_individual,
       due_at: interview.due_at,
-      // If public, hide interviewer details
-      interviewer: interview.is_public ? null : interview.interviewer,
+      // If individual interview, hide interviewer details
+      interviewer: interview.is_individual ? null : interview.interviewer,
       // Always include interviewee
       interviewee: interview.interviewee,
-      // If public and assessment exists, hide assessment id
+      // If individual interview and assessment exists, hide assessment id
       assessment:
-        interview.is_public && interview.assessment
+        interview.is_individual && interview.assessment
           ? { id: null, name: interview.assessment.name }
           : interview.assessment,
       // Map interview_roles to expected structure
@@ -862,7 +862,9 @@ export class InterviewsService {
     // Get interview basic info
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
-      .select("id, questionnaire_id, name, assessment_id, is_public, enabled")
+      .select(
+        "id, questionnaire_id, name, assessment_id, is_individual, enabled"
+      )
       .eq("id", interviewId)
       .eq("is_deleted", false)
       .maybeSingle();
@@ -870,8 +872,8 @@ export class InterviewsService {
     if (interviewError) throw interviewError;
     if (!interview || !interview.questionnaire_id) return null;
 
-    // Validate that public interviews are enabled
-    if (interview.is_public && !interview.enabled) {
+    // Validate that individual interviews are enabled
+    if (interview.is_individual && !interview.enabled) {
       throw new NotFoundError("Interview not found");
     }
 
@@ -944,7 +946,7 @@ export class InterviewsService {
         name: interview.name,
         questionnaire_id: interview.questionnaire_id,
         assessment_id: interview.assessment_id,
-        is_public: interview.is_public,
+        is_individual: interview.is_individual,
       },
       sections,
     };
@@ -980,18 +982,18 @@ export class InterviewsService {
 
     if (!data) throw new NotFoundError("Interview not found");
 
-    const isPublicInterview = data.is_public;
+    const isIndividualInterview = data.is_individual;
 
     const totalQuestions = data?.interview_responses?.length || 0;
     // Answered questions are those that have:
     // - rating_score set OR is_unknown marked as true
-    // - For private interviews, also need at least one response role
-    // If the interview is public (single role), then just need rating_score or is_unknown
+    // - For individual interviews, also need at least one response role
+    // If the interview is individual (single role), then just need rating_score or is_unknown
     const answeredQuestions = data?.interview_responses
       ? data.interview_responses.filter((response) => {
           const hasAnswer =
             response.rating_score !== null || response.is_unknown === true;
-          return isPublicInterview
+          return isIndividualInterview
             ? hasAnswer
             : hasAnswer &&
                 response.response_roles &&
@@ -1052,9 +1054,9 @@ export class InterviewsService {
           is_applicable: response.is_applicable,
           has_rating_score: response.rating_score !== null,
           is_unknown: response.is_unknown,
-          has_roles: isPublicInterview
+          has_roles: isIndividualInterview
             ? true
-            : response.response_roles && response.response_roles.length > 0, // Default true for public interviews as the role is associated at interview creation. Also interviewees do not have access to the roles table.
+            : response.response_roles && response.response_roles.length > 0, // Default true for individual interviews as the role is associated at interview creation. Also interviewees do not have access to the roles table.
           // TODO: review
         };
       }
@@ -1077,7 +1079,7 @@ export class InterviewsService {
     // First, get the interview to determine company context
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
-      .select("id, company_id, is_public, enabled")
+      .select("id, company_id, is_individual, enabled")
       .eq("id", interviewId)
       .eq("is_deleted", false)
       .maybeSingle();
@@ -1085,8 +1087,8 @@ export class InterviewsService {
     if (interviewError) throw interviewError;
     if (!interview) return null;
 
-    // Validate that public interviews are enabled
-    if (interview.is_public && !interview.enabled) {
+    // Validate that individual interviews are enabled
+    if (interview.is_individual && !interview.enabled) {
       throw new NotFoundError("Interview not found");
     }
 
@@ -2135,8 +2137,8 @@ export class InterviewsService {
    * Placeholder for completing an interview
    *
    * For private interviews, sets the status to 'completed' and completed_at timestamp
-   * For public interviews, sets the status to 'completed', completed_at timestamp
-   * and disables further access (enabled = false), and sends a summary interview emai
+   * For individual interviews, sets the status to 'completed', completed_at timestamp
+   * and disables further access (enabled = false), and sends a summary interview email
    * to the interview contact email address.
    */
   async completeInterview(
@@ -2149,7 +2151,7 @@ export class InterviewsService {
     }
     const { data: interview, error: interviewError } = await this.supabaseAdmin
       .from("interviews")
-      .select("id, is_public")
+      .select("id, is_individual")
       .eq("id", interviewId)
       .eq("is_deleted", false)
       .maybeSingle();
@@ -2158,21 +2160,21 @@ export class InterviewsService {
     if (!interview) throw new NotFoundError("Interview not found");
 
     // Update status and completed_at timestamp
-    // Uses admin client to bypass RLS for public interviews
+    // Uses admin client to bypass RLS for individual interviews
     const { error: updateError } = await this.supabaseAdmin
       .from("interviews")
       .update({
         status: "completed" as InterviewStatus,
         completed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        // For public interviews, also disable further access
-        ...(interview.is_public ? { enabled: false } : {}),
+        // For individual interviews, also disable further access
+        ...(interview.is_individual ? { enabled: false } : {}),
       })
       .eq("id", interviewId);
 
     if (updateError) throw updateError;
 
-    if (interview.is_public) {
+    if (interview.is_individual) {
       // Send email
       await emailService.sendInterviewSummary(interviewId);
       console.log(`Public interview completed. Summary email sent.`);
