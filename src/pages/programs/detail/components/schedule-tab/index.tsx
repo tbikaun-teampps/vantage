@@ -1,5 +1,0 @@
-import { InterviewSchedule } from "@/pages/programs/detail/components/schedule-tab/interview-schedule";
-
-export function ScheduleTab({ programId }: { programId: number }) {
-  return <InterviewSchedule programId={programId} />;
-}

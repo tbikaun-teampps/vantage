@@ -48,7 +48,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { UserPlus, Trash2, Edit } from "lucide-react";
 import { Loader } from "../loader";
-import { DashboardPage } from "../dashboard-page";
+import { DashboardPage } from "../dashboard";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 const roleLabels: Record<CompanyRole, string> = {

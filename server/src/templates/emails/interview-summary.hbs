@@ -1,0 +1,87 @@
+{{> header title=title subtitle=subtitle gradient=gradient company_icon_url=company_icon_url}}
+
+<div class="content">
+  <p>Hello{{#if interviewee_name}} {{interviewee_name}}{{/if}},</p>
+
+  {{#if is_completed}}
+  <p>Thank you for completing <strong>{{interview_name}}</strong> as part of <strong>{{assessment_name}}</strong>.</p>
+
+  <p>Below is a summary of your responses:</p>
+  {{else}}
+  <p>Here is a summary of your current responses for <strong>{{interview_name}}</strong> as part of <strong>{{assessment_name}}</strong>.</p>
+
+  <p>You can continue working on your interview anytime. Below is what you've completed so far:</p>
+  {{/if}}
+
+  <div class="details">
+    <h2 style="margin-top: 0; color: #374151; font-size: 18px; margin-bottom: 20px;">Your Responses</h2>
+
+    {{#each responses}}
+    {{!-- Section --}}
+    <div style="margin-bottom: 32px;">
+      <h3 style="color: #1f2937; font-size: 16px; font-weight: 700; margin: 0 0 16px 0; border-bottom: 2px solid #8b5cf6; padding-bottom: 8px;">{{section_title}}</h3>
+
+      {{#each steps}}
+      {{!-- Step --}}
+      <div style="margin-bottom: 24px; margin-left: 12px;">
+        <h4 style="color: #374151; font-size: 14px; font-weight: 600; margin: 0 0 12px 0;">{{step_title}}</h4>
+
+        {{#each questions}}
+        {{!-- Question --}}
+        <div style="margin-bottom: 16px; margin-left: 12px; padding: 12px; background: #f9fafb; border-left: 3px solid #8b5cf6; border-radius: 4px;">
+          <p style="font-weight: 600; color: #1f2937; margin: 0 0 4px 0; font-size: 13px;">{{question_title}}</p>
+          {{#if question_text}}
+          <p style="color: #6b7280; margin: 0 0 8px 0; font-size: 12px; white-space: pre-line;">{{question_text}}</p>
+          {{/if}}
+
+          {{#if answer.rating_score}}
+          <p style="margin: 8px 0 4px 0;">
+            <span style="color: #6b7280; font-size: 12px;">Rating:</span>
+            <strong style="color: #8b5cf6; font-size: 13px;">{{answer.rating_score}}</strong>
+          </p>
+          {{else}}{{#if answer.is_unknown}}
+          <p style="margin: 8px 0 4px 0;">
+            <span style="color: #6b7280; font-size: 12px;">Rating:</span>
+            <strong style="color: #8b5cf6; font-size: 13px;">Marked as unknown (I don't know/I'm not sure)</strong>
+          </p>
+          {{else}}
+          <p style="margin: 8px 0 4px 0;">
+            <span style="color: #9ca3af; font-size: 12px; font-style: italic;">No response yet</span>
+          </p>
+          {{/if}}{{/if}}
+
+          {{#if answer.comments}}
+          <p style="margin: 8px 0 4px 0;">
+            <span style="color: #6b7280; font-size: 12px;">Comments:</span>
+            <strong style="color: #374151; font-size: 13px; font-style: italic;">{{answer.comments}}</strong>
+          </p>
+          {{/if}}
+
+          {{!-- {{#if answer.uploaded_evidence}}
+          <div style="margin-top: 8px;">
+            <p style="color: #6b7280; margin-bottom: 4px; font-size: 12px;">Uploaded Evidence:</p>
+            <ul style="margin: 4px 0; padding-left: 20px;">
+              {{#each answer.uploaded_evidence}}
+              <li style="margin: 4px 0;">
+                <a href="{{this}}" style="color: #8b5cf6; text-decoration: none; font-size: 12px;">View attachment {{@index}}</a>
+              </li>
+              {{/each}}
+            </ul>
+          </div>
+          {{/if}} --}}
+        </div>
+        {{/each}}
+      </div>
+      {{/each}}
+    </div>
+    {{/each}}
+  </div>
+
+  {{#if is_completed}}
+  <p>Thank you for your participation.</p>
+  {{else}}
+  <p>We look forward to seeing your completed responses.</p>
+  {{/if}}
+</div>
+
+{{> footer}}

@@ -3,7 +3,7 @@ import { useCurrentCompany } from "@/hooks/useCompany";
 import { useEffect, useRef } from "react";
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database";
 import type { Layout } from "react-grid-layout";
-import type { WidgetType } from "@/pages/dashboard/components/widgets/types";
+import type { WidgetType } from "@/components/dashboard/widgets/types";
 import * as dashboardsApi from "@/lib/api/dashboards";
 
 // Database types

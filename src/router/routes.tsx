@@ -57,7 +57,6 @@ export const routes = {
 
   // Global settings/account routes (no company context)
   settings: "/settings",
-  settingsCompanyNew: "/settings/company/new",
   account: "/account",
   accountSubscription: "/account/subscription",
 

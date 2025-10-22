@@ -174,6 +174,55 @@ export async function emailsRoutes(fastify: FastifyInstance) {
     }
   );
 
+  // Method for sending an interviewee a digest/summary of their interview responses
+  fastify.post(
+    "/send-interview-summary",
+    {
+      schema: {
+        description:
+          "Send an interviewee a digest/summary of their interview responses",
+        querystring: {
+          type: "object",
+          required: ["interviewId"],
+          properties: {
+            interviewId: { type: "number" },
+          },
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              message: { type: "string" },
+              messageId: { type: "string" },
+            },
+          },
+          400: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              message: { type: "string" },
+            },
+          },
+          500: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { interviewId } = request.query as { interviewId: number };
+
+      const result = await emailService.sendInterviewSummary(interviewId);
+
+      return reply.status(result.success ? 200 : 400).send(result);
+    }
+  );
+
   // Send test email
   fastify.post(
     "/send-test-email",

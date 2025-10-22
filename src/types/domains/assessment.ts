@@ -308,7 +308,7 @@ export interface CreateResponseActionData {
   title: string
   description?: string
   priority: ActionPriority
-  due_date?: string
+  due_at?: string
   assigned_to?: string
 }
 
@@ -316,7 +316,7 @@ export interface UpdateResponseActionData {
   title?: string
   description?: string
   priority?: ActionPriority
-  due_date?: string
+  due_at?: string
   assigned_to?: string
   status?: string
 }

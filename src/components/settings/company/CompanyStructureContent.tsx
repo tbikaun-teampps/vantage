@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useCompanyTree } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
-import { DashboardPage } from "@/components/dashboard-page";
+import { DashboardPage } from "@/components/dashboard";
 import {
   CompanySettingsTree,
   HeaderActions,

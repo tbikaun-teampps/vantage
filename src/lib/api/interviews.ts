@@ -1,3 +1,4 @@
+import type { InterviewFeedback } from "@/components/interview/detail/InterviewCompletionDialog";
 import { apiClient } from "./client";
 import type {
   Interview,
@@ -259,7 +260,11 @@ export async function updateInterviewResponseComments(
 
 export async function updateInterviewResponse(
   responseId: number,
-  data: { rating_score?: number | null; role_ids?: number[] | null }
+  data: {
+    rating_score?: number | null;
+    role_ids?: number[] | null;
+    is_unknown?: boolean | null;
+  }
 ): Promise<any> {
   const response = await apiClient.put<ApiResponse<any>>(
     `/interviews/responses/${responseId}`,
@@ -362,7 +367,9 @@ export async function validateAssessmentRolesForQuestionnaire(
   roleIds: number[]
 ): Promise<{ isValid: boolean; hasUniversalQuestions: boolean }> {
   const response = await apiClient.post<
-    ApiResponse<{ isValid: { isValid: boolean; hasUniversalQuestions: boolean } }>
+    ApiResponse<{
+      isValid: { isValid: boolean; hasUniversalQuestions: boolean };
+    }>
   >("/interviews/assessment-roles/validate", {
     assessmentId,
     roleIds,
@@ -386,7 +393,9 @@ export async function validateProgramQuestionnaireRoles(
   roleIds: number[]
 ): Promise<{ isValid: boolean; hasUniversalQuestions: boolean }> {
   const response = await apiClient.post<
-    ApiResponse<{ isValid: { isValid: boolean; hasUniversalQuestions: boolean } }>
+    ApiResponse<{
+      isValid: { isValid: boolean; hasUniversalQuestions: boolean };
+    }>
   >(`/interviews/questionnaires/${questionnaireId}/validate-roles`, {
     roleIds,
   });
@@ -399,4 +408,23 @@ export async function validateProgramQuestionnaireRoles(
   }
 
   return response.data.data.isValid;
+}
+
+/**
+ * Mark an interview as completed. For public interviews this will send a summary of the interview to the interviewee.
+ */
+export async function completeInterview(
+  interviewId: number,
+  feedback: InterviewFeedback
+): Promise<any> {
+  const response = await apiClient.post<ApiResponse<any>>(
+    `/interviews/${interviewId}/complete`,
+    { feedback }
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to complete interview");
+  }
+
+  return response.data.data;
 }

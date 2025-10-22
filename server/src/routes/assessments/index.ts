@@ -235,6 +235,7 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
                   asset_group_id: { type: "number" },
                   created_at: { type: "string" },
                   updated_at: { type: "string" },
+                  interview_overview: { type: "string" },
                 },
               },
             },

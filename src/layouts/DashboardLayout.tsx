@@ -9,6 +9,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import { FeedbackDialogProvider } from "@/contexts/FeedbackDialogContext";
 
 export function DashboardLayout() {
   const navigate = useCompanyAwareNavigate();
@@ -48,9 +49,10 @@ export function DashboardLayout() {
   return (
     <ErrorBoundary>
       <ScreenSizeProvider>
-        <div className="relative min-h-screen">
-          <DemoBanner />
-          <SidebarProvider
+        <FeedbackDialogProvider>
+          <div className="relative min-h-screen">
+            <DemoBanner />
+            <SidebarProvider
             style={
               {
                 "--sidebar-width": "calc(var(--spacing) * 64)",
@@ -69,7 +71,8 @@ export function DashboardLayout() {
               </main>
             </SidebarInset>
           </SidebarProvider>
-        </div>
+          </div>
+        </FeedbackDialogProvider>
       </ScreenSizeProvider>
     </ErrorBoundary>
   );

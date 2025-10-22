@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,18 +20,30 @@ interface InterviewCommentsProps {
   responseId: number;
 }
 
-export function InterviewComments({
+interface InterviewCommentsContentProps {
+  disabled?: boolean;
+  responseId: number;
+  onClose?: () => void;
+  showLabel?: boolean;
+}
+
+// Extracted content component that can be used in both Dialog and Drawer
+export function InterviewCommentsContent({
   disabled = false,
   responseId,
-}: InterviewCommentsProps) {
-  const [commentsDialogOpen, setCommentsDialogOpen] = useState(false);
+  onClose,
+  showLabel = true,
+}: InterviewCommentsContentProps) {
   const [commentText, setCommentText] = useState("");
-  const isMobile = useIsMobile();
 
   const { comments, isLoading, updateComments, isUpdating } =
     useComments(responseId);
 
-  // Initialize commentText when dialog opens or comments load
+  // Initialize commentText when comments load
+  useEffect(() => {
+    setCommentText(comments);
+  }, [comments]);
+
   const currentCommentValue = commentText || comments;
   const hasUnsavedChanges = commentText !== "" && commentText !== comments;
 
@@ -45,24 +57,75 @@ export function InterviewComments({
   };
 
   const handleCancel = () => {
-    setCommentText(""); // Reset to use hook's value
+    setCommentText(comments); // Reset to hook's value
   };
 
-  const handleDialogOpenChange = (open: boolean) => {
-    setCommentsDialogOpen(open);
-    if (open) {
-      // Initialize with current comments when opening
-      setCommentText(comments);
-    } else {
-      // Reset when closing
-      setCommentText("");
-    }
-  };
+  return (
+    <div className="space-y-4">
+      <div>
+        {showLabel && (
+          <label htmlFor="comments" className="block text-sm font-medium mb-2">
+            Comments
+          </label>
+        )}
+        <Textarea
+          id="comments"
+          placeholder="Add your comments about this question response..."
+          value={currentCommentValue}
+          onChange={(e) => handleCommentChange(e.target.value)}
+          className="min-h-[200px] resize-y"
+          disabled={disabled || isLoading}
+        />
+        <div className="flex justify-between items-center mt-2">
+          <div className="text-xs text-muted-foreground">
+            {currentCommentValue.length} characters
+          </div>
+          {hasUnsavedChanges && (
+            <div className="text-xs text-amber-600">Unsaved changes</div>
+          )}
+        </div>
+      </div>
 
+      <div className="flex gap-2 justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCancel}
+          disabled={!hasUnsavedChanges || isUpdating}
+        >
+          Cancel
+        </Button>
+        <Button
+          size="sm"
+          onClick={handleSaveComments}
+          disabled={!hasUnsavedChanges || isUpdating}
+        >
+          {isUpdating ? (
+            "Saving..."
+          ) : (
+            <>
+              <IconCheck className="h-4 w-4 mr-1" />
+              Save Comments
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export function InterviewComments({
+  disabled = false,
+  responseId,
+}: InterviewCommentsProps) {
+  const [commentsDialogOpen, setCommentsDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  const { comments } = useComments(responseId);
   const hasComments = comments && comments.trim().length > 0;
 
   return (
-    <Dialog open={commentsDialogOpen} onOpenChange={handleDialogOpenChange}>
+    <Dialog open={commentsDialogOpen} onOpenChange={setCommentsDialogOpen}>
       <DialogTrigger asChild>
         <Button
           variant="outline"
@@ -87,57 +150,11 @@ export function InterviewComments({
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="comments"
-                className="block text-sm font-medium mb-2"
-              >
-                Comments
-              </label>
-              <Textarea
-                id="comments"
-                placeholder="Add your comments about this question response..."
-                value={currentCommentValue}
-                onChange={(e) => handleCommentChange(e.target.value)}
-                className="min-h-[200px] resize-y"
-                disabled={disabled || isLoading}
-              />
-              <div className="flex justify-between items-center mt-2">
-                <div className="text-xs text-muted-foreground">
-                  {currentCommentValue.length} characters
-                </div>
-                {hasUnsavedChanges && (
-                  <div className="text-xs text-amber-600">Unsaved changes</div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCancel}
-                disabled={!hasUnsavedChanges || isUpdating}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSaveComments}
-                disabled={!hasUnsavedChanges || isUpdating}
-              >
-                {isUpdating ? (
-                  "Saving..."
-                ) : (
-                  <>
-                    <IconCheck className="h-4 w-4 mr-1" />
-                    Save Comments
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+          <InterviewCommentsContent
+            responseId={responseId}
+            disabled={disabled}
+            onClose={() => setCommentsDialogOpen(false)}
+          />
         </div>
         <DialogFooter>
           <Button

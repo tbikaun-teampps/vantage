@@ -15,6 +15,7 @@ import {
   IconMail,
   IconUsers,
   IconDatabase,
+  IconHelp,
 } from "@tabler/icons-react";
 import { HexagonalBackground } from "../hexagonal-bg";
 import { ThemeModeToggle } from "../theme-mode-toggle";
@@ -69,6 +70,14 @@ export function AccessCodeForm({
   };
 
   const content = getContent();
+
+  // Generate support email mailto link with pre-filled context
+  const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || "support@teampps.com.au";
+  const mailtoLink = `mailto:${supportEmail}?subject=${encodeURIComponent(
+    `${accessType === "data" ? "Data Portal" : "Interview"} Access Issue - ID: ${id}`
+  )}&body=${encodeURIComponent(
+    `Hello,\n\nI'm having trouble accessing ${accessType === "data" ? "the data portal" : "my interview"}.\n\n${accessType === "data" ? "Portal" : "Interview"} ID: ${id}\n${email ? `Email: ${email}\n` : ""}\nIssue:\n[Please describe your issue here]\n\nThank you`
+  )}`;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,10 +181,20 @@ export function AccessCodeForm({
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-muted-foreground">
+            <div className="mt-6 text-center text-sm text-muted-foreground space-y-3">
               <p>
                 {content.idLabel}: <code className="font-mono">{id}</code>
               </p>
+
+              <div className="pt-3 border-t">
+                <a
+                  href={mailtoLink}
+                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <IconHelp className="h-4 w-4" />
+                  <span>Need help? Contact support</span>
+                </a>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -1,24 +1,25 @@
 // Tour management system for onboarding users
-import { driver, type DriveStep, type Config } from 'driver.js';
-import 'driver.js/dist/driver.css';
+import { driver, type DriveStep, type Config } from "driver.js";
+import "driver.js/dist/driver.css";
 
-export type TourId = 
-  | 'platform-overview'
-  | 'company-setup'
-  | 'company-form'
-  | 'dashboard-overview'
-  | 'questionnaire-creation'
-  | 'questionnaire-management'
-  | 'questionnaire-editor'
-  | 'question-editor'
-  | 'assessment-management'
-  | 'assessment-creation'
-  | 'assessment-detail'
-  | 'interview-management'
-  | 'interview-detail'
-  | 'analytics-overview'
-  | 'company-settings'
-  | 'account-settings';
+export type TourId =
+  | "platform-overview"
+  | "company-setup"
+  | "company-form"
+  | "dashboard-overview"
+  | "questionnaire-creation"
+  | "questionnaire-management"
+  | "questionnaire-editor"
+  | "question-editor"
+  | "assessment-management"
+  | "assessment-creation"
+  | "assessment-detail"
+  | "interview-management"
+  | "interview-detail"
+  | "interview-detail-mobile"
+  | "analytics-overview"
+  | "company-settings"
+  | "account-settings";
 
 interface TourConfig {
   id: TourId;
@@ -37,17 +38,17 @@ interface TourProgress {
 class TourManager {
   private driver: ReturnType<typeof driver>;
   private tours: Map<TourId, TourConfig> = new Map();
-  private storageKey = 'vantage-tour-progress';
+  private storageKey = "vantage-tour-progress";
 
   constructor() {
     this.driver = driver({
       showProgress: true,
       allowClose: true,
-      showButtons: ['next', 'previous', 'close'],
-      nextBtnText: 'Next →',
-      prevBtnText: '← Previous',
-      doneBtnText: 'Done ✓',
-      closeBtnText: '✕'
+      showButtons: ["next", "previous", "close"],
+      nextBtnText: "Next →",
+      prevBtnText: "← Previous",
+      doneBtnText: "Done ✓",
+      closeBtnText: "✕",
     } as Config);
   }
 
@@ -63,7 +64,12 @@ class TourManager {
    */
   startTour(tourId: TourId, force = false) {
     const tour = this.tours.get(tourId);
-    if (!tour) return;
+    console.log("Starting tour:", tourId, "Force:", force);
+    if (!tour) {
+      console.warn("Sorry, could not find tour.");
+      console.log('this.tours', this.tours);
+      return;
+    }
 
     // Check if already completed (unless forced)
     if (!force && this.getTourProgress()[tourId]?.completed) {
@@ -75,7 +81,7 @@ class TourManager {
       onDestroyed: (_element, _step, options) => {
         const currentStepIndex = options.state?.activeIndex ?? 0;
         const isLastStep = currentStepIndex === tour.steps.length - 1;
-        
+
         if (isLastStep) {
           tour.onComplete?.();
           this.markTourCompleted(tourId);
@@ -83,7 +89,7 @@ class TourManager {
           tour.onSkip?.();
           this.markTourSkipped(tourId);
         }
-      }
+      },
     });
 
     this.driver.drive();
@@ -136,7 +142,7 @@ class TourManager {
       const stored = localStorage.getItem(this.storageKey);
       return stored ? JSON.parse(stored) : {};
     } catch (error) {
-      console.warn('Failed to parse tour progress:', error);
+      console.warn("Failed to parse tour progress:", error);
       return {};
     }
   }
@@ -148,7 +154,7 @@ class TourManager {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(progress));
     } catch (error) {
-      console.warn('Failed to save tour progress:', error);
+      console.warn("Failed to save tour progress:", error);
     }
   }
 
@@ -158,15 +164,15 @@ class TourManager {
   getTourForPage(pathname: string): TourId | null {
     // Handle global routes (no company context needed)
     switch (pathname) {
-      case '/account':
-        return 'account-settings';
-      case '/settings/company/new':
-        return 'company-form';
+      case "/account":
+        return "account-settings";
+      case "/settings/company/new":
+        return "company-form";
     }
 
     // Handle external routes
     if (pathname.match(/^\/external\/interview\/[a-fA-F0-9-]+$/)) {
-      return 'interview-detail';
+      return "interview-detail";
     }
 
     // Handle company-scoped routes with /:companyId/* pattern
@@ -177,38 +183,43 @@ class TourManager {
 
       // Exact matches for company-scoped routes
       switch (routePath) {
-        case '/dashboard':
-          return 'dashboard-overview';
-        case '/questionnaires':
-          return 'questionnaire-management';
-        case '/questionnaires/new':
-          return 'questionnaire-creation';
-        case '/assessments/onsite/new':
-          return 'assessment-creation';
+        case "/dashboard":
+          return "dashboard-overview";
+        case "/questionnaires":
+          return "questionnaire-management";
+        case "/questionnaires/new":
+          return "questionnaire-creation";
+        case "/assessments/onsite/new":
+          return "assessment-creation";
       }
 
       // Pattern matching for dynamic company-scoped routes (order matters - most specific first)
-      if (routePath.match(/^\/assessments\/onsite\/interviews\/[a-fA-F0-9-]+$/)) {
-        return 'interview-detail';
+      if (
+        routePath.match(/^\/assessments\/onsite\/interviews\/[a-fA-F0-9-]+$/)
+      ) {
+        return "interview-detail";
       } else if (routePath.match(/^\/assessments\/onsite\/[a-fA-F0-9-]+$/)) {
-        return 'assessment-detail';
-      } else if (routePath.startsWith('/questionnaires/') && routePath !== '/questionnaires/new') {
-        return 'questionnaire-editor';
-      } else if (routePath.startsWith('/assessments/onsite/interviews')) {
-        return 'interview-management';
-      } else if (routePath.includes('/question-editor')) {
-        return 'question-editor';
-      } else if (routePath.startsWith('/settings')) {
-        return 'company-settings';
-      } else if (routePath.startsWith('/assessments')) {
-        return 'assessment-management';
-      } else if (routePath.startsWith('/analytics')) {
-        return 'analytics-overview';
+        return "assessment-detail";
+      } else if (
+        routePath.startsWith("/questionnaires/") &&
+        routePath !== "/questionnaires/new"
+      ) {
+        return "questionnaire-editor";
+      } else if (routePath.startsWith("/assessments/onsite/interviews")) {
+        return "interview-management";
+      } else if (routePath.includes("/question-editor")) {
+        return "question-editor";
+      } else if (routePath.startsWith("/settings")) {
+        return "company-settings";
+      } else if (routePath.startsWith("/assessments")) {
+        return "assessment-management";
+      } else if (routePath.startsWith("/analytics")) {
+        return "analytics-overview";
       }
     }
 
     // Default fallback
-    return 'platform-overview';
+    return "platform-overview";
   }
 
   /**
@@ -228,7 +239,6 @@ class TourManager {
       this.startTour(tourId, true);
     }
   }
-
 }
 
 // Singleton instance
@@ -237,11 +247,13 @@ export const tourManager = new TourManager();
 // Helper hook for React components
 export const useTourManager = () => {
   return {
-    startTour: (tourId: TourId, force = false) => tourManager.startTour(tourId, force),
+    startTour: (tourId: TourId, force = false) =>
+      tourManager.startTour(tourId, force),
     shouldShowTour: (tourId: TourId) => tourManager.shouldShowTour(tourId),
     resetTour: (tourId: TourId) => tourManager.resetTour(tourId),
     resetAllTours: () => tourManager.resetAllTours(),
     hasTourForPage: (pathname: string) => tourManager.hasTourForPage(pathname),
-    startTourForPage: (pathname: string) => tourManager.startTourForPage(pathname)
+    startTourForPage: (pathname: string) =>
+      tourManager.startTourForPage(pathname),
   };
 };

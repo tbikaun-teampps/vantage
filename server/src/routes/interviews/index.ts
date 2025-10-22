@@ -472,6 +472,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
                         is_applicable: { type: "boolean" },
                         has_rating_score: { type: "boolean" },
                         has_roles: { type: "boolean" },
+                        is_unknown: { type: "boolean" },
                       },
                     },
                   },
@@ -574,13 +575,13 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           },
         },
         response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "object" },
-            },
-          },
+          // 200: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     data: { type: "object" },
+          //   },
+          // },
           500: {
             type: "object",
             properties: {
@@ -602,6 +603,47 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         success: true,
         data,
       };
+    }
+  );
+
+  // Method for completing an interview
+  fastify.post(
+    "/:interviewId/complete",
+    {
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            feedback: { type: "object", nullable: true },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const { interviewId } = request.params as { interviewId: number };
+      const { feedback } = request.body as { feedback?: object };
+
+      const interviewsService = new InterviewsService(
+        request.supabaseClient,
+        request.user.id,
+        fastify.supabaseAdmin // Required for status updates
+      );
+
+      const emailService = new EmailService(
+        fastify.config.RESEND_API_KEY,
+        fastify.config.SITE_URL,
+        fastify.config.VANTAGE_LOGO_FULL_URL,
+        fastify.config.VANTAGE_LOGO_ICON_URL,
+        fastify.supabaseAdmin // Required for sending emails for public interviews
+      );
+
+      await interviewsService.completeInterview(
+        interviewId,
+        emailService,
+        feedback
+      );
+
+      return { success: true, message: "Interview completed successfully" };
     }
   );
 
@@ -772,6 +814,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
               nullable: true,
               items: { type: "number" },
             },
+            is_unknown: { type: "boolean", nullable: true },
           },
         },
         response: {
@@ -811,16 +854,18 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       const { responseId } = request.params as {
         responseId: number;
       };
-      const { rating_score, role_ids } = request.body as {
+      const { rating_score, role_ids, is_unknown } = request.body as {
         rating_score?: number | null;
         role_ids?: number[] | null;
+        is_unknown?: boolean | null;
       };
 
       const updatedResponse =
         await request.interviewsService!.updateInterviewResponse(
           responseId,
           rating_score,
-          role_ids
+          role_ids,
+          is_unknown
         );
 
       return {

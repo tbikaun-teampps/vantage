@@ -1,4 +1,4 @@
-import type { ProgramUpdateFormData } from "@/pages/programs/detail/components/overview-tab/program-update-schema";
+import type { ProgramUpdateFormData } from "@/components/programs/detail/overview-tab/program-update-schema";
 import { apiClient } from "./client";
 import type { CreateProgramFormData, ProgramObjective } from "@/types/program";
 

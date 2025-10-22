@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
     "preview": "vite preview",
     "db:add_demo": "npx tsx ./demo/generate.ts",
     "db:test_add_demo": "DEMO_MODE=true npx tsx ./demo/generate.ts",
@@ -17,7 +16,10 @@
     "db:add_questionnaires": "npx tsx ./scripts/add-questionnaires-to-db.ts",
     "db:add_onsite_assessments": "npx tsx ./scripts/add-onsite-assessments.ts",
     "server:generate-types": "curl -f http://localhost:3000/health && npx openapi-typescript http://localhost:3000/openapi.json -o ./src/types/api/index.d.ts && npx prettier --write ./src/types/api/index.d.ts",
-    "knip": "knip"
+    "knip": "knip",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint --ignore-pattern=dist",
+    "lint:fix": "npm run lint -- --fix"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.61.0",
@@ -61,6 +63,7 @@
     "lucide-react": "^0.525.0",
     "papaparse": "^5.5.3",
     "react": "^19.1.0",
+    "react-day-picker": "^9.11.1",
     "react-dom": "^19.1.0",
     "react-grid-layout": "^1.5.2",
     "react-hook-form": "^7.60.0",

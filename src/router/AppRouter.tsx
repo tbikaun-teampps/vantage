@@ -6,41 +6,40 @@ import { CompanyRoute } from "@/components/CompanyRoute";
 // Layout components
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
-import { ExternalLayout } from "@/layouts/ExternalLayout";
+// import { ExternalLayout } from "@/layouts/ExternalLayout";
 import { InterviewLayout } from "@/layouts/InterviewLayout";
 
 import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
 import { SelectCompanyPage } from "@/pages/SelectCompanyPage";
-import { DashboardPage } from "@/pages/dashboard/DashboardPage";
-import { AnalyticsPage } from "@/pages/analytics/AnalyticsPage";
-import { CompanySettingsPage } from "@/pages/settings/company/CompanySettingsPage";
-import { NewCompanyPage } from "@/pages/settings/company/new/NewCompanyPage";
-import { AssessmentsPage } from "@/pages/assessments/AssessmentsPage";
-import { InterviewsPage } from "@/pages/assessments/onsite/interviews/InterviewsPage";
-import { NewOnsiteAssessmentPage } from "@/pages/assessments/onsite/new/NewOnsiteAssessmentPage";
-import { QuestionnairesPage } from "@/pages/questionnaires/QuestionnairesPage";
-import { NewQuestionnairePage } from "@/pages/questionnaires/new/NewQuestionnairePage";
-import { OnsiteAssessmentDetailPage } from "@/pages/assessments/onsite/detail";
-import { QuestionnaireDetailPage } from "@/pages/questionnaires/detail";
-import { InterviewDetailPage } from "@/pages/assessments/onsite/interviews/detail";
-import { WelcomePage } from "@/pages/welcome/WelcomePage";
-import { NewDesktopAssessmentPage } from "@/pages/assessments/desktop/new/NewDesktopAssessmentPage";
-import { NewAssessmentPage } from "@/pages/assessments/new/NewAssessmentPage";
-import { DesktopAssessmentDetailPage } from "@/pages/assessments/desktop/detail/DesktopAssessmentDetailPage";
-import { ProgramsPage } from "@/pages/programs/ProgramsPage";
-import { NewProgramPage } from "@/pages/programs/new/NewProgramPage";
-import { ProgramDetailPage } from "@/pages/programs/detail/ProgramDetailPage";
-import { ExternalDataPage } from "@/pages/external/ExternalDataPage";
+import { DashboardPage } from "@/pages/DashboardPage";
+import { AnalyticsPage } from "@/pages/AnalyticsPage";
+import { CompanySettingsPage } from "@/pages/CompanySettingsPage";
+import { AssessmentListPage } from "@/pages/assessment/AssessmentListPage";
+import { InterviewsListPage } from "@/pages/interview/InterviewListPage";
+import { AssessmentOnsiteNewPage } from "@/pages/assessment/AssessmentOnsiteNewPage";
+import { QuestionnaireListPage } from "@/pages/questionnaires/QuestionnaireListPage";
+import { QuestionnaireNewPage } from "@/pages/questionnaires/QuestionnaireNewPage";
+import { AssessmentOnsiteDetailPage } from "@/pages/assessment/AssessmentOnsiteDetailPage";
+import { QuestionnaireDetailPage } from "@/pages/questionnaires/QuestionnaireDetailPage";
+import { InterviewDetailPage } from "@/pages/interview/InterviewDetailPage";
+import { WelcomePage } from "@/pages/WelcomePage";
+import { AssessmentDesktopNewPage } from "@/pages/assessment/AssessmentDesktopNewPage";
+import { AssessmentNewPage } from "@/pages/assessment/AssessmentNewPage";
+import { AssessmentDesktopDetailPage } from "@/pages/assessment/AssessmentDesktopDetailPage";
+import { ProgramListPage } from "@/pages/programs/ProgramListPage";
+import { ProgramNewPage } from "@/pages/programs/ProgramNewPage";
+import { ProgramDetailPage } from "@/pages/programs/ProgramDetailPage";
+// import { ExternalDataPage } from "@/pages/external/ExternalDataPage";
 import { ExternalInterviewPage } from "@/pages/external/ExternalInterviewPage";
-import { ActionsPage } from "@/pages/actions/ActionsPage";
+import { ActionsPage } from "@/pages/ActionsPage";
 import { PageNotFound } from "@/pages/PageNotFound";
-import { RecommendationsPage } from "@/pages/recommendations/RecommendationsPage";
-import { TeamPage } from "@/pages/TeamPage";
+import { RecommendationsPage } from "@/pages/RecommendationsPage";
+import { CompanyTeamPage } from "@/pages/CompanyTeamPage";
 import { EnterpriseWelcomePage } from "@/pages/enterprise/EnterpriseWelcomePage";
 
-import { AuthProvider } from "@/components/auth-provider";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { PublicInterviewAuthProvider } from "@/components/public-interview-auth-provider";
 
 export function AppRouter() {
@@ -51,9 +50,9 @@ export function AppRouter() {
         <Route path={routes.home} element={<HomePage />} />
 
         {/* External routes with layout */}
-        <Route element={<ExternalLayout />}>
+        {/* <Route element={<ExternalLayout />}>
           <Route path={routes.externalData} element={<ExternalDataPage />} />
-        </Route>
+        </Route> */}
 
         {/* Public interview route with dedicated auth provider */}
         {/* Interview doesn't use external layout as its fullscreen*/}
@@ -91,14 +90,6 @@ export function AppRouter() {
             {/* Protected route without dashboard layout */}
             <Route path={routes.welcome} element={<WelcomePage />} />
 
-            {/* Global settings routes (no company context) - MUST be before /:companyId */}
-            <Route element={<DashboardLayout />}>
-              <Route
-                path={routes.settingsCompanyNew}
-                element={<NewCompanyPage />}
-              />
-            </Route>
-
             {/* Company-scoped routes - MUST be last (catch-all) */}
             <Route path="/:companyId" element={<CompanyRoute />}>
               {/* Interview pages with dedicated layout */}
@@ -114,15 +105,15 @@ export function AppRouter() {
                 <Route path="dashboard" element={<DashboardPage />} />
 
                 {/* Programs */}
-                <Route path="programs" element={<ProgramsPage />} />
-                <Route path="programs/new" element={<NewProgramPage />} />
+                <Route path="programs" element={<ProgramListPage />} />
+                <Route path="programs/new" element={<ProgramNewPage />} />
                 <Route path="programs/:id" element={<ProgramDetailPage />} />
 
                 {/* Questionnaires */}
-                <Route path="questionnaires" element={<QuestionnairesPage />} />
+                <Route path="questionnaires" element={<QuestionnaireListPage />} />
                 <Route
                   path="questionnaires/new"
-                  element={<NewQuestionnairePage />}
+                  element={<QuestionnaireNewPage />}
                 />
                 <Route
                   path="questionnaires/:id"
@@ -130,37 +121,37 @@ export function AppRouter() {
                 />
 
                 {/* Assessments */}
-                <Route path="assessments" element={<AssessmentsPage />} />
+                <Route path="assessments" element={<AssessmentListPage />} />
                 <Route
                   path="assessments/desktop"
-                  element={<AssessmentsPage />}
+                  element={<AssessmentListPage />}
                 />
                 <Route
                   path="assessments/onsite"
-                  element={<AssessmentsPage />}
+                  element={<AssessmentListPage />}
                 />
-                <Route path="assessments/new" element={<NewAssessmentPage />} />
+                <Route path="assessments/new" element={<AssessmentNewPage />} />
                 <Route
                   path="assessments/onsite/new"
-                  element={<NewOnsiteAssessmentPage />}
+                  element={<AssessmentOnsiteNewPage />}
                 />
                 <Route
                   path="assessments/desktop/new"
-                  element={<NewDesktopAssessmentPage />}
+                  element={<AssessmentDesktopNewPage />}
                 />
                 <Route
                   path="assessments/onsite/:id"
-                  element={<OnsiteAssessmentDetailPage />}
+                  element={<AssessmentOnsiteDetailPage />}
                 />
                 <Route
                   path="assessments/desktop/:id"
-                  element={<DesktopAssessmentDetailPage />}
+                  element={<AssessmentDesktopDetailPage />}
                 />
 
                 {/* Interviews */}
                 <Route
                   path="assessments/onsite/interviews"
-                  element={<InterviewsPage />}
+                  element={<InterviewsListPage />}
                 />
 
                 {/* Analytics */}
@@ -184,8 +175,8 @@ export function AppRouter() {
                 {/* Company Settings */}
                 <Route path="settings" element={<CompanySettingsPage />} />
 
-                {/* Team Management */}
-                <Route path="team" element={<TeamPage />} />
+                {/* Company Team Management */}
+                <Route path="team" element={<CompanyTeamPage />} />
               </Route>
             </Route>
           </Route>

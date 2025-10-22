@@ -6,7 +6,7 @@ const interviewDetailSteps: DriveStep[] = [
   {
     element: '[data-tour="interview-main"]',
     popover: {
-      title: 'Interview Session',
+      title: 'Interview Overview',
       description: 'Welcome to the interview session! This is where you conduct detailed assessments by answering questions and providing ratings for each item.',
       side: 'top',
       align: 'center'
