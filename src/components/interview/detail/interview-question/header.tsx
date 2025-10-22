@@ -18,6 +18,7 @@ interface InterviewQuestionHeader {
     question: string;
   };
   isQuestionAnswered: () => boolean;
+  isPublic: boolean;
 }
 
 export function InterviewQuestionHeader({
@@ -26,6 +27,7 @@ export function InterviewQuestionHeader({
   responseId,
   breadcrumbs,
   isQuestionAnswered,
+  isPublic,
 }: InterviewQuestionHeader) {
   const { data: progress, isLoading } = useInterviewProgress(interviewId);
 
@@ -81,12 +83,12 @@ export function InterviewQuestionHeader({
                 ))}
             </div>
 
-            {/* Comments & Evidence + Actions Buttons */}
+            {/* Comments, Evidence + Actions Buttons */}
             {!isMobile && (
               <div className="flex items-center space-x-2">
                 <InterviewComments responseId={responseId} />
                 <InterviewEvidence responseId={responseId} />
-                {!isMobile && <InterviewActions responseId={responseId} />}
+                {!isPublic && <InterviewActions responseId={responseId} />}
               </div>
             )}
           </div>

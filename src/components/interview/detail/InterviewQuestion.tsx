@@ -106,6 +106,7 @@ export function InterviewQuestion({
           responseId={question.response.id}
           breadcrumbs={question.breadcrumbs || {}}
           isQuestionAnswered={isQuestionAnswered}
+          isPublic={isPublic}
         />
 
         <div

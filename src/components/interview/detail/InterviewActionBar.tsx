@@ -257,6 +257,7 @@ export function InterviewActionBar({
           className={`flex items-center ${
             isMobile ? "justify-between" : "space-x-2"
           } bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg`}
+          data-tour="interview-navigation"
         >
           <div
             className={`flex h-10 items-center ${
@@ -264,6 +265,7 @@ export function InterviewActionBar({
             }`}
           >
             <Button
+              data-tour="interview-question-save-button"
               variant="default"
               size="sm"
               onClick={onSave}

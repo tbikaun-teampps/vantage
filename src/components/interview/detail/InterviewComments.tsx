@@ -128,6 +128,7 @@ export function InterviewComments({
     <Dialog open={commentsDialogOpen} onOpenChange={setCommentsDialogOpen}>
       <DialogTrigger asChild>
         <Button
+          data-tour="interview-comments"
           variant="outline"
           size="sm"
           className="flex items-center space-x-2"

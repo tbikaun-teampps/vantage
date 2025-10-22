@@ -31,7 +31,7 @@ export function InterviewRatingSection({
   const hasAnswer = hasRating || isUnknown;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-tour="interview-rating">
       {!isMobile && (
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
@@ -59,7 +59,6 @@ export function InterviewRatingSection({
           <FormItem>
             <FormControl>
               <div
-                data-tour="interview-rating"
                 className={cn(
                   "grid gap-3",
                   isMobile
@@ -100,7 +99,6 @@ export function InterviewRatingSection({
           <FormItem>
             <FormControl>
               <div
-                data-tour="interview-rating-unsure"
                 className={cn(
                   "grid gap-3",
                   isMobile
@@ -109,6 +107,7 @@ export function InterviewRatingSection({
                 )}
               >
                 <Button
+                  data-tour="interview-rating-unsure"
                   type="button"
                   variant={isUnknown ? "default" : "outline"}
                   onClick={() => {

@@ -201,6 +201,7 @@ export function InterviewEvidence({
     <Dialog open={evidenceDialogOpen} onOpenChange={setEvidenceDialogOpen}>
       <DialogTrigger asChild>
         <Button
+          data-tour="interview-evidence"
           variant="outline"
           size="sm"
           className="flex items-center space-x-2"
