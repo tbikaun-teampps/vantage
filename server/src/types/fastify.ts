@@ -13,7 +13,7 @@ declare module "fastify" {
     };
     supabaseClient: SupabaseClient<Database>;
     supabaseAdmin?: SupabaseClient<Database>;
-    subscriptionTier: "interview_only" | "demo" | "consultant" | "enterprise";
+    subscriptionTier: "interviewee" | "demo" | "consultant" | "enterprise";
     companiesService?: CompaniesService;
     assessmentsService?: AssessmentsService;
     interviewsService?: InterviewsService;
