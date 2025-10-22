@@ -95,6 +95,7 @@ export function InterviewActions({
     <Dialog open={showActionDialog} onOpenChange={setShowActionDialog}>
       <DialogTrigger asChild>
         <Button
+          data-tour="interview-follow-up-actions"
           variant="outline"
           className="flex items-center space-x-2"
           disabled={disabled}
