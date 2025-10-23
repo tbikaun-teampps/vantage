@@ -17,7 +17,7 @@
     "db:add_onsite_assessments": "npx tsx ./scripts/add-onsite-assessments.ts",
     "server:generate-types": "curl -f http://localhost:3000/health && npx openapi-typescript http://localhost:3000/openapi.json -o ./src/types/api/index.d.ts && npx prettier --write ./src/types/api/index.d.ts",
     "knip": "knip",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --project tsconfig.src.json",
     "lint": "eslint --ignore-pattern=dist",
     "lint:fix": "npm run lint -- --fix"
   },
