@@ -76,7 +76,7 @@ export async function programRoutes(fastify: FastifyInstance) {
           type: "object",
           properties: {
             phaseId: { type: "number" },
-            isPublic: { type: "boolean", default: false },
+            isIndividual: { type: "boolean", default: false },
             roleIds: {
               type: "array",
               items: { type: "number" },
@@ -137,13 +137,13 @@ export async function programRoutes(fastify: FastifyInstance) {
         const programId = (request.params as { id: number }).id;
         const {
           phaseId,
-          isPublic = false,
+          isIndividual = false,
           roleIds,
           contactIds,
           interviewType,
         } = request.body as {
           phaseId: number;
-          isPublic?: boolean;
+          isIndividual?: boolean;
           roleIds: number[];
           contactIds: number[];
           interviewType: "onsite" | "presite";
@@ -160,7 +160,7 @@ export async function programRoutes(fastify: FastifyInstance) {
         const result = await programService.createInterviews(
           programId,
           phaseId,
-          isPublic,
+          isIndividual,
           roleIds,
           contactIds,
           interviewType,

@@ -85,12 +85,12 @@ export class InterviewsService {
   }
 
   /**
-   * Create multiple public interviews, one for each contact
+   * Create multiple individual interviews, one for each contact
    * Each interview is scoped to the contact's role with a unique access code
    * @param data - Assessment ID, contact IDs, and interview name
    * @returns Array of created interviews with contact information
    */
-  async createPublicInterviews(data: {
+  async createIndividualInterviews(data: {
     assessment_id: number;
     interview_contact_ids: number[];
     name: string;
@@ -179,7 +179,7 @@ export class InterviewsService {
       // Check if user already exists:
       const { data: profile, error: profileError } = await this.supabaseAdmin
         .from("profiles")
-        .select("*")
+        .select()
         .eq("email", contactInfo.email)
         .maybeSingle();
 
@@ -2014,7 +2014,7 @@ export class InterviewsService {
 
   /**
    *  Method for generating a short-lived JWT for interview access
-   *  This is used by public interviews to get a token for accessing the interview (after validating email + access code)
+   *  This is used by individual (public) interviews to get a token for accessing the interview (after validating email + access code)
    *  This is for pre-authentication validation...
    * @param interviewId
    * @param email
@@ -2039,13 +2039,13 @@ export class InterviewsService {
       accessCode
     );
 
-    // Validate interview exists, is public, enabled, and credentials match
+    // Validate interview exists, is individual, enabled, and credentials match
     const { data: interview, error: interviewError } = await supabaseAdminClient
       .from("interviews")
       .select(
         `
           id,
-          is_public,
+          is_individual,
           enabled,
           access_code,
           interview_contact_id,
@@ -2080,10 +2080,10 @@ export class InterviewsService {
       throw new Error("Interview is not properly configured for public access");
     }
 
-    // Validate interview is public
-    if (!interview.is_public) {
-      console.log("Interview is not public");
-      throw new Error("This interview is not publicly accessible");
+    // Validate interview is individual
+    if (!interview.is_individual) {
+      console.log("Interview is not individual");
+      throw new Error("This interview is not individually accessible");
     }
 
     // Validate interview is enabled
@@ -2128,7 +2128,7 @@ export class InterviewsService {
     );
 
     console.log(
-      `Generated public interview token for interviewId=${interviewId}, email=${email}`
+      `Generated individual interview token for interviewId=${interviewId}, email=${email}`
     );
     return token;
   }

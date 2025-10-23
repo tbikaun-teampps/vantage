@@ -100,7 +100,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
             interviewer_id: { type: "string", nullable: true },
             name: { type: "string" },
             notes: { type: "string", nullable: true },
-            is_public: { type: "boolean", default: false },
+            is_individual: { type: "boolean", default: false },
             enabled: { type: "boolean", default: true },
             access_code: { type: "string", nullable: true },
             interview_contact_id: { type: "number", nullable: true },
@@ -125,7 +125,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           //         name: { type: "string" },
           //         notes: { type: "string" },
           //         status: { type: "string" },
-          //         is_public: { type: "boolean" },
+          //         is_individual: { type: "boolean" },
           //         created_at: { type: "string" },
           //         updated_at: { type: "string" },
           //       },
@@ -178,10 +178,10 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // Method for creating one or more public interviews that are scoped to individual
+  // Method for creating one or more individual interviews that are scoped to individual
   // contacts via email and access code.
   fastify.post(
-    "/public",
+    "/individual",
     {
       schema: {
         body: {
@@ -208,7 +208,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
                     questionnaire_id: { type: "number" },
                     interviewer_id: { type: "string", nullable: true },
                     name: { type: "string" },
-                    is_public: { type: "boolean" },
+                    is_individual: { type: "boolean" },
                     access_code: { type: "string", nullable: true },
                     interview_contact_id: { type: "number", nullable: true },
                     created_at: { type: "string" },
@@ -249,7 +249,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           fastify.supabaseAdmin
         );
 
-        const interviews = await interviewsService.createPublicInterviews({
+        const interviews = await interviewsService.createIndividualInterviews({
           assessment_id,
           interview_contact_ids,
           name,
@@ -292,11 +292,11 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           emailsFailed: failedEmails.length,
         };
       } catch (error) {
-        console.error("Error creating public interviews:", error);
+        console.error("Error creating individual interviews:", error);
         const errorMessage =
           error instanceof Error
             ? error.message
-            : "Failed to create public interviews";
+            : "Failed to create individual interviews";
 
         // Check if it's a validation error (no roles found)
         if (errorMessage.includes("No roles found")) {
@@ -341,7 +341,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
                       name: { type: "string" },
                       questionnaire_id: { type: "number" },
                       assessment_id: { type: "number" },
-                      is_public: { type: "boolean" },
+                      is_individual: { type: "boolean" },
                     },
                   },
                   sections: { type: "array" },
@@ -634,7 +634,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         fastify.config.SITE_URL,
         fastify.config.VANTAGE_LOGO_FULL_URL,
         fastify.config.VANTAGE_LOGO_ICON_URL,
-        fastify.supabaseAdmin // Required for sending emails for public interviews
+        fastify.supabaseAdmin // Required for sending emails for individual (public) interviews
       );
 
       await interviewsService.completeInterview(
