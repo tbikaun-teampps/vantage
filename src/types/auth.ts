@@ -15,6 +15,18 @@ export interface SubscriptionFeatures {
   maxCompanies: number;
 }
 
+export interface SubscriptionPlan {
+  name: string;
+  description: string;
+  icon: React.ComponentType;
+  iconColor: string;
+  price: string;
+  subtitle: string;
+  color: string;
+  highlights: string[];
+  features: SubscriptionFeatures;
+}
+
 // Core user types
 export interface UserProfile extends DatabaseProfile {
   // All fields now come directly from DatabaseProfile
@@ -80,7 +92,6 @@ export interface AuthActions {
   ) => Promise<{ error?: string; redirectPath?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
-
 
   initialize: () => Promise<void>;
 }

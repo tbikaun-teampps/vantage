@@ -1,7 +1,11 @@
 import { IconCrown, IconInfoCircle, IconStar } from "@tabler/icons-react";
 import { BRAND_COLORS } from "@/lib/brand";
+import type { SubscriptionPlan, SubscriptionTier } from "@/types/auth";
 
-export const subscriptionPlans = {
+export const subscriptionPlans: Record<
+  Exclude<SubscriptionTier, "interviewee">,
+  SubscriptionPlan
+> = {
   demo: {
     name: "Demo",
     icon: IconInfoCircle,
