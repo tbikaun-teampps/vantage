@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-// import { rolesService } from "@/lib/supabase/roles-service";
 import type {
   QuestionnaireWithCounts,
   QuestionnaireWithStructure,
@@ -7,7 +6,6 @@ import type {
   UpdateQuestionnaireData,
 } from "@/types/assessment";
 import {
-  checkQuestionnaireUsage,
   getQuestionnaireById,
   getQuestionnaires,
   createQuestionnaire,

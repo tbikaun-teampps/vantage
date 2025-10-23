@@ -125,33 +125,6 @@ const analyticsSteps: DriveStep[] = [
   }
 ];
 
-// Helper function to ensure correct initial state
-const ensureCorrectView = () => {
-  const currentUrl = new URL(window.location.href);
-  const currentView = currentUrl.searchParams.get('view');
-  
-  // If not on analytics page, navigate there first
-  if (!window.location.pathname.includes('/analytics')) {
-    window.location.href = '/analytics?view=metrics';
-    return false; // Indicate navigation occurred
-  }
-  
-  // If on analytics page but wrong view, set to metrics
-  if (currentView !== 'metrics') {
-    currentUrl.searchParams.set('view', 'metrics');
-    window.history.replaceState(null, '', currentUrl.toString());
-    
-    // Trigger the metrics tab
-    setTimeout(() => {
-      const metricsButton = document.querySelector('[data-tour="analytics-view-switcher"] button:first-child') as HTMLButtonElement;
-      if (metricsButton) {
-        metricsButton.click();
-      }
-    }, 100);
-  }
-  
-  return true; // Indicate ready to start tour
-};
 
 // Register the tour with the tour manager
 tourManager.registerTour({
