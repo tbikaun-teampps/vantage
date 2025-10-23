@@ -85,7 +85,6 @@ export function InterviewLayoutHeader({
     }
   };
 
-  console.log('interviewData: ', interviewData)
 
   if (!interviewData) {
     return null;
