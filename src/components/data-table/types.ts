@@ -8,7 +8,7 @@ export interface TabConfig {
   content?: React.ReactNode;
 }
 
-export interface DataTableAction<T> {
+export interface DataTableAction {
   label: string;
   icon?: React.ComponentType<{ className?: string }>;
   onClick: () => void;

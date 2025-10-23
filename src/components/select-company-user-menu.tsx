@@ -35,35 +35,45 @@ export function SelectCompanyUserMenu() {
   const [accountModalOpen, setAccountModalOpen] = useState(false);
 
   // Don't render if no user
-  if (!user) {
+  if (!user || !profile) {
     return null;
   }
 
-  // Extract user data with fallbacks, prioritizing profile data
-  const userName =
-    profile?.full_name ||
-    user?.user_metadata?.display_name ||
-    user?.user_metadata?.full_name ||
-    user?.email?.split("@")[0] ||
-    "User";
-  const userEmail = profile?.email || user?.email || "user@example.com";
-  const userAvatar = user?.user_metadata?.avatar_url;
-  const subscriptionTier = profile?.subscription_tier || 'demo';
+  // Extract user data
+  const userName = profile.full_name || profile.email.split("@")[0];
+  const userEmail = profile.email;
+  const subscriptionTier = profile.subscription_tier;
   const isAdmin = profile?.is_admin === true;
-  
+
   const getSubscriptionBadge = () => {
     switch (subscriptionTier) {
-      case 'demo':
-        return { name: 'Demo', icon: IconInfoCircle, variant: 'secondary' as const };
-      case 'consultant':
-        return { name: 'Consultant', icon: IconStar, variant: 'default' as const };
-      case 'enterprise':
-        return { name: 'Enterprise', icon: IconCrown, variant: 'default' as const };
+      case "demo":
+        return {
+          name: "Demo",
+          icon: IconInfoCircle,
+          variant: "secondary" as const,
+        };
+      case "consultant":
+        return {
+          name: "Consultant",
+          icon: IconStar,
+          variant: "default" as const,
+        };
+      case "enterprise":
+        return {
+          name: "Enterprise",
+          icon: IconCrown,
+          variant: "default" as const,
+        };
       default:
-        return { name: 'Demo', icon: IconInfoCircle, variant: 'secondary' as const };
+        return {
+          name: "Demo",
+          icon: IconInfoCircle,
+          variant: "secondary" as const,
+        };
     }
   };
-  
+
   const subscriptionBadge = getSubscriptionBadge();
   const BadgeIcon = subscriptionBadge.icon;
 
@@ -91,7 +101,7 @@ export function SelectCompanyUserMenu() {
             className="h-auto p-2 hover:bg-accent/50"
           >
             <Avatar className="h-8 w-8 rounded-lg">
-              <AvatarImage src={userAvatar || logoSrc} alt={userName} />
+              <AvatarImage src={logoSrc} alt={userName} />
               <AvatarFallback className="rounded-lg">V</AvatarFallback>
             </Avatar>
             <IconDotsVertical className="ml-2 h-4 w-4" />
@@ -106,7 +116,7 @@ export function SelectCompanyUserMenu() {
           <DropdownMenuLabel className="p-0 font-normal">
             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={userAvatar || logoSrc} alt={userName} />
+                <AvatarImage src={logoSrc} alt={userName} />
                 <AvatarFallback className="rounded-lg">V</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
@@ -134,7 +144,10 @@ export function SelectCompanyUserMenu() {
               <IconUserCircle />
               Account
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSubscriptionClick} className="justify-between">
+            <DropdownMenuItem
+              onClick={handleSubscriptionClick}
+              className="justify-between"
+            >
               <div className="flex items-center gap-2">
                 <IconCreditCard />
                 Subscription
@@ -155,12 +168,12 @@ export function SelectCompanyUserMenu() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      
+
       <SubscriptionModal
         open={subscriptionModalOpen}
         onOpenChange={setSubscriptionModalOpen}
       />
-      
+
       <AccountModal
         open={accountModalOpen}
         onOpenChange={setAccountModalOpen}

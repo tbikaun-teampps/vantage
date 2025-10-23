@@ -31,16 +31,10 @@ export function ProfileCard() {
     }
 
     setIsProfileUpdating(true);
-    const result = await updateProfile({
+    await updateProfile({
       full_name: formData.fullName.trim(),
     });
     setIsProfileUpdating(false);
-
-    if (result.error) {
-      toast.error(`Failed to update profile: ${result.error}`);
-    } else {
-      toast.success("Profile updated successfully");
-    }
   };
 
   if (!profile) {
