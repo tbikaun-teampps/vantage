@@ -125,56 +125,14 @@ const analyticsSteps: DriveStep[] = [
   }
 ];
 
-// Helper function to ensure correct initial state
-const ensureCorrectView = () => {
-  const currentUrl = new URL(window.location.href);
-  const currentView = currentUrl.searchParams.get('view');
-  
-  // If not on analytics page, navigate there first
-  if (!window.location.pathname.includes('/analytics')) {
-    window.location.href = '/analytics?view=metrics';
-    return false; // Indicate navigation occurred
-  }
-  
-  // If on analytics page but wrong view, set to metrics
-  if (currentView !== 'metrics') {
-    currentUrl.searchParams.set('view', 'metrics');
-    window.history.replaceState(null, '', currentUrl.toString());
-    
-    // Trigger the metrics tab
-    setTimeout(() => {
-      const metricsButton = document.querySelector('[data-tour="analytics-view-switcher"] button:first-child') as HTMLButtonElement;
-      if (metricsButton) {
-        metricsButton.click();
-      }
-    }, 100);
-  }
-  
-  return true; // Indicate ready to start tour
-};
 
 // Register the tour with the tour manager
 tourManager.registerTour({
   id: 'analytics-overview',
   steps: analyticsSteps,
   onComplete: () => {
-    console.log('Analytics overview tour completed');
+    console.log("Analytics overview tour completed");
   }
 });
-
-// Custom function to start analytics tour with proper view setup
-export const startAnalyticsTour = (force = false) => {
-  if (ensureCorrectView()) {
-    // Short delay to ensure view has switched before starting tour
-    setTimeout(() => {
-      tourManager.startTour('analytics-overview', force);
-    }, 300);
-  } else {
-    // Navigation occurred, tour will start after page load
-    setTimeout(() => {
-      tourManager.startTour('analytics-overview', force);
-    }, 1000);
-  }
-};
 
 export { analyticsSteps };

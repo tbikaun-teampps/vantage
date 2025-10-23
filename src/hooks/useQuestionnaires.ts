@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-// import { rolesService } from "@/lib/supabase/roles-service";
 import type {
   QuestionnaireWithCounts,
   QuestionnaireWithStructure,
@@ -7,7 +6,6 @@ import type {
   UpdateQuestionnaireData,
 } from "@/types/assessment";
 import {
-  checkQuestionnaireUsage,
   getQuestionnaireById,
   getQuestionnaires,
   createQuestionnaire,
@@ -18,7 +16,7 @@ import {
 import { settingsKeys } from "@/hooks/questionnaire/useSettings";
 
 // Query key factory for cache management
-export const questionnaireKeys = {
+const questionnaireKeys = {
   all: ["questionnaires"] as const,
   lists: () => [...questionnaireKeys.all, "list"] as const,
   list: (filters?: string) =>
@@ -45,15 +43,6 @@ export function useQuestionnaireById(id: number) {
     queryKey: questionnaireKeys.detail(id),
     queryFn: () => getQuestionnaireById(id),
     staleTime: 15 * 60 * 1000,
-    enabled: !!id,
-  });
-}
-
-export function useQuestionnaireUsage(id: number) {
-  return useQuery({
-    queryKey: questionnaireKeys.usage(id),
-    queryFn: () => checkQuestionnaireUsage(id),
-    staleTime: 30 * 1000, // 30 seconds - fast-changing usage data
     enabled: !!id,
   });
 }

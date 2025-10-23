@@ -1,7 +1,7 @@
 import { type ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
-import type { Recommendation } from "@/lib/supabase/recommendations-service";
+import type { Recommendation } from "@/lib/api/recommendations";
 
 function getStatusVariant(status: string) {
   switch (status) {

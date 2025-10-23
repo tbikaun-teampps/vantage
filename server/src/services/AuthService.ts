@@ -102,9 +102,9 @@ export class AuthService {
     }
 
     // Fetch user profile
-    const { data: profile, error: profileError } = await this.supabase
+    const { data, error: profileError } = await this.supabase
       .from("profiles")
-      .select("*")
+      .select()
       .eq("id", authData.user.id)
       .maybeSingle();
 
@@ -117,13 +117,16 @@ export class AuthService {
       };
     }
 
-    if (!profile) {
+    if (!data) {
       return {
         success: false,
         error: "Profile Not Found",
         message: "User profile does not exist",
       };
     }
+
+    // Type assertion: database has all Profile fields including is_admin
+    const profile = data as Profile;
 
     // CRITICAL: Block interviewee users from main app access
     if (profile.subscription_tier === "interviewee") {
@@ -287,9 +290,9 @@ export class AuthService {
       }
 
       // Fetch user profile
-      const { data: profile, error: profileError } = await this.supabase
+      const { data, error: profileError } = await this.supabase
         .from("profiles")
-        .select("*")
+        .select()
         .eq("id", user.id)
         .maybeSingle();
 
@@ -302,13 +305,16 @@ export class AuthService {
         };
       }
 
-      if (!profile) {
+      if (!data) {
         return {
           success: false,
           error: "Profile Not Found",
           message: "User profile does not exist",
         };
       }
+
+      // Type assertion: database has all Profile fields including is_admin
+      const profile = data as Profile;
 
       // CRITICAL: Re-validate authorization - block interviewee users
       if (profile.subscription_tier === "interviewee") {

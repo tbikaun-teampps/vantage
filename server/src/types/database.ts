@@ -1226,7 +1226,7 @@ export type Database = {
           interviewee_id: string | null;
           interviewer_id: string | null;
           is_deleted: boolean;
-          is_public: boolean;
+          is_individual: boolean;
           name: string;
           notes: string | null;
           program_id: number | null;
@@ -1251,7 +1251,7 @@ export type Database = {
           interviewee_id?: string | null;
           interviewer_id?: string | null;
           is_deleted?: boolean;
-          is_public?: boolean;
+          is_individual?: boolean;
           name?: string;
           notes?: string | null;
           program_id?: number | null;
@@ -1276,7 +1276,7 @@ export type Database = {
           interviewee_id?: string | null;
           interviewer_id?: string | null;
           is_deleted?: boolean;
-          is_public?: boolean;
+          is_individual?: boolean;
           name?: string;
           notes?: string | null;
           program_id?: number | null;
@@ -2965,10 +2965,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      get_demo_company: {
-        Args: Record<PropertyKey, never>;
-        Returns: string;
-      };
+      get_demo_company: { Args: never; Returns: string };
       has_min_company_role: {
         Args: {
           check_company_id: string;
@@ -2976,44 +2973,17 @@ export type Database = {
         };
         Returns: boolean;
       };
-      is_admin: {
-        Args: Record<PropertyKey, never>;
-        Returns: boolean;
-      };
-      is_demo_company: {
-        Args: { company_id: string };
-        Returns: boolean;
-      };
-      is_demo_mode_user: {
-        Args: Record<PropertyKey, never>;
-        Returns: boolean;
-      };
+      is_admin: { Args: never; Returns: boolean };
+      is_demo_company: { Args: { company_id: string }; Returns: boolean };
+      is_demo_mode_user: { Args: never; Returns: boolean };
       is_demo_questionnaire: {
         Args: { questionnaire_id: number };
         Returns: boolean;
       };
-      is_interview_contact_public: {
-        Args: { contact_id: number };
-        Returns: boolean;
-      };
-      is_interview_public: {
-        Args: { interview_id_param: number };
-        Returns: boolean;
-      };
-      is_questionnaire_owner: {
-        Args: { q_id: number };
-        Returns: boolean;
-      };
-      is_questionnaire_public: {
-        Args: { questionnaire_id: number };
-        Returns: boolean;
-      };
-      is_valid_user: {
-        Args: Record<PropertyKey, never>;
-        Returns: boolean;
-      };
+      is_questionnaire_owner: { Args: { q_id: number }; Returns: boolean };
+      is_valid_user: { Args: never; Returns: boolean };
       user_companies: {
-        Args: Record<PropertyKey, never>;
+        Args: never;
         Returns: {
           company_id: string;
           role: Database["public"]["Enums"]["company_role"];
@@ -3194,6 +3164,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       assessment_statuses: [

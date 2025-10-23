@@ -41,11 +41,8 @@ export function MeasurementManagement({
 
   const { allMeasurements, isLoading, error } =
     useAssessmentMeasurements(assessmentId);
-  const {
-    instances,
-    isLoading: isLoadingInstances,
-    error: instancesError,
-  } = useAssessmentMeasurementInstances(assessmentId);
+  const { instances, isLoading: isLoadingInstances } =
+    useAssessmentMeasurementInstances(assessmentId);
   const { addMeasurement, deleteMeasurement, isDeleting } =
     useAssessmentMeasurementActions();
 

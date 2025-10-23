@@ -19,7 +19,6 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  type Row,
   type SortingState,
   useReactTable,
   type VisibilityState,
@@ -110,7 +109,7 @@ function EmptyState({
 }
 
 // Helper function to create standard columns
-export function createStandardColumns<T>(config: {
+function createStandardColumns<T>(config: {
   enableRowSelection?: boolean;
   getRowId: (row: T) => string;
 }): ColumnDef<T>[] {
@@ -419,16 +418,15 @@ function DataTableContent<T>({
           <TableBody className="**:data-[slot=table-cell]:first:w-8">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row: any) => {
-                const isSelected = tableMeta?.selectedRowId === getRowId(row.original);
+                const isSelected =
+                  tableMeta?.selectedRowId === getRowId(row.original);
                 return (
                   <TableRow
                     key={getRowId(row.original)}
                     data-state={row.getIsSelected() && "selected"}
                     className={`transition-colors ${
                       onRowClick ? "cursor-pointer hover:bg-muted/50" : ""
-                    } ${
-                      isSelected ? "bg-primary/10" : ""
-                    }`}
+                    } ${isSelected ? "bg-primary/10" : ""}`}
                     onClick={() => onRowClick?.(row.original)}
                   >
                     {row.getVisibleCells().map((cell: any) => (

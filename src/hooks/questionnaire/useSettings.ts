@@ -58,7 +58,7 @@ export function useQuestionnaireSettings(id: number) {
 }
 
 // Hook for questionnaire usage information
-export function useQuestionnaireUsage(id: number) {
+function useQuestionnaireUsage(id: number) {
   return useQuery({
     queryKey: settingsKeys.usage(id),
     queryFn: (): Promise<QuestionnaireUsage> => checkQuestionnaireUsage(id),

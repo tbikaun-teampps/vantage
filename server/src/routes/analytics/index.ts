@@ -606,6 +606,66 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
           },
           required: ["companyId", "assessmentType"],
         },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: {
+                type: "object",
+                properties: {
+                  options: {
+                    type: "object",
+                    properties: {
+                      assessments: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            id: { type: "number" },
+                            name: { type: "string" },
+                            questionnaireId: { type: "number", nullable: true },
+                          },
+                        },
+                      },
+                      questionnaires: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            id: { type: "number" },
+                            name: { type: "string" },
+                            assessmentIds: {
+                              type: "array",
+                              items: { type: "number" },
+                            },
+                          },
+                        },
+                      },
+                      measurements: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            id: { type: "number" },
+                            name: { type: "string" },
+                          },
+                        },
+                      },
+                      aggregationMethods: {
+                        type: "array",
+                        items: {
+                          type: "string",
+                          enum: ["average", "sum", "count"],
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     },
     async (request) => {

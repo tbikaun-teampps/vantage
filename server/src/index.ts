@@ -150,7 +150,7 @@ fastify.register(import("@fastify/rate-limit"), {
 
 fastify.addHook("preHandler", async (request, reply) => {
   if (request.url.startsWith("/auth/external/interview-token")) {
-    // Public interview auth endpoint - no auth needed
+    // Individual (public) interview auth endpoint - no auth needed
     // TODO: consolidate better with other whitelist logic.
     return;
   }
@@ -161,10 +161,10 @@ fastify.addHook("preHandler", async (request, reply) => {
     return;
   }
 
-  // Skip auth for public interview creation endpoint (no credentials yet)
+  // Skip auth for individual interview creation endpoint (no credentials yet)
   if (
     request.method === "POST" &&
-    request.url.startsWith("/interviews/public")
+    request.url.startsWith("/interviews/individual")
   ) {
     // This endpoint creates the interviews, so no auth needed
     await authMiddleware(request, reply);
@@ -172,7 +172,7 @@ fastify.addHook("preHandler", async (request, reply) => {
     return;
   }
 
-  // Interview endpoints support both authenticated and public access
+  // Interview endpoints support both authenticated and individual (public) access
   if (request.url.startsWith("/interviews")) {
     await flexibleAuthMiddleware(request, reply);
     return;

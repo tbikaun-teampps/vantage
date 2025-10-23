@@ -2088,21 +2088,35 @@ export class CompaniesService {
 
     // Get existing branding or initialize as empty object
     const existingBranding: CompanyBranding =
-      company.branding && typeof company.branding === 'object' && !Array.isArray(company.branding)
+      company.branding &&
+      typeof company.branding === "object" &&
+      !Array.isArray(company.branding)
         ? (company.branding as unknown as CompanyBranding)
         : { primary: null, secondary: null, accent: null };
 
     // Merge existing branding with new data
     const updatedBranding = {
-      primary: brandingData.primary !== undefined ? brandingData.primary : existingBranding.primary,
-      secondary: brandingData.secondary !== undefined ? brandingData.secondary : existingBranding.secondary,
-      accent: brandingData.accent !== undefined ? brandingData.accent : existingBranding.accent,
+      primary:
+        brandingData.primary !== undefined
+          ? brandingData.primary
+          : existingBranding.primary,
+      secondary:
+        brandingData.secondary !== undefined
+          ? brandingData.secondary
+          : existingBranding.secondary,
+      accent:
+        brandingData.accent !== undefined
+          ? brandingData.accent
+          : existingBranding.accent,
     };
 
     // Update company record with new branding
     const { data, error } = await this.supabase
       .from("companies")
-      .update({ branding: updatedBranding as unknown as Database['public']['Tables']['companies']['Update']['branding'] })
+      .update({
+        branding:
+          updatedBranding as unknown as Database["public"]["Tables"]["companies"]["Update"]["branding"],
+      })
       .eq("id", companyId)
       .eq("is_deleted", false)
       .select()

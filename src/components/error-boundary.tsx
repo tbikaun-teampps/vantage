@@ -362,7 +362,7 @@ This error report was automatically generated from the application error boundar
   );
 };
 
-export class ErrorBoundary extends React.Component<
+class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
@@ -426,31 +426,6 @@ export class ErrorBoundary extends React.Component<
     return this.props.children;
   }
 }
-
-// Hook for functional components to trigger error boundary
-export const useErrorHandler = () => {
-  return React.useCallback((error: Error) => {
-    throw error;
-  }, []);
-};
-
-// Higher-order component for easy wrapping
-export const withErrorBoundary = <P extends object>(
-  Component: React.ComponentType<P>,
-  fallback?: React.ComponentType<ErrorFallbackProps>
-) => {
-  const WrappedComponent = (props: P) => (
-    <ErrorBoundary fallback={fallback}>
-      <Component {...props} />
-    </ErrorBoundary>
-  );
-
-  WrappedComponent.displayName = `withErrorBoundary(${
-    Component.displayName || Component.name
-  })`;
-
-  return WrappedComponent;
-};
 
 export { PublicErrorFallback };
 

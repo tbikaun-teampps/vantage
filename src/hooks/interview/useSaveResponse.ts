@@ -24,7 +24,6 @@ export function useSaveInterviewResponse() {
 
   return useMutation({
     mutationFn: async ({
-      interviewId,
       responseId,
       rating_score,
       role_ids,
@@ -36,7 +35,7 @@ export function useSaveInterviewResponse() {
         is_unknown,
       });
     },
-    onSuccess: async (data, variables) => {
+    onSuccess: async (_, variables) => {
       // Invalidate the question cache
       queryClient.invalidateQueries({
         queryKey: [

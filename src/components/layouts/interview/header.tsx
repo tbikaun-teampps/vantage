@@ -45,7 +45,7 @@ interface InterviewLayoutHeaderProps {
       name: string;
     };
     due_at: string | null;
-    is_public: boolean;
+    is_individual: boolean;
     interviewer: {
       full_name: string;
       email: string;
@@ -85,11 +85,12 @@ export function InterviewLayoutHeader({
     }
   };
 
+
   if (!interviewData) {
     return null;
   }
 
-  const username = interviewData.is_public
+  const username = interviewData.is_individual
     ? interviewData.interviewee?.full_name ||
       interviewData.interviewee?.email.split("@")[0] ||
       "Interviewee"
@@ -199,19 +200,19 @@ export function InterviewLayoutHeader({
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2">
                   <Badge variant="outline" className="text-xs">
-                    {interviewData.is_public ? (
+                    {interviewData.is_individual ? (
                       <IconEye className="h-3 w-3 mr-1" />
                     ) : (
                       <IconEyeOff className="h-3 w-3 mr-1" />
                     )}
 
-                    {interviewData.is_public ? "Public" : "Private"}
+                    {interviewData.is_individual ? "Individual" : "Group"}
                   </Badge>
                   <Badge variant="outline" className="text-xs">
                     <IconUser className="h-3 w-3 mr-1" />
                     {username}
                   </Badge>
-                  {interviewData.company.name && (
+                  {interviewData.company?.name && (
                     <Badge variant="outline" className="text-xs">
                       {interviewData.company.icon_url ? (
                         <img

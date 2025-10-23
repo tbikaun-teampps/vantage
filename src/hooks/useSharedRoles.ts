@@ -11,7 +11,7 @@ import {
 import type { SharedRole } from "@/types/assessment";
 
 // Query key factory for shared roles
-export const sharedRolesKeys = {
+const sharedRolesKeys = {
   all: ["shared-roles"] as const,
   allRoles: () => [...sharedRolesKeys.all, "all"] as const,
   userRoles: () => [...sharedRolesKeys.all, "user"] as const,
@@ -144,14 +144,5 @@ export function useSharedRoleActions() {
       updateMutation.reset();
       deleteMutation.reset();
     },
-  };
-}
-
-// Utility hook to refetch all shared roles data
-export function useRefreshSharedRoles() {
-  const queryClient = useQueryClient();
-
-  return () => {
-    queryClient.invalidateQueries({ queryKey: sharedRolesKeys.all });
   };
 }

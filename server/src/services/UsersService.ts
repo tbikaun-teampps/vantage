@@ -36,14 +36,15 @@ export class UsersService {
   }
 
   async getUserProfile(userId: string): Promise<Profile | null> {
-    const { data: profile, error } = await this.supabase
+    const { data, error } = await this.supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
 
     if (error) throw error;
-    return profile;
+    // Type assertion: database has all Profile fields including is_admin
+    return data as Profile | null;
   }
 
   async updateSubscription(
@@ -92,6 +93,7 @@ export class UsersService {
       .single();
 
     if (error) throw error;
-    return data;
+    // Type assertion: database has all Profile fields including is_admin
+    return data as Profile;
   }
 }

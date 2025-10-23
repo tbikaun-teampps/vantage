@@ -71,7 +71,7 @@ export function ExternalInterviewPage() {
   if (isAuthenticated) {
     return (
       <ExternalInterviewLayout>
-        <InterviewDetailPage isPublic={true} />
+        <InterviewDetailPage isIndividualInterview={true} />
       </ExternalInterviewLayout>
     );
   }

@@ -5,6 +5,7 @@ import type {
   CreateInterviewData,
   InterviewFilters,
 } from "@/types/assessment";
+import type { InterviewSummaryResponseData } from "@/types/api/interviews";
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -28,19 +29,19 @@ export async function createInterview(
 }
 
 /**
- * Creates one or more public interviews scoped to individual contacts via email and access code.
+ * Creates one or more individual interviews scoped to individual contacts via email and access code.
  */
-export async function createPublicInterviews(
+export async function createIndividualInterviews(
   data: CreateInterviewData
 ): Promise<Interview[]> {
   const response = await apiClient.post<ApiResponse<Interview[]>>(
-    "/interviews/public",
+    "/interviews/individual",
     data
   );
 
   if (!response.data.success) {
     throw new Error(
-      response.data.error || "Failed to create public interview(s)"
+      response.data.error || "Failed to create individual interview(s)"
     );
   }
 
@@ -69,22 +70,12 @@ export async function getInterviews(
   return response.data.data;
 }
 
-export async function getInterviewById(interviewId: number): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/interviews/${interviewId}`
-  );
-
-  if (!response.data.success) {
-    throw new Error(response.data.error || "Failed to fetch interview");
-  }
-
-  return response.data.data;
-}
-
-export async function getInterviewSummary(interviewId: number): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/interviews/${interviewId}/summary`
-  );
+export async function getInterviewSummary(
+  interviewId: number
+): Promise<InterviewSummaryResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<InterviewSummaryResponseData>
+  >(`/interviews/${interviewId}/summary`);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch interview summary");
@@ -117,20 +108,6 @@ export async function deleteInterview(interviewId: number): Promise<void> {
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to delete interview");
   }
-}
-
-export async function getInterviewProgress(interviewId: number): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/interviews/${interviewId}/progress`
-  );
-
-  if (!response.data.success) {
-    throw new Error(
-      response.data.error || "Failed to fetch interview progress"
-    );
-  }
-
-  return response.data.data;
 }
 
 export async function getInterviewQuestionById(

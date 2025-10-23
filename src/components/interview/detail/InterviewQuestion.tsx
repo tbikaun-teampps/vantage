@@ -19,7 +19,7 @@ import { InterviewActionBar } from "./InterviewActionBar";
 interface InterviewQuestionProps {
   questionId: number;
   form: any; // React Hook Form instance
-  isPublic: boolean;
+  isIndividualInterview: boolean;
   interviewId: number;
   handleSave: () => void;
   isSaving: boolean;
@@ -29,7 +29,7 @@ interface InterviewQuestionProps {
 export function InterviewQuestion({
   questionId,
   form,
-  isPublic,
+  isIndividualInterview,
   interviewId,
   handleSave,
   isSaving,
@@ -47,7 +47,7 @@ export function InterviewQuestion({
   // Use navigation hook for mobile buttons
   const { isFirst, isLast, onPrevious, onNext } = useInterviewNavigation(
     interviewId,
-    isPublic
+    isIndividualInterview
   );
 
   // Handle completion confirmation
@@ -85,8 +85,8 @@ export function InterviewQuestion({
 
     if (!hasAnswer) return false;
 
-    // For public interviews, role is pre-assigned via interview.assigned_role_id
-    if (isPublic) return true;
+    // For individual interviews, role is pre-assigned via interview.assigned_role_id
+    if (isIndividualInterview) return true;
 
     // For private interviews, check if at least one role is selected when roles are available
     // Note: Role validation will be handled by the RolesSection component itself
@@ -106,7 +106,7 @@ export function InterviewQuestion({
           responseId={question.response.id}
           breadcrumbs={question.breadcrumbs || {}}
           isQuestionAnswered={isQuestionAnswered}
-          isPublic={isPublic}
+          isIndividualInterview={isIndividualInterview}
         />
 
         <div
@@ -122,8 +122,8 @@ export function InterviewQuestion({
             isMobile={isMobile}
           />
 
-          {/* Roles Section - Hidden for public interviews */}
-          {!isPublic && question && (
+          {/* Roles Section - Hidden for individual interviews */}
+          {!isIndividualInterview && question && (
             <InterviewRolesSection
               form={form}
               isMobile={isMobile}
@@ -186,7 +186,7 @@ export function InterviewQuestion({
               isSaving={isSaving}
               isDirty={form.formState.isDirty}
               onSave={handleSave}
-              isPublic={isPublic}
+              isIndividualInterview={isIndividualInterview}
               onComplete={
                 isLast && isQuestionAnswered() && !form.formState.isDirty
                   ? () => setIsCompletionDialogOpen(true)

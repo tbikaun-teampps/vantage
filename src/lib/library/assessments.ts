@@ -1,61 +1,69 @@
 // Assessment questionnaire library - Generated from JSON data
 // This file contains the comprehensive Asset Management Assessment
 
-import type { QuestionTemplate, SectionTemplate, QuestionnaireTemplate } from './questionnaires';
+import type {
+  QuestionTemplate,
+  SectionTemplate,
+  QuestionnaireTemplate,
+} from "./questionnaires";
+import { ratingScaleSets } from "./rating-scales";
 
-// Assessment Questions (137 total)
+// Assessment Questions
 export const assessmentQuestions: QuestionTemplate[] = [
   {
     id: 1000,
     title: "Work Identification Training",
-    question_text: "How are new employees being trained in Work Identification and Notification creation? Have Operators and Maintainers received Work Identification training? Are there training gaps regarding SAP work requests? Have Service Providers/contractors received training?",
-    context: "Operators/maintainers/professionals/contractors receive training in Work Identification and Notification creation. Work identification is incorporated into new employee training with site-specific materials and SAP notification training.",
+    question_text:
+      "How are new employees being trained in Work Identification and Notification creation? Have Operators and Maintainers received Work Identification training? Are there training gaps regarding SAP work requests? Have Service Providers/contractors received training?",
+    context:
+      "Operators/maintainers/professionals/contractors receive training in Work Identification and Notification creation. Work identification is incorporated into new employee training with site-specific materials and SAP notification training.",
     category: "Work Management",
-    suggestedRatingScaleSetId: 4,
   },
   {
     id: 1001,
-    title: "PM Work Identification", 
-    question_text: "Is all PM Work set up within SAP? Is PM work calendar-based or based on tactics reviews? For new equipment, is PM Work based on formal Asset Tactics Development? What is the process for modifications to existing tactics?",
-    context: "PM Work has defined scope and frequency, originating from asset maintenance strategy and built into maintenance tactics. All strategies and tactics are created within SAP for automatic generation.",
+    title: "PM Work Identification",
+    question_text:
+      "Is all PM Work set up within SAP? Is PM work calendar-based or based on tactics reviews? For new equipment, is PM Work based on formal Asset Tactics Development? What is the process for modifications to existing tactics?",
+    context:
+      "PM Work has defined scope and frequency, originating from asset maintenance strategy and built into maintenance tactics. All strategies and tactics are created within SAP for automatic generation.",
     category: "Work Management",
-    suggestedRatingScaleSetId: 4,
   },
   {
     id: 1002,
     title: "Operator Inspection Checklists",
-    question_text: "Are there Operators' checklists for all equipment? Is there alignment with checklist details and maintenance strategies? Are all defects entered as Notifications in SAP timely? Do Notifications represent all aspects of equipment condition?",
-    context: "Operator inspection checklists are up-to-date and aligned with equipment maintenance strategy (Daily, Weekly, Monthly). Defects found are entered in SAP considering safety, materials, tasks, resources, and feedback.",
-    category: "Work Management", 
-    suggestedRatingScaleSetId: 4,
+    question_text:
+      "Are there Operators' checklists for all equipment? Is there alignment with checklist details and maintenance strategies? Are all defects entered as Notifications in SAP timely? Do Notifications represent all aspects of equipment condition?",
+    context:
+      "Operator inspection checklists are up-to-date and aligned with equipment maintenance strategy (Daily, Weekly, Monthly). Defects found are entered in SAP considering safety, materials, tasks, resources, and feedback.",
+    category: "Work Management",
   },
   {
     id: 1003,
     title: "Maintainer Inspection Checklists",
-    question_text: "When maintainers perform inspection checklists, are defects entered in SAP? Is there alignment with maintenance strategies? How are changes transferred to checklists? Are defects scheduled using standard planning process?",
-    context: "Inspection checklists are up-to-date and aligned with equipment maintenance strategy, considering safety, materials, tasks, resources, feedback, and sign-off requirements.",
+    question_text:
+      "When maintainers perform inspection checklists, are defects entered in SAP? Is there alignment with maintenance strategies? How are changes transferred to checklists? Are defects scheduled using standard planning process?",
+    context:
+      "Inspection checklists are up-to-date and aligned with equipment maintenance strategy, considering safety, materials, tasks, resources, feedback, and sign-off requirements.",
     category: "Work Management",
-    suggestedRatingScaleSetId: 4,
   },
   {
     id: 1004,
     title: "Notification Process",
-    question_text: "Are notifications written timely with sufficient detail? Are all defects captured in SAP at appropriate hierarchy levels? Are accurate failure modes captured? What is the ratio of notifications from operations vs maintenance?",
-    context: "All work requests are recorded in SAP as Notifications, including reliability inspection findings. Adequate information includes what (fault description), where (maintainable item), when (occurrence and priority), and why (failure modes).",
+    question_text:
+      "Are notifications written timely with sufficient detail? Are all defects captured in SAP at appropriate hierarchy levels? Are accurate failure modes captured? What is the ratio of notifications from operations vs maintenance?",
+    context:
+      "All work requests are recorded in SAP as Notifications, including reliability inspection findings. Adequate information includes what (fault description), where (maintainable item), when (occurrence and priority), and why (failure modes).",
     category: "Work Management",
-    suggestedRatingScaleSetId: 4,
   },
   {
     id: 1005,
-    title: "Work Priority Determination", 
-    question_text: "How are priorities currently determined? Do operations and maintenance discuss and negotiate priorities? Are priorities based on equipment criticalities? Does the planner work from prioritized lists?",
-    context: "Priorities of work must be determined based on set guidelines and in line with maintenance and operational requirements.",
+    title: "Work Priority Determination",
+    question_text:
+      "How are priorities currently determined? Do operations and maintenance discuss and negotiate priorities? Are priorities based on equipment criticalities? Does the planner work from prioritized lists?",
+    context:
+      "Priorities of work must be determined based on set guidelines and in line with maintenance and operational requirements.",
     category: "Work Management",
-    suggestedRatingScaleSetId: 4,
   },
-  // Additional questions would continue here...
-  // Note: For brevity, I'm including a representative sample
-  // The full 137 questions would be included in the actual implementation
 ];
 
 // Assessment Section Templates (4 main sections)
@@ -63,31 +71,36 @@ export const assessmentSections: SectionTemplate[] = [
   {
     id: "assessment-work-management",
     title: "Work Management",
-    description: "Assessment of work identification, planning, scheduling, and execution processes",
+    description:
+      "Assessment of work identification, planning, scheduling, and execution processes",
     category: "Asset Management",
     steps: [
       {
         id: "identify-work",
         title: "Identify Work",
         description: "Work identification and notification processes",
-        questionIds: [1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009],
+        questionIds: [
+          1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009,
+        ],
       },
       {
-        id: "plan-work", 
+        id: "plan-work",
         title: "Plan Work",
         description: "Work planning and scoping processes",
-        questionIds: [1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019],
+        questionIds: [
+          1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019,
+        ],
       },
       {
         id: "schedule-work",
-        title: "Schedule Work", 
+        title: "Schedule Work",
         description: "Work scheduling and coordination processes",
         questionIds: [1020, 1021, 1022, 1023, 1024, 1025, 1026, 1027],
       },
       {
         id: "execute-work",
         title: "Execute Work",
-        description: "Work execution and completion processes", 
+        description: "Work execution and completion processes",
         questionIds: [1028, 1029, 1030, 1031, 1032, 1033, 1034, 1035],
       },
       {
@@ -105,9 +118,10 @@ export const assessmentSections: SectionTemplate[] = [
     ],
   },
   {
-    id: "assessment-defect-elimination", 
+    id: "assessment-defect-elimination",
     title: "Defect Elimination",
-    description: "Assessment of defect identification, analysis, and elimination processes",
+    description:
+      "Assessment of defect identification, analysis, and elimination processes",
     category: "Asset Management",
     steps: [
       {
@@ -118,7 +132,7 @@ export const assessmentSections: SectionTemplate[] = [
       },
       {
         id: "defect-data-sources",
-        title: "Data Sources", 
+        title: "Data Sources",
         description: "Data sources for defect identification",
         questionIds: [1049, 1050, 1051, 1052, 1053],
       },
@@ -130,7 +144,7 @@ export const assessmentSections: SectionTemplate[] = [
       },
       {
         id: "defect-analysis",
-        title: "Defect Analysis", 
+        title: "Defect Analysis",
         description: "Root cause analysis processes",
         questionIds: [1059, 1060, 1061, 1062, 1063],
       },
@@ -150,8 +164,9 @@ export const assessmentSections: SectionTemplate[] = [
   },
   {
     id: "assessment-asset-strategy-tactics",
-    title: "Asset Strategy & Tactics", 
-    description: "Assessment of asset strategy development and maintenance tactics",
+    title: "Asset Strategy & Tactics",
+    description:
+      "Assessment of asset strategy development and maintenance tactics",
     category: "Asset Management",
     steps: [
       {
@@ -173,8 +188,9 @@ export const assessmentSections: SectionTemplate[] = [
   {
     id: "assessment-asset-health",
     title: "Asset Health",
-    description: "Assessment of asset condition monitoring and health management",
-    category: "Asset Management", 
+    description:
+      "Assessment of asset condition monitoring and health management",
+    category: "Asset Management",
     steps: [
       {
         id: "condition-monitoring",
@@ -197,13 +213,20 @@ export const assessmentSections: SectionTemplate[] = [
 export const assetManagementAssessment: QuestionnaireTemplate = {
   id: "asset-management-assessment",
   name: "Asset Management Assessment",
-  description: "Comprehensive assessment of asset management capabilities across work management, defect elimination, asset strategy, and asset health",
+  description:
+    "Comprehensive assessment of asset management capabilities across work management, defect elimination, asset strategy, and asset health",
   category: "Asset Management",
   industry: "Manufacturing",
   complianceFramework: "ISO 55000",
   estimatedMinutes: 120,
-  tags: ["asset management", "maintenance", "reliability", "strategy", "assessment"],
-  defaultRatingScaleSetId: 4, // Maturity Scale (Reactive -> Optimized)
+  tags: [
+    "asset management",
+    "maintenance",
+    "reliability",
+    "strategy",
+    "assessment",
+  ],
+  ratingScaleSet: ratingScaleSets[0],
   sections: assessmentSections,
 };
 

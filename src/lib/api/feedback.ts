@@ -20,7 +20,9 @@ export async function submitFeedback(
     // Capture page URL client-side if not provided
     const feedbackData = {
       ...data,
-      page_url: data.page_url || (typeof window !== "undefined" ? window.location.href : ""),
+      page_url:
+        data.page_url ||
+        (typeof window !== "undefined" ? window.location.href : ""),
     };
 
     const response = await apiClient.post<FeedbackResponse>(

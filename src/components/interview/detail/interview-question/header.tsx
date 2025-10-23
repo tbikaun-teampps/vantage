@@ -18,7 +18,7 @@ interface InterviewQuestionHeader {
     question: string;
   };
   isQuestionAnswered: () => boolean;
-  isPublic: boolean;
+  isIndividualInterview: boolean;
 }
 
 export function InterviewQuestionHeader({
@@ -27,7 +27,7 @@ export function InterviewQuestionHeader({
   responseId,
   breadcrumbs,
   isQuestionAnswered,
-  isPublic,
+  isIndividualInterview,
 }: InterviewQuestionHeader) {
   const { data: progress, isLoading } = useInterviewProgress(interviewId);
 
@@ -88,7 +88,7 @@ export function InterviewQuestionHeader({
               <div className="flex items-center space-x-2">
                 <InterviewComments responseId={responseId} />
                 <InterviewEvidence responseId={responseId} />
-                {!isPublic && <InterviewActions responseId={responseId} />}
+                {!isIndividualInterview && <InterviewActions responseId={responseId} />}
               </div>
             )}
           </div>

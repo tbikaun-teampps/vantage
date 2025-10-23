@@ -4,7 +4,7 @@ import { apiClient } from "@/lib/api/client";
 import type { UserProfile } from "@/types/assessment";
 
 // Query key factory for profile cache management
-export const profileKeys = {
+const profileKeys = {
   all: ["profile"] as const,
   detail: (userId: string) => [...profileKeys.all, "detail", userId] as const,
 };
