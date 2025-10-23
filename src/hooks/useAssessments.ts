@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
   AssessmentWithCounts,
   AssessmentWithQuestionnaire,
-  CreateAssessmentData,
   AssessmentFilters,
 } from "@/types/assessment";
 import type { UpdateInput } from "@/types";
@@ -24,7 +23,8 @@ export const assessmentKeys = {
     [...assessmentKeys.lists(), { companyId, filters }] as const,
   details: () => [...assessmentKeys.all, "detail"] as const,
   detail: (id: number) => [...assessmentKeys.details(), id] as const,
-  questionnaires: (companyId: string) => [...assessmentKeys.all, "questionnaires", companyId] as const,
+  questionnaires: (companyId: string) =>
+    [...assessmentKeys.all, "questionnaires", companyId] as const,
 };
 
 // Hook to fetch assessments with optional filtering

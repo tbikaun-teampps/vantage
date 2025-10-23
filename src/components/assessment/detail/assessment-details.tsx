@@ -23,7 +23,7 @@ interface AssessmentDetailsProps {
   onStatusChange: (status: string) => Promise<void>;
   onNameChange: (name: string) => Promise<void>;
   onDescriptionChange: (description: string) => Promise<void>;
-  onInterviewOverviewChange: (overview: string) => Promise<void>;
+  onInterviewOverviewChange?: (overview: string) => Promise<void>;
   assessmentType: "onsite" | "desktop";
 }
 
@@ -64,7 +64,7 @@ export function AssessmentDetails({
       return "Interview overview must be less than 1000 characters";
     }
     return null;
-  }
+  };
 
   // Status options with icons
   const statusOptions: SelectOption[] = [
@@ -142,16 +142,18 @@ export function AssessmentDetails({
             minRows={2}
           />
 
-          <InlineFieldEditor
-            label="Interview Overview"
-            value={assessment.interview_overview || ""}
-            placeholder="Enter interview overview (optional)"
-            type="textarea"
-            onSave={onInterviewOverviewChange}
-            validation={validateInterviewOverview}
-            maxLength={1000}
-            minRows={2}
-          />
+          {onInterviewOverviewChange && (
+            <InlineFieldEditor
+              label="Interview Overview"
+              value={assessment.interview_overview || ""}
+              placeholder="Enter interview overview (optional)"
+              type="textarea"
+              onSave={onInterviewOverviewChange}
+              validation={validateInterviewOverview}
+              maxLength={1000}
+              minRows={2}
+            />
+          )}
 
           {/* Conditional Row 3: Questionnaire Template + Created */}
           {assessmentType === "onsite" && (
