@@ -6,7 +6,7 @@ import { subscriptionTierMiddleware } from "./subscription";
 /**
  * Flexible authentication middleware that supports both:
  * 1. Standard Supabase authentication (JWT bearer token)
- * 2. Public interview authentication (JWT with role: "public_interviewee")
+ * 2. Public (individual) interview authentication (JWT with role: "public_interviewee")
  *
  * Automatically detects which auth method to use based on JWT role claim
  */

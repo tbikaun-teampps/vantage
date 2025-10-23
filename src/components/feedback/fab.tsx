@@ -25,15 +25,15 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useFeedbackActions } from "@/hooks/useFeedback";
 import { toast } from "sonner";
+import type { FeedbackType } from "@/lib/api/feedback";
 
 export default function FeedbackFloatingActionButton() {
-  const { submitFeedback, isSubmitting, feedbackError, resetErrors } = useFeedbackActions();
+  const { submitFeedback, isSubmitting, feedbackError, resetErrors } =
+    useFeedbackActions();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const [type, setType] = useState<
-    "bug" | "feature" | "general" | "improvement"
-  >("general");
+  const [type, setType] = useState<FeedbackType>("general");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +77,10 @@ export default function FeedbackFloatingActionButton() {
               <MessageCircle className="h-6 w-6 text-white" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="left" className="bg-popover text-popover-foreground">
+          <TooltipContent
+            side="left"
+            className="bg-popover text-popover-foreground"
+          >
             <p className="text-sm">Send feedback</p>
           </TooltipContent>
         </Tooltip>
@@ -104,7 +107,9 @@ export default function FeedbackFloatingActionButton() {
               <Label htmlFor="feedback-type">Type</Label>
               <Select
                 value={type}
-                onValueChange={(value: "bug" | "feature" | "general" | "improvement") => setType(value)}
+                onValueChange={(
+                  value: "bug" | "feature" | "general" | "improvement"
+                ) => setType(value)}
               >
                 <SelectTrigger id="feedback-type">
                   <SelectValue placeholder="Select feedback type" />

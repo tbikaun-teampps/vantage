@@ -6,7 +6,7 @@ export type Region = DatabaseRow<"regions">;
 export type Site = DatabaseRow<"sites">;
 export type AssetGroup = DatabaseRow<"asset_groups">;
 export type WorkGroup = DatabaseRow<"work_groups">;
-export type Role = DatabaseRow<"roles">;
+type Role = DatabaseRow<"roles">;
 
 // Tree structure interfaces
 export type TreeNodeType =

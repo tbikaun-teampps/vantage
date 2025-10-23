@@ -86,7 +86,7 @@ export function InterviewsListPage() {
 
       <CreateInterviewDialog
         mode="standalone"
-        showPublicOptions={true}
+        showIndividualOptions={true}
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
       />

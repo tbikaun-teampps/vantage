@@ -14,7 +14,6 @@ export function useAssessmentDetail(assessmentId: number) {
   const { assessmentType } = useAssessmentContext();
   const companyId = useCompanyFromUrl();
 
-  // Assessment hooks
   const {
     data: assessment,
     isLoading: assessmentLoading,

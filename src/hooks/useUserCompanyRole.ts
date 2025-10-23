@@ -37,62 +37,24 @@ export function useUserCompanyRole() {
  * Utility hook to check if user has at least the minimum required role
  * Role hierarchy: viewer < admin < owner
  */
-export function useHasMinRole(minRole: 'viewer' | 'admin' | 'owner'): boolean {
+function useHasMinRole(minRole: "viewer" | "admin" | "owner"): boolean {
   const { data: userRole, isLoading } = useUserCompanyRole();
-  
+
   // If still loading, return false for safety (deny access)
   if (isLoading || !userRole) {
     return false;
   }
-  
+
   const roleHierarchy = { viewer: 0, admin: 1, owner: 2 };
   const userLevel = roleHierarchy[userRole as keyof typeof roleHierarchy] ?? -1;
   const minLevel = roleHierarchy[minRole];
-  
+
   return userLevel >= minLevel;
-}
-
-/**
- * Utility hook to check if user has a specific role
- */
-export function useHasRole(role: 'viewer' | 'admin' | 'owner'): boolean {
-  const { data: userRole } = useUserCompanyRole();
-  return userRole === role;
-}
-
-/**
- * Utility hook to check if user is an owner
- */
-export function useIsOwner(): boolean {
-  return useHasRole('owner');
 }
 
 /**
  * Utility hook to check if user is an admin or owner
  */
 export function useCanAdmin(): boolean {
-  return useHasMinRole('admin');
-}
-
-/**
- * Utility hook that returns role-based permissions object
- */
-export function useRolePermissions() {
-  const { data: userRole, isLoading } = useUserCompanyRole();
-  
-  const isOwner = userRole === 'owner';
-  const isAdmin = userRole === 'admin' || isOwner;
-  const canView = !!userRole; // viewer, admin, or owner
-  
-  return {
-    userRole,
-    isLoading,
-    isOwner,
-    isAdmin,
-    canView,
-    canEdit: isAdmin,
-    canDelete: isOwner,
-    canManageUsers: isOwner,
-    canCreateCompany: isOwner,
-  };
+  return useHasMinRole("admin");
 }

@@ -96,7 +96,7 @@ export function AppRouter() {
               <Route element={<InterviewLayout />}>
                 <Route
                   path="assessments/onsite/interviews/:id"
-                  element={<InterviewDetailPage isPublic={false} />}
+                  element={<InterviewDetailPage isIndividualInterview={false} />}
                 />
               </Route>
 

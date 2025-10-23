@@ -1,8 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getInterviews } from "@/lib/api/interviews";
-import type {
-  InterviewFilters,
-} from "@/types/assessment";
+import type { InterviewFilters } from "@/types/assessment";
 import { getInterviewsByAssessmentId } from "@/lib/api/assessments";
 
 // Query key factory for cache management
@@ -29,7 +27,7 @@ export function useInterviews(companyId: string, filters?: InterviewFilters) {
 }
 
 export function useInterviewsByAssessment(assessmentId: number) {
-  const filters: InterviewFilters = { assessment_id: assessmentId };
+  const filters: InterviewFilters = { assessmentId };
   return useQuery({
     queryKey: interviewKeys.list(filters),
     queryFn: () => getInterviewsByAssessmentId(assessmentId),

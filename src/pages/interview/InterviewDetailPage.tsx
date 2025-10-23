@@ -1,4 +1,4 @@
-import { InterviewQuestion } from "@/components/interview/detail";
+import { InterviewQuestion } from "@/components/interview/detail/InterviewQuestion";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useInterviewStructure } from "@/hooks/interview/useInterviewStructure";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
@@ -15,7 +15,7 @@ import type { InterviewFeedback } from "@/components/interview/detail/InterviewC
 import { IntroScreen } from "@/components/interview/detail/IntroScreen";
 
 interface InterviewDetailPageProps {
-  isPublic?: boolean;
+  isIndividualInterview?: boolean;
 }
 
 // Form schema for interview responses
@@ -34,9 +34,9 @@ interface InterviewState {
 
 const getInterviewState = (
   interviewId: number,
-  isPublic: boolean
+  isIndividualInterview: boolean
 ): InterviewState | null => {
-  if (!isPublic) return null;
+  if (!isIndividualInterview) return null;
   try {
     const key = `interview-${interviewId}-state`;
     const stored = localStorage.getItem(key);
@@ -48,13 +48,13 @@ const getInterviewState = (
 
 const setInterviewState = (
   interviewId: number,
-  isPublic: boolean,
+  isIndividualInterview: boolean,
   state: Partial<InterviewState>
 ) => {
-  if (!isPublic) return;
+  if (!isIndividualInterview) return;
   try {
     const key = `interview-${interviewId}-state`;
-    const existing = getInterviewState(interviewId, isPublic) || {
+    const existing = getInterviewState(interviewId, isIndividualInterview) || {
       lastQuestionId: null,
     };
     localStorage.setItem(key, JSON.stringify({ ...existing, ...state }));
@@ -64,14 +64,14 @@ const setInterviewState = (
 };
 
 export function InterviewDetailPage({
-  isPublic = false,
+  isIndividualInterview = false,
 }: InterviewDetailPageProps) {
   const { id: interviewId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Always show intro for public interviews
-  const [showIntro, setShowIntro] = useState(isPublic);
+  // Always show intro for individual interviews
+  const [showIntro, setShowIntro] = useState(isIndividualInterview);
 
   // Fetch data using new 3-endpoint architecture
   const {
@@ -132,12 +132,12 @@ export function InterviewDetailPage({
 
   // Track last question in localStorage for resume functionality
   useEffect(() => {
-    if (isPublic && currentQuestionId && interviewId) {
-      setInterviewState(parseInt(interviewId), isPublic, {
+    if (isIndividualInterview && currentQuestionId && interviewId) {
+      setInterviewState(parseInt(interviewId), isIndividualInterview, {
         lastQuestionId: currentQuestionId,
       });
     }
-  }, [currentQuestionId, interviewId, isPublic]);
+  }, [currentQuestionId, interviewId, isIndividualInterview]);
 
   const isLoading = isLoadingStructure;
 
@@ -181,7 +181,7 @@ export function InterviewDetailPage({
   const dismissIntro = () => {
     setShowIntro(false);
     // Track the current question for resume functionality
-    setInterviewState(parseInt(interviewId!), isPublic, {
+    setInterviewState(parseInt(interviewId!), isIndividualInterview, {
       lastQuestionId: currentQuestionId,
     });
   };
@@ -200,8 +200,8 @@ export function InterviewDetailPage({
     }
   };
 
-  // Show intro screen for public interviews on first load
-  if (showIntro && isPublic) {
+  // Show intro screen for individual interviews on first load
+  if (showIntro && isIndividualInterview) {
     return (
       <IntroScreen
         interviewId={parseInt(interviewId!)}
@@ -214,7 +214,7 @@ export function InterviewDetailPage({
     <InterviewQuestion
       questionId={currentQuestionId}
       form={form}
-      isPublic={isPublic}
+      isIndividualInterview={isIndividualInterview}
       interviewId={parseInt(interviewId!)}
       handleSave={handleSave}
       isSaving={isSaving}

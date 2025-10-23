@@ -16,8 +16,7 @@ import {
   IconTrash,
   IconPalette,
 } from "@tabler/icons-react";
-import { useTourManager } from "@/lib/tours";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Loader } from "@/components/loader";
 import { HexagonalBackground } from "@/components/hexagonal-bg";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
@@ -30,42 +29,29 @@ import { toast } from "sonner";
 import { SelectCompanyUserMenu } from "@/components/select-company-user-menu";
 import { getCompanies } from "@/lib/api/companies";
 import { ManageCompanyBrandingDialog } from "@/components/forms/manage-company-branding-dialog";
-import { cn } from "@/lib/utils";
+import { cn, getRoleBadge } from "@/lib/utils";
+import type { Company } from "@/types/api/companies";
 
 /**
  * Company selection page - shown when user needs to select a company
  */
 export function SelectCompanyPage() {
   const navigate = useCompanyAwareNavigate();
-  const { startTour, shouldShowTour } = useTourManager();
   const { canCreateCompany } = useFeatureFlags();
   const { deleteCompany } = useCompanyActions();
   const { data: profile } = useProfile();
-  const isDemoMode = profile?.subscription_tier === "demo";
-
-  // Helper function to get badge variant and text for user role
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "owner":
-        return { variant: "default" as const, text: "Owner" };
-      case "admin":
-        return { variant: "secondary" as const, text: "Admin" };
-      case "viewer":
-        return { variant: "outline" as const, text: "Viewer" };
-      default:
-        return { variant: "outline" as const, text: role };
-    }
-  };
-
   // Delete dialog state
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
-  const [companyToDelete, setCompanyToDelete] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] =
+    useState<string>("");
+  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
 
   // Branding dialog state
-  const [showBrandingDialog, setShowBrandingDialog] = useState(false);
-  const [companyForBranding, setCompanyForBranding] = useState(null);
+  const [showBrandingDialog, setShowBrandingDialog] = useState<boolean>(false);
+  const [companyForBranding, setCompanyForBranding] = useState<Company | null>(
+    null
+  );
 
   const {
     data: companies,
@@ -77,26 +63,26 @@ export function SelectCompanyPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Auto-start platform overview tour when no companies exist
-  useEffect(() => {
-    if (companies?.length === 0 && shouldShowTour("platform-overview")) {
-      setTimeout(() => {
-        startTour("platform-overview");
-      }, 1000);
-    }
-  }, [companies, shouldShowTour, startTour]);
+  if (!profile) {
+    return null;
+  }
+
+  const isDemoMode = profile.subscription_tier === "demo";
 
   const handleCompanySelect = (companyId: string) => {
     navigate(companyRoutes.dashboard(companyId));
   };
 
-  const handleDeleteClick = (company: any, event: React.MouseEvent) => {
+  const handleDeleteClick = (company: Company, event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent company selection when clicking delete
     setCompanyToDelete(company);
     setShowDeleteDialog(true);
   };
 
-  const handleEditBrandingClick = (company: any, event: React.MouseEvent) => {
+  const handleEditBrandingClick = (
+    company: Company,
+    event: React.MouseEvent
+  ) => {
     event.stopPropagation(); // Prevent company selection when clicking edit
     setCompanyForBranding(company);
     setShowBrandingDialog(true);
@@ -141,10 +127,6 @@ export function SelectCompanyPage() {
       setCompanyToDelete(null);
     }
   };
-
-  // const handleStartTour = () => {
-  //   startTour("platform-overview", true);
-  // };
 
   if (isLoading) {
     return (

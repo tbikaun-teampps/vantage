@@ -11,7 +11,7 @@ export type InterviewBasic = Pick<
   | "name"
   | "notes"
   | "status"
-  | "is_public"
+  | "is_individual"
   | "assessment_id"
 >;
 
@@ -40,7 +40,7 @@ export interface CreateInterviewData {
   interviewer_id: string | null;
   name: string;
   notes?: string | null;
-  is_public?: boolean;
+  is_individual?: boolean;
   enabled?: boolean;
   access_code?: string | null;
   interview_contact_id?: number | null;
@@ -50,7 +50,7 @@ export interface CreateInterviewData {
 
 export type UpdateInterviewData = Pick<
   Database["public"]["Tables"]["interviews"]["Update"],
-  "name" | "notes" | "is_public" | "enabled" | "status"
+  "name" | "notes" | "is_individual" | "enabled" | "status"
 >;
 
 export interface InterviewQuestion {
@@ -100,7 +100,7 @@ export interface InterviewSummary {
   status: Database["public"]["Enums"]["interview_statuses"];
   notes: string | null;
   overview: string | null;
-  is_public: boolean;
+  is_individual: boolean;
   due_at: string | null;
   assessment: { id: number | null; name: string } | null;
   interviewer: { full_name: string | null; email: string } | null;
@@ -142,7 +142,7 @@ export interface InterviewStructure {
     name: string;
     questionnaire_id: number;
     assessment_id: number | null;
-    is_public: boolean;
+    is_individual: boolean;
   };
   sections: {
     id: number;

@@ -7,7 +7,7 @@ interface InterviewStructure {
     name: string;
     questionnaire_id: number;
     assessment_id: number;
-    is_public: boolean;
+    is_individual: boolean;
   };
   sections: Array<{
     id: number;

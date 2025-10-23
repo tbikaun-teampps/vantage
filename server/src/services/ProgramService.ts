@@ -44,7 +44,7 @@ export class ProgramService {
   async createInterviews(
     programId: number,
     phaseId: number,
-    isPublic: boolean = false,
+    isIndividual: boolean = false,
     roleIds: number[] = [],
     contactIds: number[],
     interviewType: "onsite" | "presite",
@@ -55,9 +55,9 @@ export class ProgramService {
       throw new Error("At least one role must be selected");
     }
 
-    if (isPublic && contactIds.length === 0) {
+    if (isIndividual && contactIds.length === 0) {
       throw new Error(
-        "At least one contact must be selected for public interviews"
+        "At least one contact must be selected for individual interviews"
       );
     }
 
@@ -137,7 +137,7 @@ export class ProgramService {
     // Step 6: Create interview(s) based on type
     let interviewsCreated = 0;
 
-    if (isPublic) {
+    if (isIndividual) {
       // Create individual interview for each contact
       for (const contactId of contactIds) {
         await this.createSingleProgramInterview({
@@ -148,7 +148,7 @@ export class ProgramService {
           roleIds,
           questionIds,
           companyId: program.company_id,
-          isPublic: true,
+          isIndividual: true,
           createdBy,
           interviewType,
         });
@@ -164,7 +164,7 @@ export class ProgramService {
         roleIds,
         questionIds,
         companyId: program.company_id,
-        isPublic: false,
+        isIndividual: false,
         createdBy,
         interviewType,
       });
@@ -189,7 +189,7 @@ export class ProgramService {
     roleIds: number[];
     questionIds: number[];
     companyId: string;
-    isPublic: boolean;
+    isIndividual: boolean;
     createdBy: string;
     interviewType: "onsite" | "presite";
   }): Promise<void> {
@@ -200,7 +200,7 @@ export class ProgramService {
       contactId,
       questionIds,
       companyId,
-      isPublic,
+      isIndividual,
       createdBy,
       interviewType,
     } = params;
@@ -208,22 +208,22 @@ export class ProgramService {
     // roleIds might be modified, so keep as let
     let { roleIds } = params;
 
-    // Validation: Public individual interviews should only have one role
-    if (isPublic && contactId && roleIds.length > 1) {
+    // Validation: Individual interviews should only have one role
+    if (isIndividual && contactId && roleIds.length > 1) {
       console.warn(
-        `Public individual interview created with ${roleIds.length} roles for contact ${contactId}. Using only the first role to ensure single role assignment.`
+        `Individual interview created with ${roleIds.length} roles for contact ${contactId}. Using only the first role to ensure single role assignment.`
       );
       roleIds = [roleIds[0]];
     }
 
     // Generate interview name
     const interviewName =
-      isPublic && contactId
+      isIndividual && contactId
         ? `${interviewType} Interview - Contact ${contactId}`
         : `${interviewType} Interview - Group`;
 
-    // Generate access code for public interviews
-    const accessCode = isPublic
+    // Generate access code for individual interviews
+    const accessCode = isIndividual
       ? Math.random().toString(36).substring(2, 15) +
         Math.random().toString(36).substring(2, 15)
       : null;
@@ -239,7 +239,7 @@ export class ProgramService {
           questionnaire_id: questionnaireId,
           interview_contact_id: contactId,
           company_id: companyId,
-          is_public: isPublic,
+          is_individual: isIndividual,
           enabled: true,
           access_code: accessCode,
           status: "pending",
@@ -303,8 +303,8 @@ export class ProgramService {
           throw responsesError;
         }
 
-        // Step 4: For public interviews with single role, pre-populate response role associations
-        if (isPublic && roleIds.length === 1 && createdResponses) {
+        // Step 4: For individual interviews with single role, pre-populate response role associations
+        if (isIndividual && roleIds.length === 1 && createdResponses) {
           const responseRoleAssociations = createdResponses.map((response) => ({
             interview_response_id: response.id,
             role_id: roleIds[0],
@@ -418,7 +418,7 @@ export class ProgramService {
   }
 
   async getObjectiveCount(programId: number): Promise<number> {
-    const { count, error} = await this.supabase
+    const { count, error } = await this.supabase
       .from("program_objectives")
       .select("*", { count: "exact", head: true })
       .eq("program_id", programId)

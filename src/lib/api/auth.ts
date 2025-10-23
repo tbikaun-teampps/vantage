@@ -97,7 +97,7 @@ export const authApi = {
  * Helper to calculate token expiry timestamp
  * Default to 1 hour if backend doesn't provide expires_at
  */
-export function calculateTokenExpiry(): number {
+function calculateTokenExpiry(): number {
   return Math.floor(Date.now() / 1000) + 3600; // 1 hour in seconds
 }
 

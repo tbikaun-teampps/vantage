@@ -6,7 +6,6 @@ import ActionsWidget from "./ActionsWidget";
 import type { Widget, WidgetType } from "./types";
 import TableWidget from "./TableWidget";
 
-
 export const availableWidgets: Widget[] = [
   {
     id: "metric",
@@ -61,6 +60,4 @@ export const getWidget = (widgetId: WidgetType) =>
   availableWidgets.find((w) => w.id === widgetId);
 
 // Export types and components
-export type { Widget, WidgetComponentProps } from "./types";
-export { MetricWidget, ChartWidget, ActivityWidget, ActionsWidget };
 export { WidgetContainer } from "./WidgetContainer";

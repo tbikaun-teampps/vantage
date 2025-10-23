@@ -58,7 +58,7 @@ export function InterviewsList({ assessmentId }: InterviewsListProps) {
 
       <CreateInterviewDialog
         mode="contextual"
-        showPublicOptions={true}
+        showIndividualOptions={true}
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onSuccess={handleInterviewCreated}

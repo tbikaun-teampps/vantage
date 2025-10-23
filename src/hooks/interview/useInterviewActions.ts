@@ -1,6 +1,6 @@
 import {
   createInterview,
-  createPublicInterviews,
+  createIndividualInterviews,
   deleteInterview,
   updateInterview,
 } from "@/lib/api/interviews";
@@ -26,9 +26,9 @@ export function useInterviewActions() {
     },
   });
 
-  const createPublicInterviewsMutation = useMutation({
+  const createIndividualInterviewsMutation = useMutation({
     mutationFn: (data: any) => {
-      return createPublicInterviews(data);
+      return createIndividualInterviews(data);
     },
     onSuccess: () => {
       // Invalidate relevant interview lists - let them refetch fresh data
@@ -40,13 +40,10 @@ export function useInterviewActions() {
     mutationFn: ({
       id,
       updates,
-      isPublic,
     }: {
       id: number;
       updates: UpdateInterviewData;
-      isPublic: boolean;
     }) => {
-      // Use API for updates (isPublic param kept for backwards compatibility but not used yet)
       return updateInterview(id, updates);
     },
     onSuccess: async (_, { id, updates }) => {
@@ -92,9 +89,9 @@ export function useInterviewActions() {
     isCreating: createMutation.isPending,
     createError: createMutation.error,
 
-    createPublicInterviews: createPublicInterviewsMutation.mutateAsync,
-    isCreatingPublic: createPublicInterviewsMutation.isPending,
-    createPublicError: createPublicInterviewsMutation.error,
+    createIndividualInterviews: createIndividualInterviewsMutation.mutateAsync,
+    isCreatingIndividual: createIndividualInterviewsMutation.isPending,
+    createIndividualError: createIndividualInterviewsMutation.error,
 
     updateInterview: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,

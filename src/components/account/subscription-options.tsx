@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { IconCheck } from "@tabler/icons-react";
 import { useProfile, useProfileActions } from "@/hooks/useProfile";
 import { companyKeys } from "@/hooks/useCompany";
-import type { SubscriptionTier } from "@/types";
+import type { SubscriptionTier } from "@/types/auth";
 import type { Company } from "@/types/company";
 import { subscriptionPlans } from "@/components/account/subscription-data";
 import { BRAND_COLORS } from "@/lib/brand";

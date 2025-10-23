@@ -749,7 +749,7 @@ export function DesktopMap() {
           companyId,
           assessmentType
         );
-        setFilters(data);
+        setFilters(data.options);
         console.log("data", data);
         // Take the first measurement as the measurementType default
         setMeasurementType(data?.measurements[0]?.name);

@@ -4,7 +4,7 @@
  */
 
 import type { DatabaseRow } from "../utils";
-import type { UserProfile } from "./auth";
+import type { UserProfile } from "../auth";
 import type { Company, Role } from "./company";
 
 // Forward declarations for types from other domains

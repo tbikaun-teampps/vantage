@@ -152,22 +152,6 @@ export async function deleteProgramObjective(
   }
 }
 
-export async function getProgramObjectiveCount(
-  programId: number
-): Promise<number> {
-  const response = await apiClient.get<ApiResponse<number>>(
-    `/programs/${programId}/objectives/count`
-  );
-
-  if (!response.data.success) {
-    throw new Error(
-      response.data.error || "Failed to fetch program objective count"
-    );
-  }
-
-  return response.data.data;
-}
-
 // ====== Program Questionnaires ======
 
 export async function updateProgramOnsiteQuestionnaire(
@@ -281,7 +265,7 @@ export async function deletePhase(phaseId: number): Promise<void> {
 export interface CreateProgramInterviewsData {
   programId: number;
   phaseId: number;
-  isPublic?: boolean;
+  isIndividualInterview?: boolean;
   roleIds?: number[];
   contactIds: number[];
   interviewType: "onsite" | "presite";
@@ -293,7 +277,7 @@ export async function createProgramInterviews(
   const response = await apiClient.post<ApiResponse<any>>(
     `/programs/${data.programId}/phases/${data.phaseId}/interviews`,
     {
-      isPublic: data.isPublic,
+      isIndividualInterview: data.isIndividualInterview,
       roleIds: data.roleIds,
       contactIds: data.contactIds,
       interviewType: data.interviewType,

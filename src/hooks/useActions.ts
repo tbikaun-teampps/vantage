@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getCompanyInterviewResponseActions } from "@/lib/api/companies";
 
 // Query key factory for cache management
-export const actionsKeys = {
+const actionsKeys = {
   all: ["actions"] as const,
   lists: () => [...actionsKeys.all, "list"] as const,
   list: (companyId: string) => [...actionsKeys.lists(), companyId] as const,

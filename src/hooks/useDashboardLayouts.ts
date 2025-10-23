@@ -100,7 +100,7 @@ const createDefaultDashboard = (): CreateDashboardInput => ({
 });
 
 // Query key factory for cache management
-export const dashboardLayoutKeys = {
+const dashboardLayoutKeys = {
   all: ["dashboard-layouts"] as const,
   lists: () => [...dashboardLayoutKeys.all, "list"] as const,
   list: (companyId: string) =>
@@ -125,7 +125,7 @@ function transformDashboard(row: dashboardsApi.Dashboard): Dashboard {
 /**
  * Hook to fetch all dashboards for a company
  */
-export function useDashboards(companyId?: string) {
+function useDashboards(companyId?: string) {
   return useQuery({
     queryKey: companyId ? dashboardLayoutKeys.list(companyId) : [],
     queryFn: async () => {
@@ -140,26 +140,9 @@ export function useDashboards(companyId?: string) {
 }
 
 /**
- * Hook to fetch a single dashboard
- */
-export function useDashboard(dashboardId?: number, companyId?: string) {
-  return useQuery({
-    queryKey: dashboardId ? dashboardLayoutKeys.detail(dashboardId) : [],
-    queryFn: async () => {
-      if (!dashboardId || !companyId) return null;
-
-      const data = await dashboardsApi.getDashboardById(companyId, dashboardId);
-      return data ? transformDashboard(data) : null;
-    },
-    enabled: !!dashboardId && !!companyId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-  });
-}
-
-/**
  * Hook for dashboard CRUD operations with optimistic updates
  */
-export function useDashboardActions() {
+function useDashboardActions() {
   const queryClient = useQueryClient();
   const { data: currentCompany } = useCurrentCompany();
 

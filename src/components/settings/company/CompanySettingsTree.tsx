@@ -1,5 +1,5 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import TreeNode from "@/components/settings/company/tree-node";
+import TreeNode from "@/components/settings/company/tree-node/tree-node";
 import type { CompanyTreeNode } from "@/types/company";
 
 interface CompanySettingsTreeProps {

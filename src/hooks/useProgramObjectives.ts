@@ -5,7 +5,6 @@ import {
   createProgramObjective,
   updateProgramObjective,
   deleteProgramObjective,
-  getProgramObjectiveCount,
 } from "@/lib/api/programs";
 import type {
   CreateObjectiveData,
@@ -84,20 +83,14 @@ export function useDeleteObjective() {
       queryClient.invalidateQueries({
         queryKey: ["program-objectives", result.programId],
       });
-      queryClient.invalidateQueries({ queryKey: ["program", result.programId] });
+      queryClient.invalidateQueries({
+        queryKey: ["program", result.programId],
+      });
     },
     onError: (error: Error) => {
       toast.error("Failed to delete objective", {
         description: error.message,
       });
     },
-  });
-}
-
-export function useObjectiveCount(programId: number) {
-  return useQuery({
-    queryKey: ["program-objectives-count", programId],
-    queryFn: () => getProgramObjectiveCount(programId),
-    enabled: !!programId,
   });
 }

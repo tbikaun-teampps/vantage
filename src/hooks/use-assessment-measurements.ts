@@ -15,7 +15,7 @@ import type {
 // import type { AssessmentMeasurement } from "@/pages/assessments/desktop/detail/types";
 
 // Query key factory for assessment measurements
-export const assessmentMeasurementKeys = {
+const assessmentMeasurementKeys = {
   all: ["assessment-measurements"] as const,
   definitions: () => [...assessmentMeasurementKeys.all, "definitions"] as const,
   measurements: () =>
@@ -139,12 +139,7 @@ export function useAssessmentMeasurementActions() {
         value,
         location
       ),
-    onMutate: async ({
-      assessmentId,
-      measurementDefinitionId,
-      value,
-      location,
-    }) => {
+    onMutate: async ({ assessmentId }) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
         queryKey: assessmentMeasurementKeys.measurement(assessmentId),
@@ -207,7 +202,7 @@ export function useAssessmentMeasurementActions() {
       measurementId: number;
       updates: { calculated_value?: number };
     }) => updateAssessmentMeasurement(assessmentId, measurementId, updates),
-    onMutate: async ({ assessmentId, measurementId, updates }) => {
+    onMutate: async ({ assessmentId }) => {
       // Cancel outgoing refetches to prevent them from overwriting our optimistic update
       await queryClient.cancelQueries({
         queryKey: assessmentMeasurementKeys.measurement(assessmentId),

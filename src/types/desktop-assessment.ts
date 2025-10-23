@@ -18,13 +18,13 @@ export interface Measurement {
   data_sources: string[];
 }
 
-export interface MeasurementTerm {
+interface MeasurementTerm {
   id: number;
   description: string;
   term: string;
 }
 
-export interface RequiredColumn {
+interface RequiredColumn {
   name: string;
   type: 'string' | 'number' | 'date' | 'boolean';
   description: string;

@@ -1,17 +1,15 @@
-import type { MetricDefinition } from "./metrics";
-import type { DatabaseRow, CreateInput, UpdateInput, Enums } from "./utils";
+import type { DatabaseRow } from "./utils";
 
-export type ProgramPhaseStatusEnum = Enums["program_phase_statuses"];
-export type ProgramStatusEnum = Enums["program_statuses"];
+// export type ProgramPhaseStatusEnum = Enums["program_phase_statuses"];
 
 export type Program = DatabaseRow<"programs">;
 export type ProgramPhase = DatabaseRow<"program_phases">;
 export type ProgramObjective = DatabaseRow<"program_objectives">;
-export type ProgramMetric = DatabaseRow<"program_metrics">;
+// export type ProgramMetric = DatabaseRow<"program_metrics">;
 
-export interface ProgramMetricWithDefinition extends ProgramMetric {
-  metric_definition: MetricDefinition;
-}
+// export interface ProgramMetricWithDefinition extends ProgramMetric {
+//   metric_definition: MetricDefinition;
+// }
 
 export interface ProgramWithRelations extends Program {
   onsite_questionnaire?: {
@@ -34,8 +32,8 @@ export interface ProgramWithRelations extends Program {
   metrics_count?: number;
 }
 
-export type CreateProgramData = CreateInput<"programs">;
-export type UpdateProgramData = UpdateInput<"programs">;
+// export type CreateProgramData = CreateInput<"programs">;
+// export type UpdateProgramData = UpdateInput<"programs">;
 
 export interface CreateProgramFormData {
   name: string;

@@ -1,6 +1,5 @@
 import { Outlet, useParams, useNavigate } from "react-router-dom";
-import {
-  ErrorBoundary,
+import ErrorBoundary, {
   PublicErrorFallback,
 } from "@/components/error-boundary";
 import { useInterviewSummary } from "@/hooks/interview/useInterviewSummary";

@@ -40,7 +40,7 @@ export function SubscriptionModal({
 
   const currentTier = profile?.subscription_tier || "demo";
 
-  const handleSubscriptionChange = async (tier: SubscriptionTier) => {
+  const handleSubscriptionChange = async (tier: Exclude<SubscriptionTier, "interviewee">) => {
     if (tier === currentTier || updatingTier) return;
 
     setUpdatingTier(tier);

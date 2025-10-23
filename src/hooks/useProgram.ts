@@ -1,8 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type {
-  CreateProgramFormData,
-  Program,
-} from "@/types/program";
+import type { CreateProgramFormData, Program } from "@/types/program";
 import type { ProgramUpdateFormData } from "@/components/programs/detail/overview-tab/program-update-schema";
 import { toast } from "sonner";
 import {
@@ -23,7 +20,7 @@ import {
 } from "@/lib/api/programs";
 
 // Query key factory for cache management
-export const programKeys = {
+const programKeys = {
   all: ["programs"] as const,
   lists: () => [...programKeys.all, "list"] as const,
   list: (companyId?: string) =>
@@ -279,14 +276,14 @@ export function useCreateProgramInterviews() {
     mutationFn: ({
       programId,
       phaseId,
-      isPublic = false,
+      isIndividualInterview = false,
       roleIds = [],
       contactIds,
       interviewType,
     }: {
       programId: number;
       phaseId: number;
-      isPublic?: boolean;
+      isIndividualInterview?: boolean;
       roleIds?: number[];
       contactIds: number[];
       interviewType: "onsite" | "presite";
@@ -294,7 +291,7 @@ export function useCreateProgramInterviews() {
       createProgramInterviews({
         programId,
         phaseId,
-        isPublic,
+        isIndividualInterview,
         roleIds,
         contactIds,
         interviewType,
@@ -306,7 +303,7 @@ export function useCreateProgramInterviews() {
         queryKey: programKeys.detail(variables.programId),
       });
 
-      const interviewCount = variables.isPublic
+      const interviewCount = variables.isIndividualInterview
         ? variables.contactIds.length
         : 1;
       const interviewText = interviewCount === 1 ? "interview" : "interviews";

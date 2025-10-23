@@ -1,6 +1,5 @@
 import { apiClient } from "./client";
 
-// Types for email service
 export interface InviteTeamMemberData {
   email: string;
   name?: string;
@@ -36,28 +35,6 @@ export async function sendInterviewReminder(
         error instanceof Error
           ? error.message
           : "Failed to send interview reminder email",
-    };
-  }
-}
-
-export async function sendTeamMemberInvite(
-  data: InviteTeamMemberData
-): Promise<EmailResponse> {
-  try {
-    const response = await apiClient.post<EmailResponse>(
-      "/emails/send-team-member-invite",
-      data
-    );
-
-    return response.data;
-  } catch (error) {
-    console.error("Email service error:", error);
-    return {
-      success: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "Failed to send team member invite email",
     };
   }
 }

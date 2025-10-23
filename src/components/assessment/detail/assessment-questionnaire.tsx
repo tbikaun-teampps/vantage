@@ -44,7 +44,7 @@ export function QuestionnaireStructure({
 
   return (
     <Card
-      className=" shadow-none border-none"
+      className="shadow-none border-none"
       data-tour="questionnaire-structure"
     >
       <CardHeader>

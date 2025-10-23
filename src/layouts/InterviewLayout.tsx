@@ -1,5 +1,5 @@
 import { Outlet, useParams } from "react-router-dom";
-import { ErrorBoundary } from "@/components/error-boundary";
+import ErrorBoundary from "@/components/error-boundary";
 import { useInterview } from "@/hooks/interview/useInterview";
 import { InterviewExitDialog } from "@/components/interview/detail/InterviewExitDialog";
 import { InterviewLayoutHeader } from "@/components/layouts/interview/header";

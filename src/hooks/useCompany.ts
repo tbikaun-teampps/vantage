@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-// import { rolesService } from "@/lib/supabase/roles-service";
 import {
   deleteCompany,
   getCompanies,
@@ -9,8 +8,8 @@ import {
   getRegions,
   getSites,
   getAssetGroups,
-  createCompany as createCompanyApi,
-  updateCompany as updateCompanyApi,
+  createCompany,
+  updateCompany,
   createEntity,
   updateEntity,
   deleteEntity,
@@ -133,17 +132,6 @@ export function useAssetGroups(companyId: string | null) {
   });
 }
 
-// export function useRoles() {
-//   return useQuery({
-//     queryKey: companyKeys.roles(),
-//     queryFn: () =>
-//       rolesService.getRoles({
-//         includeSharedRole: true,
-//       }),
-//     staleTime: 15 * 60 * 1000, // 15 minutes - roles change infrequently
-//   });
-// }
-
 // Mutation hooks with cache updates
 export function useCompanyActions() {
   const queryClient = useQueryClient();
@@ -151,7 +139,7 @@ export function useCompanyActions() {
   const createMutation = useMutation({
     mutationFn: (formData: FormData) => {
       const data = formDataToJson(formData);
-      return createCompanyApi(data);
+      return createCompany(data);
     },
     onSuccess: (newCompany) => {
       // Optimistic cache update for companies list
@@ -174,7 +162,7 @@ export function useCompanyActions() {
       formData: FormData;
     }) => {
       const data = formDataToJson(formData);
-      return updateCompanyApi(companyId, data);
+      return updateCompany(companyId, data);
     },
     onSuccess: (updatedCompany, { companyId }) => {
       // Update companies list
@@ -286,7 +274,7 @@ export function useTreeNodeActions() {
       const data = formDataToJson(formData);
 
       if (nodeType === "company") {
-        return updateCompanyApi(String(nodeId), data);
+        return updateCompany(String(nodeId), data);
       }
 
       const entityType = getEntityTypeFromTreeNodeType(nodeType);

@@ -16,15 +16,9 @@ interface DemoModeCardProps {
 }
 
 export function DemoModeCard({ onToggle, isUpdating }: DemoModeCardProps) {
-  const { isDemoMode } = useAuthStore();
+  const { profile } = useAuthStore();
 
-  // Check if demo mode is locked via environment variable
-  const isDemoModeLocked = import.meta.env.VITE_DEMO_MODE_LOCKED === "true";
-
-  // Don't render if demo mode is locked
-  if (isDemoModeLocked) {
-    return null;
-  }
+  const isDemoMode = profile?.subscription_tier === "demo";
 
   return (
     <Card
