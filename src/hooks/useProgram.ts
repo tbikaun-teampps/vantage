@@ -279,14 +279,14 @@ export function useCreateProgramInterviews() {
     mutationFn: ({
       programId,
       phaseId,
-      isPublic = false,
+      isIndividualInterview = false,
       roleIds = [],
       contactIds,
       interviewType,
     }: {
       programId: number;
       phaseId: number;
-      isPublic?: boolean;
+      isIndividualInterview?: boolean;
       roleIds?: number[];
       contactIds: number[];
       interviewType: "onsite" | "presite";
@@ -294,7 +294,7 @@ export function useCreateProgramInterviews() {
       createProgramInterviews({
         programId,
         phaseId,
-        isPublic,
+        isIndividualInterview,
         roleIds,
         contactIds,
         interviewType,
@@ -306,7 +306,7 @@ export function useCreateProgramInterviews() {
         queryKey: programKeys.detail(variables.programId),
       });
 
-      const interviewCount = variables.isPublic
+      const interviewCount = variables.isIndividualInterview
         ? variables.contactIds.length
         : 1;
       const interviewText = interviewCount === 1 ? "interview" : "interviews";

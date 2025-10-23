@@ -17,6 +17,8 @@ import {
   IconEye,
   IconCalendar,
   IconEdit,
+  IconUsers,
+  IconUser,
 } from "@tabler/icons-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
@@ -124,7 +126,6 @@ export function InterviewsDataTable({
       await updateInterview({
         id: interviewId,
         updates: { enabled: newEnabledState },
-        isPublic: false,
       });
       toast.success(
         `Interview ${newEnabledState ? "enabled" : "disabled"} successfully`
@@ -140,9 +141,9 @@ export function InterviewsDataTable({
     }
   };
 
-  const handleCopyPublicLink = (interview: InterviewData) => {
-    if (!interview.enabled || !interview.is_public) {
-      toast.error("Interview must be enabled to copy public link");
+  const handleCopyIndividualLink = (interview: InterviewData) => {
+    if (!interview.enabled || !interview.is_individual) {
+      toast.error("Interview must be enabled to copy individual link");
       return;
     }
 
@@ -150,7 +151,7 @@ export function InterviewsDataTable({
     navigator.clipboard
       .writeText(publicUrl)
       .then(() => {
-        toast.success("Public link copied to clipboard");
+        toast.success("Individual interview link copied to clipboard");
       })
       .catch(() => {
         toast.error("Failed to copy link to clipboard");
@@ -158,7 +159,7 @@ export function InterviewsDataTable({
   };
 
   const handleSendReminderEmail = async (interview: InterviewData) => {
-    if (!interview.enabled || !interview.is_public) {
+    if (!interview.enabled || !interview.is_individual) {
       toast.error("Interview must be enabled to send reminder");
       return;
     }
@@ -244,7 +245,6 @@ export function InterviewsDataTable({
       await updateInterview({
         id: editingInterview.id,
         updates,
-        isPublic: editingInterview.is_public,
       });
       toast.success("Interview updated successfully");
       setEditDialogOpen(false);
@@ -268,7 +268,7 @@ export function InterviewsDataTable({
         <div className="flex-1">
           <Link
             to={
-              row.original.is_public &&
+              row.original.is_individual &&
               row.original.access_code &&
               row.original.interviewee?.email
                 ? routes.externalInterviewDetail(
@@ -315,38 +315,25 @@ export function InterviewsDataTable({
         ]
       : []),
     {
-      accessorKey: "is_public",
-      header: "Public",
+      accessorKey: "is_individual",
+      header: "Type",
       cell: ({ row }) => {
         const interview = row.original;
-        return interview.is_public ? (
+        return interview.is_individual ? (
           <Badge
-            variant={interview.enabled ? "default" : "outline"}
+            variant={interview.enabled ? "secondary" : "outline"}
             className={`${
-              interview.enabled
-                ? "bg-green-100 text-green-800 border-green-300"
-                : "border-orange-300 text-orange-800"
-            } ${
-              togglingInterviewId === interview.id ||
-              sendingEmailId?.id === interview.id
-                ? "opacity-50"
-                : ""
+              !interview.enabled && "border-orange-300 text-orange-800"
             }`}
           >
-            {togglingInterviewId === interview.id ||
-            sendingEmailId?.id === interview.id ? (
-              <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
-            ) : interview.enabled ? (
-              <IconLockOpen className="h-3 w-3 mr-1" />
-            ) : (
-              <IconLock className="h-3 w-3 mr-1" />
-            )}
-            Public
+            <IconUser className="h-3 w-3 mr-1" />
+            Individual
+            {!interview.enabled && <IconLock className="h-3 w-3 ml-1" />}
           </Badge>
         ) : (
           <Badge variant="secondary">
-            <IconEyeOff className="h-3 w-3 mr-1" />
-            Private
+            <IconUsers className="h-3 w-3 mr-1" />
+            Group
           </Badge>
         );
       },
@@ -466,7 +453,12 @@ export function InterviewsDataTable({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <IconDots className="h-4 w-4" />
+                  {togglingInterviewId === interview.id ||
+                  sendingEmailId?.id === interview.id ? (
+                    <IconLoader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <IconDots className="h-4 w-4" />
+                  )}
                   <span className="sr-only">Open menu</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -482,7 +474,7 @@ export function InterviewsDataTable({
                   Edit Interview
                 </DropdownMenuItem>
 
-                {interview.is_public && (
+                {interview.is_individual && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -494,17 +486,17 @@ export function InterviewsDataTable({
                       {interview.enabled ? (
                         <>
                           <IconLock className="mr-2 h-4 w-4" />
-                          Disable Public Access
+                          Disable Access
                         </>
                       ) : (
                         <>
                           <IconLockOpen className="mr-2 h-4 w-4" />
-                          Enable Public Access
+                          Enable Access
                         </>
                       )}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => handleCopyPublicLink(interview)}
+                      onClick={() => handleCopyIndividualLink(interview)}
                       disabled={
                         !interview.enabled ||
                         !interview.access_code ||
@@ -512,19 +504,19 @@ export function InterviewsDataTable({
                       }
                     >
                       <IconCopy className="mr-2 h-4 w-4" />
-                      Copy Public Link
+                      Copy Link
                     </DropdownMenuItem>
                   </>
                 )}
 
-                {interview.is_public && (
+                {interview.is_individual && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => handleSendSummaryEmail(interview.id)}
                       disabled={
-                        (sendingEmailId?.id === interview.id &&
-                          sendingEmailId.type === "summary")
+                        sendingEmailId?.id === interview.id &&
+                        sendingEmailId.type === "summary"
                       }
                     >
                       {sendingEmailId?.id === interview.id &&

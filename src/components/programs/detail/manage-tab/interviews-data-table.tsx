@@ -96,7 +96,6 @@ export function InterviewsDataTable({
       await updateInterview({
         id: interviewId,
         updates: { enabled: newEnabledState },
-        isPublic: false,
       });
       toast.success(
         `Interview ${newEnabledState ? "enabled" : "disabled"} successfully`
@@ -112,9 +111,9 @@ export function InterviewsDataTable({
     }
   };
 
-  const handleCopyPublicLink = (interview: InterviewWithResponses) => {
-    if (!interview.enabled || !interview.is_public) {
-      toast.error("Interview must be enabled to copy public link");
+  const handleCopyIndividualLink = (interview: InterviewWithResponses) => {
+    if (!interview.enabled || !interview.is_individual) {
+      toast.error("Interview must be enabled to copy individual interview link");
       return;
     }
 
@@ -122,7 +121,7 @@ export function InterviewsDataTable({
     navigator.clipboard
       .writeText(publicUrl)
       .then(() => {
-        toast.success("Public link copied to clipboard");
+        toast.success("Individual interview link copied to clipboard");
       })
       .catch(() => {
         toast.error("Failed to copy link to clipboard");
@@ -130,7 +129,7 @@ export function InterviewsDataTable({
   };
 
   const handleSendReminderEmail = async (interview: InterviewWithResponses) => {
-    if (!interview.enabled || !interview.is_public) {
+    if (!interview.enabled || !interview.is_individual) {
       toast.error("Interview must be enabled to send reminder");
       return;
     }
@@ -183,7 +182,7 @@ export function InterviewsDataTable({
           <div className="flex-1">
             <Link
               to={
-                row.original.is_public
+                row.original.is_individual
                   ? routes.externalInterviewDetail(
                       row.original.id,
                       row.original.access_code,
@@ -203,11 +202,11 @@ export function InterviewsDataTable({
       },
     },
     {
-      accessorKey: "is_public",
-      header: "Public",
+      accessorKey: "is_individual",
+      header: "Individual",
       cell: ({ row }) => {
         const interview = row.original;
-        return interview.is_public ? (
+        return interview.is_individual ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Badge
@@ -245,19 +244,19 @@ export function InterviewsDataTable({
                 {interview.enabled ? (
                   <>
                     <IconLock className="mr-2 h-4 w-4" />
-                    Disable Public Access
+                    Disable Access
                   </>
                 ) : (
                   <>
                     <IconLockOpen className="mr-2 h-4 w-4" />
-                    Enable Public Access
+                    Enable Access
                   </>
                 )}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={(e) => {
                   e.preventDefault();
-                  handleCopyPublicLink(interview);
+                  handleCopyIndividualLink(interview);
                 }}
                 disabled={
                   !interview.enabled ||

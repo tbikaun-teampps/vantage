@@ -11,7 +11,10 @@ interface DialogState {
   showExit: boolean;
 }
 
-export function useInterview(interviewId: number, isPublic: boolean = false) {
+export function useInterview(
+  interviewId: number,
+  isIndividualInterview: boolean = false
+) {
   const navigate = useCompanyAwareNavigate();
   const [searchParams] = useSearchParams();
 
@@ -73,8 +76,8 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
       const hasRating =
         response.rating_score !== null && response.rating_score !== undefined;
 
-      if (isPublic) {
-        // For public interviews, only check rating_score
+      if (isIndividualInterview) {
+        // For individual interviews, only check rating_score
         return hasRating;
       } else {
         // For private interviews, must have both rating_score AND at least one role
@@ -83,7 +86,7 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
         return hasRating && hasRoles;
       }
     }).length;
-  }, [interviewData?.responses, allQuestions.length, isPublic]);
+  }, [interviewData?.responses, allQuestions.length, isIndividualInterview]);
 
   const progressPercentage =
     totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
@@ -111,7 +114,7 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
         await updateInterview({
           id: interviewData.id,
           updates: { status: newStatus },
-          isPublic,
+          isIndividualInterview,
         });
 
         // Show toast only for specific meaningful transitions
@@ -137,7 +140,7 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     answeredQuestions,
     totalQuestions,
     updateInterview,
-    isPublic,
+    isIndividualInterview,
   ]);
 
   // Check status whenever answered questions change (only when ready)
@@ -158,11 +161,11 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
     if (!questionIdParam && allQuestions.length > 0 && isReady) {
       // Navigate to first question to establish clean URL structure
       // Using replace to not add an extra history entry
-      const basePath = isPublic
+      const basePath = isIndividualInterview
         ? `/external/interview/${interviewId}`
         : `/assessments/onsite/interviews/${interviewId}`;
 
-      // Preserve existing search parameters (especially code and email for public interviews)
+      // Preserve existing search parameters (especially code and email for individual interviews)
       const searchString = searchParams.toString();
       const fullPath = searchString ? `${basePath}?${searchString}` : basePath;
 
@@ -170,7 +173,14 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
         replace: true,
       });
     }
-  }, [searchParams, allQuestions, interviewId, navigate, isPublic, isReady]);
+  }, [
+    searchParams,
+    allQuestions,
+    interviewId,
+    navigate,
+    isIndividualInterview,
+    isReady,
+  ]);
 
   const toggleDialog = useCallback(
     (dialog: keyof DialogState, value?: boolean) => {
@@ -194,7 +204,7 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
         await updateInterview({
           id: interviewData.id,
           updates,
-          isPublic,
+          isIndividualInterview,
         });
         toast.success("Interview settings updated successfully");
         toggleDialog("showSettings", false);
@@ -206,7 +216,7 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
         );
       }
     },
-    [interviewData, updateInterview, toggleDialog, isPublic]
+    [interviewData, updateInterview, toggleDialog, isIndividualInterview]
   );
 
   const handleSettingsDelete = useCallback(async () => {
@@ -264,14 +274,14 @@ export function useInterview(interviewId: number, isPublic: boolean = false) {
   }, [interviewData, totalQuestions, answeredQuestions, progressPercentage]);
 
   const confirmExit = useCallback(() => {
-    if (isPublic) {
-      // For public interviews, go to home page
+    if (isIndividualInterview) {
+      // For individual interviews, go to home page
       navigate("/");
     } else {
       // For internal interviews, go to interviews list
       navigate("/assessments/onsite/interviews");
     }
-  }, [navigate, isPublic]);
+  }, [navigate, isIndividualInterview]);
 
   return {
     // Interview data

@@ -43,7 +43,7 @@ interface InterviewActionBarProps {
   isSaving: boolean;
   isDirty: boolean;
   onSave?: () => void;
-  isPublic?: boolean;
+  isIndividualInterview?: boolean;
   onComplete?: () => void;
 }
 
@@ -51,7 +51,7 @@ export function InterviewActionBar({
   isSaving,
   isDirty,
   onSave,
-  isPublic = false,
+  isIndividualInterview = false,
   onComplete,
 }: InterviewActionBarProps) {
   const { id: interviewId } = useParams();
@@ -68,7 +68,7 @@ export function InterviewActionBar({
     onPrevious,
     onNext,
     goToQuestion,
-  } = useInterviewNavigation(parseInt(interviewId!), isPublic);
+  } = useInterviewNavigation(parseInt(interviewId!), isIndividualInterview);
 
   const { data: structure, isLoading: isLoadingStructure } =
     useInterviewStructure(parseInt(interviewId!));
@@ -355,7 +355,7 @@ export function InterviewActionBar({
                   </div>
 
                   {/* Role filter */}
-                  {/* {!isPublic && availableRoles.length > 0 && (
+                  {/* {!isIndividualInterview && availableRoles.length > 0 && (
                     <div className="space-y-2">
                       <Select
                         value={

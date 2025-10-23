@@ -47,7 +47,7 @@ interface CreateInterviewDialogProps {
   onSuccess?: (interviewId: string) => void;
   mode: "standalone" | "contextual";
   assessmentId?: number;
-  showPublicOptions?: boolean;
+  showIndividualOptions?: boolean;
 }
 
 export function CreateInterviewDialog({
@@ -56,13 +56,13 @@ export function CreateInterviewDialog({
   onSuccess,
   mode,
   assessmentId,
-  showPublicOptions = false,
+  showIndividualOptions = false,
 }: CreateInterviewDialogProps) {
   const {
     createInterview,
     isCreating,
-    createPublicInterviews,
-    isCreatingPublic,
+    createIndividualInterviews,
+    isCreatingIndividual,
   } = useInterviewActions();
   const { user } = useAuthStore();
   const companyId = useCompanyFromUrl();
@@ -74,7 +74,8 @@ export function CreateInterviewDialog({
   >(assessmentId || undefined);
   const [interviewName, setInterviewName] = useState<string>("");
   const [interviewNotes, setInterviewNotes] = useState<string>("");
-  const [isPublic, setIsPublic] = useState<boolean>(false);
+  const [isIndividualInterview, setIsIndividualInterview] =
+    useState<boolean>(false);
   const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
   const [isLoadingRoles, setIsLoadingRoles] = useState<boolean>(false);
@@ -117,11 +118,13 @@ export function CreateInterviewDialog({
       );
       if (selectedAssessment) {
         const timestamp = new Date().toLocaleDateString();
-        const prefix = isPublic ? "Public Interview" : "Interview";
+        const prefix = isIndividualInterview
+          ? "Individual Interview"
+          : "Interview";
         setInterviewName(`${prefix} - ${timestamp}`);
       }
     }
-  }, [selectedAssessmentId, assessments, isPublic]);
+  }, [selectedAssessmentId, assessments, isIndividualInterview]);
 
   // Validate that selected roles have applicable questions
   useEffect(() => {
@@ -150,11 +153,15 @@ export function CreateInterviewDialog({
     validateRoleApplicability();
   }, [selectedAssessmentId, selectedRoleIds]);
 
-  // Load contacts when role is selected for public interviews
+  // Load contacts when role is selected for individual interviews
   useEffect(() => {
     async function loadContacts() {
-      if (isPublic && showPublicOptions && selectedRoleIds.length > 0) {
-        const roleId = selectedRoleIds[0]; // For public interviews, only one role is selected
+      if (
+        isIndividualInterview &&
+        showIndividualOptions &&
+        selectedRoleIds.length > 0
+      ) {
+        const roleId = selectedRoleIds[0]; // For individual interviews, only one role is selected
         setIsLoadingContacts(true);
         try {
           const contacts = await getContactsByRole(companyId, roleId);
@@ -174,7 +181,12 @@ export function CreateInterviewDialog({
       }
     }
     loadContacts();
-  }, [isPublic, showPublicOptions, selectedRoleIds, companyId]);
+  }, [
+    isIndividualInterview,
+    showIndividualOptions,
+    selectedRoleIds,
+    companyId,
+  ]);
 
   // Handle create interview
   const handleCreateInterview = async () => {
@@ -188,25 +200,31 @@ export function CreateInterviewDialog({
       return;
     }
 
-    if (isPublic && showPublicOptions) {
+    if (isIndividualInterview && showIndividualOptions) {
       if (selectedRoleIds.length === 0) {
-        toast.error("Please select a role for public interviews");
+        toast.error("Please select a role for individual interviews");
         return;
       }
       if (selectedContactIds.length === 0) {
-        toast.error("Please select at least one contact for public interviews");
+        toast.error(
+          "Please select at least one contact for individual interviews"
+        );
         return;
       }
     }
 
     try {
-      if (isPublic && showPublicOptions && selectedContactIds.length > 0) {
-        const newInterviews = await createPublicInterviews({
+      if (
+        isIndividualInterview &&
+        showIndividualOptions &&
+        selectedContactIds.length > 0
+      ) {
+        const newInterviews = await createIndividualInterviews({
           assessment_id: selectedAssessmentId,
           name: interviewName,
           interview_contact_ids: selectedContactIds,
         });
-        console.log('newInterviews: ', newInterviews)
+        console.log("newInterviews: ", newInterviews);
 
         if (newInterviews.length > 0) {
           toast.success(
@@ -218,13 +236,13 @@ export function CreateInterviewDialog({
           toast.error("Failed to create any interviews");
         }
       } else {
-        // Original single interview creation logic for non-public or non-contact scenarios
+        // Original single interview creation logic for group or non-contact scenarios
         const interviewData: CreateInterviewData = {
           assessment_id: selectedAssessmentId,
-          interviewer_id: isPublic ? null : user.id,
+          interviewer_id: isIndividualInterview ? null : user.id,
           name: interviewName,
           notes: interviewNotes,
-          is_public: isPublic && showPublicOptions,
+          is_individual: isIndividualInterview && showIndividualOptions,
           enabled: true,
         };
 
@@ -236,8 +254,8 @@ export function CreateInterviewDialog({
         const newInterview = await createInterview(interviewData);
 
         toast.success(
-          isPublic && showPublicOptions
-            ? "Public interview created successfully"
+          isIndividualInterview && showIndividualOptions
+            ? "Individual interview created successfully"
             : "Interview created successfully"
         );
         handleClose();
@@ -258,7 +276,7 @@ export function CreateInterviewDialog({
     }
     setInterviewName("");
     setInterviewNotes("");
-    setIsPublic(false);
+    setIsIndividualInterview(false);
     setSelectedRoleIds([]);
     setAvailableRoles([]);
     setAvailableContacts([]);
@@ -348,7 +366,7 @@ export function CreateInterviewDialog({
               value={interviewName}
               onChange={(e) => setInterviewName(e.target.value)}
               placeholder="Enter interview name..."
-              disabled={isCreating || isCreatingPublic}
+              disabled={isCreating || isCreatingIndividual}
             />
           </div>
 
@@ -359,12 +377,12 @@ export function CreateInterviewDialog({
               placeholder="Add any notes or instructions for this interview..."
               value={interviewNotes}
               onChange={(e) => setInterviewNotes(e.target.value)}
-              disabled={isCreating || isCreatingPublic}
+              disabled={isCreating || isCreatingIndividual}
             />
           </div>
 
-          {/* Private Interview Role Selection - Optional */}
-          {!isPublic && availableRoles.length > 0 && (
+          {/* Group Interview Role Selection - Optional */}
+          {!isIndividualInterview && availableRoles.length > 0 && (
             <div className="space-y-3">
               <div>
                 <Label>Roles (optional)</Label>
@@ -401,7 +419,7 @@ export function CreateInterviewDialog({
                             );
                           }
                         }}
-                        disabled={isCreating || isCreatingPublic}
+                        disabled={isCreating || isCreatingIndividual}
                       />
                       <Label
                         htmlFor={`role-${role.id}`}
@@ -421,20 +439,22 @@ export function CreateInterviewDialog({
             </div>
           )}
 
-          {/* Public Interview Options - Only show if enabled */}
-          {showPublicOptions && (
+          {/* Individual Interview Options - Only show if enabled */}
+          {showIndividualOptions && (
             <>
               <div className="flex items-center space-x-2">
                 <Switch
-                  id="public-mode"
-                  checked={isPublic}
-                  onCheckedChange={setIsPublic}
-                  disabled={isCreating || isCreatingPublic}
+                  id="individual-mode"
+                  checked={isIndividualInterview}
+                  onCheckedChange={setIsIndividualInterview}
+                  disabled={isCreating || isCreatingIndividual}
                 />
-                <Label htmlFor="public-mode">Make this interview public</Label>
+                <Label htmlFor="individual-mode">
+                  Make this interview individual
+                </Label>
               </div>
 
-              {isPublic && (
+              {isIndividualInterview && (
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="role">Interviewee Role *</Label>
@@ -444,7 +464,7 @@ export function CreateInterviewDialog({
                         setSelectedRoleIds(value ? [parseInt(value)] : [])
                       }
                       disabled={
-                        isCreating || isLoadingRoles || isCreatingPublic
+                        isCreating || isLoadingRoles || isCreatingIndividual
                       }
                     >
                       <SelectTrigger id="role">
@@ -527,7 +547,7 @@ export function CreateInterviewDialog({
                               isCreating ||
                               isLoadingContacts ||
                               selectedRoleIds.length === 0 ||
-                              isCreatingPublic
+                              isCreatingIndividual
                             }
                           >
                             {(() => {
@@ -585,7 +605,7 @@ export function CreateInterviewDialog({
                                   );
                                 }
                               }}
-                              disabled={isCreating || isCreatingPublic}
+                              disabled={isCreating || isCreatingIndividual}
                             />
                             <Label
                               htmlFor={`contact-${contact.id}`}
@@ -626,7 +646,7 @@ export function CreateInterviewDialog({
           <Button
             variant="outline"
             onClick={handleClose}
-            disabled={isCreating || isCreatingPublic}
+            disabled={isCreating || isCreatingIndividual}
           >
             Cancel
           </Button>
@@ -636,16 +656,16 @@ export function CreateInterviewDialog({
               !selectedAssessmentId ||
               !interviewName.trim() ||
               isCreating ||
-              isCreatingPublic ||
+              isCreatingIndividual ||
               isValidatingRoles ||
               !hasApplicableQuestions ||
-              (isPublic &&
-                showPublicOptions &&
+              (isIndividualInterview &&
+                showIndividualOptions &&
                 (selectedRoleIds.length === 0 ||
                   selectedContactIds.length === 0))
             }
           >
-            {isCreating || isCreatingPublic ? (
+            {isCreating || isCreatingIndividual ? (
               <>
                 <IconLoader className="mr-2 h-4 w-4 animate-spin" />
                 Creating...

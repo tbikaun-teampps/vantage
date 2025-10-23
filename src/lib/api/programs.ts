@@ -281,7 +281,7 @@ export async function deletePhase(phaseId: number): Promise<void> {
 export interface CreateProgramInterviewsData {
   programId: number;
   phaseId: number;
-  isPublic?: boolean;
+  isIndividualInterview?: boolean;
   roleIds?: number[];
   contactIds: number[];
   interviewType: "onsite" | "presite";
@@ -293,7 +293,7 @@ export async function createProgramInterviews(
   const response = await apiClient.post<ApiResponse<any>>(
     `/programs/${data.programId}/phases/${data.phaseId}/interviews`,
     {
-      isPublic: data.isPublic,
+      isIndividualInterview: data.isIndividualInterview,
       roleIds: data.roleIds,
       contactIds: data.contactIds,
       interviewType: data.interviewType,

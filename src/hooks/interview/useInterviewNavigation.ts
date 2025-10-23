@@ -24,7 +24,7 @@ interface InterviewNavigationResult {
 
 export function useInterviewNavigation(
   interviewId: number,
-  isPublic: boolean = false
+  isIndividualInterview: boolean = false
 ): InterviewNavigationResult {
   const [searchParams] = useSearchParams();
   const navigate = useCompanyAwareNavigate();
@@ -86,10 +86,10 @@ export function useInterviewNavigation(
 
       const queryString = params.toString();
       navigate(
-        `${isPublic ? "/external/interview" : "/assessments/onsite/interviews"}/${interviewId}${queryString ? `?${queryString}` : ""}`
+        `${isIndividualInterview ? "/external/interview" : "/assessments/onsite/interviews"}/${interviewId}${queryString ? `?${queryString}` : ""}`
       );
     },
-    [allQuestions, searchParams, navigate, interviewId, isPublic]
+    [allQuestions, searchParams, navigate, interviewId, isIndividualInterview]
   );
 
   // Navigate to previous question

@@ -28,19 +28,19 @@ export async function createInterview(
 }
 
 /**
- * Creates one or more public interviews scoped to individual contacts via email and access code.
+ * Creates one or more individual interviews scoped to individual contacts via email and access code.
  */
-export async function createPublicInterviews(
+export async function createIndividualInterviews(
   data: CreateInterviewData
 ): Promise<Interview[]> {
   const response = await apiClient.post<ApiResponse<Interview[]>>(
-    "/interviews/public",
+    "/interviews/individual",
     data
   );
 
   if (!response.data.success) {
     throw new Error(
-      response.data.error || "Failed to create public interview(s)"
+      response.data.error || "Failed to create individual interview(s)"
     );
   }
 
