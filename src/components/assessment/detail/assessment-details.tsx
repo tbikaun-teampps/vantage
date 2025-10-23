@@ -164,10 +164,10 @@ export function AssessmentDetails({
                 </Label>
                 <p className="text-sm">
                   <Link
-                    to={routes.questionnaireDetail(assessment.questionnaire_id)}
+                    to={routes.questionnaireDetail(assessment.questionnaire_id!)}
                     className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
                   >
-                    {assessment.questionnaire?.name || "Loading..."}
+                    {assessment?.questionnaire?.name || "Loading..."}
                     <IconExternalLink className="h-3 w-3" />
                   </Link>
                 </p>

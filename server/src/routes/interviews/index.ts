@@ -385,13 +385,82 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           required: ["interviewId"],
         },
         response: {
-          // 200: {
-          //   type: "object",
-          //   properties: {
-          //     success: { type: "boolean" },
-          //     data: { type: "object" },
-          //   },
-          // },
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: {
+                type: "object",
+                properties: {
+                  id: { type: "number" },
+                  name: { type: "string" },
+                  status: { type: "string" },
+                  notes: { type: "string", nullable: true },
+                  is_individual: { type: "boolean" },
+                  overview: { type: "string", nullable: true },
+                  due_at: { type: "string", nullable: true },
+                  interviewer: {
+                    type: "object",
+                    nullable: true,
+                    properties: {
+                      full_name: { type: "string" },
+                      email: { type: "string" },
+                    },
+                  },
+                  interviewee: {
+                    type: "object",
+                    nullable: true,
+                    properties: {
+                      full_name: { type: "string" },
+                      email: { type: "string" },
+                    },
+                  },
+                  assessment: {
+                    type: "object",
+                    properties: {
+                      id: { type: "number" },
+                      name: { type: "string" },
+                    },
+                  },
+                  company: {
+                    type: "object",
+                    nullable: true,
+                    properties: {
+                      id: { type: "string" },
+                      name: { type: "string" },
+                      icon_url: { type: "string", nullable: true },
+                      branding: {
+                        type: "object",
+                        nullable: true,
+                        additionalProperties: true,
+                      },
+                    },
+                  },
+                  interview_roles: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        role: {
+                          type: "object",
+                          properties: {
+                            id: { type: "number" },
+                            shared_role: {
+                              type: "object",
+                              properties: {
+                                id: { type: "number" },
+                                name: { type: "string" },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },

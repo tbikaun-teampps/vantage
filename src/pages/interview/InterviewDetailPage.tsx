@@ -1,4 +1,4 @@
-import { InterviewQuestion } from "@/components/interview/detail";
+import { InterviewQuestion } from "@/components/interview/detail/InterviewQuestion";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useInterviewStructure } from "@/hooks/interview/useInterviewStructure";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";

@@ -1,8 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type {
-  CreateProgramFormData,
-  Program,
-} from "@/types/program";
+import type { CreateProgramFormData, Program } from "@/types/program";
 import type { ProgramUpdateFormData } from "@/components/programs/detail/overview-tab/program-update-schema";
 import { toast } from "sonner";
 import {
@@ -23,7 +20,7 @@ import {
 } from "@/lib/api/programs";
 
 // Query key factory for cache management
-export const programKeys = {
+const programKeys = {
   all: ["programs"] as const,
   lists: () => [...programKeys.all, "list"] as const,
   list: (companyId?: string) =>

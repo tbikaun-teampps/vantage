@@ -15,7 +15,7 @@ import type {
 // import type { AssessmentMeasurement } from "@/pages/assessments/desktop/detail/types";
 
 // Query key factory for assessment measurements
-export const assessmentMeasurementKeys = {
+const assessmentMeasurementKeys = {
   all: ["assessment-measurements"] as const,
   definitions: () => [...assessmentMeasurementKeys.all, "definitions"] as const,
   measurements: () =>

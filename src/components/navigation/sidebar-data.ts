@@ -184,8 +184,3 @@ export function getSidebarData(companyId: string) {
     ],
   };
 }
-
-// Fallback data for when no company is selected (shouldn't be used much with new architecture)
-export const data = getSidebarData("");
-
-export default data;

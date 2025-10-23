@@ -1,12 +1,6 @@
 import { z } from "zod";
 import { LEVELS } from "@/lib/library/roles";
 
-// Base coordinates schema
-export const coordinatesSchema = z.object({
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
-});
-
 // Company schema
 export const companySchema = z.object({
   id: z.union([z.string(), z.number()]).optional(),

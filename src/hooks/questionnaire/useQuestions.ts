@@ -33,7 +33,7 @@ export const questionsKeys = {
 };
 
 // Hook for full questionnaire structure (sections, steps, questions) with lazy loading
-export function useQuestionnaireStructure(
+function useQuestionnaireStructure(
   questionnaireId: number,
   enabled = true
 ) {
@@ -429,7 +429,7 @@ export function useQuestionActions() {
       questionnaire_rating_scale_id: number;
       description: string;
     }) => addQuestionRatingScale(data),
-    onSuccess: (newRatingScale, { questionId }) => {
+    onSuccess: () => {
       // Refresh the questionnaire data to get the updated rating scales
       queryClient.invalidateQueries({
         queryKey: questionsKeys.all,
@@ -443,7 +443,7 @@ export function useQuestionActions() {
       questionRatingScaleId: number;
       description: string;
     }) => updateQuestionRatingScale(data),
-    onSuccess: (_, { questionId }) => {
+    onSuccess: () => {
       // Refresh the questionnaire data to get the updated rating scales
       queryClient.invalidateQueries({
         queryKey: questionsKeys.all,

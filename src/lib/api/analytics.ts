@@ -1,3 +1,7 @@
+import type {
+  OverallGeographicalMapFiltersResponseData,
+  OverallOnsiteGeographicalMapResponseData,
+} from "@/types/api/analytics";
 import { apiClient } from "./client";
 
 export interface ApiResponse<T> {
@@ -9,29 +13,9 @@ export interface ApiResponse<T> {
 export async function getOverallGeographicalMapFilters(
   companyId: string,
   assessmentType: "onsite" | "desktop"
-): Promise<{
-  questionnaires?: { id: number; name: string; assessmentIds: number[] }[];
-  assessments: { id: number; name: string; questionnaireId: number }[];
-  measurements?: { id: number; name: string }[];
-  aggregationMethods?: string[];
-}> {
+): Promise<OverallGeographicalMapFiltersResponseData> {
   const response = await apiClient.get<
-    ApiResponse<{
-      options: {
-        questionnaires?: {
-          id: number;
-          name: string;
-          assessmentIds: number[];
-        }[];
-        assessments: {
-          id: number;
-          name: string;
-          questionnaireId: number;
-        }[];
-        measurements?: { id: number; name: string }[];
-        aggregationMethods?: string[];
-      };
-    }>
+    ApiResponse<OverallGeographicalMapFiltersResponseData>
   >("/analytics/overall/geographical-map/filters", {
     params: {
       companyId,
@@ -45,40 +29,20 @@ export async function getOverallGeographicalMapFilters(
     );
   }
 
-  return response.data.data.options;
+  if (!response.data.data) {
+    throw new Error("No data received for geographical map filters");
+  }
+
+  return response.data.data;
 }
 
 export async function getOverallOnsiteGeographicalMap(
-  companyId: string,
+  companyId: string, 
   questionnaireId: number,
   assessmentId?: number
-): Promise<
-  {
-    name: string;
-    lat: number;
-    lng: number;
-    region: string;
-    businessUnit: string;
-    score: number;
-    interviews: number;
-    totalActions: number;
-    completionRate: number;
-  }[]
-> {
+): Promise<OverallOnsiteGeographicalMapResponseData> {
   const response = await apiClient.get<
-    ApiResponse<
-      {
-        name: string;
-        lat: number;
-        lng: number;
-        region: string;
-        businessUnit: string;
-        score: number;
-        interviews: number;
-        totalActions: number;
-        completionRate: number;
-      }[]
-    >
+    ApiResponse<OverallOnsiteGeographicalMapResponseData>
   >("/analytics/geographical-map/overall-onsite", {
     params: {
       companyId,

@@ -16,7 +16,7 @@ import {
 import { getQuestionnaires } from "@/lib/api/questionnaires";
 
 // Query key factory for assessments
-export const assessmentKeys = {
+const assessmentKeys = {
   all: ["assessments"] as const,
   lists: () => [...assessmentKeys.all, "list"] as const,
   list: (companyId: string, filters?: AssessmentFilters) =>

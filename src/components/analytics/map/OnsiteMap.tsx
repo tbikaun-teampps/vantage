@@ -730,7 +730,7 @@ export function OnsiteMap() {
           companyId,
           assessmentType
         );
-        setFilters(data);
+        setFilters(data.options);
         // Initialize with first questionnaire if available
         if (data.questionnaires.length > 0) {
           setSelectedQuestionnaireId(data.questionnaires[0].id.toString());

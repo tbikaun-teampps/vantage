@@ -34,5 +34,3 @@ export const createAssessmentSchema = baseSchema.refine(
     path: ["questionnaire_id"],
   }
 );
-
-export type CreateAssessmentFormData = z.infer<typeof createAssessmentSchema>;

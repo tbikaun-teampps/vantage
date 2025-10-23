@@ -2564,7 +2564,38 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                [key: string]: unknown;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
         };
       };
     };
@@ -2597,7 +2628,36 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success?: boolean;
+              data?: Record<string, never>[];
+            };
+          };
+        };
+        /** @description Default Response */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
         };
       };
     };
@@ -6479,7 +6539,30 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success?: boolean;
+              data?: {
+                options?: {
+                  assessments?: {
+                    id?: number;
+                    name?: string;
+                    questionnaireId?: number | null;
+                  }[];
+                  questionnaires?: {
+                    id?: number;
+                    name?: string;
+                    assessmentIds?: number[];
+                  }[];
+                  measurements?: {
+                    id?: number;
+                    name?: string;
+                  }[];
+                  aggregationMethods?: ("average" | "sum" | "count")[];
+                };
+              };
+            };
+          };
         };
       };
     };
@@ -7968,7 +8051,57 @@ export interface paths {
         cookie?: never;
       };
       requestBody?: never;
-      responses: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success?: boolean;
+              data?: {
+                id?: number;
+                name?: string;
+                status?: string;
+                notes?: string | null;
+                is_individual?: boolean;
+                overview?: string | null;
+                due_at?: string | null;
+                interviewer?: {
+                  full_name?: string;
+                  email?: string;
+                } | null;
+                interviewee?: {
+                  full_name?: string;
+                  email?: string;
+                } | null;
+                assessment?: {
+                  id?: number;
+                  name?: string;
+                };
+                company?: {
+                  id?: string;
+                  name?: string;
+                  icon_url?: string | null;
+                  branding?: {
+                    [key: string]: unknown;
+                  } | null;
+                } | null;
+                interview_roles?: {
+                  role?: {
+                    id?: number;
+                    shared_role?: {
+                      id?: number;
+                      name?: string;
+                    };
+                  };
+                }[];
+              };
+            };
+          };
+        };
+      };
     };
     put?: never;
     post?: never;

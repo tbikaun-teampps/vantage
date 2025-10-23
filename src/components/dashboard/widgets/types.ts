@@ -1,4 +1,4 @@
-import type { MetricConfig, WidgetConfig } from "@/hooks/useDashboardLayouts";
+import type { WidgetConfig } from "@/hooks/useDashboardLayouts";
 
 export type WidgetType = "metric" | "chart" | "activity" | "actions" | "table"; 
 
@@ -23,5 +23,3 @@ export interface Widget {
   icon: React.ComponentType<{ size?: number; className?: string }>;
   disabled?: boolean; // Optional disabled flag
 }
-
-export type { MetricConfig };

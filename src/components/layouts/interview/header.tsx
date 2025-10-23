@@ -85,6 +85,8 @@ export function InterviewLayoutHeader({
     }
   };
 
+  console.log('interviewData: ', interviewData)
+
   if (!interviewData) {
     return null;
   }
@@ -211,7 +213,7 @@ export function InterviewLayoutHeader({
                     <IconUser className="h-3 w-3 mr-1" />
                     {username}
                   </Badge>
-                  {interviewData.company.name && (
+                  {interviewData.company?.name && (
                     <Badge variant="outline" className="text-xs">
                       {interviewData.company.icon_url ? (
                         <img

@@ -53,21 +53,6 @@ export async function getDashboards(companyId: string): Promise<Dashboard[]> {
   return response.data.data;
 }
 
-export async function getDashboardById(
-  companyId: string,
-  dashboardId: number
-): Promise<Dashboard> {
-  const response = await apiClient.get<ApiResponse<Dashboard>>(
-    `/dashboards/${companyId}/${dashboardId}`
-  );
-
-  if (!response.data.success) {
-    throw new Error(response.data.error || "Failed to fetch dashboard");
-  }
-
-  return response.data.data;
-}
-
 export async function createDashboard(
   companyId: string,
   input: CreateDashboardInput

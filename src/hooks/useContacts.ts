@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  getCompanyContacts,
   getEntityContacts,
   createAndLinkContact,
   updateContact,
@@ -20,7 +19,7 @@ import type {
  * - Invalidate company contacts: contactKeys.byCompany(companyId)
  * - Invalidate entity contacts: contactKeys.byEntity(companyId, entityType, entityId)
  */
-export const contactKeys = {
+const contactKeys = {
   all: ["contacts"] as const,
   byCompany: (companyId: string) =>
     [...contactKeys.all, "company", companyId] as const,
@@ -37,18 +36,6 @@ export const contactKeys = {
       String(entityId),
     ] as const,
 };
-
-/**
- * Fetch all contacts for a company
- */
-export function useCompanyContacts(companyId: string) {
-  return useQuery({
-    queryKey: contactKeys.byCompany(companyId),
-    queryFn: () => getCompanyContacts(companyId),
-    staleTime: 5 * 60 * 1000, // 5 minutes - contacts change infrequently
-    enabled: !!companyId,
-  });
-}
 
 /**
  * Fetch contacts for a specific entity (business unit, site, role, etc.)

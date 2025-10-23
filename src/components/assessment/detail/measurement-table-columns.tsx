@@ -126,24 +126,3 @@ export function createMeasurementColumns(
     },
   ];
 }
-
-// Helper function to get status counts for tabs
-export function getMeasurementStatusCounts(
-  measurements: AssessmentMeasurement[]
-) {
-  return {
-    all: measurements.length,
-    configured: measurements.filter((m) => m.status === "configured").length,
-    pending: measurements.filter((m) => m.status === "pending").length,
-    error: measurements.filter((m) => m.status === "error").length,
-  };
-}
-
-// Helper function to filter measurements by status
-export function filterMeasurementsByStatus(
-  measurements: AssessmentMeasurement[],
-  status: string
-) {
-  if (status === "all") return measurements;
-  return measurements.filter((m) => m.status === status);
-}

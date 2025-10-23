@@ -152,22 +152,6 @@ export async function deleteProgramObjective(
   }
 }
 
-export async function getProgramObjectiveCount(
-  programId: number
-): Promise<number> {
-  const response = await apiClient.get<ApiResponse<number>>(
-    `/programs/${programId}/objectives/count`
-  );
-
-  if (!response.data.success) {
-    throw new Error(
-      response.data.error || "Failed to fetch program objective count"
-    );
-  }
-
-  return response.data.data;
-}
-
 // ====== Program Questionnaires ======
 
 export async function updateProgramOnsiteQuestionnaire(

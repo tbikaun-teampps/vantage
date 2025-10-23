@@ -6,12 +6,12 @@
 import type { DatabaseRow, Enums } from "./utils";
 
 // Database types
-export type DatabaseProfile = DatabaseRow<"profiles">;
+export type UserProfile = DatabaseRow<"profiles">;
 
 // Subscription types (using database enum)
 export type SubscriptionTier = Enums["subscription_tier_enum"];
 
-export interface SubscriptionFeatures {
+interface SubscriptionFeatures {
   maxCompanies: number;
 }
 
@@ -27,11 +27,6 @@ export interface SubscriptionPlan {
   features: SubscriptionFeatures;
 }
 
-// Core user types
-export interface UserProfile extends DatabaseProfile {
-  // All fields now come directly from DatabaseProfile
-}
-
 // Token storage (replaces Supabase Session)
 export interface TokenData {
   access_token: string;
@@ -45,10 +40,12 @@ export interface AuthUser {
   email: string;
 }
 
+export type UserRole = "owner" | "admin" | "viewer" | "interviewee";
+
 // User company role (from user_companies table)
 export interface UserCompany {
   id: string;
-  role: "owner" | "admin" | "viewer" | "interviewee";
+  role: Exclude<UserRole, "interviewee">;
 }
 
 // Backend auth response types
@@ -98,9 +95,6 @@ export interface AuthActions {
 
 // Complete auth store interface
 export interface AuthStore extends AuthState, AuthActions {}
-
-// Utility types
-export type UserRole = "admin" | "manager" | "user";
 
 export interface UserPermissions {
   canAccessMainApp: boolean;

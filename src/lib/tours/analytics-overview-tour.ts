@@ -158,23 +158,8 @@ tourManager.registerTour({
   id: 'analytics-overview',
   steps: analyticsSteps,
   onComplete: () => {
-    console.log('Analytics overview tour completed');
+    console.log("Analytics overview tour completed");
   }
 });
-
-// Custom function to start analytics tour with proper view setup
-export const startAnalyticsTour = (force = false) => {
-  if (ensureCorrectView()) {
-    // Short delay to ensure view has switched before starting tour
-    setTimeout(() => {
-      tourManager.startTour('analytics-overview', force);
-    }, 300);
-  } else {
-    // Navigation occurred, tour will start after page load
-    setTimeout(() => {
-      tourManager.startTour('analytics-overview', force);
-    }, 1000);
-  }
-};
 
 export { analyticsSteps };

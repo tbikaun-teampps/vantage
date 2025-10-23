@@ -1,14 +1,14 @@
 import type { ProgramWithRelations } from "@/types/program";
 
 // Utility function to validate if a program has an onsite questionnaire
-export function isProgramOnsiteQuestionnaireValid(
+function isProgramOnsiteQuestionnaireValid(
   program: ProgramWithRelations
 ): boolean {
   return !!program.onsite_questionnaire_id;
 }
 
 // Utility function to validate if a program has a presite questionnaire
-export function isProgramPresiteQuestionnaireValid(
+function isProgramPresiteQuestionnaireValid(
   program: ProgramWithRelations
 ): boolean {
   return !!program.presite_questionnaire_id;

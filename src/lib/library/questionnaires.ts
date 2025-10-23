@@ -179,69 +179,6 @@ export const questionnaireTemplates: QuestionnaireTemplate[] = [
   },
 ];
 
-// Helper functions to get items by category
-export const getRatingScaleSetsByCategory = (
-  category: string
-): RatingScaleSet[] => {
-  return ratingScaleSets.filter((set) => set.category === category);
-};
-
-export const getQuestionTemplatesByCategory = (
-  category: string
-): QuestionTemplate[] => {
-  return questionTemplates.filter((template) => template.category === category);
-};
-
-export const getSectionTemplatesByCategory = (
-  category: string
-): SectionTemplate[] => {
-  return sectionTemplates.filter((template) => template.category === category);
-};
-
-export const getQuestionnaireTemplatesByCategory = (
-  category: string
-): QuestionnaireTemplate[] => {
-  return questionnaireTemplates.filter(
-    (template) => template.category === category
-  );
-};
-
-export const getQuestionnaireTemplatesByIndustry = (
-  industry: string
-): QuestionnaireTemplate[] => {
-  return questionnaireTemplates.filter(
-    (template) => template.industry === industry
-  );
-};
-
-// Get all unique categories
-export const getRatingScaleCategories = (): string[] => {
-  return [...new Set(ratingScaleSets.map((set) => set.category))];
-};
-
-export const getQuestionCategories = (): string[] => {
-  return [...new Set(questionTemplates.map((template) => template.category))];
-};
-
-export const getSectionCategories = (): string[] => {
-  return [...new Set(sectionTemplates.map((template) => template.category))];
-};
-
-export const getQuestionnaireCategories = (): string[] => {
-  return [
-    ...new Set(questionnaireTemplates.map((template) => template.category)),
-  ];
-};
-
-export const getQuestionnaireIndustries = (): string[] => {
-  return [
-    ...new Set(
-      questionnaireTemplates
-        .map((template) => template.industry)
-        .filter(Boolean)
-    ),
-  ] as string[];
-};
 
 // Helper to get questions by IDs
 export const getQuestionsByIds = (ids: number[]): QuestionTemplate[] => {

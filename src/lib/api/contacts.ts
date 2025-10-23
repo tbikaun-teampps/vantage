@@ -36,23 +36,6 @@ function toApiEntityType(entityType: ContactableEntityType): string {
 }
 
 /**
- * Get all contacts for a company
- */
-export async function getCompanyContacts(
-  companyId: string
-): Promise<Contact[]> {
-  const response = await apiClient.get<ApiResponse<Contact[]>>(
-    `/companies/${companyId}/contacts`
-  );
-
-  if (!response.data.success) {
-    throw new Error(response.data.error || "Failed to fetch company contacts");
-  }
-
-  return response.data.data;
-}
-
-/**
  * Get contacts for a specific entity (business unit, region, site, etc.)
  */
 export async function getEntityContacts(
