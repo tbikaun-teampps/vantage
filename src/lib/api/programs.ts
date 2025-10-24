@@ -1,6 +1,11 @@
 import type { ProgramUpdateFormData } from "@/components/programs/detail/overview-tab/program-update-schema";
 import { apiClient } from "./client";
 import type { CreateProgramFormData, ProgramObjective } from "@/types/program";
+import type {
+  ProgramDetailResponseData,
+  ProgramListResponseData,
+  ProgramObjectivesListResponseData,
+} from "@/types/api/programs";
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -19,10 +24,15 @@ export interface UpdateObjectiveData {
   description?: string;
 }
 
-export async function getPrograms(companyId: string): Promise<any[]> {
-  const response = await apiClient.get<ApiResponse<any[]>>("/programs", {
-    params: { companyId },
-  });
+export async function getPrograms(
+  companyId: string
+): Promise<ProgramListResponseData> {
+  const response = await apiClient.get<ApiResponse<ProgramListResponseData>>(
+    "/programs",
+    {
+      params: { companyId },
+    }
+  );
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch programs");
@@ -31,8 +41,10 @@ export async function getPrograms(companyId: string): Promise<any[]> {
   return response.data.data;
 }
 
-export async function getProgramById(programId: number): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
+export async function getProgramById(
+  programId: number
+): Promise<ProgramDetailResponseData> {
+  const response = await apiClient.get<ApiResponse<ProgramDetailResponseData>>(
     `/programs/${programId}`
   );
 
@@ -87,10 +99,10 @@ export async function updateProgram(
 
 export async function getProgramObjectives(
   programId: number
-): Promise<ProgramObjective[]> {
-  const response = await apiClient.get<ApiResponse<ProgramObjective[]>>(
-    `/programs/${programId}/objectives`
-  );
+): Promise<ProgramObjectivesListResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<ProgramObjectivesListResponseData>
+  >(`/programs/${programId}/objectives`);
 
   if (!response.data.success) {
     throw new Error(
@@ -213,17 +225,17 @@ export interface UpdatePhaseData {
 }
 
 export interface CreatePhaseData {
-  name?: string | null;
-  sequence_number: number;
-  activate?: boolean;
+  name: string;
+  activate: boolean;
 }
 
 export async function updatePhase(
+  programId: number,
   phaseId: number,
   updateData: UpdatePhaseData
 ): Promise<any> {
   const response = await apiClient.put<ApiResponse<any>>(
-    `/programs/phases/${phaseId}`,
+    `/programs/${programId}/phases/${phaseId}`,
     updateData
   );
 
@@ -275,9 +287,10 @@ export async function createProgramInterviews(
   data: CreateProgramInterviewsData
 ): Promise<any> {
   const response = await apiClient.post<ApiResponse<any>>(
-    `/programs/${data.programId}/phases/${data.phaseId}/interviews`,
+    `/programs/${data.programId}/interviews`,
     {
-      isIndividualInterview: data.isIndividualInterview,
+      phaseId: data.phaseId,
+      isIndividual: data.isIndividualInterview,
       roleIds: data.roleIds,
       contactIds: data.contactIds,
       interviewType: data.interviewType,
@@ -289,4 +302,189 @@ export async function createProgramInterviews(
   }
 
   return response.data.data;
+}
+
+export async function getProgramMeasurements(
+  programId: number,
+  includeDefinitions: boolean = false
+): Promise<any> {
+  const response = await apiClient.get<ApiResponse<any>>(
+    `/programs/${programId}/measurements`,
+    {
+      params: { includeDefinitions },
+    }
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to fetch program measurements"
+    );
+  }
+
+  return response.data.data;
+}
+
+export async function getProgramAvailableMeasurements(
+  programId: number
+): Promise<any> {
+  const response = await apiClient.get<ApiResponse<any>>(
+    `/programs/${programId}/measurements/available`
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to fetch available program measurements"
+    );
+  }
+
+  return response.data.data;
+}
+
+export async function addMeasurementDefinitionsToProgram(
+  programId: number,
+  measurementDefinitionIds: number[]
+): Promise<any> {
+  const response = await apiClient.post<ApiResponse<any>>(
+    `/programs/${programId}/measurement-definitions`,
+    {
+      measurementDefinitionIds,
+    }
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to add measurement definitions to program"
+    );
+  }
+
+  return response.data.data;
+}
+
+export async function removeMeasurementDefinitionFromProgram(
+  programId: number,
+  measurementDefinitionId: number
+): Promise<void> {
+  const response = await apiClient.delete<ApiResponse<void>>(
+    `/programs/${programId}/measurement-definitions/${measurementDefinitionId}`
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error ||
+        "Failed to remove measurement definition from program"
+    );
+  }
+}
+
+export async function getProgramCalculatedMeasurements(
+  programid: number,
+  programPhaseId: number
+): Promise<any> {
+  const response = await apiClient.get<ApiResponse<any>>(
+    `/programs/${programid}/phases/${programPhaseId}/calculated-measurements`
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to fetch program calculated measurements"
+    );
+  }
+
+  return response.data.data;
+}
+
+// ====== Program Phase Measurement Data CRUD ======
+
+export interface LocationParams {
+  business_unit_id?: number;
+  region_id?: number;
+  site_id?: number;
+  asset_group_id?: number;
+  work_group_id?: number;
+  role_id?: number;
+}
+
+export async function getProgramPhaseMeasurementData(
+  programId: number,
+  programPhaseId: number,
+  measurementDefinitionId: number,
+  location?: LocationParams
+): Promise<any> {
+  const response = await apiClient.get<ApiResponse<any>>(
+    `/programs/${programId}/phases/${programPhaseId}/calculated-measurement`,
+    {
+      params: {
+        measurementId: measurementDefinitionId,
+        location,
+      },
+    }
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to fetch measurement data"
+    );
+  }
+
+  return response.data.data;
+}
+
+export interface CreateMeasurementDataParams extends LocationParams {
+  measurement_definition_id: number;
+  calculated_value: number;
+}
+
+export async function createProgramPhaseMeasurementData(
+  programId: number,
+  programPhaseId: number,
+  data: CreateMeasurementDataParams
+): Promise<any> {
+  const response = await apiClient.post<ApiResponse<any>>(
+    `/programs/${programId}/phases/${programPhaseId}/measurement-data`,
+    data
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to create measurement data"
+    );
+  }
+
+  return response.data.data;
+}
+
+export async function updateProgramPhaseMeasurementData(
+  programId: number,
+  programPhaseId: number,
+  measurementId: number,
+  calculated_value: number
+): Promise<any> {
+  const response = await apiClient.put<ApiResponse<any>>(
+    `/programs/${programId}/phases/${programPhaseId}/measurement-data/${measurementId}`,
+    { calculated_value }
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to update measurement data"
+    );
+  }
+
+  return response.data.data;
+}
+
+export async function deleteProgramPhaseMeasurementData(
+  programId: number,
+  programPhaseId: number,
+  measurementId: number
+): Promise<void> {
+  const response = await apiClient.delete<ApiResponse<void>>(
+    `/programs/${programId}/phases/${programPhaseId}/measurement-data/${measurementId}`
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to delete measurement data"
+    );
+  }
 }

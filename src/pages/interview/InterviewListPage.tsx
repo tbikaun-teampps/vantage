@@ -79,6 +79,7 @@ export function InterviewsListPage() {
               onTabChange={handleTabChange}
               onCreateInterview={() => setIsCreateDialogOpen(true)}
               showAssessmentColumn={true}
+              showProgramColumn={true}
             />
           </div>
         </div>

@@ -9,7 +9,10 @@ import { IconLoader } from "@tabler/icons-react";
 import { useCreateProgram } from "@/hooks/useProgram";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
-import { programFormSchema, type ProgramFormData } from "@/components/programs/new/schema";
+import {
+  programFormSchema,
+  type ProgramFormData,
+} from "@/components/programs/new/schema";
 
 export function ProgramNewPage() {
   const companyId = useCompanyFromUrl();
@@ -38,59 +41,54 @@ export function ProgramNewPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle>Create New Program</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="name">Program Name*</Label>
-              <Input
-                id="name"
-                {...form.register("name")}
-                placeholder="Enter program name"
-              />
-              {form.formState.errors.name && (
-                <p className="text-sm text-red-600">
-                  {form.formState.errors.name.message}
-                </p>
+    <Card className="max-w-[1600px] mx-auto shadow-none border-none">
+      <CardHeader>
+        <CardTitle>Create New Program</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="name">Program Name*</Label>
+            <Input
+              id="name"
+              {...form.register("name")}
+              placeholder="Enter program name"
+            />
+            {form.formState.errors.name && (
+              <p className="text-sm text-red-600">
+                {form.formState.errors.name.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              {...form.register("description")}
+              placeholder="Enter program description (optional)"
+              rows={3}
+            />
+          </div>
+
+          <div className="flex gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/programs")}
+              disabled={createProgramMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={createProgramMutation.isPending}>
+              {createProgramMutation.isPending && (
+                <IconLoader className="mr-2 h-4 w-4 animate-spin" />
               )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                {...form.register("description")}
-                placeholder="Enter program description (optional)"
-                rows={3}
-              />
-            </div>
-
-            <div className="flex gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate("/programs")}
-                disabled={createProgramMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createProgramMutation.isPending}
-              >
-                {createProgramMutation.isPending && (
-                  <IconLoader className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Create Program
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+              Create Program
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

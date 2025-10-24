@@ -109,7 +109,7 @@ export interface AssessmentWithQuestionnaire
 //   ===== Assessment Measurements =====
 
 type CalculatedMeasurement =
-  Database["public"]["Tables"]["calculated_measurements"]["Row"];
+  Database["public"]["Tables"]["measurements_calculated"]["Row"];
 
 export interface CalculatedMeasurementWithLocation
   extends CalculatedMeasurement {
@@ -119,6 +119,18 @@ export interface CalculatedMeasurementWithLocation
   asset_group: { name: string } | null;
   work_group: { name: string } | null;
   role: { name: string } | null;
+}
+
+export interface CalculatedMeasurementWithDefinition
+  extends CalculatedMeasurement {
+  measurement_definition: {
+    id: number;
+    name: string;
+    description: string | null;
+    calculation_type: string | null;
+    required_csv_columns: Database["public"]["Tables"]["measurement_definitions"]["Row"]["required_csv_columns"];
+    provider: string | null;
+  } | null;
 }
 
 // ===== Assessment Actions =====

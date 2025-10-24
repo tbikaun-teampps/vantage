@@ -25,13 +25,13 @@ import {
   IconExternalLink,
 } from "@tabler/icons-react";
 import { useQuestionnaires } from "@/hooks/useAssessments";
-import type { ProgramWithRelations } from "@/types/program";
 import { Link } from "react-router-dom";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import type { ProgramDetailResponseData } from "@/types/api/programs";
 
 interface PresiteQuestionnaireSelectionProps {
-  program: ProgramWithRelations;
+  program: ProgramDetailResponseData;
   onPresiteQuestionnaireUpdate: (questionnaireId: number | null) => void;
   isUpdating?: boolean;
 }
@@ -55,7 +55,6 @@ export function PresiteQuestionnaireSelection({
     (q) => q.id === program.presite_questionnaire_id
   );
 
-
   const handleSave = () => {
     const newQuestionnaireId =
       selectedQuestionnaireId && selectedQuestionnaireId !== "__clear__"
@@ -75,7 +74,7 @@ export function PresiteQuestionnaireSelection({
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="shadow-none border-none">
         <CardHeader>
           <div className="flex items-center gap-2">
             <IconClipboardText className="h-5 w-5" />
@@ -96,7 +95,7 @@ export function PresiteQuestionnaireSelection({
   }
 
   return (
-    <Card>
+    <Card className="shadow-none border-none">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
@@ -152,8 +151,8 @@ export function PresiteQuestionnaireSelection({
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  This questionnaire will be used for self-audit interviews within
-                  this program to gather preliminary insights.
+                  This questionnaire will be used for self-audit interviews
+                  within this program to gather preliminary insights.
                 </p>
               </div>
             ) : (
@@ -196,7 +195,8 @@ export function PresiteQuestionnaireSelection({
                     </SelectItem>
                   ) : (
                     questionnaires.map((questionnaire) => {
-                      const isUsedByOnsite = questionnaire.id === program.onsite_questionnaire_id;
+                      const isUsedByOnsite =
+                        questionnaire.id === program.onsite_questionnaire_id;
                       return (
                         <SelectItem
                           key={questionnaire.id}

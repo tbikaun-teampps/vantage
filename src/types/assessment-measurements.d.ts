@@ -8,8 +8,8 @@ export interface AssessmentMeasurement extends Measurement {
   completion: number;
   isInUse?: boolean;
   description?: string;
-  measurementRecordId?: number; // ID from calculated_measurements table for deletion
-  calculated_value?: number; // The calculated value from calculated_measurements table
+  measurementRecordId?: number; // ID from measurements_calculated table for deletion
+  calculated_value?: number; // The calculated value from measurements_calculated table
   instanceCount?: number; // Count of calculated measurement instances for this definition
   calculation: string | null; // The calculation formula or method
   calculation_type: string | null; // Type of calculation (e.g., sum, average)

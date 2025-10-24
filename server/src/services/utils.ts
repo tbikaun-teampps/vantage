@@ -29,7 +29,11 @@ export function calculateRatingValueRange(
  * @returns Completion rate as a number between 0 and 1.
  */
 export function calculateCompletionRate(
-  responses: InterviewResponse[]
+  responses: Array<{
+    is_applicable?: boolean | null;
+    is_unknown?: boolean | null;
+    rating_score?: number | null;
+  }>
 ): number {
   if (!responses || responses.length === 0) {
     return 0;
@@ -54,10 +58,15 @@ export function calculateCompletionRate(
 }
 /**
  * Calculates the average score from interview responses.
- * @param responses 
+ * @param responses
  * @returns Average score as a number.
  */
-export function calculateAverageScore(responses: InterviewResponse[]): number {
+export function calculateAverageScore(
+  responses: Array<{
+    is_applicable?: boolean | null;
+    rating_score?: number | null;
+  }>
+): number {
   if (!responses || responses.length === 0) {
     return 0;
   }

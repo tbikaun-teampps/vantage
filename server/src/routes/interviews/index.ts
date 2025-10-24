@@ -35,7 +35,9 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
             company_id: { type: "string" },
             assessment_id: { type: "number" },
             status: { type: "array", items: { type: "string" } },
-            program_id: { type: "string" },
+            program_phase_id: { type: "string" },
+            questionnaire_id: { type: "string" },
+            detailed: { type: "boolean", default: false },
           },
           required: ["company_id"],
         },
@@ -68,18 +70,29 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       },
     },
     async (request) => {
-      const { company_id, assessment_id, status, program_id } =
-        request.query as {
-          company_id: string;
-          assessment_id: number;
-          status: InterviewStatus[];
-          program_id: number;
-        };
+      const {
+        company_id,
+        assessment_id,
+        status,
+        program_phase_id,
+        questionnaire_id,
+        detailed,
+      } = request.query as {
+        company_id: string;
+        assessment_id: number;
+        status: InterviewStatus[];
+        program_id: number;
+        program_phase_id: number;
+        questionnaire_id: number;
+        detailed: boolean;
+      };
       const data = await request.interviewsService!.getInterviews(
         company_id,
         assessment_id,
         status,
-        program_id
+        program_phase_id,
+        questionnaire_id,
+        detailed
       );
 
       return {

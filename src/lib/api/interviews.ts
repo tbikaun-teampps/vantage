@@ -52,15 +52,17 @@ export async function getInterviews(
   companyId: string,
   filters?: InterviewFilters
 ): Promise<Interview[]> {
-  const params: Record<string, any> = {};
-  params.company_id = companyId;
-  if (filters?.assessmentId) params.assessment_id = filters.assessmentId;
-  if (filters?.status) params.status = filters.status;
-  if (filters?.programId) params.program = filters.programId;
-
   const response = await apiClient.get<ApiResponse<Interview[]>>(
     "/interviews",
-    { params }
+    {
+      params: {
+        company_id: companyId,
+        assessment_id: filters?.assessmentId,
+        status: filters?.status,
+        program_phase_id: filters?.programPhaseId,
+        questionnaire_id: filters?.questionnaireId,
+      },
+    }
   );
 
   if (!response.data.success) {

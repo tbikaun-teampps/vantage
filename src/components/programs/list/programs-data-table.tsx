@@ -3,14 +3,17 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { SimpleDataTable } from "@/components/simple-data-table";
-import type { ProgramWithRelations } from "@/types/program";
 import { formatDistanceToNow } from "date-fns";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import type {
+  ProgramListItem,
+  ProgramListResponseData,
+} from "@/types/api/programs";
 
 interface ProgramsDataTableProps {
-  data: ProgramWithRelations[];
+  data: ProgramListResponseData;
   isLoading?: boolean;
 }
 
@@ -22,7 +25,7 @@ export function ProgramsDataTable({
   const routes = useCompanyRoutes();
   const navigate = useCompanyAwareNavigate();
 
-  const columns: ColumnDef<ProgramWithRelations>[] = [
+  const columns: ColumnDef<ProgramListItem>[] = [
     {
       accessorKey: "name",
       header: "Program Name",
@@ -54,7 +57,7 @@ export function ProgramsDataTable({
       accessorKey: "presite_questionnaire",
       header: "Self-Audit",
       cell: ({ row }) => {
-        const hasPresite = !!row.original.presite_questionnaire;
+        const hasPresite = row.original.presite_questionnaire_id !== null;
         return (
           <Badge variant={hasPresite ? "default" : "outline"}>
             {hasPresite ? "✓" : "—"}
@@ -66,7 +69,7 @@ export function ProgramsDataTable({
       accessorKey: "onsite_questionnaire",
       header: "Onsite-Audit",
       cell: ({ row }) => {
-        const hasOnsite = !!row.original.onsite_questionnaire;
+        const hasOnsite = row.original.onsite_questionnaire_id !== null;
         return (
           <Badge variant={hasOnsite ? "default" : "outline"}>
             {hasOnsite ? "✓" : "—"}
@@ -75,10 +78,10 @@ export function ProgramsDataTable({
       },
     },
     {
-      accessorKey: "metrics_count",
+      accessorKey: "measurements_count",
       header: "Desktop Measurements",
       cell: ({ row }) => {
-        const count = row.original.metrics_count || 0;
+        const count = row.original.measurements_count;
         return (
           <Badge variant={count > 0 ? "default" : "outline"}>
             {count > 0 ? count : "—"}
@@ -126,7 +129,7 @@ export function ProgramsDataTable({
 
   return (
     <SimpleDataTable
-      data={data}
+      data={data ?? []}
       columns={columns}
       getRowId={(row) => row.id.toString()}
       enableSorting={true}

@@ -140,11 +140,11 @@ export class HeatmapService {
 
     // Fetch all calculated measurements for these assessments
     const { data: measurements, error: measurementsError } = await this.supabase
-      .from("calculated_measurements")
+      .from("measurements_calculated")
       .select(
         `
           *,
-          definition:measurement_id(*),
+          definition:measurement_definition_id(*),
           business_unit:business_unit_id(name),
           region:region_id(name),
           site:site_id(name, lat, lng),
@@ -1043,8 +1043,8 @@ export async function getOverallHeatmapFilters(
 
     // Fetch measurements used on desktop assessments
     const { data: measurements, error: measurementsError } = await supabase
-      .from("calculated_measurements")
-      .select("*, definition:measurement_id(*)")
+      .from("measurements_calculated")
+      .select("*, definition:measurement_definition_id(*)")
       .in(
         "assessment_id",
         assessments.map((a) => a.id)

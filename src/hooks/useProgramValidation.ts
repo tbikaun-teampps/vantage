@@ -1,21 +1,23 @@
-import type { ProgramWithRelations } from "@/types/program";
+import type { ProgramDetailResponseData } from "@/types/api/programs";
 
 // Utility function to validate if a program has an onsite questionnaire
 function isProgramOnsiteQuestionnaireValid(
-  program: ProgramWithRelations
+  program: ProgramDetailResponseData
 ): boolean {
   return !!program.onsite_questionnaire_id;
 }
 
 // Utility function to validate if a program has a presite questionnaire
 function isProgramPresiteQuestionnaireValid(
-  program: ProgramWithRelations
+  program: ProgramDetailResponseData
 ): boolean {
   return !!program.presite_questionnaire_id;
 }
 
 // Unified program validation hook - extensible for future validation needs
-export function useProgramValidation(program: ProgramWithRelations | null) {
+export function useProgramValidation(
+  program: ProgramDetailResponseData | null
+) {
   if (!program) {
     return {
       // Questionnaire validations
