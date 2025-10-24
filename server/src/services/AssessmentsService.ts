@@ -161,6 +161,7 @@ export class AssessmentsService {
       status: assessmentData.status,
       type: assessmentData.type,
       questionnaire_id: assessmentData.questionnaire_id,
+      program_phase_id: assessmentData.program_phase_id,
       company_id: assessmentData.company_id,
       created_by: assessmentData.created_by,
       created_at: assessmentData.created_at,
