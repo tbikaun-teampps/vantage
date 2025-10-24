@@ -58,11 +58,13 @@ import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { InterviewSettingsDialog } from "@/components/interview/detail/InterviewSettingsDialog";
 import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface InterviewsDataTableProps {
   data: InterviewWithResponses[] | InterviewWithDetails[];
   isLoading?: boolean;
   showAssessmentColumn?: boolean;
+  showProgramColumn?: boolean;
   defaultTab?: string;
   onTabChange?: (tabValue: string) => void;
   onCreateInterview?: () => void;
@@ -74,6 +76,7 @@ export function InterviewsDataTable({
   data,
   isLoading = false,
   showAssessmentColumn = false,
+  showProgramColumn = false,
   defaultTab = "all",
   onTabChange,
   onCreateInterview,
@@ -114,6 +117,21 @@ export function InterviewsDataTable({
         return <IconCancel className="mr-1 h-3 w-3 text-gray-500" />;
       default:
         return <IconClock className="mr-1 h-3 w-3 text-gray-500" />;
+    }
+  };
+
+  const getStatusStyle = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "in_progress":
+        return "bg-blue-100 text-blue-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "cancelled":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -306,7 +324,42 @@ export function InterviewsDataTable({
                     className="text-xs text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
                   >
                     {interview.assessment.name}
-                    <IconExternalLink className="h-3 w-3" />
+                  </Link>
+                </div>
+              );
+            },
+          } as ColumnDef<InterviewData>,
+        ]
+      : []),
+    // Conditionally include program column
+    ...(showProgramColumn
+      ? [
+          {
+            accessorKey: "program" as const,
+            header: "Program",
+            cell: ({ row }: { row: { original: InterviewData } }) => {
+              const interview = row.original as InterviewWithResponses;
+              console.log("interview: ", interview);
+              if (!interview.program?.name) {
+                return (
+                  <div className="text-xs text-muted-foreground truncate">
+                    N/A
+                  </div>
+                );
+              }
+              return (
+                <div className="flex-1">
+                  <Link
+                    to={routes.assessmentDetails(
+                      interview.assessment.type || "onsite",
+                      interview.assessment.id
+                    )}
+                    className="text-xs text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
+                  >
+                    {interview?.program?.name || "N/A"}{" "}
+                    {interview?.program?.program_phase_name
+                      ? `- ${interview?.program?.program_phase_name}`
+                      : ""}
                   </Link>
                 </div>
               );
@@ -387,8 +440,11 @@ export function InterviewsDataTable({
       header: "Status",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          {getStatusIcon(row.original.status)}
-          <Badge variant="outline" className="capitalize">
+          <Badge
+            variant="secondary"
+            className={cn("capitalize", getStatusStyle(row.original.status))}
+          >
+            {getStatusIcon(row.original.status)}
             {row.original.status.replace("_", " ")}
           </Badge>
         </div>
@@ -398,23 +454,25 @@ export function InterviewsDataTable({
       accessorKey: "completion_rate",
       header: "Progress",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
+        <div className="relative w-full">
           <Progress
             value={Math.round(row.original.completion_rate * 100)}
-            className="w-20"
+            className="h-4"
           />
-          <span className="text-xs text-muted-foreground">
-            {Math.round(row.original.completion_rate * 100)}%
-          </span>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs font-medium mix-blend-difference text-white">
+              {Math.round(row.original.completion_rate * 100)}%
+            </span>
+          </div>
         </div>
       ),
     },
     {
       accessorKey: "average_score",
-      header: "Ave. Score",
+      header: () => <div className="text-center">Ave. Score</div>,
       cell: ({ row }) => (
-        <div className="flex items-center">
-          <Badge variant="outline">
+        <div className="w-full text-center">
+          <Badge variant="secondary">
             {Math.round(row.original.average_score * 10) / 10}/
             {row.original.max_rating_value}
           </Badge>
@@ -426,7 +484,9 @@ export function InterviewsDataTable({
       header: () => <div className="text-center">Created</div>,
       cell: ({ row }) => (
         <div className="text-xs text-center">
-          {new Date(row.original.created_at).toLocaleDateString()}
+          {formatDistanceToNow(new Date(row.original.created_at), {
+            addSuffix: true,
+          })}
         </div>
       ),
     },

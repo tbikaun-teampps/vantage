@@ -350,7 +350,7 @@ export async function getOverallDesktopGeographicalMapData(
   }
 
   const { data: measurements, error: measurementsError } = await supabase
-    .from("calculated_measurements")
+    .from("measurements_calculated")
     .select(
       `id,
       calculated_value,
@@ -530,7 +530,7 @@ export async function getOverallGeographicalMapFilters(
 
     // TODO: turn this into an RPC, as there will be lots of measurements and
     const { data: measurements, error: measurementsError } = await supabase
-      .from("calculated_measurements")
+      .from("measurements_calculated")
       .select("id, definition:measurement_definitions(*)")
       .in("assessment_id", assessments?.map((a) => a.id) || [])
       .eq("is_deleted", false);

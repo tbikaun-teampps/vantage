@@ -7,7 +7,7 @@ import { ProgramsDataTable } from "@/components/programs/list/programs-data-tabl
 export function ProgramListPage() {
   usePageTitle("Programs");
   const companyId = useCompanyFromUrl();
-  const { data: programs = [], isLoading } = usePrograms(companyId);
+  const { data: programs, isLoading } = usePrograms(companyId);
 
   return (
     <DashboardPage title="Programs" description="Manage and view programs">

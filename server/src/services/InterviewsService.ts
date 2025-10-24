@@ -94,6 +94,10 @@ export class InterviewsService {
     assessment_id: number;
     interview_contact_ids: number[];
     name: string;
+    // Optional program-specific fields
+    program_id?: number;
+    program_phase_id?: number;
+    questionnaire_id?: number;
   }): Promise<
     // Array<
     //   Interview & {
@@ -106,7 +110,14 @@ export class InterviewsService {
       throw new Error("Supabase admin client is required for this operation");
     }
 
-    const { assessment_id, interview_contact_ids, name } = data;
+    const {
+      assessment_id,
+      interview_contact_ids,
+      name,
+      program_id,
+      program_phase_id,
+      questionnaire_id,
+    } = data;
     const createdInterviews: any[] = [];
     // Array<
     //   Interview & {
@@ -276,6 +287,10 @@ export class InterviewsService {
         interview_contact_id: contactId,
         role_ids: [roleId],
         interviewee_id: userId,
+        // Pass through program-specific fields if provided
+        program_id,
+        program_phase_id,
+        questionnaire_id,
       };
 
       try {
@@ -308,12 +323,27 @@ export class InterviewsService {
   async createInterview(
     interviewData: CreateInterviewData
   ): Promise<Interview> {
-    if (!this.userId || this.userId === null) {
-      throw new Error("User not authenticated");
+    // Extract fields that aren't directly part of the database schema or need special handling
+    const {
+      role_ids,
+      questionnaire_id: providedQuestionnaireId,
+      company_id: providedCompanyId,
+      created_by: providedCreatedBy,
+      ...dbInterviewData
+    } = interviewData;
+
+    // Determine the user ID to use for creation
+    const creatorUserId = providedCreatedBy || this.userId;
+
+    if (!creatorUserId) {
+      throw new Error("User not authenticated and no created_by provided");
     }
 
-    // Extract role_ids from the data (not part of the database schema)
-    const { role_ids, ...dbInterviewData } = interviewData;
+    // Auto-generate access code for individual interviews if not provided
+    let accessCode = dbInterviewData.access_code;
+    if (dbInterviewData.is_individual && !accessCode) {
+      accessCode = await this.generateAccessCode();
+    }
 
     // First, get all questions for the assessment's questionnaire
     const { data: assessment, error: assessmentError } = (await this.supabase
@@ -343,6 +373,15 @@ export class InterviewsService {
 
     if (assessmentError) throw assessmentError;
     if (!assessment) throw new Error("Assessment not found");
+
+    // Determine company_id and questionnaire_id: use provided values if available, otherwise derive from assessment
+    const companyId = providedCompanyId || assessment.company_id;
+    const questionnaireId =
+      providedQuestionnaireId || assessment.questionnaire?.id;
+
+    if (!questionnaireId) {
+      throw new Error("No questionnaire found for interview");
+    }
 
     // Get shared_role_ids associated with the role_ids
     // This is used to determine question applicability later
@@ -379,7 +418,7 @@ export class InterviewsService {
     const { data: companyRoles, error: companyRolesError } = await this.supabase
       .from("roles")
       .select("id, shared_role_id")
-      .eq("company_id", assessment.company_id)
+      .eq("company_id", companyId)
       .eq("is_deleted", false);
 
     if (companyRolesError) throw companyRolesError;
@@ -424,10 +463,11 @@ export class InterviewsService {
       .insert([
         {
           ...dbInterviewData,
-          company_id: assessment.company_id,
-          questionnaire_id: assessment.questionnaire!.id,
-          interviewer_id: dbInterviewData.interviewer_id || this.userId,
-          created_by: this.userId,
+          company_id: companyId,
+          questionnaire_id: questionnaireId,
+          interviewer_id: dbInterviewData.interviewer_id || creatorUserId,
+          created_by: creatorUserId,
+          access_code: accessCode, // Use generated or provided access code
         },
       ])
       .select()
@@ -440,8 +480,8 @@ export class InterviewsService {
       const interviewRoleAssociations = role_ids.map((roleId) => ({
         interview_id: interview.id,
         role_id: roleId,
-        company_id: assessment.company_id,
-        created_by: this.userId,
+        company_id: companyId,
+        created_by: creatorUserId,
       }));
 
       const { error: interviewRoleError } = await this.supabase
@@ -505,7 +545,7 @@ export class InterviewsService {
             questionnaire_question_id: questionId,
             is_universal: true,
             role_id: null,
-            company_id: assessment.company_id,
+            company_id: companyId,
           });
         } else if (hasInterviewRoles && questionRoles.length === 0) {
           // Universally applicable question
@@ -519,7 +559,7 @@ export class InterviewsService {
             questionnaire_question_id: questionId,
             is_universal: true,
             role_id: null,
-            company_id: assessment.company_id,
+            company_id: companyId,
           });
         } else if (!hasInterviewRoles && questionRoles.length > 0) {
           // Question has specific roles defined, but
@@ -540,7 +580,7 @@ export class InterviewsService {
                 questionnaire_question_id: questionId,
                 is_universal: false,
                 role_id: actualRoleId,
-                company_id: assessment.company_id,
+                company_id: companyId,
               });
             }
           }
@@ -561,7 +601,7 @@ export class InterviewsService {
                 questionnaire_question_id: questionId,
                 is_universal: false,
                 role_id: actualRoleId,
-                company_id: assessment.company_id,
+                company_id: companyId,
               });
             }
           }
@@ -578,8 +618,8 @@ export class InterviewsService {
           comments: null,
           answered_at: null,
           is_applicable: applicable,
-          company_id: assessment.company_id,
-          created_by: this.userId,
+          company_id: companyId,
+          created_by: creatorUserId,
         });
       }
 
@@ -621,9 +661,9 @@ export class InterviewsService {
         const responseRoleAssociations = createdResponses.map((response) => ({
           interview_response_id: response.id,
           role_id: role_ids[0],
-          company_id: assessment.company_id,
+          company_id: companyId,
           interview_id: interview.id,
-          created_by: this.userId,
+          created_by: creatorUserId,
         }));
 
         const { error: responseRoleError } = await this.supabase
@@ -1739,15 +1779,45 @@ export class InterviewsService {
     companyId: string,
     assessmentId?: number,
     status?: InterviewStatus[],
-    programId?: number
+    programPhaseId?: number,
+    questionnaireId?: number,
+    detailed: boolean = false
   ) {
-    console.log(
-      "fetching interviews with: ",
-      companyId,
-      assessmentId,
-      status,
-      programId
-    );
+    // Build conditional select query based on whether detailed data is needed
+    // When detailed=false, only fetch minimal fields needed for calculations
+    // When detailed=true, fetch full nested data including questions, actions, and roles
+    const interviewResponsesSelect = detailed
+      ? `interview_responses(
+            *,
+            question:questionnaire_questions(
+              id,
+              title,
+              question_text,
+              context,
+              order_index,
+              questionnaire_question_rating_scales(
+                id,
+                description,
+                questionnaire_rating_scale:questionnaire_rating_scales(
+                  id,
+                  name,
+                  description,
+                  order_index,
+                  value
+                )
+              )
+            ),
+            interview_response_actions(*),
+            interview_response_roles(
+              role:roles(*)
+            )
+          )`
+      : `interview_responses(
+            id,
+            rating_score,
+            is_applicable,
+            is_unknown
+          )`;
 
     let query = this.supabase
       .from("interviews")
@@ -1755,10 +1825,18 @@ export class InterviewsService {
         `
           *,
           assessment:assessments!inner(
-            id, 
-            name, 
+            id,
+            name,
             company_id,
             type,
+            program_phase:program_phases(
+              id,
+              name,
+              program:programs(
+                id,
+                name
+              )
+            ),
             questionnaire:questionnaires(
               id,
               questionnaire_rating_scales(
@@ -1788,31 +1866,7 @@ export class InterviewsService {
               )
             )
           ),
-          interview_responses(
-            *,
-            question:questionnaire_questions(
-              id,
-              title,
-              question_text,
-              context,
-              order_index,
-              questionnaire_question_rating_scales(
-                id,
-                description,
-                questionnaire_rating_scale:questionnaire_rating_scales(
-                  id,
-                  name,
-                  description,
-                  order_index,
-                  value
-                )
-              )
-            ),
-            interview_response_actions(*),
-            interview_response_roles(
-              role:roles(*)
-            )
-          )
+          ${interviewResponsesSelect}
         `
       )
       .eq("is_deleted", false)
@@ -1822,27 +1876,33 @@ export class InterviewsService {
     if (assessmentId) {
       query = query.eq("assessment_id", assessmentId);
     }
-    if (programId) {
-      query = query.eq("program_id", programId);
+    if (programPhaseId) {
+      query = query.eq("program_phase_id", programPhaseId);
     }
     if (status && status.length > 0) {
       query = query.in("status", status);
     }
+    if (questionnaireId) {
+      query = query.eq("assessment.questionnaire_id", questionnaireId);
+    }
 
-    const { data: interviews, error } = await query.order("created_at", {
+    const { data: interviewsData, error } = await query.order("created_at", {
       ascending: false,
     });
 
     if (error) throw error;
-    if (!interviews || interviews.length === 0) return [];
+    if (!interviewsData || interviewsData.length === 0) return [];
 
     // Transform interviews data
-    return interviews.map((interview) => {
+    return interviewsData.map((interviewData) => {
       const ratingRange = calculateRatingValueRange(
-        interview.assessment?.questionnaire
+        interviewData.assessment?.questionnaire
       );
 
-      return {
+      const { interview_responses: interviewResponses, ...interview } =
+        interviewData;
+
+      const baseOutput = {
         ...interview,
         assessment: {
           id: interview.assessment?.id,
@@ -1850,12 +1910,14 @@ export class InterviewsService {
           type: interview.assessment?.type,
           company_id: interview.assessment?.company_id,
         },
-        completion_rate: calculateCompletionRate(
-          interview.interview_responses || []
-        ),
-        average_score: calculateAverageScore(
-          interview.interview_responses || []
-        ),
+        program: {
+          id: interview.assessment.program_phase?.program?.id || null,
+          name: interview.assessment.program_phase?.program?.name || null,
+          program_phase_id: interview.assessment.program_phase?.id || null,
+          program_phase_name: interview.assessment.program_phase?.name || null,
+        },
+        completion_rate: calculateCompletionRate(interviewResponses || []),
+        average_score: calculateAverageScore(interviewResponses || []),
         min_rating_value: ratingRange.min,
         max_rating_value: ratingRange.max,
         interviewee: interview.interviewee?.email
@@ -1878,15 +1940,22 @@ export class InterviewsService {
               email: interview.interviewer.email,
             }
           : null,
-        responses:
-          interview.interview_responses?.map((response) => ({
-            ...response,
-            // question: transformQuestionData(response.question),
-            response_roles:
-              response.interview_response_roles?.map((rr) => rr.role) || [],
-            actions: response.interview_response_actions || [],
-          })) || [],
       };
+
+      // Conditionally add responses property when detailed=true
+      return detailed
+        ? {
+            ...baseOutput,
+            responses:
+              interviewResponses?.map((response) => ({
+                ...response,
+                response_roles:
+                  response.interview_response_roles?.map((rr) => rr.role) ||
+                  [],
+                actions: response.interview_response_actions || [],
+              })) || [],
+          }
+        : baseOutput;
     });
   }
 

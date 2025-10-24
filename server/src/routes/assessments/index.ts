@@ -605,7 +605,7 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
       // Update the measurement
       const { data: updatedMeasurement, error: updateError } =
         await request.supabaseClient
-          .from("calculated_measurements")
+          .from("measurements_calculated")
           .update({ ...updates, updated_at: new Date().toISOString() })
           .eq("id", measurementId)
           .select()

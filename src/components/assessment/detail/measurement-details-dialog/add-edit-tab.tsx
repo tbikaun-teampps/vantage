@@ -299,44 +299,6 @@ export function AddEditTab({
           </div>
         )}
 
-        {/* <div>
-                        <h4 className="font-medium mb-3">Configuration Actions</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <Button
-                            variant="outline"
-                            onClick={() => onConfigure(measurement)}
-                            className="justify-start"
-                          >
-                            <IconSettings className="h-4 w-4 mr-2" />
-                            Measurement Settings
-                          </Button>
-                          <Button
-                            variant="outline"
-                            disabled
-                            className="justify-start"
-                          >
-                            <IconDatabase className="h-4 w-4 mr-2" />
-                            Data Mapping
-                          </Button>
-                          <Button
-                            variant="outline"
-                            disabled
-                            className="justify-start"
-                          >
-                            <IconCheck className="h-4 w-4 mr-2" />
-                            Validation Rules
-                          </Button>
-                          <Button
-                            variant="outline"
-                            disabled
-                            className="justify-start"
-                          >
-                            <IconMath className="h-4 w-4 mr-2" />
-                            Formula Editor
-                          </Button>
-                        </div>
-                      </div> */}
-
         {/* Remove from Assessment option - only for edit mode */}
         {mode === "edit" && instance && (
           <div>

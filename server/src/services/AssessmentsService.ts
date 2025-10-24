@@ -683,7 +683,7 @@ export class AssessmentsService {
   ): Promise<CalculatedMeasurementWithLocation[]> {
     // Fetch measurements associated with the assessment
     const { data: measurements, error: measurementsError } = await this.supabase
-      .from("calculated_measurements")
+      .from("measurements_calculated")
       .select(
         `
           *,
@@ -758,7 +758,7 @@ export class AssessmentsService {
 
     // Check measurement isn't already associated with the assessment
     let existenceCheckQuery = this.supabase
-      .from("calculated_measurements")
+      .from("measurements_calculated")
       .select("*")
       .eq("assessment_id", assessmentId)
       .eq("measurement_definition_id", measurement_definition_id);
@@ -814,11 +814,11 @@ export class AssessmentsService {
     // Add measurement to assessment
     const { data: newMeasurement, error: newMeasurementError } =
       await this.supabase
-        .from("calculated_measurements")
+        .from("measurements_calculated")
         .insert({
           company_id: assessment.company_id,
           assessment_id: assessmentId,
-          measurement_id: measurement_definition_id,
+          measurement_definition_id,
           calculated_value,
           ...location,
         })
@@ -833,7 +833,7 @@ export class AssessmentsService {
   async deleteMeasurementFromAssessment(measurementId: number) {
     // Delete the measurement
     const { error: deleteError } = await this.supabase
-      .from("calculated_measurements")
+      .from("measurements_calculated")
       .delete()
       .eq("id", measurementId);
 
@@ -845,11 +845,11 @@ export class AssessmentsService {
   async getMeasurementBarChartsByAssessmentId(assessmentId: number) {
     // Fetch measurements associated with the assessment
     const { data: measurements, error: measurementsError } = await this.supabase
-      .from("calculated_measurements")
+      .from("measurements_calculated")
       .select(
         `
             *,
-            definition:measurement_id(name),
+            definition:measurement_definition_id(name),
             business_unit:business_unit_id(name),
             region:region_id(name),
             site:site_id(name),

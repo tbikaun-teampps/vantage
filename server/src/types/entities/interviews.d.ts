@@ -46,6 +46,14 @@ export interface CreateInterviewData {
   interview_contact_id?: number | null;
   role_ids?: number[];
   interviewee_id: string | null;
+  // Program-specific fields (optional)
+  program_id?: number | null;
+  program_phase_id?: number | null;
+  // Allow explicit override of normally-derived fields
+  questionnaire_id?: number | null;
+  company_id?: string | null;
+  created_by?: string | null;
+  status?: Database["public"]["Enums"]["interview_statuses"];
 }
 
 export type UpdateInterviewData = Pick<

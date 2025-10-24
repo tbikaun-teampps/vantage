@@ -17,6 +17,17 @@ import {
   updateProgramPresiteQuestionnaire,
   type CreatePhaseData,
   type UpdatePhaseData,
+  getProgramMeasurements,
+  getProgramAvailableMeasurements,
+  addMeasurementDefinitionsToProgram,
+  removeMeasurementDefinitionFromProgram,
+  getProgramCalculatedMeasurements,
+  getProgramPhaseMeasurementData,
+  createProgramPhaseMeasurementData,
+  updateProgramPhaseMeasurementData,
+  deleteProgramPhaseMeasurementData,
+  type LocationParams,
+  type CreateMeasurementDataParams,
 } from "@/lib/api/programs";
 
 // Query key factory for cache management
@@ -30,6 +41,22 @@ const programKeys = {
   phases: () => [...programKeys.all, "phases"] as const,
   currentPhase: (programId: number) =>
     [...programKeys.phases(), "current", programId] as const,
+  programMeasurements: () =>
+    [...programKeys.all, "program-measurements"] as const,
+  programMeasurement: (
+    programId: number,
+    includeDefinitions: boolean = false
+  ) =>
+    [
+      ...programKeys.programMeasurements(),
+      { programId, includeDefinitions },
+    ] as const,
+  programMeasurementsWithDefinitions: (programId: number) =>
+    [
+      ...programKeys.programMeasurements(),
+      "with-definitions",
+      programId,
+    ] as const,
 };
 
 // Hook to fetch programs with optional company filtering
@@ -192,12 +219,14 @@ export function useUpdatePhase() {
 
   return useMutation({
     mutationFn: ({
+      programId,
       phaseId,
       updateData,
     }: {
+      programId: number;
       phaseId: number;
       updateData: UpdatePhaseData;
-    }) => updatePhase(phaseId, updateData),
+    }) => updatePhase(programId, phaseId, updateData),
     onSuccess: () => {
       // Invalidate program queries to refresh phase data
       queryClient.invalidateQueries({ queryKey: programKeys.all });
@@ -321,6 +350,272 @@ export function useCreateProgramInterviews() {
           ? error.message
           : "Failed to create interviews. Please try again.";
       toast.error(errorMessage);
+    },
+  });
+}
+
+// Program Measurements queries
+export function useProgramMeasurements(
+  programId: number,
+  includeDefinitions: boolean = false
+) {
+  return useQuery({
+    queryKey: programKeys.programMeasurement(programId, includeDefinitions),
+    queryFn: () => getProgramMeasurements(programId, includeDefinitions),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!programId,
+  });
+}
+
+export function useProgramAvailableMeasurements(programId: number) {
+  return useQuery({
+    queryKey: programKeys.programMeasurementsWithDefinitions(programId),
+    queryFn: () => getProgramAvailableMeasurements(programId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!programId,
+  });
+}
+
+export function useAddMeasurementDefinitionsToProgram() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      programId,
+      measurementDefinitionIds,
+    }: {
+      programId: number;
+      measurementDefinitionIds: number[];
+    }) => {
+      return addMeasurementDefinitionsToProgram(
+        programId,
+        measurementDefinitionIds
+      );
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate all related queries
+      queryClient.invalidateQueries({
+        queryKey: programKeys.programMeasurements(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: programKeys.programMeasurementsWithDefinitions(
+          variables.programId
+        ),
+      });
+      toast.success("Measurements added to program successfully.");
+    },
+    onError: (error) => {
+      console.error("Failed to add measurements to program:", error);
+      toast.error("Failed to add measurements to program. Please try again.");
+    },
+  });
+}
+
+export function useRemoveMeasurementDefinitionFromProgram() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      programId,
+      measurementDefinitionId,
+    }: {
+      programId: number;
+      measurementDefinitionId: number;
+    }) =>
+      removeMeasurementDefinitionFromProgram(
+        programId,
+        measurementDefinitionId
+      ),
+    onSuccess: (_, variables) => {
+      // Invalidate all related queries
+      queryClient.invalidateQueries({
+        queryKey: programKeys.programMeasurements(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: programKeys.programMeasurementsWithDefinitions(
+          variables.programId
+        ),
+      });
+      toast.success("Measurement removed from program successfully.");
+    },
+    onError: (error) => {
+      console.error("Failed to remove measurement from program:", error);
+      toast.error(
+        "Failed to remove measurement from program. Please try again."
+      );
+    },
+  });
+}
+
+export function useProgramPhaseCalculatedMeasurements(
+  programId: number,
+  programPhaseId: number
+) {
+  return useQuery({
+    queryKey: ["program", programId, "calculated-measurements", programPhaseId],
+    queryFn: () => getProgramCalculatedMeasurements(programId, programPhaseId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!programId && !!programPhaseId,
+  });
+}
+
+// ====== Program Phase Measurement Data Hooks ======
+
+export function useProgramPhaseMeasurementData(
+  programId: number,
+  programPhaseId: number,
+  measurementDefinitionId: number | undefined,
+  location?: LocationParams
+) {
+  return useQuery({
+    queryKey: [
+      "program",
+      programId,
+      "phase",
+      programPhaseId,
+      "measurement-data",
+      measurementDefinitionId,
+      location,
+    ],
+    queryFn: () =>
+      getProgramPhaseMeasurementData(
+        programId,
+        programPhaseId,
+        measurementDefinitionId!,
+        location
+      ),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    enabled:
+      !!programId && !!programPhaseId && !!measurementDefinitionId,
+    retry: false, // Don't retry if measurement doesn't exist
+  });
+}
+
+export function useCreateProgramPhaseMeasurementData() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      programId,
+      programPhaseId,
+      data,
+    }: {
+      programId: number;
+      programPhaseId: number;
+      data: CreateMeasurementDataParams;
+    }) => createProgramPhaseMeasurementData(programId, programPhaseId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "program",
+          variables.programId,
+          "phase",
+          variables.programPhaseId,
+          "measurement-data",
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [
+          "program",
+          variables.programId,
+          "calculated-measurements",
+          variables.programPhaseId,
+        ],
+      });
+      toast.success("Measurement data created successfully.");
+    },
+    onError: (error) => {
+      console.error("Failed to create measurement data:", error);
+      toast.error("Failed to create measurement data. Please try again.");
+    },
+  });
+}
+
+export function useUpdateProgramPhaseMeasurementData() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      programId,
+      programPhaseId,
+      measurementId,
+      calculated_value,
+    }: {
+      programId: number;
+      programPhaseId: number;
+      measurementId: number;
+      calculated_value: number;
+    }) =>
+      updateProgramPhaseMeasurementData(
+        programId,
+        programPhaseId,
+        measurementId,
+        calculated_value
+      ),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "program",
+          variables.programId,
+          "phase",
+          variables.programPhaseId,
+          "measurement-data",
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [
+          "program",
+          variables.programId,
+          "calculated-measurements",
+          variables.programPhaseId,
+        ],
+      });
+      toast.success("Measurement data updated successfully.");
+    },
+    onError: (error) => {
+      console.error("Failed to update measurement data:", error);
+      toast.error("Failed to update measurement data. Please try again.");
+    },
+  });
+}
+
+export function useDeleteProgramPhaseMeasurementData() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      programId,
+      programPhaseId,
+      measurementId,
+    }: {
+      programId: number;
+      programPhaseId: number;
+      measurementId: number;
+    }) =>
+      deleteProgramPhaseMeasurementData(programId, programPhaseId, measurementId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "program",
+          variables.programId,
+          "phase",
+          variables.programPhaseId,
+          "measurement-data",
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [
+          "program",
+          variables.programId,
+          "calculated-measurements",
+          variables.programPhaseId,
+        ],
+      });
+      toast.success("Measurement data deleted successfully.");
+    },
+    onError: (error) => {
+      console.error("Failed to delete measurement data:", error);
+      toast.error("Failed to delete measurement data. Please try again.");
     },
   });
 }

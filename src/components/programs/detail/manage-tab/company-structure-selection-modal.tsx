@@ -1,11 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -47,6 +40,13 @@ import type {
   AssetGroupTreeNode,
   WorkGroupTreeNode,
 } from "@/types/company";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Contact {
   id: number;
@@ -188,7 +188,8 @@ export function CompanyStructureSelectionModal({
   const [selectedRoleIds, setSelectedRoleIds] = useState<Set<string>>(
     new Set()
   );
-  const [isPublic, setIsPublic] = useState<boolean>(false);
+  const [isIndividualInterview, setIsIndividualInterview] =
+    useState<boolean>(false);
   const [interviewType, setInterviewType] = useState<"onsite" | "presite">(
     defaultInterviewType
   );
@@ -429,7 +430,7 @@ export function CompanyStructureSelectionModal({
   // Load contacts when public mode is enabled and roles are selected
   useEffect(() => {
     async function loadContacts() {
-      if (isPublic && selectedRoleIds.size > 0) {
+      if (isIndividualInterview && selectedRoleIds.size > 0) {
         setIsLoadingContacts(true);
         try {
           // Get contacts for all selected roles with organizational context
@@ -480,7 +481,7 @@ export function CompanyStructureSelectionModal({
       }
     }
     loadContacts();
-  }, [isPublic, selectedRoleIds, flatNodes]);
+  }, [isIndividualInterview, selectedRoleIds, flatNodes]);
 
   // Auto-expand company node and reset state when modal opens
   useEffect(() => {
@@ -536,7 +537,7 @@ export function CompanyStructureSelectionModal({
       return;
     }
 
-    if (isPublic && selectedContactIds.length === 0) {
+    if (isIndividualInterview && selectedContactIds.length === 0) {
       toast.error("Please select at least one contact for public interviews");
       return;
     }
@@ -566,21 +567,24 @@ export function CompanyStructureSelectionModal({
     // }
 
     try {
-      if (isPublic) {
+      if (isIndividualInterview) {
         // For public interviews, create each interview with only the contact's specific role
-        const selectedContacts = availableContacts.filter(contact => 
+        const selectedContacts = availableContacts.filter((contact) =>
           selectedContactIds.includes(contact.id)
         );
-        
+
         // Group contacts by their role to batch create interviews with the same role
-        const contactsByRole = selectedContacts.reduce((acc, contact) => {
-          const roleId = contact.roleId;
-          if (!acc[roleId]) {
-            acc[roleId] = [];
-          }
-          acc[roleId].push(contact.id);
-          return acc;
-        }, {} as Record<number, number[]>);
+        const contactsByRole = selectedContacts.reduce(
+          (acc, contact) => {
+            const roleId = contact.roleId;
+            if (!acc[roleId]) {
+              acc[roleId] = [];
+            }
+            acc[roleId].push(contact.id);
+            return acc;
+          },
+          {} as Record<number, number[]>
+        );
 
         // Create interviews for each role group
         for (const [roleIdStr, contactIds] of Object.entries(contactsByRole)) {
@@ -588,7 +592,7 @@ export function CompanyStructureSelectionModal({
           await createInterviews.mutateAsync({
             programId,
             phaseId: programPhaseId,
-            isPublic,
+            isIndividualInterview,
             roleIds: [roleId], // Only the specific role for these contacts
             contactIds,
             interviewType,
@@ -599,7 +603,7 @@ export function CompanyStructureSelectionModal({
         await createInterviews.mutateAsync({
           programId,
           phaseId: programPhaseId,
-          isPublic,
+          isIndividualInterview,
           roleIds: Array.from(selectedRoleIds).map((id) => parseInt(id)),
           contactIds: [],
           interviewType,
@@ -609,7 +613,7 @@ export function CompanyStructureSelectionModal({
       // Reset form and close modal on success
       setSelectedRoleIds(new Set());
       setSelectedContactIds([]);
-      setIsPublic(false);
+      setIsIndividualInterview(false);
       setInterviewType(defaultInterviewType);
       onOpenChange(false);
     } catch (error) {
@@ -619,292 +623,300 @@ export function CompanyStructureSelectionModal({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        className="max-w-2xl sm:max-w-none flex flex-col pb-6"
-        side="right"
-      >
-        <SheetHeader>
-          <SheetTitle>Select Company Structure Scope</SheetTitle>
-          <SheetDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="min-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Select Company Structure Scope</DialogTitle>
+          <DialogDescription>
             Choose the organizational levels where you want to generate
             interviews. You can select specific sites, work groups, or roles to
             define the scope of your interviews.
-          </SheetDescription>
-          <span className='text-xs'>Program {programId} - Assessment {programPhaseId}</span>
-        </SheetHeader>
+          </DialogDescription>
+          <span className="text-xs">
+            Program {programId} - Assessment {programPhaseId}
+          </span>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            {/* Search Field */}
+            <div className="pb-4">
+              <div className="relative">
+                <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search company structure..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
 
-        {/* Search Field */}
-        <div className="px-6 pb-4">
-          <div className="relative">
-            <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search company structure..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </div>
-
-        <div className="flex-1 min-h-0 px-6 pb-6">
-          <ScrollArea className="border rounded-md overflow-y-auto">
-            <div className="p-4">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-sm text-muted-foreground">
-                    Loading company structure...
-                  </div>
-                </div>
-              ) : flatNodes.length > 0 ? (
-                <div className="space-y-0">
-                  {(searchQuery.trim() ? filteredNodes : flatNodes).map(
-                    (node) => (
-                      <SimpleTreeNode
-                        key={node.id}
-                        node={node}
-                        isExpanded={expandedNodes.has(node.id)}
-                        onToggleExpanded={toggleExpanded}
-                        isVisible={isNodeVisible(node)}
-                        selectionState={getNodeSelectionState(node.id)}
-                        onNodeSelection={handleNodeSelection}
-                      />
-                    )
+            <div className="flex-1 min-h-0">
+              <ScrollArea className="border rounded-md overflow-y-auto">
+                <div className="p-4">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-sm text-muted-foreground">
+                        Loading company structure...
+                      </div>
+                    </div>
+                  ) : flatNodes.length > 0 ? (
+                    <div className="space-y-0">
+                      {(searchQuery.trim() ? filteredNodes : flatNodes).map(
+                        (node) => (
+                          <SimpleTreeNode
+                            key={node.id}
+                            node={node}
+                            isExpanded={expandedNodes.has(node.id)}
+                            onToggleExpanded={toggleExpanded}
+                            isVisible={isNodeVisible(node)}
+                            selectionState={getNodeSelectionState(node.id)}
+                            onNodeSelection={handleNodeSelection}
+                          />
+                        )
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-sm text-muted-foreground">
+                        No company structure found
+                      </div>
+                    </div>
                   )}
                 </div>
-              ) : (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-sm text-muted-foreground">
-                    No company structure found
-                  </div>
-                </div>
-              )}
+              </ScrollArea>
             </div>
-          </ScrollArea>
-        </div>
-
-        {/* Selected Roles Summary */}
-        {selectedRoles.length > 0 && (
-          <div className="border-t px-6 py-4">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-medium">
-                Selected Roles ({selectedRoles.length})
-              </h4>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearAllSelections}
-                className="text-xs"
-              >
-                Clear All
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
-              {selectedRoles.map((role) => (
-                <Badge key={role.id} variant="secondary" className="text-xs">
-                  {role.name}
-                </Badge>
-              ))}
-            </div>
-            {selectedRoles.length > 0 &&
-              !hasApplicableQuestions &&
-              !isValidatingRoles && (
-                <p className="text-sm text-destructive mt-2">
-                  The selected roles have no applicable questions in the{" "}
-                  {interviewType} questionnaire. Please select different roles
-                  or ensure the questionnaire is properly configured.
-                </p>
-              )}
-          </div>
-        )}
-
-        {/* Interview Type Selection */}
-        {selectedRoles.length > 0 && (
-          <div className="border-t px-6 py-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Interview Type</Label>
-              <Select
-                value={interviewType}
-                onValueChange={(value: "onsite" | "presite") =>
-                  setInterviewType(value)
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="onsite">Onsite Interview</SelectItem>
-                  <SelectItem value="presite">
-                    Pre-assessment Interview
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {interviewType === "onsite"
-                  ? "Create interviews using the onsite questionnaire"
-                  : "Create interviews using the self-audit questionnaire"}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Public Interview Toggle */}
-        {selectedRoles.length > 0 && (
-          <div className="border-t px-6 py-4">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="public-mode"
-                checked={isPublic}
-                onCheckedChange={setIsPublic}
-              />
-              <Label htmlFor="public-mode" className="text-sm">
-                Create public interviews with contacts
-              </Label>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Public interviews can be accessed by contacts using an access code
-            </p>
-          </div>
-        )}
-
-        {/* Contact Selection - Only show when public mode is enabled */}
-        {isPublic && selectedRoles.length > 0 && (
-          <div className="border-t px-6 py-4">
-            <div className="space-y-3">
+            {/* Selected Roles Summary */}
+            {selectedRoles.length > 0 && (
               <div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Label className="text-sm font-medium">
-                      Interviewee Contacts
-                    </Label>
-                    {selectedContactIds.length > 0 && (
-                      <span className="text-sm text-muted-foreground">
-                        ({selectedContactIds.length} selected)
-                      </span>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium">
+                    Selected Roles ({selectedRoles.length})
+                  </h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearAllSelections}
+                    className="text-xs"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                  {selectedRoles.map((role) => (
+                    <Badge
+                      key={role.id}
+                      variant="secondary"
+                      className="text-xs"
+                    >
+                      {role.name}
+                    </Badge>
+                  ))}
+                </div>
+                {selectedRoles.length > 0 &&
+                  !hasApplicableQuestions &&
+                  !isValidatingRoles && (
+                    <p className="text-sm text-destructive mt-2">
+                      The selected roles have no applicable questions in the{" "}
+                      {interviewType} questionnaire. Please select different
+                      roles or ensure the questionnaire is properly configured.
+                    </p>
+                  )}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-6">
+            {/* Interview Type Selection */}
+            {selectedRoles.length > 0 && (
+              <div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Interview Type</Label>
+                  <Select
+                    value={interviewType}
+                    onValueChange={(value: "onsite" | "presite") =>
+                      setInterviewType(value)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="onsite">Onsite Interview</SelectItem>
+                      <SelectItem value="presite">
+                        Pre-assessment Interview
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {interviewType === "onsite"
+                      ? "Create interviews using the onsite questionnaire"
+                      : "Create interviews using the self-audit questionnaire"}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Public Interview Toggle */}
+            {selectedRoles.length > 0 && (
+              <div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="public-mode"
+                    checked={isIndividualInterview}
+                    onCheckedChange={setIsIndividualInterview}
+                  />
+                  <Label htmlFor="public-mode" className="text-sm">
+                    Create public interviews with contacts
+                  </Label>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Public interviews can be accessed by contacts using an access
+                  code
+                </p>
+              </div>
+            )}
+
+            {/* Contact Selection - Only show when public mode is enabled */}
+            {isIndividualInterview && selectedRoles.length > 0 && (
+              <div className="px-6 py-4">
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Label className="text-sm font-medium">
+                          Interviewee Contacts
+                        </Label>
+                        {selectedContactIds.length > 0 && (
+                          <span className="text-sm text-muted-foreground">
+                            ({selectedContactIds.length} selected)
+                          </span>
+                        )}
+                      </div>
+                      {availableContacts.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const allContactIds = availableContacts.map(
+                              (contact) => contact.id
+                            );
+                            const allSelected = allContactIds.every((id) =>
+                              selectedContactIds.includes(id)
+                            );
+
+                            if (allSelected) {
+                              setSelectedContactIds([]);
+                            } else {
+                              setSelectedContactIds(allContactIds);
+                            }
+                          }}
+                        >
+                          {(() => {
+                            const allContactIds = availableContacts.map(
+                              (contact) => contact.id
+                            );
+                            const allSelected = allContactIds.every((id) =>
+                              selectedContactIds.includes(id)
+                            );
+                            return allSelected ? "Unselect All" : "Select All";
+                          })()}
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Select contacts to create interviews for each
+                    </p>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto space-y-2 border rounded-md p-3">
+                    {isLoadingContacts ? (
+                      <div className="text-sm text-muted-foreground text-center py-4">
+                        Loading contacts...
+                      </div>
+                    ) : selectedRoleIds.size === 0 ? (
+                      <div className="text-sm text-muted-foreground text-center py-4">
+                        Please select roles first
+                      </div>
+                    ) : availableContacts.length === 0 ? (
+                      <div className="text-sm text-muted-foreground text-center py-4">
+                        No contacts available for selected roles
+                      </div>
+                    ) : (
+                      availableContacts.map((contact) => (
+                        <div
+                          key={contact.id}
+                          className="flex items-start space-x-3 p-2 hover:bg-muted/50 rounded-md"
+                        >
+                          <Checkbox
+                            id={`contact-${contact.id}`}
+                            checked={selectedContactIds.includes(contact.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedContactIds([
+                                  ...selectedContactIds,
+                                  contact.id,
+                                ]);
+                              } else {
+                                setSelectedContactIds(
+                                  selectedContactIds.filter(
+                                    (id) => id !== contact.id
+                                  )
+                                );
+                              }
+                            }}
+                          />
+                          <Label
+                            htmlFor={`contact-${contact.id}`}
+                            className="cursor-pointer flex-1"
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {contact.full_name}
+                              </span>
+                              <span className="text-sm text-muted-foreground">
+                                {contact.email}
+                              </span>
+                              {contact.title && (
+                                <span className="text-xs text-muted-foreground">
+                                  {contact.title}
+                                </span>
+                              )}
+                              <span className="text-xs text-muted-foreground/70 mt-1">
+                                📍 {contact.organizationPath}
+                              </span>
+                            </div>
+                          </Label>
+                        </div>
+                      ))
                     )}
                   </div>
-                  {availableContacts.length > 0 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const allContactIds = availableContacts.map(
-                          (contact) => contact.id
-                        );
-                        const allSelected = allContactIds.every((id) =>
-                          selectedContactIds.includes(id)
-                        );
-
-                        if (allSelected) {
-                          setSelectedContactIds([]);
-                        } else {
-                          setSelectedContactIds(allContactIds);
-                        }
-                      }}
-                    >
-                      {(() => {
-                        const allContactIds = availableContacts.map(
-                          (contact) => contact.id
-                        );
-                        const allSelected = allContactIds.every((id) =>
-                          selectedContactIds.includes(id)
-                        );
-                        return allSelected ? "Unselect All" : "Select All";
-                      })()}
-                    </Button>
-                  )}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Select contacts to create interviews for each
-                </p>
               </div>
-              <div className="max-h-60 overflow-y-auto space-y-2 border rounded-md p-3">
-                {isLoadingContacts ? (
-                  <div className="text-sm text-muted-foreground text-center py-4">
-                    Loading contacts...
-                  </div>
-                ) : selectedRoleIds.size === 0 ? (
-                  <div className="text-sm text-muted-foreground text-center py-4">
-                    Please select roles first
-                  </div>
-                ) : availableContacts.length === 0 ? (
-                  <div className="text-sm text-muted-foreground text-center py-4">
-                    No contacts available for selected roles
-                  </div>
-                ) : (
-                  availableContacts.map((contact) => (
-                    <div
-                      key={contact.id}
-                      className="flex items-start space-x-3 p-2 hover:bg-muted/50 rounded-md"
-                    >
-                      <Checkbox
-                        id={`contact-${contact.id}`}
-                        checked={selectedContactIds.includes(contact.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedContactIds([
-                              ...selectedContactIds,
-                              contact.id,
-                            ]);
-                          } else {
-                            setSelectedContactIds(
-                              selectedContactIds.filter(
-                                (id) => id !== contact.id
-                              )
-                            );
-                          }
-                        }}
-                      />
-                      <Label
-                        htmlFor={`contact-${contact.id}`}
-                        className="cursor-pointer flex-1"
-                      >
-                        <div className="flex flex-col">
-                          <span className="font-medium">
-                            {contact.full_name}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {contact.email}
-                          </span>
-                          {contact.title && (
-                            <span className="text-xs text-muted-foreground">
-                              {contact.title}
-                            </span>
-                          )}
-                          <span className="text-xs text-muted-foreground/70 mt-1">
-                            📍 {contact.organizationPath}
-                          </span>
-                        </div>
-                      </Label>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+            )}
+            <Button
+              onClick={handleSubmit}
+              disabled={
+                createInterviews.isPending ||
+                selectedRoleIds.size === 0 ||
+                isValidatingRoles ||
+                !hasApplicableQuestions ||
+                (isIndividualInterview && selectedContactIds.length === 0)
+              }
+            >
+              {createInterviews.isPending
+                ? "Creating Interviews..."
+                : isValidatingRoles
+                  ? "Validating..."
+                  : isIndividualInterview && selectedContactIds.length > 0
+                    ? `Create ${selectedContactIds.length} ${interviewType === "onsite" ? "Onsite" : "Pre-assessment"} Interview${selectedContactIds.length > 1 ? "s" : ""}`
+                    : selectedRoleIds.size > 0
+                      ? `Create ${interviewType === "onsite" ? "Onsite" : "Pre-assessment"} Interview${selectedRoleIds.size > 1 ? "s" : ""}`
+                      : "Create Interviews"}
+            </Button>
           </div>
-        )}
-        <Button
-          onClick={handleSubmit}
-          disabled={
-            createInterviews.isPending ||
-            selectedRoleIds.size === 0 ||
-            isValidatingRoles ||
-            !hasApplicableQuestions ||
-            (isPublic && selectedContactIds.length === 0)
-          }
-        >
-          {createInterviews.isPending
-            ? "Creating Interviews..."
-            : isValidatingRoles
-              ? "Validating..."
-              : isPublic && selectedContactIds.length > 0
-                ? `Create ${selectedContactIds.length} ${interviewType === "onsite" ? "Onsite" : "Pre-assessment"} Interview${selectedContactIds.length > 1 ? "s" : ""}`
-                : selectedRoleIds.size > 0
-                  ? `Create ${interviewType === "onsite" ? "Onsite" : "Pre-assessment"} Interview${selectedRoleIds.size > 1 ? "s" : ""}`
-                  : "Create Interviews"}
-        </Button>
-      </SheetContent>
-    </Sheet>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

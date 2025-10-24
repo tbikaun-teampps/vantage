@@ -1,24 +1,37 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { 
-  IconTarget, 
-  IconPlus, 
-  IconEdit, 
-  IconTrash, 
-  IconCheck, 
-  IconX 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  IconTarget,
+  IconPlus,
+  IconEdit,
+  IconTrash,
+  IconCheck,
+  IconX,
 } from "@tabler/icons-react";
 import type { ProgramObjective } from "@/types/program";
 import { formatDistanceToNow } from "date-fns";
-import { 
-  useProgramObjectives, 
-  useCreateObjective, 
-  useUpdateObjective, 
-  useDeleteObjective 
+import {
+  useProgramObjectives,
+  useCreateObjective,
+  useUpdateObjective,
+  useDeleteObjective,
 } from "@/hooks/useProgramObjectives";
 
 interface ProgramObjectivesManagerProps {
@@ -30,14 +43,20 @@ interface ObjectiveFormData {
   description: string;
 }
 
-export function ProgramObjectivesManager({ programId }: ProgramObjectivesManagerProps) {
+export function ProgramObjectivesManager({
+  programId,
+}: ProgramObjectivesManagerProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [objectiveToDelete, setObjectiveToDelete] = useState<ProgramObjective | null>(null);
-  const [formData, setFormData] = useState<ObjectiveFormData>({ name: "", description: "" });
+  const [objectiveToDelete, setObjectiveToDelete] =
+    useState<ProgramObjective | null>(null);
+  const [formData, setFormData] = useState<ObjectiveFormData>({
+    name: "",
+    description: "",
+  });
 
-  const { data: objectives = [], isLoading } = useProgramObjectives(programId);
+  const { data: objectives, isLoading } = useProgramObjectives(programId);
   const createObjectiveMutation = useCreateObjective();
   const updateObjectiveMutation = useUpdateObjective();
   const deleteObjectiveMutation = useDeleteObjective();
@@ -48,9 +67,9 @@ export function ProgramObjectivesManager({ programId }: ProgramObjectivesManager
   };
 
   const handleStartEdit = (objective: ProgramObjective) => {
-    setFormData({ 
-      name: objective.name, 
-      description: objective.description || "" 
+    setFormData({
+      name: objective.name,
+      description: objective.description || "",
     });
     setEditingId(objective.id);
   };
@@ -116,12 +135,18 @@ export function ProgramObjectivesManager({ programId }: ProgramObjectivesManager
     }
   };
 
-  const isLoading_any = createObjectiveMutation.isPending || updateObjectiveMutation.isPending || deleteObjectiveMutation.isPending;
+  const isLoading_any =
+    createObjectiveMutation.isPending ||
+    updateObjectiveMutation.isPending ||
+    deleteObjectiveMutation.isPending;
+
+  if (!objectives) return null;
+
   const canDelete = objectives.length > 1; // Enforce minimum one objective constraint
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="shadow-none border-none">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <IconTarget className="h-5 w-5" />
@@ -145,7 +170,7 @@ export function ProgramObjectivesManager({ programId }: ProgramObjectivesManager
 
   return (
     <>
-      <Card>
+      <Card className="shadow-none border-none">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -153,11 +178,12 @@ export function ProgramObjectivesManager({ programId }: ProgramObjectivesManager
                 Program Objectives
               </CardTitle>
               <CardDescription>
-                {objectives.length} objective{objectives.length !== 1 ? "s" : ""} defined for this program
+                {objectives.length} objective
+                {objectives.length !== 1 ? "s" : ""} defined for this program
               </CardDescription>
             </div>
-            <Button 
-              onClick={handleStartCreate} 
+            <Button
+              onClick={handleStartCreate}
               size="sm"
               disabled={isCreating || isLoading_any}
             >
@@ -174,28 +200,35 @@ export function ProgramObjectivesManager({ programId }: ProgramObjectivesManager
                 <Input
                   placeholder="Objective name"
                   value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
                   disabled={isLoading_any}
                 />
                 <Textarea
                   placeholder="Description (optional)"
                   value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   disabled={isLoading_any}
                   rows={2}
                 />
                 <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     onClick={handleSaveCreate}
                     disabled={!formData.name.trim() || isLoading_any}
                   >
                     <IconCheck className="h-4 w-4 mr-1" />
                     Save
                   </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={handleCancelEdit}
                     disabled={isLoading_any}
                   >
@@ -208,35 +241,48 @@ export function ProgramObjectivesManager({ programId }: ProgramObjectivesManager
 
             {/* Existing objectives */}
             {objectives.map((objective) => (
-              <div key={objective.id} className="border rounded-lg p-4 space-y-2">
+              <div
+                key={objective.id}
+                className="border rounded-lg p-4 space-y-2"
+              >
                 {editingId === objective.id ? (
                   // Edit form
                   <div className="space-y-3">
                     <Input
                       placeholder="Objective name"
                       value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
                       disabled={isLoading_any}
                     />
                     <Textarea
                       placeholder="Description (optional)"
                       value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
                       disabled={isLoading_any}
                       rows={2}
                     />
                     <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         onClick={handleSaveEdit}
                         disabled={!formData.name.trim() || isLoading_any}
                       >
                         <IconCheck className="h-4 w-4 mr-1" />
                         Save
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={handleCancelEdit}
                         disabled={isLoading_any}
                       >
@@ -252,13 +298,17 @@ export function ProgramObjectivesManager({ programId }: ProgramObjectivesManager
                       <h4 className="font-medium text-sm">{objective.name}</h4>
                       <div className="flex items-center gap-1">
                         <span className="text-xs text-muted-foreground mr-2">
-                          {formatDistanceToNow(new Date(objective.created_at), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(objective.created_at), {
+                            addSuffix: true,
+                          })}
                         </span>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => handleStartEdit(objective)}
-                          disabled={editingId !== null || isCreating || isLoading_any}
+                          disabled={
+                            editingId !== null || isCreating || isLoading_any
+                          }
                         >
                           <IconEdit className="h-3 w-3" />
                         </Button>
@@ -266,7 +316,12 @@ export function ProgramObjectivesManager({ programId }: ProgramObjectivesManager
                           size="sm"
                           variant="ghost"
                           onClick={() => handleDeleteClick(objective)}
-                          disabled={!canDelete || editingId !== null || isCreating || isLoading_any}
+                          disabled={
+                            !canDelete ||
+                            editingId !== null ||
+                            isCreating ||
+                            isLoading_any
+                          }
                           className="text-destructive hover:text-destructive"
                         >
                           <IconTrash className="h-3 w-3" />
@@ -306,20 +361,25 @@ export function ProgramObjectivesManager({ programId }: ProgramObjectivesManager
           <DialogHeader>
             <DialogTitle>Delete Objective</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{objectiveToDelete?.name}"? This action cannot be undone.
+              Are you sure you want to delete "{objectiveToDelete?.name}"? This
+              action cannot be undone.
               {!canDelete && (
                 <span className="block mt-2 text-destructive font-medium">
-                  You cannot delete this objective because programs must have at least one objective.
+                  You cannot delete this objective because programs must have at
+                  least one objective.
                 </span>
               )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleDeleteConfirm}
               disabled={!canDelete || deleteObjectiveMutation.isPending}
             >

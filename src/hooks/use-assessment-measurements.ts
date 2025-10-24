@@ -78,7 +78,7 @@ export function useAssessmentMeasurements(assessmentId?: number) {
           id: definition.id, // CRITICAL: Preserve definition ID, don't let uploaded.id overwrite it
           status: "in_use" as const,
           isInUse: true,
-          measurementRecordId: uploaded.id, // Store the calculated_measurements.id for deletion
+          measurementRecordId: uploaded.id, // Store the measurements_calculated.id for deletion
           instanceCount, // Add count of all instances for this definition
         };
       }

@@ -25,13 +25,13 @@ import {
   IconExternalLink,
 } from "@tabler/icons-react";
 import { useQuestionnaires } from "@/hooks/useAssessments";
-import type { ProgramWithRelations } from "@/types/program";
 import { Link } from "react-router-dom";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import type { ProgramDetailResponseData } from "@/types/api/programs";
 
 interface ProgramQuestionnaireSelectionProps {
-  program: ProgramWithRelations;
+  program: ProgramDetailResponseData;
   onOnsiteQuestionnaireUpdate: (questionnaireId: number | null) => void;
   isUpdating?: boolean;
 }
@@ -73,7 +73,7 @@ export function OnsiteQuestionnaireSelection({
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className='shadow-none border-none'>
         <CardHeader>
           <div className="flex items-center gap-2">
             <IconClipboardList className="h-5 w-5" />
@@ -94,7 +94,7 @@ export function OnsiteQuestionnaireSelection({
   }
 
   return (
-    <Card>
+    <Card className='shadow-none border-none'>
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">

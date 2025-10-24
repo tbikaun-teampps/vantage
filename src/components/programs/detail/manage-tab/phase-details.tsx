@@ -1,117 +1,126 @@
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { IconEdit } from "@tabler/icons-react";
 import type { ProgramPhase } from "@/types/program";
+import { useUpdatePhase } from "@/hooks/useProgram";
+import { InlineFieldEditor } from "@/components/ui/inline-field-editor";
+import {
+  InlineSelectEditor,
+  type SelectOption,
+} from "@/components/ui/inline-select-editor";
+import { InlineDateEditor } from "@/components/ui/inline-date-editor";
+import {
+  IconCalendarEvent,
+  IconLoader,
+  IconCircleCheckFilled,
+  IconArchive,
+} from "@tabler/icons-react";
 
 interface PhaseDetailsProps {
   phase: ProgramPhase;
-  onEditPhase: (phase: ProgramPhase) => void;
 }
 
-const statusColors = {
-  scheduled: "bg-blue-100 text-blue-800 border-blue-200",
-  in_progress: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  completed: "bg-green-100 text-green-800 border-green-200",
-  archived: "bg-gray-100 text-gray-800 border-gray-200",
-} as const;
+const statusOptions: SelectOption[] = [
+  {
+    value: "scheduled",
+    label: "Scheduled",
+    icon: <IconCalendarEvent className="h-4 w-4 text-blue-500" />,
+  },
+  {
+    value: "in_progress",
+    label: "In Progress",
+    icon: <IconLoader className="h-4 w-4 text-yellow-500" />,
+  },
+  {
+    value: "completed",
+    label: "Completed",
+    icon: (
+      <IconCircleCheckFilled className="h-4 w-4 fill-green-500 dark:fill-green-400" />
+    ),
+  },
+  {
+    value: "archived",
+    label: "Archived",
+    icon: <IconArchive className="h-4 w-4 text-gray-500" />,
+  },
+];
 
-const statusLabels = {
-  scheduled: "Scheduled",
-  in_progress: "In Progress",
-  completed: "Completed",
-  archived: "Archived",
-} as const;
+export function PhaseDetails({ phase }: PhaseDetailsProps) {
+  const updatePhaseMutation = useUpdatePhase();
 
-export function PhaseDetails({ phase, onEditPhase }: PhaseDetailsProps) {
+  const handleUpdateField = async (
+    field: keyof ProgramPhase,
+    value: string | null
+  ) => {
+    await updatePhaseMutation.mutateAsync({
+      programId: phase.program_id,
+      phaseId: phase.id,
+      updateData: { [field]: value },
+    });
+  };
+
   return (
-    <Card>
+    <Card className="shadow-none border-none">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Assessment Details</h3>
-          <Button variant="outline" size="sm" onClick={() => onEditPhase(phase)}>
-            <IconEdit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-        </div>
+        <h3 className="text-lg font-medium">Assessment Details</h3>
       </CardHeader>
 
       <CardContent>
-        <div className="grid grid-cols-6 gap-4">
-          <div>
-            <Label className="text-sm font-medium text-muted-foreground">
-              Assessment Name
-            </Label>
-            <p className="text-sm">
-              {phase.name || `Assessment ${phase.sequence_number}`}
-            </p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-muted-foreground">
-              Status
-            </Label>
-            <div className="flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className={`text-xs ${statusColors[phase.status as keyof typeof statusColors]}`}
-              >
-                {statusLabels[phase.status as keyof typeof statusLabels]}
-              </Badge>
-            </div>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-muted-foreground">
-              Planned Start Date
-            </Label>
-            <p className="text-sm">
-              {phase.planned_start_date
-                ? new Date(phase.planned_start_date).toLocaleDateString()
-                : "Not set"}
-            </p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-muted-foreground">
-              Actual Start Date
-            </Label>
-            <p className="text-sm">
-              {phase.actual_start_date
-                ? new Date(phase.actual_start_date).toLocaleDateString()
-                : "Not set"}
-            </p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-muted-foreground">
-              Planned End Date
-            </Label>
-            <p className="text-sm">
-              {phase.planned_end_date
-                ? new Date(phase.planned_end_date).toLocaleDateString()
-                : "Not set"}
-            </p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-muted-foreground">
-              Actual End Date
-            </Label>
-            <p className="text-sm">
-              {phase.actual_end_date
-                ? new Date(phase.actual_end_date).toLocaleDateString()
-                : "Not set"}
-            </p>
+        <div className="grid grid-cols-4 gap-6">
+          {/* Name Field */}
+          <InlineFieldEditor
+            label="Assessment Name"
+            value={phase.name || `Assessment ${phase.sequence_number}`}
+            placeholder="Enter assessment name"
+            onSave={(value) => handleUpdateField("name", value)}
+          />
+
+          {/* Status Field */}
+          <InlineSelectEditor
+            label="Status"
+            value={phase.status}
+            options={statusOptions}
+            onSave={(value) => handleUpdateField("status", value)}
+          />
+
+          {/* Date Fields */}
+          <InlineDateEditor
+            label="Planned Start Date"
+            value={phase.planned_start_date}
+            placeholder="Select planned start date"
+            onSave={(value) => handleUpdateField("planned_start_date", value)}
+          />
+
+          <InlineDateEditor
+            label="Actual Start Date"
+            value={phase.actual_start_date}
+            placeholder="Select actual start date"
+            onSave={(value) => handleUpdateField("actual_start_date", value)}
+          />
+
+          <InlineDateEditor
+            label="Planned End Date"
+            value={phase.planned_end_date}
+            placeholder="Select planned end date"
+            onSave={(value) => handleUpdateField("planned_end_date", value)}
+          />
+
+          <InlineDateEditor
+            label="Actual End Date"
+            value={phase.actual_end_date}
+            placeholder="Select actual end date"
+            onSave={(value) => handleUpdateField("actual_end_date", value)}
+          />
+
+          {/* Notes Field - Full Width */}
+          <div className="col-span-2">
+            <InlineFieldEditor
+              label="Notes"
+              value={phase.notes || ""}
+              placeholder="Add notes about this assessment phase"
+              type="textarea"
+              onSave={(value) => handleUpdateField("notes", value || null)}
+            />
           </div>
         </div>
-
-        {phase.notes && (
-          <div className="mt-4">
-            <Label className="text-sm font-medium text-muted-foreground">
-              Notes
-            </Label>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-              {phase.notes}
-            </p>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

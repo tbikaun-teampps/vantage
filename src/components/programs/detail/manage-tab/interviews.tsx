@@ -8,8 +8,9 @@ import {
 } from "@/components/ui/card";
 import { IconUsers, IconUserCheck, IconAlertCircle } from "@tabler/icons-react";
 import { CompanyStructureSelectionModal } from "./company-structure-selection-modal";
-import { useCurrentCompany } from "@/hooks/useCompany";
-import { InterviewsDataTable } from "./interviews-data-table";
+import { InterviewsDataTable } from "@/components/interview/list/interviews-data-table";
+import { useInterviews } from "@/hooks/useInterviews";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 type InterviewType = "onsite" | "presite";
 
@@ -19,7 +20,7 @@ interface InterviewsProps {
   disabled?: boolean;
   disabledReason?: string | null;
   hasQuestionnaire?: boolean;
-  questionnaireId: number;
+  questionnaireId: number | null;
   interviewType: InterviewType;
 }
 
@@ -56,24 +57,27 @@ export function Interviews({
   questionnaireId,
   interviewType,
 }: InterviewsProps) {
+  const companyId = useCompanyFromUrl();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const config = INTERVIEW_CONFIG[interviewType];
 
-  const { data: company } = useCurrentCompany();
-  // const { data: interviews = [], isLoading } = useInterviewsByProgram(
-  //   company?.id,
-  //   programId,
-  //   programPhaseId,
-  //   questionnaireId
-  // );
+  const { data: interviews, isLoading } = useInterviews(companyId, {
+    programPhaseId,
+    questionnaireId,
+  });
 
+  if (!programPhaseId) return;
   const handleCreateInterview = () => {
     setIsModalOpen(true);
   };
 
+  if (questionnaireId === null) {
+    return null;
+  }
+
   return (
     <>
-      <Card>
+      <Card className="shadow-none border-none">
         <CardHeader>
           <CardTitle>{config.title}</CardTitle>
           <CardDescription>{config.description}</CardDescription>
@@ -90,12 +94,11 @@ export function Interviews({
               </p>
             </div>
           ) : hasQuestionnaire ? (
-            <div>Coming Soon</div>
-            // <InterviewsDataTable
-            //   data={interviews}
-            //   isLoading={isLoading}
-            //   onCreateInterview={handleCreateInterview}
-            // />
+            <InterviewsDataTable
+              data={interviews ?? []}
+              isLoading={isLoading}
+              onCreateInterview={handleCreateInterview}
+            />
           ) : (
             <div className="text-center py-8">
               <IconAlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />

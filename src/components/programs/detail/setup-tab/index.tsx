@@ -2,12 +2,17 @@ import {
   useUpdateProgramOnsiteQuestionnaire,
   useUpdateProgramPresiteQuestionnaire,
 } from "@/hooks/useProgram";
-import { ProgramObjectivesManager } from "./program-objectives-manager";
-import { OnsiteQuestionnaireSelection } from "./onsite-questionnaire-selection";
-import { PresiteQuestionnaireSelection } from "./presite-questionnaire-selection";
-// import { Metrics } from "./desktop-metrics";
+import { ProgramObjectivesManager } from "@/components/programs/detail/setup-tab/program-objectives-manager";
+import { OnsiteQuestionnaireSelection } from "@/components/programs/detail/setup-tab/onsite-questionnaire-selection";
+import { PresiteQuestionnaireSelection } from "@/components/programs/detail/setup-tab/presite-questionnaire-selection";
+import type { ProgramDetailResponseData } from "@/types/api/programs";
+import { Measurements } from "@/components/programs/detail/setup-tab/desktop-measurements";
 
-export function SetupTab({ program }) {
+interface SetupTabProps {
+  program: ProgramDetailResponseData;
+}
+
+export function SetupTab({ program }: SetupTabProps) {
   const updateOnsiteQuestionnaireMutation =
     useUpdateProgramOnsiteQuestionnaire();
   const updatePresiteQuestionnaireMutation =
@@ -47,7 +52,7 @@ export function SetupTab({ program }) {
         onOnsiteQuestionnaireUpdate={handleOnsiteQuestionnaireUpdate}
         isUpdating={updateOnsiteQuestionnaireMutation.isPending}
       />
-      {/* <Metrics programId={program.id} /> */}
+      <Measurements programId={program.id} />
     </div>
   );
 }
