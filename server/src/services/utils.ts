@@ -1,5 +1,3 @@
-import { InterviewResponse } from "../types/entities/interviews";
-
 export function calculateRatingValueRange(
   questionnaire:
     | { questionnaire_rating_scales?: Array<{ value: number }> }

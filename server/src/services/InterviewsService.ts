@@ -1947,13 +1947,21 @@ export class InterviewsService {
         ? {
             ...baseOutput,
             responses:
-              interviewResponses?.map((response) => ({
-                ...response,
-                response_roles:
-                  response.interview_response_roles?.map((rr) => rr.role) ||
-                  [],
-                actions: response.interview_response_actions || [],
-              })) || [],
+              interviewResponses?.map((response) => {
+                // Type assertion: when detailed=true, response includes nested objects
+                const detailedResponse = response as typeof response & {
+                  interview_response_roles?: { role: unknown }[];
+                  interview_response_actions?: unknown[];
+                };
+                return {
+                  ...response,
+                  response_roles:
+                    detailedResponse.interview_response_roles?.map(
+                      (rr) => rr.role
+                    ) || [],
+                  actions: detailedResponse.interview_response_actions || [],
+                };
+              }) || [],
           }
         : baseOutput;
     });
