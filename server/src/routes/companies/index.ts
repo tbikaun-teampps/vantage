@@ -883,16 +883,16 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     {
       schema: {
         response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: { type: "object" },
-              },
-            },
-          },
+          // 200: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     data: {
+          //       type: "array",
+          //       items: { type: "object" },
+          //     },
+          //   },
+          // },
           401: commonResponseSchemas.responses[401],
           500: commonResponseSchemas.responses[500],
         },
