@@ -171,14 +171,14 @@ export function EditableProgramDetails({
               </div>
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label className="text-sm font-medium">
                 Current Sequence Number
               </Label>
               <p className="text-sm">
-                {program.current_sequence_number || "-"}
+                {program?.current_sequence_number || "-"}
               </p>
-            </div>
+            </div> */}
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">
@@ -186,7 +186,7 @@ export function EditableProgramDetails({
               </Label>
               <div className="flex items-center gap-2">
                 <IconClipboardList className="h-4 w-4 text-muted-foreground" />
-                {program.presite_questionnaire ? (
+                {program.presite_questionnaire.name ? (
                   <p className="text-sm">
                     {program.presite_questionnaire.name}
                   </p>
@@ -204,7 +204,7 @@ export function EditableProgramDetails({
               </Label>
               <div className="flex items-center gap-2">
                 <IconClipboardList className="h-4 w-4 text-muted-foreground" />
-                {program.onsite_questionnaire ? (
+                {program.onsite_questionnaire.name ? (
                   <p className="text-sm">{program.onsite_questionnaire.name}</p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
