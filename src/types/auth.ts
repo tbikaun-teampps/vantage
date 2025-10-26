@@ -59,7 +59,21 @@ export interface BackendAuthResponse {
     session: {
       access_token: string;
       refresh_token: string;
+      expires_at: number; // Unix timestamp in seconds
     };
+  };
+  error?: string;
+  message?: string;
+}
+
+// Validate session response (does not include session tokens)
+export interface ValidateSessionResponse {
+  success: boolean;
+  data?: {
+    user: AuthUser;
+    profile: UserProfile;
+    permissions: UserPermissions;
+    companies: UserCompany[];
   };
   error?: string;
   message?: string;

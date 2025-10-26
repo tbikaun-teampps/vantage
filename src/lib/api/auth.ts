@@ -5,7 +5,11 @@
  */
 
 import { apiClient } from "./client";
-import type { BackendAuthResponse, TokenData } from "@/types/auth";
+import type {
+  BackendAuthResponse,
+  ValidateSessionResponse,
+  TokenData,
+} from "@/types/auth";
 
 export interface RefreshTokenResponse {
   success: boolean;
@@ -59,9 +63,11 @@ export const authApi = {
   /**
    * Validate current session and get enriched user data
    * Re-checks authorization and returns fresh profile/permissions
+   * Does not return session tokens - client keeps existing tokens
    */
-  async validateSession(): Promise<BackendAuthResponse> {
-    const response = await apiClient.get<BackendAuthResponse>("/auth/session");
+  async validateSession(): Promise<ValidateSessionResponse> {
+    const response =
+      await apiClient.get<ValidateSessionResponse>("/auth/session");
     return response.data;
   },
 
@@ -94,23 +100,16 @@ export const authApi = {
 };
 
 /**
- * Helper to calculate token expiry timestamp
- * Default to 1 hour if backend doesn't provide expires_at
- */
-function calculateTokenExpiry(): number {
-  return Math.floor(Date.now() / 1000) + 3600; // 1 hour in seconds
-}
-
-/**
  * Helper to convert session data to TokenData
  */
 export function sessionToTokenData(session: {
   access_token: string;
   refresh_token: string;
+  expires_at: number;
 }): TokenData {
   return {
     access_token: session.access_token,
     refresh_token: session.refresh_token,
-    expires_at: calculateTokenExpiry(),
+    expires_at: session.expires_at,
   };
 }
