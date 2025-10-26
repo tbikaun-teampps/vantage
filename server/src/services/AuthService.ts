@@ -25,7 +25,27 @@ interface SignInResponse {
     session: {
       access_token: string;
       refresh_token: string;
+      expires_at: number;
     };
+  };
+  error?: string;
+  message?: string;
+}
+
+interface ValidateSessionResponse {
+  success: boolean;
+  data?: {
+    user: {
+      id: string;
+      email: string;
+    };
+    profile: Profile;
+    permissions: {
+      canAccessMainApp: boolean;
+      features: string[];
+      maxCompanies: number;
+    };
+    companies: UserCompany[];
   };
   error?: string;
   message?: string;
@@ -169,6 +189,16 @@ export class AuthService {
       role: uc.role,
     }));
 
+    // Validate session has expires_at
+    if (authData.session.expires_at === undefined || authData.session.expires_at === null) {
+      console.error("Session missing expires_at timestamp");
+      return {
+        success: false,
+        error: "Authentication Failed",
+        message: "Invalid session data received from authentication provider",
+      };
+    }
+
     // Return enriched response
     return {
       success: true,
@@ -183,6 +213,7 @@ export class AuthService {
         session: {
           access_token: authData.session.access_token,
           refresh_token: authData.session.refresh_token,
+          expires_at: authData.session.expires_at,
         },
       },
     };
@@ -250,12 +281,22 @@ export class AuthService {
         };
       }
 
+      // Supabase always provides expires_at, but we validate it exists
+      if (data.session.expires_at === undefined || data.session.expires_at === null || typeof data.session.expires_at !== 'number') {
+        console.error("Token refresh succeeded but expires_at is missing or invalid");
+        return {
+          success: false,
+          error: "Token Refresh Failed",
+          message: "Invalid session data received from authentication provider",
+        };
+      }
+
       return {
         success: true,
         data: {
           access_token: data.session.access_token,
           refresh_token: data.session.refresh_token,
-          expires_at: data.session.expires_at || 0,
+          expires_at: data.session.expires_at,
         },
       };
     } catch (err) {
@@ -271,9 +312,10 @@ export class AuthService {
   /**
    * Validate current session and return enriched user data
    * Re-checks authorization to ensure user still has access
+   * Does not return session tokens - client keeps existing tokens
    * @param token - The user's access token to validate
    */
-  async validateSession(token: string): Promise<SignInResponse> {
+  async validateSession(token: string): Promise<ValidateSessionResponse> {
     try {
       // Validate the token
       const {
@@ -354,10 +396,8 @@ export class AuthService {
         role: uc.role,
       }));
 
-      // Get fresh session data
-      const { data: sessionData } = await this.supabase.auth.getSession();
-
-      // Return enriched response (same format as signIn)
+      // Return enriched response without session tokens
+      // Token refresh is handled by axios interceptor, not validateSession
       return {
         success: true,
         data: {
@@ -368,10 +408,6 @@ export class AuthService {
           profile,
           permissions,
           companies,
-          session: {
-            access_token: token,
-            refresh_token: sessionData.session?.refresh_token || "",
-          },
         },
       };
     } catch (err) {
