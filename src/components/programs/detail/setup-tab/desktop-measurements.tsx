@@ -30,6 +30,7 @@ import {
   useRemoveMeasurementDefinitionFromProgram,
 } from "@/hooks/useProgram";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 // import type { ProgramMeasurementWithDefinition } from "@/types/program";
 
 interface MeasurementsProps {
@@ -37,7 +38,7 @@ interface MeasurementsProps {
 }
 
 export function Measurements({ programId }: MeasurementsProps) {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState<boolean>(false);
   const [
     selectedMeasurementDefinitionIds,
     setSelectedMeasurementDefinitionIds,
@@ -134,55 +135,80 @@ export function Measurements({ programId }: MeasurementsProps) {
                   availableMeasurements.length > 0 ? (
                   <>
                     <div className="space-y-3 max-h-96 overflow-y-auto">
-                      {availableMeasurements.map(
-                        (measurement: {
-                          id: number;
-                          name: string;
-                          description?: string;
-                          calculation_type?: string;
-                          provider?: string;
-                        }) => (
-                          <div
-                            key={measurement.id}
-                            className="flex items-start space-x-3 p-3 border rounded-lg"
-                          >
-                          <Checkbox
-                            id={`measurement-${measurement.id}`}
-                            checked={selectedMeasurementDefinitionIds.includes(
-                              measurement.id
-                            )}
-                            onCheckedChange={(checked) =>
-                              handleMeasurementSelection(
-                                measurement.id,
-                                !!checked
-                              )
-                            }
-                          />
-                          <div className="flex-1 min-w-0">
-                            <label
-                              htmlFor={`measurement-${measurement.id}`}
-                              className="block text-sm font-medium cursor-pointer"
+                      {availableMeasurements
+                        .sort((a, b) => {
+                          // First sort by active status (active first)
+                          if (a.active !== b.active) {
+                            return a.active ? -1 : 1;
+                          }
+                          // Then sort alphabetically by name
+                          return a.name.localeCompare(b.name);
+                        })
+                        .map(
+                          (measurement: {
+                            id: number;
+                            name: string;
+                            description?: string;
+                            calculation_type?: string;
+                            provider?: string;
+                            active: boolean;
+                          }) => (
+                            <div
+                              key={measurement.id}
+                              className={cn(
+                                "flex items-start space-x-3 p-3 border rounded-lg",
+                                !measurement.active && "opacity-60"
+                              )}
                             >
-                              {measurement.name}
-                            </label>
-                            {measurement.description && (
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {measurement.description}
-                              </p>
-                            )}
-                            {measurement.calculation_type && (
-                              <Badge variant="secondary" className="mt-2">
-                                {measurement.calculation_type}
-                              </Badge>
-                            )}
-                            {measurement.provider && (
-                              <Badge className="mt-2">
-                                {measurement.provider}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                              <Checkbox
+                                id={`measurement-${measurement.id}`}
+                                checked={selectedMeasurementDefinitionIds.includes(
+                                  measurement.id
+                                )}
+                                onCheckedChange={(checked) =>
+                                  handleMeasurementSelection(
+                                    measurement.id,
+                                    !!checked
+                                  )
+                                }
+                              />
+                              <div className="flex-1 min-w-0">
+                                <label
+                                  htmlFor={`measurement-${measurement.id}`}
+                                  className={cn(
+                                    "block text-sm font-medium",
+                                    measurement.active && "cursor-pointer"
+                                  )}
+                                >
+                                  {measurement.name}
+                                </label>
+                                {measurement.description && (
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {measurement.description}
+                                  </p>
+                                )}
+                                {measurement.calculation_type && (
+                                  <Badge variant="secondary" className="mt-2">
+                                    {measurement.calculation_type}
+                                  </Badge>
+                                )}
+                                {measurement.provider && (
+                                  <Badge className="mt-2">
+                                    {measurement.provider}
+                                  </Badge>
+                                )}
+                                {!measurement.active && (
+                                  <Badge
+                                    variant="outline"
+                                    className="mt-2 ml-2"
+                                  >
+                                    Coming Soon
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        )}
                     </div>
                     <div className="flex justify-end space-x-2 pt-4 border-t">
                       <Button
@@ -248,36 +274,36 @@ export function Measurements({ programId }: MeasurementsProps) {
                   key={programMeasurement.id}
                   className="flex items-center justify-between p-4 border rounded-lg"
                 >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-3">
-                    <h4 className="text-sm font-medium">
-                      {programMeasurement.measurement_definition.name}
-                    </h4>
-                    {programMeasurement.measurement_definition
-                      .calculation_type && (
-                      <Badge variant="secondary">
-                        {
-                          programMeasurement.measurement_definition
-                            .calculation_type
-                        }
-                      </Badge>
-                    )}
-                  </div>
-                  {programMeasurement.measurement_definition.description && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {programMeasurement.measurement_definition.description}
-                    </p>
-                  )}
-                  <div className="flex gap-4">
-                    {programMeasurement.measurement_definition.provider && (
-                      <div className="text-sm mt-2">
-                        Data Provider:{" "}
-                        <Badge>
-                          {programMeasurement.measurement_definition.provider}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-3">
+                      <h4 className="text-sm font-medium">
+                        {programMeasurement.measurement_definition.name}
+                      </h4>
+                      {programMeasurement.measurement_definition
+                        .calculation_type && (
+                        <Badge variant="secondary">
+                          {
+                            programMeasurement.measurement_definition
+                              .calculation_type
+                          }
                         </Badge>
-                      </div>
+                      )}
+                    </div>
+                    {programMeasurement.measurement_definition.description && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {programMeasurement.measurement_definition.description}
+                      </p>
                     )}
-                    {/* {programMeasurement.measurement_definition
+                    <div className="flex gap-4">
+                      {programMeasurement.measurement_definition.provider && (
+                        <div className="text-sm mt-2">
+                          Data Provider:{" "}
+                          <Badge>
+                            {programMeasurement.measurement_definition.provider}
+                          </Badge>
+                        </div>
+                      )}
+                      {/* {programMeasurement.measurement_definition
                       .required_csv_columns && (
                       <div className="text-sm mt-2">
                         Required CSV Columns:{" "}
@@ -293,27 +319,28 @@ export function Measurements({ programId }: MeasurementsProps) {
                         </div>
                       </div>
                     )} */}
+                    </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      handleRemoveMeasurementDefinition(
+                        programMeasurement.measurement_definition.id
+                      )
+                    }
+                    disabled={removeMeasurementDefinitionMutation.isPending}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    {removeMeasurementDefinitionMutation.isPending ? (
+                      <IconLoader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <IconTrash className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    handleRemoveMeasurementDefinition(
-                      programMeasurement.measurement_definition.id
-                    )
-                  }
-                  disabled={removeMeasurementDefinitionMutation.isPending}
-                  className="text-destructive hover:text-destructive"
-                >
-                  {removeMeasurementDefinitionMutation.isPending ? (
-                    <IconLoader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <IconTrash className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            ))}
+              )
+            )}
           </div>
         ) : (
           <div className="text-center py-8">
