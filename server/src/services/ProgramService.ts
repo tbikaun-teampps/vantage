@@ -29,7 +29,8 @@ export class ProgramService {
         `
         *,
         company:companies!inner(id, name),
-        program_objectives(id)
+        program_objectives(id),
+        measurement_definitions:program_measurements(*)
       `
       )
       .eq("company_id", companyId)
@@ -42,7 +43,7 @@ export class ProgramService {
 
     return programs.map((program) => ({
       ...program,
-      measurements_count: 0, // Placeholder, implement measurement count logic if needed
+      measurements_count: program.measurement_definitions?.length || null,
       objective_count: program.program_objectives?.length || 0,
     }));
   }
