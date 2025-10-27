@@ -98,7 +98,8 @@ function findNodeInTree(
           for (const site of region.sites || []) {
             for (const ag of site.asset_groups || []) {
               for (const wg of ag.work_groups || []) {
-                const found = searchArray(wg.roles);
+                // Recursively search through roles and their reporting_roles (direct reports)
+                const found = searchArray(wg.roles, "reporting_roles");
                 if (found) return found;
               }
             }
