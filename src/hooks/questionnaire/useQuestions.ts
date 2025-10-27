@@ -325,7 +325,6 @@ export function useQuestionActions() {
                         ...step.questions,
                         {
                           ...newQuestion,
-                          question_rating_scales: [],
                           question_roles: [],
                         },
                       ],

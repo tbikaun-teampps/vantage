@@ -722,3 +722,176 @@ export async function importQuestionnaire(data: {
     throw error;
   }
 }
+
+// ===== Question Parts =====
+
+export async function getQuestionParts(questionId: number): Promise<any[]> {
+  const response = await apiClient.get<ApiResponse<any[]>>(
+    `/questionnaires/questions/${questionId}/parts`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to fetch question parts");
+  }
+
+  return response.data.data;
+}
+
+export async function createQuestionPart(
+  questionId: number,
+  partData: any
+): Promise<any> {
+  try {
+    const response = await apiClient.post<ApiResponse<any>>(
+      `/questionnaires/questions/${questionId}/parts`,
+      partData
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error || "Failed to create question part");
+    }
+
+    toast.success("Question part created successfully");
+    return response.data.data;
+  } catch (error: any) {
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to create question part"
+    );
+    toast.error(errorMessage);
+    throw error;
+  }
+}
+
+export async function updateQuestionPart(
+  questionId: number,
+  partId: number,
+  partData: any
+): Promise<any> {
+  try {
+    const response = await apiClient.put<ApiResponse<any>>(
+      `/questionnaires/questions/${questionId}/parts/${partId}`,
+      partData
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error || "Failed to update question part");
+    }
+
+    toast.success("Question part updated successfully");
+    return response.data.data;
+  } catch (error: any) {
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to update question part"
+    );
+    toast.error(errorMessage);
+    throw error;
+  }
+}
+
+export async function deleteQuestionPart(
+  questionId: number,
+  partId: number
+): Promise<void> {
+  try {
+    const response = await apiClient.delete<ApiResponse<null>>(
+      `/questionnaires/questions/${questionId}/parts/${partId}`
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.error || "Failed to delete question part");
+    }
+
+    toast.success("Question part deleted successfully");
+  } catch (error: any) {
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to delete question part"
+    );
+    toast.error(errorMessage);
+    throw error;
+  }
+}
+
+export async function duplicateQuestionPart(
+  questionId: number,
+  partId: number
+): Promise<any> {
+  try {
+    const response = await apiClient.post<ApiResponse<any>>(
+      `/questionnaires/questions/${questionId}/parts/${partId}/duplicate`
+    );
+
+    if (!response.data.success) {
+      throw new Error(
+        response.data.error || "Failed to duplicate question part"
+      );
+    }
+
+    toast.success("Question part duplicated successfully");
+    return response.data.data;
+  } catch (error: any) {
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to duplicate question part"
+    );
+    toast.error(errorMessage);
+    throw error;
+  }
+}
+
+export async function reorderQuestionParts(
+  questionId: number,
+  partIdsInOrder: number[]
+): Promise<void> {
+  try {
+    const response = await apiClient.post<ApiResponse<null>>(
+      `/questionnaires/questions/${questionId}/parts/reorder`,
+      { part_ids_in_order: partIdsInOrder }
+    );
+
+    if (!response.data.success) {
+      throw new Error(
+        response.data.error || "Failed to reorder question parts"
+      );
+    }
+
+    toast.success("Question parts reordered successfully");
+  } catch (error: any) {
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to reorder question parts"
+    );
+    toast.error(errorMessage);
+    throw error;
+  }
+}
+
+export async function updateQuestionRatingScaleMapping(
+  questionId: number,
+  ratingScaleMapping: Record<string, unknown>
+): Promise<unknown> {
+  try {
+    const response = await apiClient.put<ApiResponse<unknown>>(
+      `/questionnaires/questions/${questionId}/rating-scale-mapping`,
+      { rating_scale_mapping: ratingScaleMapping }
+    );
+
+    if (!response.data.success) {
+      throw new Error(
+        response.data.error || "Failed to update question rating scale mapping"
+      );
+    }
+
+    toast.success("Question mapping updated successfully");
+    return response.data.data;
+  } catch (error: unknown) {
+    const errorMessage = getErrorMessage(
+      error,
+      "Failed to update question rating scale mapping"
+    );
+    toast.error(errorMessage);
+    throw error;
+  }
+}

@@ -1840,6 +1840,73 @@ export type Database = {
           },
         ];
       };
+      questionnaire_question_parts: {
+        Row: {
+          answer_type: Database["public"]["Enums"]["question_part_answer_type"];
+          company_id: string;
+          created_at: string;
+          created_by: string;
+          deleted_at: string | null;
+          id: number;
+          is_deleted: boolean;
+          options: Json;
+          order_index: number;
+          questionnaire_question_id: number;
+          text: string;
+          updated_at: string;
+        };
+        Insert: {
+          answer_type: Database["public"]["Enums"]["question_part_answer_type"];
+          company_id: string;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          id?: number;
+          is_deleted?: boolean;
+          options: Json;
+          order_index: number;
+          questionnaire_question_id: number;
+          text: string;
+          updated_at?: string;
+        };
+        Update: {
+          answer_type?: Database["public"]["Enums"]["question_part_answer_type"];
+          company_id?: string;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          id?: number;
+          is_deleted?: boolean;
+          options?: Json;
+          order_index?: number;
+          questionnaire_question_id?: number;
+          text?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "questionnaire_question_parts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "questionnaire_question_parts_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "questionnaire_question_parts_questionnaire_question_id_fkey";
+            columns: ["questionnaire_question_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaire_questions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       questionnaire_question_rating_scales: {
         Row: {
           company_id: string;
@@ -2006,6 +2073,7 @@ export type Database = {
           question_text: string;
           questionnaire_id: number;
           questionnaire_step_id: number;
+          rating_scale_mapping: Json | null;
           title: string;
           updated_at: string;
         };
@@ -2021,6 +2089,7 @@ export type Database = {
           question_text: string;
           questionnaire_id: number;
           questionnaire_step_id: number;
+          rating_scale_mapping?: Json | null;
           title: string;
           updated_at?: string;
         };
@@ -2036,6 +2105,7 @@ export type Database = {
           question_text?: string;
           questionnaire_id?: number;
           questionnaire_step_id?: number;
+          rating_scale_mapping?: Json | null;
           title?: string;
           updated_at?: string;
         };
@@ -3042,6 +3112,12 @@ export type Database = {
         | "under_review"
         | "completed"
         | "archived";
+      question_part_answer_type:
+        | "boolean"
+        | "scale"
+        | "labelled_scale"
+        | "percentage"
+        | "number";
       questionnaire_statuses: "draft" | "active" | "under_review" | "archived";
       recommendation_status: "not_started" | "in_progress" | "completed";
       role_levels:
@@ -3220,6 +3296,13 @@ export const Constants = {
         "under_review",
         "completed",
         "archived",
+      ],
+      question_part_answer_type: [
+        "boolean",
+        "scale",
+        "labelled_scale",
+        "percentage",
+        "number",
       ],
       questionnaire_statuses: ["draft", "active", "under_review", "archived"],
       recommendation_status: ["not_started", "in_progress", "completed"],

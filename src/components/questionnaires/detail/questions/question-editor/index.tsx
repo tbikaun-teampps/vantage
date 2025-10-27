@@ -106,7 +106,13 @@ export function QuestionEditor({
         required
       />
 
-      <InlineQuestionPartsEditor />
+      <InlineQuestionPartsEditor
+        questionId={question.id}
+        ratingScales={question.question_rating_scales}
+        ratingScaleMapping={
+          question.rating_scale_mapping as Record<string, unknown> | null
+        }
+      />
 
       <InlineRatingScalesEditor
         question={question}

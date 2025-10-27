@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "../types/database.js";
+import type { Database, Json } from "../types/database.js";
 import {
   CreateQuestionnaireData,
   CreateQuestionnaireQuestionData,
@@ -26,7 +26,11 @@ import {
   UpdateQuestionnaireStepData,
 } from "../types/entities/questionnaires.js";
 import { SubscriptionTier } from "../types/entities/profiles.js";
-import { BadRequestError, ForbiddenError } from "../plugins/errorHandler.js";
+import {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+} from "../plugins/errorHandler.js";
 
 export class QuestionnaireService {
   private supabase: SupabaseClient<Database>;
@@ -878,7 +882,75 @@ export class QuestionnaireService {
       .single();
 
     if (error) throw error;
-    return data;
+
+    // Auto-assign all questionnaire rating scales to the new question
+    const { data: questionnaireRatingScales, error: ratingScalesError } =
+      await this.supabase
+        .from("questionnaire_rating_scales")
+        .select("id, description")
+        .eq("questionnaire_id", step.questionnaire_id)
+        .eq("is_deleted", false);
+
+    if (ratingScalesError) throw ratingScalesError;
+
+    // Create associations for all rating scales
+    if (questionnaireRatingScales && questionnaireRatingScales.length > 0) {
+      const associations = questionnaireRatingScales.map((rs) => ({
+        questionnaire_question_id: data.id,
+        questionnaire_rating_scale_id: rs.id,
+        questionnaire_id: step.questionnaire_id,
+        description: rs.description,  // Optional: can be customized later
+        company_id: step.company_id,
+        created_by: this.userId,
+      }));
+
+      const { error: associationsError } = await this.supabase
+        .from("questionnaire_question_rating_scales")
+        .insert(associations);
+
+      if (associationsError) throw associationsError;
+    }
+
+    // Fetch the question with rating scales to return to the frontend
+    const { data: questionWithRatingScales, error: fetchError } =
+      await this.supabase
+        .from("questionnaire_questions")
+        .select(
+          `
+          *,
+          question_rating_scales:questionnaire_question_rating_scales(
+            id,
+            description,
+            questionnaire_rating_scale_id,
+            questionnaire_question_id,
+            questionnaire_id,
+            questionnaire_rating_scales(
+              name,
+              value
+            )
+          )
+        `
+        )
+        .eq("id", data.id)
+        .single();
+
+    if (fetchError) throw fetchError;
+
+    // Flatten the rating scale data structure
+    if (questionWithRatingScales && questionWithRatingScales.question_rating_scales) {
+      questionWithRatingScales.question_rating_scales =
+        questionWithRatingScales.question_rating_scales.map((qrs: any) => ({
+          id: qrs.id,
+          description: qrs.description,
+          questionnaire_rating_scale_id: qrs.questionnaire_rating_scale_id,
+          questionnaire_question_id: qrs.questionnaire_question_id,
+          questionnaire_id: qrs.questionnaire_id,
+          name: qrs.questionnaire_rating_scales?.name,
+          value: qrs.questionnaire_rating_scales?.value,
+        }));
+    }
+
+    return questionWithRatingScales;
   }
 
   async updateQuestion(
@@ -1763,5 +1835,191 @@ export class QuestionnaireService {
       console.error("Import failed:", error);
       throw error;
     }
+  }
+
+  // Question part operations
+  async getQuestionParts(questionId: number): Promise<any> {
+    const { data, error } = await this.supabase
+      .from("questionnaire_question_parts")
+      .select("*")
+      .eq("questionnaire_question_id", questionId)
+      .eq("is_deleted", false);
+
+    if (error) throw error;
+    return data;
+  }
+  async createQuestionPart(data): Promise<any> {
+    // validate question exists and get the company_id associated with it
+    const { data: question, error: questionError } = await this.supabase
+      .from("questionnaire_questions")
+      .select("id, questionnaire_id, company_id")
+      .eq("id", data.questionnaire_question_id)
+      .eq("is_deleted", false)
+      .single();
+
+    if (questionError) throw questionError;
+    if (!question) throw new NotFoundError("Question not found");
+
+    // insert question part
+    data.company_id = question.company_id;
+
+    const { data: insertedData, error } = await this.supabase
+      .from("questionnaire_question_parts")
+      .insert([data])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return insertedData;
+  }
+
+  async updateQuestionPart(partId: number, updates: any): Promise<any> {
+    const { data: existingData, error: fetchError } = await this.supabase
+      .from("questionnaire_question_parts")
+      .select("id")
+      .eq("id", partId)
+      .eq("is_deleted", false)
+      .single();
+
+    if (fetchError) throw fetchError;
+    if (!existingData) throw new NotFoundError("Question part not found");
+
+    const { data, error } = await this.supabase
+      .from("questionnaire_question_parts")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", partId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async deleteQuestionPart(partId: number): Promise<boolean> {
+    const { data: existingData, error: fetchError } = await this.supabase
+      .from("questionnaire_question_parts")
+      .select("id")
+      .eq("id", partId)
+      .eq("is_deleted", false)
+      .single();
+
+    if (fetchError) throw fetchError;
+    if (!existingData) throw new NotFoundError("Question part not found");
+
+    const { error } = await this.supabase
+      .from("questionnaire_question_parts")
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+      })
+      .eq("id", partId);
+
+    if (error) throw error;
+    return true;
+  }
+
+  async duplicateQuestionPart(partId: number): Promise<any> {
+    // First, get the original question part with all its data
+    const { data: originalPart, error: partError } = await this.supabase
+      .from("questionnaire_question_parts")
+      .select("*")
+      .eq("id", partId)
+      .single();
+
+    if (partError) throw partError;
+    if (!originalPart) throw new NotFoundError("Question part not found");
+
+    // Create the duplicate question part
+    const newPartData = {
+      questionnaire_question_id: originalPart.questionnaire_question_id,
+      text: originalPart.text,
+      answer_type: originalPart.answer_type,
+      options: originalPart.options,
+      order_index: originalPart.order_index + 1, // Insert after the original
+      company_id: originalPart.company_id,
+    };
+
+    const { data: newPart, error: createError } = await this.supabase
+      .from("questionnaire_question_parts")
+      .insert([newPartData])
+      .select()
+      .single();
+
+    if (createError) throw createError;
+
+    return newPart;
+  }
+
+  async reorderQuestionParts(
+    questionId: number,
+    orderedPartIds: number[]
+  ): Promise<void> {
+    if (orderedPartIds.length === 0) {
+      throw new BadRequestError("Ordered part IDs array cannot be empty");
+    }
+    // Validate that all provided part IDs belong to the question
+    const { data: existingParts, error: fetchError } = await this.supabase
+      .from("questionnaire_question_parts")
+      .select("id")
+      .eq("questionnaire_question_id", questionId)
+      .eq("is_deleted", false);
+
+    if (fetchError) throw fetchError;
+
+    const existingPartIds = existingParts.map((part) => part.id);
+    const invalidPartIds = orderedPartIds.filter(
+      (id) => !existingPartIds.includes(id)
+    );
+
+    if (invalidPartIds.length > 0) {
+      throw new BadRequestError(
+        `Invalid part IDs for the specified question: ${invalidPartIds.join(", ")}`
+      );
+    }
+
+    // Update order_index for each part
+    for (let index = 0; index < orderedPartIds.length; index++) {
+      const partId = orderedPartIds[index];
+      const { error } = await this.supabase
+        .from("questionnaire_question_parts")
+        .update({ order_index: index, updated_at: new Date().toISOString() })
+        .eq("id", partId);
+
+      if (error) throw error;
+    }
+  }
+
+  async updateQuestionRatingScaleMapping(
+    questionId: number,
+    mapping: Json
+  ): Promise<unknown> {
+    // Fetch the question to validate it exists and get questionnaire_id
+    const { data: question, error: questionError } = await this.supabase
+      .from("questionnaire_questions")
+      .select("id, questionnaire_id")
+      .eq("id", questionId)
+      .eq("is_deleted", false)
+      .single();
+
+    if (questionError) throw questionError;
+    if (!question) throw new NotFoundError("Question not found");
+
+    // Check if questionnaire is in use
+    await this.checkQuestionnaireInUse(question.questionnaire_id);
+
+    // Update the rating_scale_mapping field
+    const { data: updatedQuestion, error: updateError } = await this.supabase
+      .from("questionnaire_questions")
+      .update({
+        rating_scale_mapping: mapping,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", questionId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    return updatedQuestion;
   }
 }

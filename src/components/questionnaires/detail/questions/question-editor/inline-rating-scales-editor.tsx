@@ -33,9 +33,9 @@ export function InlineRatingScalesEditor({
     isAddingRatingScale,
     updateQuestionRatingScale,
     isUpdatingRatingScale,
-    deleteQuestionRatingScale,
+    // deleteQuestionRatingScale,
     isDeletingRatingScale,
-    addAllQuestionnaireRatingScales,
+    // addAllQuestionnaireRatingScales,
     isAddingAllRatingScales,
   } = useQuestionActions();
 
@@ -60,16 +60,16 @@ export function InlineRatingScalesEditor({
     (rs) => !assignedRatingScaleIds.includes(rs.id)
   );
 
-  const handleEdit = () => {
-    if (disabled) return;
-    handleAddRatingScale(); // Open the dialog directly
-  };
+  // const handleEdit = () => {
+  //   if (disabled) return;
+  //   handleAddRatingScale(); // Open the dialog directly
+  // };
 
-  const handleAddRatingScale = () => {
-    setRatingFormData({ ratingScaleId: "", description: "" });
-    setEditingRating(null);
-    setShowRatingDialog(true);
-  };
+  // const handleAddRatingScale = () => {
+  //   setRatingFormData({ ratingScaleId: "", description: "" });
+  //   setEditingRating(null);
+  //   setShowRatingDialog(true);
+  // };
 
   const handleEditRatingScale = (
     ratingScale: QuestionRatingScaleWithDetails
@@ -122,40 +122,40 @@ export function InlineRatingScalesEditor({
     setRatingFormData({ ratingScaleId: "", description: "" });
   };
 
-  const handleAddAllRatingScales = async () => {
-    if (!questionnaireId || !question.id) return;
+  // const handleAddAllRatingScales = async () => {
+  //   if (!questionnaireId || !question.id) return;
 
-    try {
-      await addAllQuestionnaireRatingScales({
-        questionnaireId,
-        questionId: question.id,
-      });
-      toast.success("All questionnaire rating scales added successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to add all rating scales"
-      );
-    }
-  };
+  //   try {
+  //     await addAllQuestionnaireRatingScales({
+  //       questionnaireId,
+  //       questionId: question.id,
+  //     });
+  //     toast.success("All questionnaire rating scales added successfully");
+  //   } catch (error) {
+  //     toast.error(
+  //       error instanceof Error
+  //         ? error.message
+  //         : "Failed to add all rating scales"
+  //     );
+  //   }
+  // };
 
-  const handleDeleteRatingScale = async () => {
-    if (!editingRating) return;
+  // const handleDeleteRatingScale = async () => {
+  //   if (!editingRating) return;
 
-    try {
-      await deleteQuestionRatingScale({
-        questionId: question.id,
-        questionRatingScaleId: editingRating.id,
-      });
-      setShowRatingDialog(false);
-      toast.success("Rating scale removed successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to delete rating scale"
-      );
-    }
-  };
+  //   try {
+  //     await deleteQuestionRatingScale({
+  //       questionId: question.id,
+  //       questionRatingScaleId: editingRating.id,
+  //     });
+  //     setShowRatingDialog(false);
+  //     toast.success("Rating scale removed successfully");
+  //   } catch (error) {
+  //     toast.error(
+  //       error instanceof Error ? error.message : "Failed to delete rating scale"
+  //     );
+  //   }
+  // };
 
   return (
     <div className="flex flex-col w-full gap-2">
@@ -203,7 +203,7 @@ export function InlineRatingScalesEditor({
             </div>
           )}
         </div>
-        <div className="flex justify-end gap-2">
+        {/* <div className="flex justify-end gap-2">
           {questionnaireId &&
             availableRatingScales.length > 0 &&
             userCanAdmin && (
@@ -230,7 +230,7 @@ export function InlineRatingScalesEditor({
               Add
             </Button>
           )}
-        </div>
+        </div> */}
 
         {/* Rating Scale Assignment Dialog */}
         <QuestionRatingScaleDialog
@@ -242,7 +242,6 @@ export function InlineRatingScalesEditor({
           isProcessing={isLoading}
           unassignedRatingScales={unassignedRatingScales}
           handleSaveRatingScale={handleSaveRatingScale}
-          handleDeleteRatingScale={handleDeleteRatingScale}
         />
       </div>
     </div>

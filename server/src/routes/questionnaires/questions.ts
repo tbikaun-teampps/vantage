@@ -10,6 +10,76 @@ import {
   NotFoundError,
 } from "../../plugins/errorHandler.js";
 
+/**
+ * Validate question part options based on answer type
+ * - Boolean: { true_label: string, false_label: string }
+ * - Number: { min: number, max: number, decimal_places: number }
+ * - Percentage: { } - uses 0-100 by default
+ * - Scale : { min: number, max: number, step: number }
+ * - Labelled Scale: { labels: Array<{ value: number, label: string }> }
+ *
+ * @param answerType
+ * @param options
+ */
+function validateQuestionPartOptions(answerType: string, options: any): void {
+  switch (answerType) {
+    case "labelled_scale":
+      if (
+        !options ||
+        !Array.isArray((options as any).labels) ||
+        (options as any).labels.length === 0
+      ) {
+        throw new Error(
+          "Invalid options for labelled_scale. 'labels' array is required."
+        );
+      }
+      break;
+    case "scale":
+      if (
+        !options ||
+        typeof (options as any).min !== "number" ||
+        typeof (options as any).max !== "number" ||
+        typeof (options as any).step !== "number"
+      ) {
+        throw new Error(
+          "Invalid options for scale. 'min', 'max', and 'step' numbers are required."
+        );
+      }
+      break;
+    case "boolean":
+      if (
+        !options ||
+        typeof (options as any).true_label !== "string" ||
+        typeof (options as any).false_label !== "string"
+      ) {
+        throw new Error(
+          "Invalid options for boolean. 'true_label' and 'false_label' strings are required."
+        );
+      }
+      break;
+    case "number":
+      if (
+        !options ||
+        typeof (options as any).min !== "number" ||
+        typeof (options as any).max !== "number" ||
+        typeof (options as any).decimal_places !== "number"
+      ) {
+        throw new Error(
+          "Invalid options for number. 'min', 'max', and 'decimal_places' numbers are required."
+        );
+      }
+      break;
+    case "percentage":
+      // No specific options required
+      break;
+    case "text":
+      // No specific options required
+      break;
+    default:
+      throw new Error("Invalid answer type");
+  }
+}
+
 export async function questionsRoutes(fastify: FastifyInstance) {
   // Create a new question in a step
   fastify.post(
@@ -634,6 +704,358 @@ export async function questionsRoutes(fastify: FastifyInstance) {
       if (!updatedQuestion || updatedQuestion.length === 0) {
         throw new InternalServerError("Unable to update applicable roles");
       }
+
+      return {
+        success: true,
+        data: updatedQuestion,
+      };
+    }
+  );
+
+  // Question parts
+  fastify.get("/questions/:questionId/parts", async (request) => {
+    const { questionId } = request.params as {
+      questionId: string;
+    };
+
+    const questionnaireService = new QuestionnaireService(
+      request.supabaseClient,
+      request.user.id
+    );
+
+    const parts = await questionnaireService.getQuestionParts(
+      parseInt(questionId)
+    );
+
+    return {
+      success: true,
+      data: parts,
+    };
+  });
+  fastify.post(
+    "/questions/:questionId/parts",
+    {
+      schema: {
+        description: "Add a new question part to a question",
+        params: {
+          type: "object",
+          properties: {
+            questionId: { type: "string" },
+          },
+          required: ["questionId"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            text: { type: "string" },
+            order_index: { type: "number" },
+            options: { type: "object" },
+            answer_type: {
+              type: "string",
+              enum: [
+                "text",
+                "labelled_scale",
+                "scale",
+                "boolean",
+                "percentage",
+                "number",
+              ],
+            },
+          },
+          required: ["text", "order_index", "answer_type", "options"],
+        },
+      },
+    },
+    async (request) => {
+      const { questionId } = request.params as {
+        questionId: number;
+      };
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+
+      const data = request.body as {
+        text: string;
+        order_index: number;
+        options: object;
+        answer_type:
+          | "text"
+          | "labelled_scale"
+          | "scale"
+          | "boolean"
+          | "percentage"
+          | "number";
+      };
+
+      data.questionnaire_question_id = questionId;
+
+      // Validate options
+      validateQuestionPartOptions(data.answer_type, data.options);
+
+      const part = await questionnaireService.createQuestionPart(data);
+
+      return {
+        success: true,
+        data: part,
+      };
+    }
+  );
+
+  fastify.put(
+    "/questions/:questionId/parts/:partId",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            questionId: { type: "string" },
+            partId: { type: "string" },
+          },
+          required: ["questionId", "partId"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            text: { type: "string" },
+            order_index: { type: "number" },
+            options: { type: "object" },
+            answer_type: {
+              type: "string",
+              enum: [
+                "text",
+                "labelled_scale",
+                "scale",
+                "boolean",
+                "percentage",
+                "number",
+              ],
+            },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const { partId } = request.params as { partId: number };
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+
+      const data = request.body as {
+        text: string;
+        order_index: number;
+        options: object;
+        answer_type:
+          | "text"
+          | "labelled_scale"
+          | "scale"
+          | "boolean"
+          | "percentage"
+          | "number";
+      };
+
+      // Validate options
+      if (data.answer_type && data.options) {
+        validateQuestionPartOptions(data.answer_type, data.options);
+      }
+
+      const part = await questionnaireService.updateQuestionPart(partId, data);
+
+      return {
+        success: true,
+        data: part,
+      };
+    }
+  );
+
+  fastify.put(
+    "/questions/:questionId/parts/:partId/mapping",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            questionId: { type: "string" },
+            partId: { type: "string" },
+          },
+          required: ["questionId", "partId"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            mapped_to: { type: "string" },
+          },
+          required: ["mapped_to"],
+        },
+      },
+    },
+    async (request) => {
+      // Implementation for updating question part mapping can be added here
+    }
+  );
+
+  fastify.delete(
+    "/questions/:questionId/parts/:partId",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            questionId: { type: "string" },
+            partId: { type: "string" },
+          },
+          required: ["questionId", "partId"],
+        },
+      },
+    },
+    async (request) => {
+      const { partId } = request.params as { partId: number };
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+
+      const part = await questionnaireService.deleteQuestionPart(partId);
+
+      return {
+        success: true,
+        data: part,
+      };
+    }
+  );
+
+  fastify.post(
+    "/questions/:questionId/parts/:partId/duplicate",
+    {
+      schema: {
+        description: "Duplicate a question part",
+        params: {
+          type: "object",
+          properties: {
+            questionId: { type: "string" },
+            partId: { type: "string" },
+          },
+          required: ["questionId", "partId"],
+        },
+      },
+    },
+    async (request) => {
+      const { partId } = request.params as {
+        partId: number;
+      };
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+
+      const newPart = await questionnaireService.duplicateQuestionPart(partId);
+
+      return {
+        success: true,
+        data: newPart,
+      };
+    }
+  );
+
+  fastify.put(
+    "/questions/:questionId/parts/reorder",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            questionId: { type: "string" },
+          },
+          required: ["questionId"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            questionId: { type: "number" },
+            partIdsInOrder: {
+              type: "array",
+              items: { type: "number" },
+            },
+          },
+          required: ["questionId", "partIdsInOrder"],
+        },
+      },
+    },
+    async (request) => {
+      const { questionId } = request.params as {
+        questionId: number;
+      };
+      const { partIdsInOrder } = request.body as {
+        partIdsInOrder: number[];
+      };
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+
+      const newPart = await questionnaireService.reorderQuestionParts(
+        questionId,
+        partIdsInOrder
+      );
+
+      return {
+        success: true,
+        data: newPart,
+      };
+    }
+  );
+
+  // Update question rating scale mapping
+  fastify.put(
+    "/questions/:questionId/rating-scale-mapping",
+    {
+      schema: {
+        description: "Update the rating scale mapping for a question",
+        params: {
+          type: "object",
+          properties: {
+            questionId: { type: "string" },
+          },
+          required: ["questionId"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            rating_scale_mapping: { type: "object" },
+          },
+          required: ["rating_scale_mapping"],
+        },
+        response: {
+          // 200: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     data: { type: "object" },
+          //   },
+          // },
+          403: commonResponseSchemas.responses[403],
+          404: commonResponseSchemas.responses[404],
+          500: commonResponseSchemas.responses[500],
+        },
+      },
+    },
+    async (request) => {
+      const { questionId } = request.params as { questionId: string };
+      const { rating_scale_mapping } = request.body as {
+        rating_scale_mapping: object;
+      };
+
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+
+      const updatedQuestion =
+        await questionnaireService.updateQuestionRatingScaleMapping(
+          parseInt(questionId),
+          rating_scale_mapping as any
+        );
 
       return {
         success: true,
