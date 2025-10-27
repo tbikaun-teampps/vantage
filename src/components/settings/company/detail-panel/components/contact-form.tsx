@@ -88,7 +88,13 @@ export const ContactForm: React.FC<ContactFormProps> = ({
           <DialogTitle>{dialogTitle}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.stopPropagation(); // Prevent event from bubbling to parent forms
+            form.handleSubmit(handleSave)(e);
+          }}
+          className="space-y-4"
+        >
           <div className="space-y-4">
             <FormInput
               control={form.control}

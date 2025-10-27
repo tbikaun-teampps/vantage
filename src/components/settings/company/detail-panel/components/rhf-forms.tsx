@@ -152,7 +152,6 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
                 parentItem={selectedItem}
                 parentType="company"
                 addType="business_unit"
-                onAddSuccess={() => console.log("Business unit added!")}
               />
             </FormSection>
           </div>
@@ -264,7 +263,6 @@ export const RHFBusinessUnitForm: React.FC<
                 parentItem={selectedItem}
                 parentType="business_unit"
                 addType="region"
-                onAddSuccess={() => console.log("Region added!")}
               />
             </FormSection>
           </div>
@@ -379,7 +377,6 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
                 parentItem={selectedItem}
                 parentType="region"
                 addType="site"
-                onAddSuccess={() => console.log("Site added!")}
               />
             </FormSection>
           </div>
@@ -512,7 +509,6 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
                 parentItem={selectedItem}
                 parentType="site"
                 addType="asset_group"
-                onAddSuccess={() => console.log("Asset group added!")}
               />
             </FormSection>
           </div>
@@ -627,7 +623,6 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
                 parentItem={selectedItem}
                 parentType="asset_group"
                 addType="work_group"
-                onAddSuccess={() => console.log("Work group added!")}
               />
             </FormSection>
           </div>
@@ -742,7 +737,6 @@ export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
                 parentItem={selectedItem}
                 parentType="work_group"
                 addType="role"
-                onAddSuccess={() => console.log("Role added!")}
               />
             </FormSection>
           </div>
@@ -874,7 +868,6 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
                 parentItem={selectedItem}
                 parentType="role"
                 addType="role"
-                onAddSuccess={() => console.log("Direct report added!")}
               />
             </FormSection>
           </div>

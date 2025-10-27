@@ -1,6 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import { useQuestionnaires } from "@/hooks/useQuestionnaires";
-import { QuestionnairesDataTable } from "./questionnaires-data-table";
+import { QuestionnairesDataTable } from "../list/questionnaires-data-table";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 

@@ -732,8 +732,8 @@ export function OnsiteMap() {
         );
         setFilters(data.options);
         // Initialize with first questionnaire if available
-        if (data.questionnaires.length > 0) {
-          setSelectedQuestionnaireId(data.questionnaires[0].id.toString());
+        if (data?.options?.questionnaires && data.options.questionnaires.length > 0) {
+          setSelectedQuestionnaireId(data.options.questionnaires[0].id.toString());
         }
       } catch (err) {
         console.error("Error fetching filters:", err);
