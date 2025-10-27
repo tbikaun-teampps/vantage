@@ -26,7 +26,7 @@ export interface EntityBadgesProps {
   parentItem: any;
   parentType: TreeNodeType;
   addType: string;
-  onAddSuccess: () => void;
+  onAddSuccess?: () => void;
 }
 
 export interface FormSectionProps {
