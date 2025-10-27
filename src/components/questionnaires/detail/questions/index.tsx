@@ -805,6 +805,28 @@ export function Questions() {
                             updates: { title: newValue },
                           });
                         }}
+                        required
+                      />
+
+                      <InlineFieldEditor
+                        label="Context"
+                        value={question.context || ""}
+                        placeholder="Enter supporting context or instructions (optional)"
+                        type="textarea"
+                        maxLength={1000}
+                        minRows={3}
+                        disabled={isProcessing}
+                        validation={(value) => {
+                          if (value.length > 1000)
+                            return "Context must be less than 1000 characters";
+                          return null;
+                        }}
+                        onSave={async (newValue) => {
+                          await updateQuestion({
+                            id: question.id,
+                            updates: { context: newValue || null },
+                          });
+                        }}
                       />
 
                       <InlineFieldEditor
@@ -827,27 +849,7 @@ export function Questions() {
                             updates: { question_text: newValue },
                           });
                         }}
-                      />
-
-                      <InlineFieldEditor
-                        label="Context"
-                        value={question.context || ""}
-                        placeholder="Enter supporting context or instructions (optional)"
-                        type="textarea"
-                        maxLength={1000}
-                        minRows={3}
-                        disabled={isProcessing}
-                        validation={(value) => {
-                          if (value.length > 1000)
-                            return "Context must be less than 1000 characters";
-                          return null;
-                        }}
-                        onSave={async (newValue) => {
-                          await updateQuestion({
-                            id: question.id,
-                            updates: { context: newValue || null },
-                          });
-                        }}
+                        required
                       />
 
                       <InlineRatingScalesEditor
