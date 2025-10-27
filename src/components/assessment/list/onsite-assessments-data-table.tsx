@@ -74,7 +74,6 @@ export function OnsiteAssessmentsDataTable({
             className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
           >
             {row.original.name}
-            <IconExternalLink className="h-3 w-3" />
           </Link>
         </div>
       ),
@@ -90,7 +89,6 @@ export function OnsiteAssessmentsDataTable({
             title={row.original.questionnaire_name}
           >
             <span className="truncate">{row.original.questionnaire_name}</span>
-            <IconExternalLink className="h-3 w-3 flex-shrink-0 opacity-70 group-hover:opacity-100" />
           </Link>
         </div>
       ),

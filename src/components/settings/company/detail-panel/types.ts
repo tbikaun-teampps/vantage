@@ -1,3 +1,5 @@
+import type { TreeNodeType } from "@/types/company";
+
 export interface DetailPanelProps {
   selectedItem: any; // Replace with actual type
   setSelectedItem: (item: any) => void; // Replace with actual type
@@ -22,9 +24,9 @@ export interface EntityBadgesProps {
   entities: any[];
   icon: React.ComponentType<any>;
   parentItem: any;
-  parentType: string;
+  parentType: TreeNodeType;
   addType: string;
-  onAddSuccess: () => void;
+  onAddSuccess?: () => void;
 }
 
 export interface FormSectionProps {

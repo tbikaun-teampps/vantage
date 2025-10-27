@@ -1,2 +1,2 @@
-export { default as QuestionnairesDataTable } from './questionnaires-data-table';
-export type { Questionnaire } from './questionnaires-data-table';
+export { default as QuestionnairesDataTable } from '../list/questionnaires-data-table';
+export type { Questionnaire } from '../list/questionnaires-data-table';

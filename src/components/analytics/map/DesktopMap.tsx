@@ -752,9 +752,9 @@ export function DesktopMap() {
         setFilters(data.options);
         console.log("data", data);
         // Take the first measurement as the measurementType default
-        setMeasurementType(data?.measurements[0]?.name);
+        setMeasurementType(data?.options?.measurements?.[0]?.name);
         // Take first aggregation method as default too
-        setDataType(data?.aggregationMethods[0] || "average");
+        setDataType(data?.options?.aggregationMethods?.[0] || "average");
       } catch (err) {
         console.error("Error fetching filters:", err);
         setError("Failed to load filter options.");

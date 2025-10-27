@@ -422,9 +422,7 @@ export async function getProgramInterviewHeatmap(
   return response.data.data;
 }
 
-export async function getProgramMeasurementHeatmap(
-  programId: string
-): Promise<{
+export async function getProgramMeasurementHeatmap(programId: string): Promise<{
   data: Array<{
     measurement: string;
     phaseTransition: string;

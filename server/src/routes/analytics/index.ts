@@ -871,7 +871,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
       for (let i = 0; i < sortedPhases.length - 1; i++) {
         const current = sortedPhases[i];
         const next = sortedPhases[i + 1];
-        const transition = `${current.name || `Assessment ${current.sequence_number}`}→${next.name || `Assessment ${next.sequence_number}`}`;
+        const transition = `${current.name || `Assessment ${current.sequence_number}`} → ${next.name || `Assessment ${next.sequence_number}`}`;
         transitions.push(transition);
       }
 
@@ -1042,7 +1042,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
       for (let i = 0; i < sortedPhases.length - 1; i++) {
         const currentPhase = sortedPhases[i];
         const nextPhase = sortedPhases[i + 1];
-        const transition = `${currentPhase.name || `Phase ${currentPhase.sequence_number}`}→${nextPhase.name || `Phase ${nextPhase.sequence_number}`}`;
+        const transition = `${currentPhase.name || `Phase ${currentPhase.sequence_number}`} → ${nextPhase.name || `Phase ${nextPhase.sequence_number}`}`;
         transitions.push(transition);
 
         const currentMetrics = phaseMap.get(currentPhase.id) || [];

@@ -78,7 +78,6 @@ export function QuestionnairesDataTable({
           <span className="max-w-[160px] truncate" title={row.original.name}>
             {row.original.name}
           </span>
-          <IconExternalLink className="h-3 w-3" />
         </Link>
       ),
     },
@@ -87,7 +86,7 @@ export function QuestionnairesDataTable({
       header: "Description",
       cell: ({ row }) => (
         <div
-          className="text-sm text-muted-foreground max-w-[160px] truncate"
+          className="text-sm max-w-[160px] truncate"
           title={row.original.description}
         >
           {row.original.description || "No Description"}

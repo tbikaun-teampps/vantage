@@ -6,6 +6,7 @@ export type ProgramWithRelations = Program & {
   objective_count: number;
   phases?: Database["public"]["Tables"]["program_phases"]["Row"][];
   objectives?: Database["public"]["Tables"]["program_objectives"]["Row"][];
+  measurements_count: number | null;
 };
 
 export type ProgramStatus = Database["public"]["Enums"]["program_statuses"];

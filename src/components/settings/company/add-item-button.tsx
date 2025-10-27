@@ -24,7 +24,6 @@ export function AddItemButton({
   parentType,
   newItemType,
   newItemName,
-  defaultValues = {},
   onSuccess,
   onError,
   size = "sm",
@@ -42,16 +41,9 @@ export function AddItemButton({
       const formData = new FormData();
 
       // Add default values
-      formData.append("name", defaultValues.name || `New ${newItemName}`);
-      formData.append("code", defaultValues.code || "");
-      formData.append("description", defaultValues.description || "");
-
-      // Add type-specific defaults
-      Object.entries(defaultValues).forEach(([key, value]) => {
-        if (!["name", "code", "description"].includes(key)) {
-          formData.append(key, value);
-        }
-      });
+      formData.append("name", `New ${newItemName}`);
+      formData.append("code", "");
+      formData.append("description", "");
 
       await createTreeNode({
         parentType: parentType,
