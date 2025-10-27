@@ -74,7 +74,6 @@ export function DesktopAssessmentsDataTable({
             className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
           >
             {row.original.name}
-            <IconExternalLink className="h-3 w-3" />
           </Link>
         </div>
       ),

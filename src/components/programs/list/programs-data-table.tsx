@@ -34,7 +34,7 @@ export function ProgramsDataTable({
         return (
           <Link
             to={routes.programDetail(program.id)}
-            className="font-medium hover:underline"
+            className="underline text-sm"
           >
             {program.name}
           </Link>
