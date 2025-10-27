@@ -732,7 +732,7 @@ export function OnsiteMap() {
         );
         setFilters(data.options);
         // Initialize with first questionnaire if available
-        if (data.options?.questionnaires?.length > 0) {
+        if (data?.options?.questionnaires && data.options.questionnaires.length > 0) {
           setSelectedQuestionnaireId(data.options.questionnaires[0].id.toString());
         }
       } catch (err) {
