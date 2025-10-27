@@ -1,7 +1,8 @@
 import { InlineFieldEditor } from "@/components/ui/inline-field-editor";
-import { InlineRatingScalesEditor } from "@/components/questionnaires/detail/questions/inline-rating-scales-editor";
-import { InlineRolesEditor } from "@/components/questionnaires/detail/questions/inline-roles-editor";
+import { InlineRatingScalesEditor } from "@/components/questionnaires/detail/questions/question-editor/inline-rating-scales-editor";
+import { InlineRolesEditor } from "@/components/questionnaires/detail/questions/question-editor/inline-roles-editor";
 import type { QuestionWithRatingScales } from "@/types/assessment";
+import { InlineQuestionPartsEditor } from "./inline-question-parts-editor";
 
 interface QuestionEditorProps {
   question: QuestionWithRatingScales;
@@ -104,6 +105,8 @@ export function QuestionEditor({
         }}
         required
       />
+
+      <InlineQuestionPartsEditor />
 
       <InlineRatingScalesEditor
         question={question}

@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { IconLibraryPlus, IconPencil, IconPlus } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { QuestionRatingScaleDialog } from "./question-rating-scale-dialog";
+import { QuestionRatingScaleDialog } from "@/components/questionnaires/detail/questions/question-editor/question-rating-scale-dialog";
 import type {
   QuestionWithRatingScales,
   QuestionRatingScaleWithDetails,

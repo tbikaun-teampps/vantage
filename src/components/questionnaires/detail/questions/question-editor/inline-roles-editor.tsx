@@ -5,10 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { IconPencil, IconCheck, IconX } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useQuestionActions } from "@/hooks/questionnaire/useQuestions";
-import {
-  useAllSharedRoles,
-} from "@/hooks/useSharedRoles";
-import MultiSelect from "./multi-select";
+import { useAllSharedRoles } from "@/hooks/useSharedRoles";
+import MultiSelect from "@/components/questionnaires/detail/questions/question-editor/multi-select";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 
 interface InlineRolesEditorProps {
