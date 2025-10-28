@@ -49,7 +49,7 @@ const getAnswerTypeLabel = (answer_type: AnswerType): string => {
   const labels: Record<AnswerType, string> = {
     boolean: "Boolean",
     scale: "Scale",
-    labeled_scale: "Labeled Scale",
+    labelled_scale: "Labelled Scale",
     percentage: "Percentage",
     number: "Number",
   };
@@ -62,7 +62,7 @@ const getAnswerTypeDetails = (part: QuestionPart): string => {
       return `${part.options.true_label || "Yes"} / ${part.options.false_label || "No"}`;
     case "scale":
       return `${part.options.min || 1}-${part.options.max || 5}${part.options.step ? ` (step: ${part.options.step})` : ""}`;
-    case "labeled_scale":
+    case "labelled_scale":
       return part.options.labels && part.options.labels.length > 0
         ? part.options.labels.filter((l) => l.trim()).join(", ")
         : "No labels defined";
@@ -177,7 +177,7 @@ export function InlineQuestionPartsEditor({
         false_label:
           formData.answer_type === "boolean" ? formData.false_label : undefined,
         labels:
-          formData.answer_type === "labeled_scale"
+          formData.answer_type === "labelled_scale"
             ? formData.labels.filter((l) => l.trim().length > 0)
             : undefined,
       },
@@ -286,7 +286,7 @@ export function InlineQuestionPartsEditor({
     Object.values(part.mapping).forEach((value) => {
       if (Array.isArray(value)) {
         if (typeof value[0] === "number") {
-          // Boolean or labeled_scale mapping
+          // Boolean or labelled_scale mapping
           (value as number[]).forEach((level) => mappedLevels.add(level));
         } else {
           // Range mapping
@@ -490,6 +490,7 @@ export function InlineQuestionPartsEditor({
       <QuestionPartsMatrixBuilder
         open={showMatrixBuilder}
         handleClose={() => setShowMatrixBuilder(false)}
+        questionId={questionId}
         questionParts={questionParts}
         ratingScaleLevels={ratingScales.map((rs) => ({
           level: rs.value,

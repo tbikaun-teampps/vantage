@@ -9,16 +9,11 @@ import {
   //   updateRatingScale,
   //   deleteRatingScale,
   getQuestionParts,
+  getQuestionRatingScaleMapping,
   reorderQuestionParts,
   updateQuestionPart,
   updateQuestionRatingScaleMapping,
 } from "@/lib/api/questionnaires";
-import type {
-  QuestionnaireRatingScale,
-  //   CreateQuestionnaireRatingScaleData,
-  //   UpdateQuestionnaireRatingScaleData,
-  //   QuestionnaireWithStructure,
-} from "@/types/assessment";
 
 // Query key factory for question parts
 export const questionPartsKeys = {
@@ -32,6 +27,18 @@ export function useQuestionParts(questionId: number, enabled = true) {
     queryKey: questionPartsKeys.byQuestionId(questionId),
     queryFn: (): Promise<any[]> => getQuestionParts(questionId),
     staleTime: 10 * 60 * 1000, // 10 minutes - question parts don't change often
+    enabled: enabled && !!questionId,
+  });
+}
+
+export function useQuestionRatingScaleMapping(
+  questionId: number,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: ["question", "ratingScaleMapping", questionId],
+    queryFn: () => getQuestionRatingScaleMapping(questionId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: enabled && !!questionId,
   });
 }
@@ -95,6 +102,13 @@ export function useQuestionPartsActions(questionId: number) {
       queryClient.invalidateQueries({
         queryKey: questionPartsKeys.byQuestionId(questionId),
       });
+    },
+  });
+
+  const getMappingMutation = useMutation({
+    mutationFn: () => getQuestionRatingScaleMapping(questionId),
+    onSuccess: (mapping) => {
+      console.log("Fetched rating scale mapping:", mapping);
     },
   });
 

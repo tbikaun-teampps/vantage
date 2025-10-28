@@ -24,6 +24,7 @@ import type {
   RangeMapping,
 } from "./question-parts-types";
 import { toast } from "sonner";
+import { useQuestionRatingScaleMapping } from "@/hooks/questionnaire/useQuestionParts";
 
 interface RatingScaleLevel {
   level: number;
@@ -33,6 +34,7 @@ interface RatingScaleLevel {
 interface QuestionPartsMatrixBuilderProps {
   open: boolean;
   handleClose: () => void;
+  questionId: number;
   questionParts: QuestionPart[];
   ratingScaleLevels: RatingScaleLevel[]; // e.g., [{level: 1, name: "Reactive"}, ...]
   onSave: (parts: QuestionPart[]) => void;
@@ -41,37 +43,33 @@ interface QuestionPartsMatrixBuilderProps {
 export function QuestionPartsMatrixBuilder({
   open,
   handleClose,
+  questionId,
   questionParts,
   ratingScaleLevels,
   onSave,
 }: QuestionPartsMatrixBuilderProps) {
   const [mappings, setMappings] = useState<Record<string, AnswerMapping>>({});
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   console.log("Mappings:", mappings);
 
+  const { data: mappingData, isLoading, isPending } = useQuestionRatingScaleMapping(
+    questionId,
+    open
+  );
+
   // Initialize mappings from existing question parts
   useEffect(() => {
-    if (open) {
-      const initialMappings: Record<string, AnswerMapping> = {};
-      questionParts.forEach((part) => {
-        const partIdStr = part.id.toString();
-        if (part.mapping) {
-          initialMappings[partIdStr] = part.mapping;
-        } else {
-          // Initialize empty mappings based on answer type
-          initialMappings[partIdStr] = getDefaultMapping(part);
-        }
-      });
-      setMappings(initialMappings);
+    if (mappingData) {
+      setMappings(mappingData);
     }
-  }, [open, questionParts]);
+  }, [mappingData]);
 
   const getDefaultMapping = (part: QuestionPart): AnswerMapping => {
     switch (part.answer_type) {
       case "boolean":
         return { true: [], false: [] };
-      case "labeled_scale": {
+      case "labelled_scale": {
         const labelMapping: AnswerMapping = {};
         (part.options.labels || []).forEach((label) => {
           labelMapping[label] = [];
@@ -174,7 +172,7 @@ export function QuestionPartsMatrixBuilder({
           );
           return false;
         }
-      } else if (part.answer_type === "labeled_scale") {
+      } else if (part.answer_type === "labelled_scale") {
         // Each label must be mapped to at least one level
         for (const label of part.options.labels || []) {
           if (!(mapping[label] as number[])?.length) {
@@ -226,24 +224,17 @@ export function QuestionPartsMatrixBuilder({
       }));
 
       onSave(updatedParts);
-      toast.success("Mappings saved successfully");
       handleClose();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to save mappings"
-      );
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleReset = () => {
-    const resetMappings: Record<string, AnswerMapping> = {};
-    questionParts.forEach((part) => {
-      resetMappings[part.id.toString()] = getDefaultMapping(part);
-    });
-    setMappings(resetMappings);
-    toast.info("Mappings reset");
+    if (mappingData) {
+      setMappings(mappingData);
+      toast.info("Mappings reset to saved state");
+    }
   };
 
   const renderCell = (part: QuestionPart, level: RatingScaleLevel) => {
@@ -282,7 +273,7 @@ export function QuestionPartsMatrixBuilder({
       );
     }
 
-    if (part.answer_type === "labeled_scale") {
+    if (part.answer_type === "labelled_scale") {
       const labels = part.options.labels || [];
       return (
         <div className="space-y-2">
@@ -415,7 +406,7 @@ export function QuestionPartsMatrixBuilder({
             type="button"
             variant="outline"
             onClick={handleReset}
-            disabled={isProcessing}
+            disabled={isPending}
           >
             Reset
           </Button>
@@ -424,12 +415,12 @@ export function QuestionPartsMatrixBuilder({
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isProcessing}
+              disabled={isPending}
             >
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isProcessing}>
-              {isProcessing ? "Saving..." : "Save Mappings"}
+            <Button onClick={handleSave} disabled={isPending}>
+              {isPending ? "Saving..." : "Save Mappings"}
             </Button>
           </div>
         </DialogFooter>

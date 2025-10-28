@@ -868,6 +868,22 @@ export async function reorderQuestionParts(
   }
 }
 
+export async function getQuestionRatingScaleMapping(
+  questionId: number
+): Promise<Record<string, unknown>> {
+  const response = await apiClient.get<ApiResponse<Record<string, unknown>>>(
+    `/questionnaires/questions/${questionId}/rating-scale-mapping`
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to fetch question rating scale mapping"
+    );
+  }
+
+  return response.data.data;
+}
+
 export async function updateQuestionRatingScaleMapping(
   questionId: number,
   ratingScaleMapping: Record<string, unknown>

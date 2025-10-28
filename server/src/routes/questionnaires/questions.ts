@@ -4,6 +4,8 @@ import { QuestionnaireService } from "../../services/QuestionnaireService.js";
 import {
   CreateQuestionnaireQuestionData,
   UpdateQuestionnaireQuestionData,
+  CreateQuestionPartData,
+  UpdateQuestionPartData,
 } from "../../types/entities/questionnaires.js";
 import {
   InternalServerError,
@@ -775,23 +777,18 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         request.user.id
       );
 
-      const data = request.body as {
-        text: string;
-        order_index: number;
-        options: object;
-        answer_type:
-          | "text"
-          | "labelled_scale"
-          | "scale"
-          | "boolean"
-          | "percentage"
-          | "number";
-      };
-
-      data.questionnaire_question_id = questionId;
+      const body = request.body as Omit<
+        CreateQuestionPartData,
+        "questionnaire_question_id"
+      >;
 
       // Validate options
-      validateQuestionPartOptions(data.answer_type, data.options);
+      validateQuestionPartOptions(body.answer_type, body.options);
+
+      const data: CreateQuestionPartData = {
+        ...body,
+        questionnaire_question_id: questionId,
+      };
 
       const part = await questionnaireService.createQuestionPart(data);
 
@@ -842,56 +839,22 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         request.user.id
       );
 
-      const data = request.body as {
-        text: string;
-        order_index: number;
-        options: object;
-        answer_type:
-          | "text"
-          | "labelled_scale"
-          | "scale"
-          | "boolean"
-          | "percentage"
-          | "number";
-      };
+      const updates = request.body as UpdateQuestionPartData;
 
-      // Validate options
-      if (data.answer_type && data.options) {
-        validateQuestionPartOptions(data.answer_type, data.options);
+      // Validate options if provided
+      if (updates.answer_type && updates.options) {
+        validateQuestionPartOptions(updates.answer_type, updates.options);
       }
 
-      const part = await questionnaireService.updateQuestionPart(partId, data);
+      const part = await questionnaireService.updateQuestionPart(
+        partId,
+        updates
+      );
 
       return {
         success: true,
         data: part,
       };
-    }
-  );
-
-  fastify.put(
-    "/questions/:questionId/parts/:partId/mapping",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            questionId: { type: "string" },
-            partId: { type: "string" },
-          },
-          required: ["questionId", "partId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            mapped_to: { type: "string" },
-          },
-          required: ["mapped_to"],
-        },
-      },
-    },
-    async (request) => {
-      // Implementation for updating question part mapping can be added here
     }
   );
 
@@ -1002,6 +965,27 @@ export async function questionsRoutes(fastify: FastifyInstance) {
       return {
         success: true,
         data: newPart,
+      };
+    }
+  );
+
+  fastify.get(
+    "/questions/:questionId/rating-scale-mapping",
+    async (request) => {
+      const { questionId } = request.params as { questionId: string };
+
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+
+      const mapping = await questionnaireService.getQuestionRatingScaleMapping(
+        parseInt(questionId)
+      );
+
+      return {
+        success: true,
+        data: mapping,
       };
     }
   );

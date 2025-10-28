@@ -5,6 +5,9 @@ import {
   CreateQuestionnaireQuestionData,
   CreateQuestionnaireSectionData,
   CreateQuestionnaireStepBody,
+  CreateQuestionPartData,
+  UpdateQuestionPartData,
+  QuestionPart,
   QuestionApplicableRole,
   Questionnaire,
   QuestionnaireQuestion,
@@ -1838,7 +1841,7 @@ export class QuestionnaireService {
   }
 
   // Question part operations
-  async getQuestionParts(questionId: number): Promise<any> {
+  async getQuestionParts(questionId: number): Promise<QuestionPart[]> {
     const { data, error } = await this.supabase
       .from("questionnaire_question_parts")
       .select("*")
@@ -1848,7 +1851,8 @@ export class QuestionnaireService {
     if (error) throw error;
     return data;
   }
-  async createQuestionPart(data): Promise<any> {
+
+  async createQuestionPart(data: CreateQuestionPartData): Promise<QuestionPart> {
     // validate question exists and get the company_id associated with it
     const { data: question, error: questionError } = await this.supabase
       .from("questionnaire_questions")
@@ -1860,12 +1864,19 @@ export class QuestionnaireService {
     if (questionError) throw questionError;
     if (!question) throw new NotFoundError("Question not found");
 
-    // insert question part
-    data.company_id = question.company_id;
+    // Check if questionnaire is in use
+    await this.checkQuestionnaireInUse(question.questionnaire_id);
+
+    // Create new object with all required fields (don't mutate input)
+    const partData = {
+      ...data,
+      company_id: question.company_id,
+      created_by: this.userId,
+    };
 
     const { data: insertedData, error } = await this.supabase
       .from("questionnaire_question_parts")
-      .insert([data])
+      .insert([partData])
       .select()
       .single();
 
@@ -1873,16 +1884,31 @@ export class QuestionnaireService {
     return insertedData;
   }
 
-  async updateQuestionPart(partId: number, updates: any): Promise<any> {
-    const { data: existingData, error: fetchError } = await this.supabase
+  async updateQuestionPart(partId: number, updates: UpdateQuestionPartData): Promise<QuestionPart> {
+    // Fetch part to get questionnaire_id for validation
+    const { data: existingPart, error: fetchError } = await this.supabase
       .from("questionnaire_question_parts")
-      .select("id")
+      .select("id, questionnaire_question_id")
       .eq("id", partId)
       .eq("is_deleted", false)
       .single();
 
     if (fetchError) throw fetchError;
-    if (!existingData) throw new NotFoundError("Question part not found");
+    if (!existingPart) throw new NotFoundError("Question part not found");
+
+    // Get question to validate questionnaire isn't in use
+    const { data: question, error: questionError } = await this.supabase
+      .from("questionnaire_questions")
+      .select("questionnaire_id")
+      .eq("id", existingPart.questionnaire_question_id)
+      .eq("is_deleted", false)
+      .single();
+
+    if (questionError) throw questionError;
+    if (!question) throw new NotFoundError("Question not found");
+
+    // Check if questionnaire is in use
+    await this.checkQuestionnaireInUse(question.questionnaire_id);
 
     const { data, error } = await this.supabase
       .from("questionnaire_question_parts")
@@ -1918,7 +1944,7 @@ export class QuestionnaireService {
     return true;
   }
 
-  async duplicateQuestionPart(partId: number): Promise<any> {
+  async duplicateQuestionPart(partId: number): Promise<QuestionPart> {
     // First, get the original question part with all its data
     const { data: originalPart, error: partError } = await this.supabase
       .from("questionnaire_question_parts")
@@ -1987,6 +2013,22 @@ export class QuestionnaireService {
 
       if (error) throw error;
     }
+  }
+
+  async getQuestionRatingScaleMapping(
+    questionId: number
+  ): Promise<Json | null> {
+    const { data: question, error } = await this.supabase
+      .from("questionnaire_questions")
+      .select("rating_scale_mapping")
+      .eq("id", questionId)
+      .eq("is_deleted", false)
+      .single();
+
+    if (error) throw error;
+    if (!question) throw new NotFoundError("Question not found");
+
+    return question.rating_scale_mapping;
   }
 
   async updateQuestionRatingScaleMapping(

@@ -5,7 +5,7 @@ export type AnswerType =
   | "scale"
   | "percentage"
   | "number"
-  | "labeled_scale";
+  | "labelled_scale";
 
 export interface QuestionPartOptions {
   // For scale/number types
@@ -18,7 +18,7 @@ export interface QuestionPartOptions {
   true_label?: string;
   false_label?: string;
 
-  // For labeled_scale type
+  // For labelled_scale type
   labels?: string[];
 }
 
@@ -31,7 +31,7 @@ export interface RangeMapping {
 
 export interface AnswerMapping {
   // For boolean: { "true": [1,2], "false": [3,4,5] }
-  // For labeled_scale: { "Basic": [1,2], "Detailed": [3,4,5] }
+  // For labelled_scale: { "Basic": [1,2], "Detailed": [3,4,5] }
   // For scale/number/percentage: { "ranges": [{min:0, max:25, levels:[1]}, ...] }
   [key: string]: number[] | RangeMapping[];
 }
@@ -56,6 +56,6 @@ export interface QuestionPartFormData {
   // Options for boolean
   true_label: string;
   false_label: string;
-  // Options for labeled_scale
+  // Options for labelled_scale
   labels: string[];
 }

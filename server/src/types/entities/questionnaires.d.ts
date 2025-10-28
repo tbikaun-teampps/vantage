@@ -224,3 +224,27 @@ export interface QuestionApplicableRole extends QuestionRole {
   name: string;
   description: string | null;
 }
+
+// ===== Questionnaire Question Parts =====
+
+export type CreateQuestionPartData = Pick<
+  Database["public"]["Tables"]["questionnaire_question_parts"]["Insert"],
+  | "questionnaire_question_id"
+  | "text"
+  | "answer_type"
+  | "options"
+  | "order_index"
+>;
+
+export type UpdateQuestionPartData = Partial<
+  Pick<
+    Database["public"]["Tables"]["questionnaire_question_parts"]["Update"],
+    | "text"
+    | "answer_type"
+    | "options"
+    | "order_index"
+  >
+>;
+
+export type QuestionPart =
+  Database["public"]["Tables"]["questionnaire_question_parts"]["Row"];

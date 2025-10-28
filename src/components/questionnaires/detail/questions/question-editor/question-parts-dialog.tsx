@@ -58,7 +58,7 @@ export function QuestionPartsDialog({
       if (isNaN(min) || isNaN(max) || min >= max) return false;
     }
 
-    if (data.answer_type === "labeled_scale") {
+    if (data.answer_type === "labelled_scale") {
       // Require at least 2 labels with non-empty text
       const validLabels = data.labels.filter(
         (label) => label.trim().length > 0
@@ -122,8 +122,8 @@ export function QuestionPartsDialog({
               <SelectContent>
                 <SelectItem value="boolean">Boolean (Yes/No)</SelectItem>
                 <SelectItem value="scale">Scale (e.g., 1-5)</SelectItem>
-                <SelectItem value="labeled_scale">
-                  Labeled Scale (custom options)
+                <SelectItem value="labelled_scale">
+                  Labelled Scale (custom options)
                 </SelectItem>
                 <SelectItem value="percentage">Percentage (0-100%)</SelectItem>
                 <SelectItem value="number">Number</SelectItem>
@@ -164,7 +164,7 @@ export function QuestionPartsDialog({
             </div>
           )}
 
-          {data.answer_type === "labeled_scale" && (
+          {data.answer_type === "labelled_scale" && (
             <div className="space-y-2">
               <Label htmlFor="labels" className="required">
                 Scale Labels
