@@ -28,6 +28,12 @@ import {
   UpdateQuestionnaireSectionData,
   UpdateQuestionnaireStepData,
 } from "../types/entities/questionnaires.js";
+import type { WeightedScoringConfig } from "../types/entities/weighted-scoring.js";
+import {
+  validateWeightedScoringConfig,
+  formatValidationErrors,
+} from "../validation/weighted-scoring-schema.js";
+import { ZodError } from "zod";
 import { SubscriptionTier } from "../types/entities/profiles.js";
 import {
   BadRequestError,
@@ -2017,7 +2023,7 @@ export class QuestionnaireService {
 
   async getQuestionRatingScaleMapping(
     questionId: number
-  ): Promise<Json | null> {
+  ): Promise<WeightedScoringConfig | null> {
     const { data: question, error } = await this.supabase
       .from("questionnaire_questions")
       .select("rating_scale_mapping")
@@ -2028,13 +2034,44 @@ export class QuestionnaireService {
     if (error) throw error;
     if (!question) throw new NotFoundError("Question not found");
 
-    return question.rating_scale_mapping;
+    // Return null if no mapping exists
+    if (!question.rating_scale_mapping) {
+      return null;
+    }
+
+    // Validate and return the mapping as WeightedScoringConfig
+    try {
+      return validateWeightedScoringConfig(question.rating_scale_mapping);
+    } catch (err) {
+      if (err instanceof ZodError) {
+        // If stored data is invalid, log error but return null to allow fixing
+        console.error(
+          `Invalid rating_scale_mapping for question ${questionId}:`,
+          formatValidationErrors(err)
+        );
+        return null;
+      }
+      throw err;
+    }
   }
 
   async updateQuestionRatingScaleMapping(
     questionId: number,
-    mapping: Json
+    mapping: WeightedScoringConfig
   ): Promise<unknown> {
+    // Validate the mapping structure before saving
+    try {
+      validateWeightedScoringConfig(mapping);
+    } catch (err) {
+      if (err instanceof ZodError) {
+        const errors = formatValidationErrors(err);
+        throw new BadRequestError(
+          `Invalid weighted scoring configuration: ${errors.join(", ")}`
+        );
+      }
+      throw err;
+    }
+
     // Fetch the question to validate it exists and get questionnaire_id
     const { data: question, error: questionError } = await this.supabase
       .from("questionnaire_questions")
@@ -2053,7 +2090,7 @@ export class QuestionnaireService {
     const { data: updatedQuestion, error: updateError } = await this.supabase
       .from("questionnaire_questions")
       .update({
-        rating_scale_mapping: mapping,
+        rating_scale_mapping: mapping as unknown as Json,
         updated_at: new Date().toISOString(),
       })
       .eq("id", questionId)

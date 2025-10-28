@@ -14,7 +14,7 @@ import {
   IconAlertCircle,
 } from "@tabler/icons-react";
 import { QuestionPartsDialog } from "./question-parts-dialog";
-import { QuestionPartsMatrixBuilder } from "./question-parts-matrix-builder";
+import { QuestionPartsWeightedScoringBuilder } from "./question-parts-weighted-scoring-builder";
 import type {
   QuestionPart,
   QuestionPartFormData,
@@ -25,6 +25,7 @@ import {
   useQuestionPartsActions,
 } from "@/hooks/questionnaire/useQuestionParts";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { WeightedScoringConfig } from "./question-parts-weighted-scoring-types";
 
 interface InlineQuestionPartsEditorProps {
   questionId: number;
@@ -262,19 +263,9 @@ export function InlineQuestionPartsEditor({
     setFormData(getDefaultFormData());
   };
 
-  const handleSaveMappings = async (updatedParts: QuestionPart[]) => {
-    // Convert the parts array with mappings into a single mapping object
-    // Structure: { [partId]: mapping }
-    const ratingScaleMapping: Record<string, unknown> = {};
-
-    updatedParts.forEach((part) => {
-      if (part.mapping) {
-        ratingScaleMapping[part.id.toString()] = part.mapping;
-      }
-    });
-
-    // Update the question's rating_scale_mapping field
-    await updateQuestionRatingScaleMapping(ratingScaleMapping);
+  const handleSaveMappings = async (config: WeightedScoringConfig) => {
+    // Update the question's rating_scale_mapping field with weighted config
+    await updateQuestionRatingScaleMapping(config);
   };
 
   const getMappingSummary = (part: QuestionPart): string | null => {
@@ -325,7 +316,7 @@ export function InlineQuestionPartsEditor({
     <>
       <div className="flex flex-col w-full gap-2">
         <div className="grid w-full gap-2">
-          <Label htmlFor="question-parts">Question Parts</Label>
+          <Label htmlFor="question-parts">Question Elements</Label>
 
           {errors.length > 0 && (
             <Alert variant="destructive">
@@ -487,7 +478,7 @@ export function InlineQuestionPartsEditor({
         handleDelete={handleDelete}
       />
 
-      <QuestionPartsMatrixBuilder
+      <QuestionPartsWeightedScoringBuilder
         open={showMatrixBuilder}
         handleClose={() => setShowMatrixBuilder(false)}
         questionId={questionId}

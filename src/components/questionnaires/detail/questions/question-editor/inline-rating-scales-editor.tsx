@@ -164,7 +164,7 @@ export function InlineRatingScalesEditor({
         <div id="rating-scales" className="space-y-2">
           {question.question_rating_scales &&
           question.question_rating_scales.length > 0 ? (
-            question.question_rating_scales.map((qrs) => (
+            question.question_rating_scales.sort((a,b) => a.value - b.value).map((qrs) => (
               <div
                 key={qrs.id}
                 className="text-sm bg-muted/50 rounded-md p-2 border border-border"

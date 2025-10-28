@@ -1,6 +1,7 @@
 import { apiClient } from "./client";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
+import type { WeightedScoringConfig } from "@/components/questionnaires/detail/questions/question-editor/question-parts-weighted-scoring-types";
 import type {
   QuestionnaireWithCounts,
   QuestionnaireWithStructure,
@@ -870,8 +871,8 @@ export async function reorderQuestionParts(
 
 export async function getQuestionRatingScaleMapping(
   questionId: number
-): Promise<Record<string, unknown>> {
-  const response = await apiClient.get<ApiResponse<Record<string, unknown>>>(
+): Promise<WeightedScoringConfig | null> {
+  const response = await apiClient.get<ApiResponse<WeightedScoringConfig | null>>(
     `/questionnaires/questions/${questionId}/rating-scale-mapping`
   );
 
@@ -886,12 +887,12 @@ export async function getQuestionRatingScaleMapping(
 
 export async function updateQuestionRatingScaleMapping(
   questionId: number,
-  ratingScaleMapping: Record<string, unknown>
+  config: WeightedScoringConfig
 ): Promise<unknown> {
   try {
     const response = await apiClient.put<ApiResponse<unknown>>(
       `/questionnaires/questions/${questionId}/rating-scale-mapping`,
-      { rating_scale_mapping: ratingScaleMapping }
+      { rating_scale_mapping: config }
     );
 
     if (!response.data.success) {

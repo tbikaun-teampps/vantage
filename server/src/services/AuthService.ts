@@ -175,9 +175,12 @@ export class AuthService {
     // Fetch user's companies with roles
     const { data: userCompanies, error: companiesError } = await this.supabase
       .from("user_companies")
-      .select("company_id, role")
+      .select("company_id, role, companies!inner()")
       .eq("user_id", authData.user.id)
-      .neq("role", "interviewee");
+      .neq("role", "interviewee")
+      .eq("companies.is_deleted", false);
+
+    console.log("User companies data:", userCompanies);
 
     if (companiesError) {
       console.error("Failed to fetch user companies:", companiesError);
@@ -190,7 +193,10 @@ export class AuthService {
     }));
 
     // Validate session has expires_at
-    if (authData.session.expires_at === undefined || authData.session.expires_at === null) {
+    if (
+      authData.session.expires_at === undefined ||
+      authData.session.expires_at === null
+    ) {
       console.error("Session missing expires_at timestamp");
       return {
         success: false,
@@ -282,8 +288,14 @@ export class AuthService {
       }
 
       // Supabase always provides expires_at, but we validate it exists
-      if (data.session.expires_at === undefined || data.session.expires_at === null || typeof data.session.expires_at !== 'number') {
-        console.error("Token refresh succeeded but expires_at is missing or invalid");
+      if (
+        data.session.expires_at === undefined ||
+        data.session.expires_at === null ||
+        typeof data.session.expires_at !== "number"
+      ) {
+        console.error(
+          "Token refresh succeeded but expires_at is missing or invalid"
+        );
         return {
           success: false,
           error: "Token Refresh Failed",

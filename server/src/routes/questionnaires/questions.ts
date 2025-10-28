@@ -7,6 +7,7 @@ import {
   CreateQuestionPartData,
   UpdateQuestionPartData,
 } from "../../types/entities/questionnaires.js";
+import type { WeightedScoringConfig } from "../../types/entities/weighted-scoring.js";
 import {
   InternalServerError,
   NotFoundError,
@@ -1027,7 +1028,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
     async (request) => {
       const { questionId } = request.params as { questionId: string };
       const { rating_scale_mapping } = request.body as {
-        rating_scale_mapping: object;
+        rating_scale_mapping: WeightedScoringConfig;
       };
 
       const questionnaireService = new QuestionnaireService(
@@ -1038,7 +1039,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
       const updatedQuestion =
         await questionnaireService.updateQuestionRatingScaleMapping(
           parseInt(questionId),
-          rating_scale_mapping as any
+          rating_scale_mapping
         );
 
       return {

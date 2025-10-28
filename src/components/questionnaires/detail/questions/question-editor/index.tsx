@@ -83,7 +83,7 @@ export function QuestionEditor({
         }}
       />
 
-      <InlineFieldEditor
+      {/* <InlineFieldEditor
         label="Question Text"
         value={question.question_text}
         placeholder="Enter the full question text"
@@ -104,7 +104,7 @@ export function QuestionEditor({
           });
         }}
         required
-      />
+      /> */}
 
       <InlineQuestionPartsEditor
         questionId={question.id}
