@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/database";
 import { EvidenceService } from "./EvidenceService";
+import { InterviewsService } from "./InterviewsService";
 import {
   Assessment,
   AssessmentAction,
@@ -15,11 +16,6 @@ import {
   UpdateAssessmentData,
 } from "../types/entities/assessments";
 import { InterviewEvidence } from "../types/entities/interviews";
-import {
-  calculateAverageScore,
-  calculateCompletionRate,
-  calculateRatingValueRange,
-} from "./utils";
 
 export class AssessmentsService {
   private supabase: SupabaseClient<Database>;
@@ -243,7 +239,7 @@ export class AssessmentsService {
       );
 
       // Remove the original questionnaire_sections to avoid redundancy
-      const { questionnaire_sections, ...restQuestionnaire } = questionnaire;
+      const { questionnaire_sections: _questionnaire_sections, ...restQuestionnaire } = questionnaire;
 
       const transformedQuestionnaire: TransformedQuestionnaire = {
         ...restQuestionnaire,
@@ -389,110 +385,39 @@ export class AssessmentsService {
   }
 
   // Get all interviews for an assessment with calculated fields
+  // Delegates to InterviewsService.getInterviews for consistency and code reuse
   async getInterviewsByAssessmentId(
     assessmentId: number
   ): Promise<AssessmentInterview[]> {
     try {
-      const { data: interviews, error } = await this.supabase
-        .from("interviews")
-        .select(
-          `
-            *,
-            assessment:assessments!inner(
-              id, 
-              name, 
-              company_id,
-              type,
-              questionnaire:questionnaires(
-                id,
-                questionnaire_rating_scales(
-                  id,
-                  value,
-                  order_index
-                )
-              )
-            ),
-            interviewer:profiles!interviewer_id(full_name, email),
-            interviewee:profiles!interviewee_id(full_name, email),
-            interview_contact:contacts(
-              id,
-              full_name,
-              email,
-              title,
-              phone
-            ),
-            assigned_role:roles(id, shared_role:shared_roles(id, name)),
-            interview_roles(
-              role:roles(
-                id,
-                shared_role:shared_roles(id, name),
-                work_group:work_groups(
-                  id,
-                  name
-                )
-              )
-            ),
-            interview_responses(
-              *,
-              interview_response_roles(
-                role:roles(*)
-              )
-            )
-          `
-        )
+      // First, fetch the assessment to get company_id
+      const { data: assessment, error: assessmentError } = await this.supabase
+        .from("assessments")
+        .select("company_id")
+        .eq("id", assessmentId)
         .eq("is_deleted", false)
-        .eq("assessment_id", assessmentId);
+        .single();
 
-      if (error) throw error;
-      if (!interviews || interviews.length === 0) return [];
+      if (assessmentError) throw assessmentError;
+      if (!assessment) return [];
 
-      // Transform interviews data
-      const data =
-        interviews.map((interview) => {
-          const ratingRange = calculateRatingValueRange(
-            interview.assessment?.questionnaire
-          );
+      // Create InterviewsService instance and delegate to getInterviews
+      // Using detailed=false to fetch minimal data (no nested response details)
+      const interviewsService = new InterviewsService(
+        this.supabase,
+        this.userId
+      );
 
-          return {
-            ...interview,
-            assessment: {
-              id: interview.assessment?.id,
-              name: interview.assessment?.name,
-              type: interview.assessment?.type,
-              company_id: interview.assessment?.company_id,
-            },
-            completion_rate: calculateCompletionRate(
-              interview.interview_responses || []
-            ),
-            average_score: calculateAverageScore(
-              interview.interview_responses || []
-            ),
-            min_rating_value: ratingRange.min,
-            max_rating_value: ratingRange.max,
-            interviewee: interview.interviewee?.email
-              ? {
-                  full_name: interview.interviewee.full_name,
-                  email: interview.interviewee.email,
-                  role:
-                    interview.interview_roles &&
-                    interview.interview_roles.length > 0
-                      ? interview.interview_roles
-                          .map((ir) => ir.role?.shared_role?.name)
-                          .filter(Boolean)
-                          .join(", ")
-                      : (interview.assigned_role?.shared_role?.name ?? ""),
-                }
-              : null,
-            interviewer: interview.interviewer?.email
-              ? {
-                  full_name: interview.interviewer.full_name,
-                  email: interview.interviewer.email,
-                }
-              : null,
-          };
-        }) || [];
+      const interviews = await interviewsService.getInterviews(
+        assessment.company_id,
+        assessmentId,
+        undefined, // status filter
+        undefined, // programPhaseId filter
+        undefined, // questionnaireId filter
+        false // detailed - do not fetch detailed response data
+      );
 
-      return data;
+      return interviews;
     } catch (error) {
       console.error("Error in getInterviewsByAssessmentId:", error);
       return [];

@@ -5,6 +5,7 @@ import type {
   Assessment,
   AssessmentFilters,
   DesktopAssessment,
+  InterviewWithDetails,
 } from "@/types/assessment";
 import type { UpdateInput } from "@/types";
 
@@ -92,8 +93,10 @@ export async function getActionsByAssessmentId(id: number): Promise<any[]> {
   return response.data.data;
 }
 
-export async function getInterviewsByAssessmentId(id: number): Promise<any[]> {
-  const response = await apiClient.get<ApiResponse<any[]>>(
+export async function getInterviewsByAssessmentId(
+  id: number
+): Promise<InterviewWithDetails[]> {
+  const response = await apiClient.get<ApiResponse<InterviewWithDetails[]>>(
     `/assessments/${id}/interviews`
   );
 
