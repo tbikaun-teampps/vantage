@@ -317,6 +317,12 @@ export function InlineQuestionPartsEditor({
       <div className="flex flex-col w-full gap-2">
         <div className="grid w-full gap-2">
           <Label htmlFor="question-parts">Question Elements</Label>
+          <span className="text-xs text-muted-foreground">
+            Define the individual parts that make up this question. Each part
+            can have its own answer type and is mappable to the questions rating
+            scale. This makes it easier to interviewees to answer questions, without
+            overwhelming them with a single large rating scale.
+          </span>
 
           {errors.length > 0 && (
             <Alert variant="destructive">

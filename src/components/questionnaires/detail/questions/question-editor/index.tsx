@@ -59,6 +59,7 @@ export function QuestionEditor({
             });
           }}
           required
+          helperText="Provide a concise title for the question to summarise its purpose."
         />
 
         <InlineFieldEditor
@@ -82,6 +83,7 @@ export function QuestionEditor({
             });
           }}
           required
+          helperText="Provide context or instructions to help auditors and interviewees understand the question(s)."
         />
 
         {/* <InlineFieldEditor
@@ -122,11 +124,13 @@ export function QuestionEditor({
           questionnaireId={questionnaire.id}
         />
 
-        <InlineRolesEditor
-          questionId={question.id}
-          questionRoles={question.question_roles}
-          disabled={isProcessing}
-        />
+        {question.question_roles && (
+          <InlineRolesEditor
+            questionId={question.id}
+            questionRoles={question.question_roles}
+            disabled={isProcessing}
+          />
+        )}
       </div>
     </>
   );

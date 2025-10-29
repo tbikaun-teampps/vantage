@@ -18,6 +18,7 @@ interface InlineFieldEditorProps {
   maxLength?: number;
   minRows?: number;
   required?: boolean;
+  helperText?: string;
 }
 
 export function InlineFieldEditor({
@@ -31,6 +32,7 @@ export function InlineFieldEditor({
   maxLength,
   minRows = 3,
   required = false,
+  helperText,
 }: InlineFieldEditorProps) {
   const userCanAdmin = useCanAdmin();
 
@@ -114,6 +116,9 @@ export function InlineFieldEditor({
             {label}
             {required && <span className="text-red-500">*</span>}
           </Label>
+          {helperText && (
+            <span className="text-xs text-muted-foreground">{helperText}</span>
+          )}
           {type === "textarea" ? (
             <Textarea
               id={label.toLowerCase().replace(/\s+/g, "-")}
@@ -156,6 +161,9 @@ export function InlineFieldEditor({
         <Label htmlFor={label.toLowerCase().replace(/\s+/g, "-")}>
           {label}
         </Label>
+        {helperText && (
+          <span className="text-xs text-muted-foreground">{helperText}</span>
+        )}
         {type === "textarea" ? (
           <Textarea
             id={label.toLowerCase().replace(/\s+/g, "-")}
