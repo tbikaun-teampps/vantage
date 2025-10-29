@@ -289,7 +289,7 @@ export function Questions() {
 
   return (
     <>
-      <div className="space-y-6 h-full flex flex-col max-w-[1600px] mx-auto">
+      <div className="space-y-6 h-full flex flex-col max-w-[2000px] mx-auto">
         <ResizablePanelGroup
           className="flex h-full min-h-0 flex-1"
           direction="horizontal"
@@ -360,18 +360,6 @@ export function Questions() {
               <div className="space-y-1">
                 {sections.map((section, sectionIndex) => (
                   <div key={section.id} className="select-none">
-                    {/* {onAddSection && userCanAdmin && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onAddSection}
-                      disabled={isProcessing}
-                      className="w-full border-dashed h-8"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add Section
-                    </Button>
-                  )} */}
                     {/* Section */}
                     <div
                       className={`flex items-center py-2.5 px-3 hover:bg-accent/50 rounded-lg cursor-pointer transition-all duration-200 ${
@@ -780,7 +768,9 @@ export function Questions() {
                       questionnaire={questionnaire}
                       isProcessing={isProcessing}
                       updateQuestion={updateQuestion}
-                      questionDisplayNumber={getQuestionDisplayNumber(question.id)}
+                      questionDisplayNumber={getQuestionDisplayNumber(
+                        question.id
+                      )}
                     />
                   ))}
                 </div>
