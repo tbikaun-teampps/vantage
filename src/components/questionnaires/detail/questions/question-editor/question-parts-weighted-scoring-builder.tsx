@@ -631,7 +631,7 @@ export function QuestionPartsWeightedScoringBuilder({
       return (
         <div className="space-y-3">
           {/* Range inputs */}
-          <div className="space-y-3 grid grid-cols-3 gap-2 ">
+          <div className="grid grid-cols-3 gap-2 ">
             {ranges.map((range, i) => {
               return (
                 <div
