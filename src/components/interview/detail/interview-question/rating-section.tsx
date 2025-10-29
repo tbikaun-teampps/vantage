@@ -31,7 +31,7 @@ export function InterviewRatingSection({
   const hasAnswer = hasRating || isUnknown;
 
   return (
-    <div className="space-y-4" data-tour="interview-rating">
+    <div className="space-y-4 px-6" data-tour="interview-rating">
       {!isMobile && (
         <div className="space-y-1">
           <div className="flex items-center space-x-2">

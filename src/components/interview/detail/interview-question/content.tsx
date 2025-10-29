@@ -18,21 +18,17 @@ export function InterviewQuestionContent({
   // For individual interviews, show centered content box
   if (isIndividualInterview) {
     return (
-      <div className="space-y-4" data-tour="interview-question">
-        <div className="flex justify-center">
-          <div className="w-full">
-            <div className="rounded-xl p-8 bg-muted">
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <h1 className="text-xl font-bold">Context</h1>
-                  <h2 className="text-lg font-bold text-foreground leading-relaxed whitespace-pre-line">
-                    {question.context}
-                  </h2>
-                  <p className="text-muted-foreground">
-                    Please answer the question elements below
-                  </p>
-                </div>
-              </div>
+      <div className="flex justify-center px-6" data-tour="interview-question">
+        <div className="w-full">
+          <div className="rounded-xl p-8 bg-muted">
+            <div className="space-y-4">
+              <h1 className="text-xl font-bold">Context</h1>
+              <h2 className="text-lg font-bold text-foreground leading-relaxed whitespace-pre-line">
+                {question.context}
+              </h2>
+              <p className="text-muted-foreground">
+                Please answer the question elements below
+              </p>
             </div>
           </div>
         </div>
@@ -50,7 +46,7 @@ export function InterviewQuestionContent({
     "";
 
   return (
-    <div className="space-y-4" data-tour="interview-question">
+    <div className="space-y-4 px-6" data-tour="interview-question">
       {question.context ? (
         // Traditional layout when context exists
         <div className="flex flex-col">

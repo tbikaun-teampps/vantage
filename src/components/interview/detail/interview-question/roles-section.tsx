@@ -28,7 +28,7 @@ export function InterviewRolesSection({
   const optionsFlat = Object.values(options).flat();
 
   return (
-    <div className="space-y-4" data-tour="interview-role-selection">
+    <div className="space-y-4 px-6" data-tour="interview-role-selection">
       <div className="space-y-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
