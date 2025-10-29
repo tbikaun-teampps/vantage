@@ -2128,7 +2128,7 @@ export type Database = {
       questionnaire_questions: {
         Row: {
           company_id: string;
-          context: string | null;
+          context: string;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -2144,7 +2144,7 @@ export type Database = {
         };
         Insert: {
           company_id: string;
-          context?: string | null;
+          context?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -2160,7 +2160,7 @@ export type Database = {
         };
         Update: {
           company_id?: string;
-          context?: string | null;
+          context?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;

@@ -1345,31 +1345,7 @@ export class InterviewsService {
       {} as Record<string, typeof selectableRoles>
     );
 
-    const responseQuery = interview.is_individual
-      ? "id, question_part_responses:interview_question_part_responses(id,answer_value,question_part_id)"
-      : `
-        id,
-        rating_score,
-        is_unknown,
-        response_roles:interview_response_roles(
-          id,
-          role:roles(
-            id
-          )
-        )
-      `;
-
-    // Get the response associated with the question (if any)
-    const { data: responseData, error: responseError } = await this.supabase
-      .from("interview_responses")
-      .select(responseQuery)
-      .eq("interview_id", interviewId)
-      .eq("questionnaire_question_id", questionId)
-      .maybeSingle();
-
-    if (responseError) throw responseError;
-
-    let baseResponse = {
+    const baseResponse = {
       id: questionId,
       title: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index}. ${interviewQuestion.title}`,
       question_text: interviewQuestion.question_text,
@@ -1382,6 +1358,19 @@ export class InterviewsService {
     };
 
     if (interview.is_individual) {
+      // Get the response associated with the question (if any)
+      const { data: individualResponseData, error: individualResponseError } =
+        await this.supabase
+          .from("interview_responses")
+          .select(
+            "id, rating_score,is_unknown,question_part_responses:interview_question_part_responses(id,answer_value,question_part_id)"
+          )
+          .eq("interview_id", interviewId)
+          .eq("questionnaire_question_id", questionId)
+          .maybeSingle();
+
+      if (individualResponseError) throw individualResponseError;
+
       // Get question parts
       const { data: questionParts, error: questionPartsError } =
         await this.supabase
@@ -1396,9 +1385,20 @@ export class InterviewsService {
       return {
         ...baseResponse,
         question_parts: questionParts,
-        response: responseData,
+        response: individualResponseData,
       };
     } else {
+      // Get the response associated with the question (if any)
+      const { data: responseData, error: responseError } = await this.supabase
+        .from("interview_responses")
+        .select(
+          "id,rating_score,is_unknown,response_roles:interview_response_roles(id,role:roles(id))"
+        )
+        .eq("interview_id", interviewId)
+        .eq("questionnaire_question_id", questionId)
+        .maybeSingle();
+
+      if (responseError) throw responseError;
       return {
         ...baseResponse,
         options: {
@@ -1475,7 +1475,10 @@ export class InterviewsService {
       const ratingScaleMap: {
         version: string;
         partScoring: Record<string, Record<string, number> | NumericScoring>;
-      } = question.rating_scale_mapping;
+      } = question.rating_scale_mapping as {
+        version: string;
+        partScoring: Record<string, Record<string, number> | NumericScoring>;
+      };
 
       const upsertData = question_part_answers.map((answer) => ({
         interview_response_id: responseId,

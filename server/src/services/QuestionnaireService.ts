@@ -330,7 +330,7 @@ export class QuestionnaireService {
                   questionnaire_step_id: newStep.id,
                   title: question.title,
                   question_text: question.question_text,
-                  context: question.context,
+                  context: question.context ?? 'Placeholder context',
                   order_index: question.order_index,
                   questionnaire_id: newQuestionnaire.id,
                   created_by: this.userId,
@@ -908,7 +908,7 @@ export class QuestionnaireService {
         questionnaire_question_id: data.id,
         questionnaire_rating_scale_id: rs.id,
         questionnaire_id: step.questionnaire_id,
-        description: rs.description,  // Optional: can be customized later
+        description: rs.description || "",  // Optional: can be customized later
         company_id: step.company_id,
         created_by: this.userId,
       }));
@@ -945,7 +945,7 @@ export class QuestionnaireService {
 
     if (fetchError) throw fetchError;
 
-    // Flatten the rating scale data structure
+    // Keep the rating scale data structure nested
     if (questionWithRatingScales && questionWithRatingScales.question_rating_scales) {
       questionWithRatingScales.question_rating_scales =
         questionWithRatingScales.question_rating_scales.map((qrs: any) => ({
@@ -954,8 +954,10 @@ export class QuestionnaireService {
           questionnaire_rating_scale_id: qrs.questionnaire_rating_scale_id,
           questionnaire_question_id: qrs.questionnaire_question_id,
           questionnaire_id: qrs.questionnaire_id,
-          name: qrs.questionnaire_rating_scales?.name,
-          value: qrs.questionnaire_rating_scales?.value,
+          questionnaire_rating_scales: {
+            name: qrs.questionnaire_rating_scales?.name,
+            value: qrs.questionnaire_rating_scales?.value,
+          },
         }));
     }
 
@@ -1778,7 +1780,7 @@ export class QuestionnaireService {
         )!,
         title: q.title,
         question_text: q.question_text,
-        context: q.context || null,
+        context: q.context ?? 'Placeholder context',
         order_index: q.order_index,
         created_by: this.userId,
         company_id: companyId,
