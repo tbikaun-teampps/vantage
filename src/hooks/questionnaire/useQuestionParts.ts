@@ -55,6 +55,10 @@ export function useQuestionPartsActions(questionId: number) {
         questionPartsKeys.byQuestionId(questionId),
         (old: any[] = []) => [...old, newPart]
       );
+      // Invalidate rating scale mapping since server auto-creates defaults
+      queryClient.invalidateQueries({
+        queryKey: ["question", "ratingScaleMapping", questionId],
+      });
     },
   });
 
@@ -68,6 +72,10 @@ export function useQuestionPartsActions(questionId: number) {
         (old: any[] = []) =>
           old.map((part) => (part.id === partId ? updatedQuestionPart : part))
       );
+      // Invalidate rating scale mapping in case answer_type or options changed
+      queryClient.invalidateQueries({
+        queryKey: ["question", "ratingScaleMapping", questionId],
+      });
     },
   });
 
@@ -79,6 +87,10 @@ export function useQuestionPartsActions(questionId: number) {
         questionPartsKeys.byQuestionId(questionId),
         (old: any[] = []) => old.filter((part) => part.id !== partId)
       );
+      // Invalidate rating scale mapping since server removes orphaned entries
+      queryClient.invalidateQueries({
+        queryKey: ["question", "ratingScaleMapping", questionId],
+      });
     },
   });
 
@@ -91,6 +103,10 @@ export function useQuestionPartsActions(questionId: number) {
         questionPartsKeys.byQuestionId(questionId),
         (old: any[] = []) => [...old, newPart]
       );
+      // Invalidate rating scale mapping since server copies/creates scoring config
+      queryClient.invalidateQueries({
+        queryKey: ["question", "ratingScaleMapping", questionId],
+      });
     },
   });
 
