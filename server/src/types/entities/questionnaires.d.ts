@@ -141,6 +141,25 @@ export type UpdateQuestionnaireStepBody = Pick<
 export type QuestionnaireQuestionRatingScale =
   Database["public"]["Tables"]["questionnaire_question_rating_scales"]["Row"];
 
+// Flattened rating scale structure (hoisted name/value from nested join)
+export type FlattenedQuestionRatingScale = {
+  id: number;
+  description: string;
+  questionnaire_rating_scale_id: number;
+  questionnaire_question_id: number;
+  questionnaire_id: number;
+  name: string;
+  value: number;
+};
+
+// QuestionnaireQuestion with flattened rating scales included (for API responses)
+export type QuestionnaireQuestionWithRatingScales = Pick<
+  Database["public"]["Tables"]["questionnaire_questions"]["Row"],
+  "id" | "title" | "order_index" | "context" | "question_text" | "questionnaire_step_id"
+> & {
+  question_rating_scales: FlattenedQuestionRatingScale[];
+};
+
 // ===== Questionnaire Question Roles =====
 
 export type QuestionnaireQuestionRole =

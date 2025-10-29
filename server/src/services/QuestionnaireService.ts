@@ -11,6 +11,8 @@ import {
   QuestionApplicableRole,
   Questionnaire,
   QuestionnaireQuestion,
+  QuestionnaireQuestionWithRatingScales,
+  FlattenedQuestionRatingScale,
   QuestionnaireQuestionRatingScale,
   QuestionnaireRatingScale,
   QuestionnaireSection,
@@ -287,9 +289,14 @@ export class QuestionnaireService {
       // Build mapping from original rating scale ID to new rating scale ID
       // Rating scales are inserted in same order, so we can match by index
       if (newRatingScales) {
-        originalQuestionnaire.questionnaire_rating_scales.forEach((originalScale, index) => {
-          ratingScaleIdMapping.set(originalScale.id, newRatingScales[index].id);
-        });
+        originalQuestionnaire.questionnaire_rating_scales.forEach(
+          (originalScale, index) => {
+            ratingScaleIdMapping.set(
+              originalScale.id,
+              newRatingScales[index].id
+            );
+          }
+        );
       }
     }
 
@@ -340,7 +347,7 @@ export class QuestionnaireService {
                   questionnaire_step_id: newStep.id,
                   title: question.title,
                   question_text: question.question_text,
-                  context: question.context ?? 'Placeholder context',
+                  context: question.context ?? "Placeholder context",
                   order_index: question.order_index,
                   questionnaire_id: newQuestionnaire.id,
                   created_by: this.userId,
@@ -356,27 +363,26 @@ export class QuestionnaireService {
           if (question.question_rating_scales.length > 0) {
             // Use the rating scale ID mapping created earlier
             // Map old rating scale IDs to new ones
-            const questionRatingScalesToInsert =
-              question.question_rating_scales
-                .map((qrs) => {
-                  const newRatingScaleId = ratingScaleIdMapping.get(
-                    qrs.questionnaire_rating_scale_id
-                  );
-                  if (newRatingScaleId) {
-                    return {
-                      questionnaire_question_id: newQuestion.id,
-                      questionnaire_rating_scale_id: newRatingScaleId,
-                      description: qrs.description,
-                      questionnaire_id: newQuestionnaire.id,
-                      created_by: this.userId,
-                      company_id: newQuestionnaire.company_id,
-                    };
-                  }
-                  return null;
-                })
-                .filter(
-                  (item): item is NonNullable<typeof item> => item !== null
+            const questionRatingScalesToInsert = question.question_rating_scales
+              .map((qrs) => {
+                const newRatingScaleId = ratingScaleIdMapping.get(
+                  qrs.questionnaire_rating_scale_id
                 );
+                if (newRatingScaleId) {
+                  return {
+                    questionnaire_question_id: newQuestion.id,
+                    questionnaire_rating_scale_id: newRatingScaleId,
+                    description: qrs.description,
+                    questionnaire_id: newQuestionnaire.id,
+                    created_by: this.userId,
+                    company_id: newQuestionnaire.company_id,
+                  };
+                }
+                return null;
+              })
+              .filter(
+                (item): item is NonNullable<typeof item> => item !== null
+              );
 
             if (questionRatingScalesToInsert.length > 0) {
               const { error: qrsError } = await this.supabase
@@ -388,13 +394,12 @@ export class QuestionnaireService {
           }
 
           // Duplicate question parts if any exist
-          const { data: originalParts, error: partsError } =
-            await this.supabase
-              .from("questionnaire_question_parts")
-              .select("*")
-              .eq("questionnaire_question_id", question.id)
-              .eq("is_deleted", false)
-              .order("order_index", { ascending: true });
+          const { data: originalParts, error: partsError } = await this.supabase
+            .from("questionnaire_question_parts")
+            .select("*")
+            .eq("questionnaire_question_id", question.id)
+            .eq("is_deleted", false)
+            .order("order_index", { ascending: true });
 
           if (partsError) throw partsError;
 
@@ -433,11 +438,17 @@ export class QuestionnaireService {
           if (fetchQuestionError) throw fetchQuestionError;
 
           if (originalQuestionData?.rating_scale_mapping) {
-            const originalMapping = originalQuestionData.rating_scale_mapping as unknown as WeightedScoringConfig;
+            const originalMapping =
+              originalQuestionData.rating_scale_mapping as unknown as WeightedScoringConfig;
             let transformedMapping: WeightedScoringConfig;
 
             // If question has parts and mapping has partScoring, transform part IDs
-            if (newParts && originalParts && originalMapping.partScoring && Object.keys(originalMapping.partScoring).length > 0) {
+            if (
+              newParts &&
+              originalParts &&
+              originalMapping.partScoring &&
+              Object.keys(originalMapping.partScoring).length > 0
+            ) {
               // Build mapping from old part IDs to new part IDs
               const partIdMapping = new Map<string, string>();
               originalParts.forEach((oldPart, index) => {
@@ -448,13 +459,17 @@ export class QuestionnaireService {
               });
 
               // Transform the partScoring object to use new part IDs
-              const transformedPartScoring: typeof originalMapping.partScoring = {};
-              Object.keys(originalMapping.partScoring).forEach((oldPartIdStr) => {
-                const newPartIdStr = partIdMapping.get(oldPartIdStr);
-                if (newPartIdStr) {
-                  transformedPartScoring[newPartIdStr] = originalMapping.partScoring[oldPartIdStr];
+              const transformedPartScoring: typeof originalMapping.partScoring =
+                {};
+              Object.keys(originalMapping.partScoring).forEach(
+                (oldPartIdStr) => {
+                  const newPartIdStr = partIdMapping.get(oldPartIdStr);
+                  if (newPartIdStr) {
+                    transformedPartScoring[newPartIdStr] =
+                      originalMapping.partScoring[oldPartIdStr];
+                  }
                 }
-              });
+              );
 
               transformedMapping = {
                 ...originalMapping,
@@ -929,7 +944,7 @@ export class QuestionnaireService {
   async createQuestion(
     questionnaireStepId: number,
     questionData: Omit<CreateQuestionnaireQuestionData, "questionnaire_step_id">
-  ): Promise<QuestionnaireQuestion> {
+  ): Promise<QuestionnaireQuestionWithRatingScales> {
     // Verify step exists and belongs to the questionnaire
     const { data: step, error: stepError } = await this.supabase
       .from("questionnaire_steps")
@@ -987,7 +1002,7 @@ export class QuestionnaireService {
         questionnaire_question_id: data.id,
         questionnaire_rating_scale_id: rs.id,
         questionnaire_id: step.questionnaire_id,
-        description: rs.description || "",  // Optional: can be customized later
+        description: rs.description || "", // Optional: can be customized later
         company_id: step.company_id,
         created_by: this.userId,
       }));
@@ -1000,12 +1015,18 @@ export class QuestionnaireService {
     }
 
     // Fetch the question with rating scales to return to the frontend
+
     const { data: questionWithRatingScales, error: fetchError } =
       await this.supabase
         .from("questionnaire_questions")
         .select(
           `
-          *,
+          id,
+          title,
+          question_text,
+          context,
+          order_index,
+          questionnaire_step_id,
           question_rating_scales:questionnaire_question_rating_scales(
             id,
             description,
@@ -1023,24 +1044,43 @@ export class QuestionnaireService {
         .single();
 
     if (fetchError) throw fetchError;
+    if (!questionWithRatingScales) throw new Error("Question not found after creation");
 
-    // Keep the rating scale data structure nested
-    if (questionWithRatingScales && questionWithRatingScales.question_rating_scales) {
-      questionWithRatingScales.question_rating_scales =
-        questionWithRatingScales.question_rating_scales.map((qrs: any) => ({
-          id: qrs.id,
-          description: qrs.description,
-          questionnaire_rating_scale_id: qrs.questionnaire_rating_scale_id,
-          questionnaire_question_id: qrs.questionnaire_question_id,
-          questionnaire_id: qrs.questionnaire_id,
-          questionnaire_rating_scales: {
-            name: qrs.questionnaire_rating_scales?.name,
-            value: qrs.questionnaire_rating_scales?.value,
-          },
-        }));
-    }
+    // Type for Supabase nested rating scale result
+    type SupabaseRatingScaleResult = {
+      id: number;
+      description: string;
+      questionnaire_rating_scale_id: number;
+      questionnaire_question_id: number;
+      questionnaire_id: number;
+      questionnaire_rating_scales: {
+        name: string;
+        value: number;
+      } | null;
+    };
 
-    return questionWithRatingScales;
+    // Transform to flattened structure by creating a new object
+    const result: QuestionnaireQuestionWithRatingScales = {
+      id: questionWithRatingScales.id,
+      title: questionWithRatingScales.title,
+      question_text: questionWithRatingScales.question_text,
+      context: questionWithRatingScales.context,
+      order_index: questionWithRatingScales.order_index,
+      questionnaire_step_id: questionWithRatingScales.questionnaire_step_id,
+      question_rating_scales: (
+        questionWithRatingScales.question_rating_scales as SupabaseRatingScaleResult[]
+      ).map((qrs): FlattenedQuestionRatingScale => ({
+        id: qrs.id,
+        description: qrs.description,
+        questionnaire_rating_scale_id: qrs.questionnaire_rating_scale_id,
+        questionnaire_question_id: qrs.questionnaire_question_id,
+        questionnaire_id: qrs.questionnaire_id,
+        name: qrs.questionnaire_rating_scales?.name ?? '',
+        value: qrs.questionnaire_rating_scales?.value ?? 0,
+      }))
+    };
+
+    return result;
   }
 
   async updateQuestion(
@@ -1859,7 +1899,7 @@ export class QuestionnaireService {
         )!,
         title: q.title,
         question_text: q.question_text,
-        context: q.context ?? 'Placeholder context',
+        context: q.context ?? "Placeholder context",
         order_index: q.order_index,
         created_by: this.userId,
         company_id: companyId,
@@ -1939,7 +1979,9 @@ export class QuestionnaireService {
     return data;
   }
 
-  async createQuestionPart(data: CreateQuestionPartData): Promise<QuestionPart> {
+  async createQuestionPart(
+    data: CreateQuestionPartData
+  ): Promise<QuestionPart> {
     // validate question exists and get the company_id and rating_scale_mapping associated with it
     const { data: question, error: questionError } = await this.supabase
       .from("questionnaire_questions")
@@ -1986,7 +2028,8 @@ export class QuestionnaireService {
 
       if (question.rating_scale_mapping) {
         // Add to existing mapping
-        const currentMapping = question.rating_scale_mapping as unknown as WeightedScoringConfig;
+        const currentMapping =
+          question.rating_scale_mapping as unknown as WeightedScoringConfig;
         updatedMapping = {
           ...currentMapping,
           partScoring: {
@@ -2019,7 +2062,10 @@ export class QuestionnaireService {
     return insertedData;
   }
 
-  async updateQuestionPart(partId: number, updates: UpdateQuestionPartData): Promise<QuestionPart> {
+  async updateQuestionPart(
+    partId: number,
+    updates: UpdateQuestionPartData
+  ): Promise<QuestionPart> {
     // Fetch part to get questionnaire_id for validation
     const { data: existingPart, error: fetchError } = await this.supabase
       .from("questionnaire_question_parts")
@@ -2081,7 +2127,8 @@ export class QuestionnaireService {
 
     // Remove the deleted part from the rating_scale_mapping if it exists
     if (question.rating_scale_mapping) {
-      const currentMapping = question.rating_scale_mapping as unknown as WeightedScoringConfig;
+      const currentMapping =
+        question.rating_scale_mapping as unknown as WeightedScoringConfig;
       const updatedMapping = this.removePartFromMapping(currentMapping, partId);
 
       // Update the question's rating_scale_mapping
@@ -2155,15 +2202,22 @@ export class QuestionnaireService {
     let updatedMapping: WeightedScoringConfig | null = null;
 
     if (question.rating_scale_mapping) {
-      const currentMapping = question.rating_scale_mapping as unknown as WeightedScoringConfig;
+      const currentMapping =
+        question.rating_scale_mapping as unknown as WeightedScoringConfig;
 
       // Check if original part has scoring configured
       if (currentMapping.partScoring[partIdStr]) {
         // Copy from original part
-        updatedMapping = this.copyPartInMapping(currentMapping, partId, newPart.id);
+        updatedMapping = this.copyPartInMapping(
+          currentMapping,
+          partId,
+          newPart.id
+        );
       } else {
         // Original part not in mapping, generate defaults for the new part
-        const maxLevel = await this.getMaxLevelForQuestionnaire(question.questionnaire_id);
+        const maxLevel = await this.getMaxLevelForQuestionnaire(
+          question.questionnaire_id
+        );
         const defaultScoring = this.createDefaultPartScoring(
           originalPart.answer_type,
           originalPart.options,
@@ -2182,7 +2236,9 @@ export class QuestionnaireService {
       }
     } else {
       // No mapping exists, create new one with defaults for the duplicated part
-      const maxLevel = await this.getMaxLevelForQuestionnaire(question.questionnaire_id);
+      const maxLevel = await this.getMaxLevelForQuestionnaire(
+        question.questionnaire_id
+      );
       const defaultScoring = this.createDefaultPartScoring(
         originalPart.answer_type,
         originalPart.options,
@@ -2349,11 +2405,14 @@ export class QuestionnaireService {
 
     // Create new partScoring without the deleted part
     const remainingPartScoring = Object.keys(mapping.partScoring)
-      .filter(key => key !== partIdStr)
-      .reduce((acc, key) => {
-        acc[key] = mapping.partScoring[key];
-        return acc;
-      }, {} as typeof mapping.partScoring);
+      .filter((key) => key !== partIdStr)
+      .reduce(
+        (acc, key) => {
+          acc[key] = mapping.partScoring[key];
+          return acc;
+        },
+        {} as typeof mapping.partScoring
+      );
 
     // If no parts remain in the mapping, return null
     if (Object.keys(remainingPartScoring).length === 0) {
