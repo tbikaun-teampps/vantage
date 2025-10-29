@@ -9,6 +9,10 @@ interface SaveResponseData {
   rating_score?: number | null;
   role_ids?: number[] | null;
   is_unknown?: boolean | null;
+  question_part_answers?: Array<{
+    question_part_id: number;
+    answer_value: string;
+  }> | null;
 }
 
 interface InterviewProgress {
@@ -28,16 +32,18 @@ export function useSaveInterviewResponse() {
       rating_score,
       role_ids,
       is_unknown,
+      question_part_answers,
     }: SaveResponseData) => {
       return updateInterviewResponse(responseId, {
         rating_score,
         role_ids,
         is_unknown,
+        question_part_answers,
       });
     },
     onSuccess: async (_, variables) => {
-      // Invalidate the question cache
-      queryClient.invalidateQueries({
+      // Force immediate refetch of the question cache to ensure UI updates with saved values
+      await queryClient.refetchQueries({
         queryKey: [
           "interviews",
           variables.interviewId,

@@ -1125,7 +1125,7 @@ export class InterviewsService {
       .maybeSingle();
 
     if (interviewError) throw interviewError;
-    if (!interview) return null;
+    if (!interview) throw new NotFoundError("Interview not found");
 
     // Validate that individual interviews are enabled
     if (interview.is_individual && !interview.enabled) {
@@ -1315,11 +1315,9 @@ export class InterviewsService {
       {} as Record<string, typeof selectableRoles>
     );
 
-    // Get the response associated with the question (if any)
-    const { data: responseData, error: responseError } = await this.supabase
-      .from("interview_responses")
-      .select(
-        `
+    const responseQuery = interview.is_individual
+      ? "id, question_part_responses:interview_question_part_responses(id,answer_value,question_part_id)"
+      : `
         id,
         rating_score,
         is_unknown,
@@ -1329,15 +1327,19 @@ export class InterviewsService {
             id
           )
         )
-      `
-      )
+      `;
+
+    // Get the response associated with the question (if any)
+    const { data: responseData, error: responseError } = await this.supabase
+      .from("interview_responses")
+      .select(responseQuery)
       .eq("interview_id", interviewId)
       .eq("questionnaire_question_id", questionId)
       .maybeSingle();
 
     if (responseError) throw responseError;
 
-    const questionDetails = {
+    let baseResponse = {
       id: questionId,
       title: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index}. ${interviewQuestion.title}`,
       question_text: interviewQuestion.question_text,
@@ -1346,28 +1348,61 @@ export class InterviewsService {
         section: `${interviewQuestion.step.section.order_index}. ${interviewQuestion.step.section.title}`,
         step: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}. ${interviewQuestion.step.title}`,
         question: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index + 1}. ${interviewQuestion.title}`,
-        // TODO: review why question index is off by one here
       },
-      options: {
-        applicable_roles: groupedRoles,
-        rating_scales: interviewQuestion.rating_scale.map((rs) => ({
-          id: rs.id,
-          name: rs.questionnaire_rating_scale.name,
-          value: rs.questionnaire_rating_scale.value,
-          description: rs.description,
-        })),
-      },
-      response: responseData,
     };
 
-    return questionDetails;
+    if (interview.is_individual) {
+      // Get question parts
+      const { data: questionParts, error: questionPartsError } =
+        await this.supabase
+          .from("questionnaire_question_parts")
+          .select("id, text, order_index, answer_type, options")
+          .eq("questionnaire_question_id", questionId)
+          .eq("is_deleted", false)
+          .order("order_index", { ascending: true });
+
+      if (questionPartsError) throw questionPartsError;
+
+      return {
+        ...baseResponse,
+        question_parts: questionParts,
+        response: responseData,
+      };
+    } else {
+      return {
+        ...baseResponse,
+        options: {
+          applicable_roles: groupedRoles,
+          rating_scales: interviewQuestion.rating_scale.map((rs) => ({
+            id: rs.id,
+            name: rs.questionnaire_rating_scale.name,
+            value: rs.questionnaire_rating_scale.value,
+            description: rs.description,
+          })),
+        },
+        response: responseData,
+      };
+    }
   }
 
+  /**
+   * Update an interview response
+   * @param responseId ID of the interview response to update
+   * @param rating_score New rating score (optional)
+   * @param role_ids New role IDs to associate (optional)
+   * @param is_unknown Mark as unknown (optional)
+   * @param question_part_answers Answers for question parts (optional, for individual interviews)
+   * @returns Updated interview response
+   */
   async updateInterviewResponse(
     responseId: number,
     rating_score?: number | null,
     role_ids?: number[] | null,
-    is_unknown?: boolean | null
+    is_unknown?: boolean | null,
+    question_part_answers?: Array<{
+      question_part_id: number;
+      answer_value: string;
+    }> | null
   ) {
     // First, verify the response exists and get current data
     const { data: existingResponse, error: fetchError } = await this.supabase
@@ -1380,68 +1415,171 @@ export class InterviewsService {
       throw new NotFoundError("Interview response not found");
     }
 
-    // Build update object for rating_score and is_unknown
-    // These fields are mutually exclusive - if one is set, clear the other
-    const updates: { rating_score?: number | null; is_unknown?: boolean } = {};
+    if (question_part_answers !== undefined && question_part_answers !== null) {
+      // Before updating the question part answers, validate that its possible
+      // to calculate the rating score from the answers provided.
+      // 1. Fetch the associated questions 'rating_scale_mapping' which maps
+      // question_part_id to rating scale value
+      const { data: question, error: questionError } = await this.supabase
+        .from("questionnaire_questions")
+        .select("rating_scale_mapping")
+        .eq("id", existingResponse.questionnaire_question_id)
+        .eq("is_deleted", false)
+        .maybeSingle();
 
-    if (rating_score !== undefined) {
-      updates.rating_score = rating_score;
-      // Clear is_unknown when setting a rating
-      if (rating_score !== null) {
-        updates.is_unknown = false;
+      // Should return something like:
+      // {"version": "...", "partScoring": {"question_part_id": {"answer_value": rating_scale_value, ...}, ...}}
+      // {"version": "weighted", "partScoring": {"28": {"Partial automation - Some automated capture exists but still relies heavily on manual entry": 2, "No automated system - Losses captured manually through shift logs, timecards, or word of mouth": 1, "Automated system in place - Fully automated system captures losses with good accuracy (~80% coverage)": 3, "Fully optimized automation - Automated system with excellent accuracy and accessibility (~95% coverage)": 4}, "29": {"Moderate coverage - Covers main operational areas but gaps exist": 2, "Minimal coverage - Only captures losses in limited areas or departments": 1, "Comprehensive coverage - Covers all major operational areas with minor gaps": 3, "Complete coverage - All operational areas fully covered with integrated data": 4}, "30": {"Not captured - No systematic capture of failure modes or root causes": 1, "Basic capture - Some failure data captured but inconsistent or incomplete": 2, "Detailed capture - Failure modes and causes captured with linkage to maintenance orders (~80%)": 3, "Advanced analytics - Complete failure mode capture with root cause analysis and maintenance integration (~95%)": 4}}}
+
+      if (questionError) throw questionError;
+      if (!question || !question.rating_scale_mapping) {
+        throw new InternalServerError(
+          "Unable to calculate rating score - question rating scale mapping not found"
+        );
       }
-    }
 
-    if (is_unknown !== undefined) {
-      updates.is_unknown = is_unknown ?? false;
-      // Clear rating_score when marking as unknown
-      if (is_unknown === true) {
-        updates.rating_score = null;
+      const ratingScaleMap: {
+        version: string;
+        partScoring: Record<string, Record<string, number>>;
+      } = question.rating_scale_mapping;
+      console.log("Question rating scale mapping:", ratingScaleMap);
+
+      const upsertData = question_part_answers.map((answer) => ({
+        interview_response_id: responseId,
+        question_part_id: answer.question_part_id,
+        answer_value: answer.answer_value,
+        company_id: existingResponse.company_id,
+      }));
+
+      // Upsert question part answers for individual interviews
+      // Uses unique constraint on (interview_response_id, question_part_id)
+      const { error: upsertError } = await this.supabase
+        .from("interview_question_part_responses")
+        .upsert(upsertData, {
+          onConflict: "interview_response_id,question_part_id",
+        });
+
+      if (upsertError) throw upsertError;
+
+      // Get the response associated with the question (if any)
+      const { data: responseData, error: responseError } = await this.supabase
+        .from("interview_responses")
+        .select(
+          "id, question_part_responses:interview_question_part_responses(*)"
+        )
+        .eq("id", responseId)
+        .maybeSingle();
+
+      if (responseError) throw responseError;
+
+      // Calculate the rating_score based on the individual answers
+      // For each question part answer, look up the corresponding rating scale value
+      let totalScore = 0;
+      let answeredParts = 0;
+
+      for (const answer of question_part_answers) {
+        const partMapping = ratingScaleMap.partScoring[answer.question_part_id.toString()];
+        if (partMapping) {
+          const score = partMapping[answer.answer_value];
+          if (score !== undefined) {
+            totalScore += score;
+            answeredParts += 1;
+          }
+        }
       }
-    }
+      console.log("totalScore: ", totalScore);
+      console.log("answeredParts: ", answeredParts);
 
-    // Update the response if there are changes to apply
-    if (Object.keys(updates).length > 0) {
+      // Calculate the average rating score across all answered parts
+      // Conservatively round down to nearest whole number
+      // TODO: In the future, have the rating scale mapping dictate the average/max/min, etc to use.
+      const calculatedRatingScore =
+        answeredParts > 0 ? Math.floor(totalScore / answeredParts) : null;
+      const finalRatingScore =
+        calculatedRatingScore !== null
+          ? Math.floor(calculatedRatingScore)
+          : null;
+
+      console.log("Final calculated rating score:", finalRatingScore);
+
+      // Update the response with the calculated rating score
       const { error: updateError } = await this.supabase
         .from("interview_responses")
-        .update(updates)
+        .update({
+          rating_score: finalRatingScore,
+          score_source: "calculated",
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", responseId);
 
       if (updateError) throw updateError;
-    }
 
-    // Update roles if provided
-    if (role_ids !== undefined) {
-      // Delete existing role associations
-      const { error: deleteError } = await this.supabase
-        .from("interview_response_roles")
-        .delete()
-        .eq("interview_response_id", responseId);
+      return responseData;
+    } else {
+      // Build update object for rating_score and is_unknown
+      // These fields are mutually exclusive - if one is set, clear the other
+      const updates: { rating_score?: number | null; is_unknown?: boolean } =
+        {};
 
-      if (deleteError) throw deleteError;
-
-      // Insert new role associations (only if role_ids is not null/empty)
-      if (role_ids && role_ids.length > 0) {
-        const roleAssociations = role_ids.map((roleId) => ({
-          interview_response_id: responseId,
-          role_id: roleId,
-          company_id: existingResponse.company_id,
-          interview_id: existingResponse.interview_id,
-        }));
-
-        const { error: insertError } = await this.supabase
-          .from("interview_response_roles")
-          .insert(roleAssociations);
-
-        if (insertError) throw insertError;
+      if (rating_score !== undefined) {
+        updates.rating_score = rating_score;
+        // Clear is_unknown when setting a rating
+        if (rating_score !== null) {
+          updates.is_unknown = false;
+        }
       }
-    }
 
-    // Fetch and return updated response
-    const { data: updatedResponse, error: responseError } = await this.supabase
-      .from("interview_responses")
-      .select(
-        `
+      if (is_unknown !== undefined) {
+        updates.is_unknown = is_unknown ?? false;
+        // Clear rating_score when marking as unknown
+        if (is_unknown === true) {
+          updates.rating_score = null;
+        }
+      }
+
+      // Update the response if there are changes to apply
+      if (Object.keys(updates).length > 0) {
+        const { error: updateError } = await this.supabase
+          .from("interview_responses")
+          .update(updates)
+          .eq("id", responseId);
+
+        if (updateError) throw updateError;
+      }
+
+      // Update roles if provided
+      if (role_ids !== undefined) {
+        // Delete existing role associations
+        const { error: deleteError } = await this.supabase
+          .from("interview_response_roles")
+          .delete()
+          .eq("interview_response_id", responseId);
+
+        if (deleteError) throw deleteError;
+
+        // Insert new role associations (only if role_ids is not null/empty)
+        if (role_ids && role_ids.length > 0) {
+          const roleAssociations = role_ids.map((roleId) => ({
+            interview_response_id: responseId,
+            role_id: roleId,
+            company_id: existingResponse.company_id,
+            interview_id: existingResponse.interview_id,
+          }));
+
+          const { error: insertError } = await this.supabase
+            .from("interview_response_roles")
+            .insert(roleAssociations);
+
+          if (insertError) throw insertError;
+        }
+      }
+
+      // Fetch and return updated response
+      const { data: updatedResponse, error: responseError } =
+        await this.supabase
+          .from("interview_responses")
+          .select(
+            `
         id,
         rating_score,
         is_unknown,
@@ -1450,13 +1588,14 @@ export class InterviewsService {
           role:roles(id)
         )
       `
-      )
-      .eq("id", responseId)
-      .single();
+          )
+          .eq("id", responseId)
+          .single();
 
-    if (responseError) throw responseError;
+      if (responseError) throw responseError;
 
-    return updatedResponse;
+      return updatedResponse;
+    }
   }
   // Get roles associated with an assessment
   // business_unit > region > site > asset_group > work_group > role < shared_roles

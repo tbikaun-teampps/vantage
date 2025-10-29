@@ -1,55 +1,82 @@
-import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
-
 interface InterviewQuestionContentProps {
+  isIndividualInterview: boolean;
   question: {
-    question_text: string;
+    question_text?: string;
     context?: string;
+    question_parts?: Array<{
+      id: number;
+      order_index: number;
+      text: string;
+    }>;
   };
 }
 
 export function InterviewQuestionContent({
+  isIndividualInterview,
   question,
 }: InterviewQuestionContentProps) {
-  const isMobile = useIsMobile();
+  // For individual interviews, show centered content box
+  if (isIndividualInterview) {
+    return (
+      <div className="space-y-4" data-tour="interview-question">
+        <div className="flex justify-center">
+          <div className="w-full">
+            <div className="rounded-xl p-8 bg-muted">
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h1 className="text-xl font-bold">Context</h1>
+                  <h2 className="text-lg font-bold text-foreground leading-relaxed whitespace-pre-line">
+                    {question.context}
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Please answer the question elements below
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // For non-individual interviews, generate question_text from question_parts if needed
+  const displayQuestionText =
+    question.question_text ||
+    question.question_parts
+      ?.sort((a, b) => a.order_index - b.order_index)
+      .map((part) => part.text)
+      .join("\n") ||
+    "";
+
   return (
     <div className="space-y-4" data-tour="interview-question">
       {question.context ? (
         // Traditional layout when context exists
-        <div className={cn("flex flex-col", isMobile ? "px-2" : "")}>
+        <div className="flex flex-col">
           {/* Question Text */}
           <div className="text-left">
-            <h2
-              className={cn(
-                "font-bold text-foreground leading-relaxed whitespace-pre-line",
-                isMobile ? "text-sm" : "text-xl"
-              )}
-            >
-              {question.question_text}
+            <h2 className="text-xl font-bold text-foreground leading-relaxed whitespace-pre-line">
+              {displayQuestionText}
             </h2>
           </div>
 
           {/* Context */}
           <div className="text-left">
-            <p
-              className={cn(
-                "text-muted-foreground whitespace-pre-line mt-2",
-                isMobile ? "text-xs" : "text-sm"
-              )}
-            >
+            <p className="text-sm text-muted-foreground whitespace-pre-line mt-2">
               {question.context}
             </p>
           </div>
         </div>
       ) : (
-        // Typeform-style centered layout when no context
+        // Centered layout when no context
         <div className="flex justify-center">
           <div className="max-w-4xl w-full">
             <div className="rounded-xl p-8 bg-muted">
               <div className="text-center space-y-6">
                 <div className="space-y-4">
                   <h2 className="text-2xl font-bold text-foreground leading-relaxed">
-                    {question.question_text}
+                    {displayQuestionText}
                   </h2>
                   <p className="text-muted-foreground">
                     Please select your rating below

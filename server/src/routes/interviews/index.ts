@@ -613,36 +613,6 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       return { success: true, data };
     }
   );
-  // Method for updating a specific question within an interview
-  // fastify.put(
-  //   "/:interviewId/questions/:questionId",
-  //   {
-  //     schema: {
-  //       params: {
-  //         type: "object",
-  //         properties: {
-  //           interviewId: { type: "string" },
-  //         },
-  //         required: ["interviewId"],
-  //       },
-  //       body: {
-  //         type: "object",
-  //         properties: {
-  //           rating_scale_value: { type: "number" },
-  //           comments: { type: "string" },
-  //           applicable_roles: { type: "array", items: { type: "number" } },
-  //         },
-  //       },
-  //     },
-  //   },
-  //   async (request, reply) => {
-  //     const { interviewId, questionId } = request.params as {
-  //       interviewId: number;
-  //       questionId: number;
-  //     };
-  //     return { success: true, data: { interviewId, questionId } };
-  //   }
-  // );
   // Method for updating interview details
   fastify.put(
     "/:interviewId",
@@ -897,6 +867,18 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
               items: { type: "number" },
             },
             is_unknown: { type: "boolean", nullable: true },
+            question_part_answers: {
+              type: "array",
+              nullable: true,
+              items: {
+                type: "object",
+                properties: {
+                  question_part_id: { type: "number" },
+                  answer_value: { type: "string" },
+                },
+                required: ["question_part_id", "answer_value"],
+              },
+            },
           },
         },
         response: {
@@ -936,18 +918,28 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       const { responseId } = request.params as {
         responseId: number;
       };
-      const { rating_score, role_ids, is_unknown } = request.body as {
-        rating_score?: number | null;
-        role_ids?: number[] | null;
-        is_unknown?: boolean | null;
-      };
+      const { rating_score, role_ids, is_unknown, question_part_answers } =
+        request.body as {
+          rating_score?: number | null;
+          role_ids?: number[] | null;
+          is_unknown?: boolean | null;
+          question_part_answers?:
+            | {
+                question_part_id: number;
+                answer_value: string;
+              }[]
+            | null;
+        };
+
+      console.log("question_part_answers: ", question_part_answers);
 
       const updatedResponse =
         await request.interviewsService!.updateInterviewResponse(
           responseId,
           rating_score,
           role_ids,
-          is_unknown
+          is_unknown,
+          question_part_answers
         );
 
       return {

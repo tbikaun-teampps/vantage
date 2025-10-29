@@ -243,6 +243,10 @@ export async function updateInterviewResponse(
     rating_score?: number | null;
     role_ids?: number[] | null;
     is_unknown?: boolean | null;
+    question_part_answers?: Array<{
+      question_part_id: number;
+      answer_value: string;
+    }> | null;
   }
 ): Promise<any> {
   const response = await apiClient.put<ApiResponse<any>>(

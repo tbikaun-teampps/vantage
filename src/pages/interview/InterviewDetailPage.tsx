@@ -21,8 +21,8 @@ interface InterviewDetailPageProps {
 // Form schema for interview responses
 const responseSchema = z.object({
   rating_score: z.number().nullable().optional(),
-  role_ids: z.array(z.number()).optional().default([]),
-  is_unknown: z.boolean().optional().default(false),
+  role_ids: z.array(z.number()).optional(),
+  is_unknown: z.boolean().optional(),
 });
 
 type ResponseFormData = z.infer<typeof responseSchema>;
@@ -121,14 +121,25 @@ export function InterviewDetailPage({
   // Update form when question data loads
   useEffect(() => {
     if (question?.response) {
-      form.reset({
+      const formValues: any = {
         rating_score: question.response.rating_score ?? null,
         role_ids:
           question.response.response_roles?.map((rr) => rr.role.id) ?? [],
         is_unknown: question.response.is_unknown ?? false,
-      });
+      };
+
+      // Add question part responses for individual interviews
+      if (isIndividualInterview && question.response.question_part_responses) {
+        question.response.question_part_responses.forEach((response) => {
+          if (response.answer_value) {
+            formValues[`question_part_${response.question_part_id}`] = response.answer_value;
+          }
+        });
+      }
+
+      form.reset(formValues);
     }
-  }, [question, form]);
+  }, [question, form, isIndividualInterview]);
 
   // Track last question in localStorage for resume functionality
   useEffect(() => {
@@ -168,6 +179,33 @@ export function InterviewDetailPage({
     if (!question?.response?.id || !currentQuestionId) return;
 
     const formData = form.getValues();
+
+    console.log('formData', formData);
+
+
+    // Convert any question_part_{id} fields to part answers
+    const partAnswers: {
+      question_part_id: number;
+      answer_text?: string;
+      answer_value?: number;
+    }[] = [];
+
+    for (const key in formData) {
+      if (key.startsWith("question_part_")) {
+        const partId = parseInt(key.replace("question_part_", ""));
+        const value = (formData as any)[key];
+
+        if (value !== undefined && value !== null) {
+            partAnswers.push({
+              question_part_id: partId,
+              answer_value: value,
+            });
+          }
+        }
+      }
+
+      console.log('partAnswers', partAnswers);
+
     saveResponse({
       interviewId: parseInt(interviewId!),
       responseId: question.response.id,
@@ -175,6 +213,7 @@ export function InterviewDetailPage({
       rating_score: formData.rating_score,
       role_ids: formData.role_ids,
       is_unknown: formData.is_unknown,
+      question_part_answers: partAnswers,
     });
   };
 

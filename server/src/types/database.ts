@@ -806,6 +806,68 @@ export type Database = {
           },
         ];
       };
+      interview_question_part_responses: {
+        Row: {
+          answer_value: string;
+          company_id: string;
+          created_at: string;
+          created_by: string;
+          id: number;
+          interview_response_id: number;
+          question_part_id: number;
+          updated_at: string;
+        };
+        Insert: {
+          answer_value: string;
+          company_id: string;
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          interview_response_id: number;
+          question_part_id: number;
+          updated_at?: string;
+        };
+        Update: {
+          answer_value?: string;
+          company_id?: string;
+          created_at?: string;
+          created_by?: string;
+          id?: number;
+          interview_response_id?: number;
+          question_part_id?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "interview_question_part_responses_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_question_part_responses_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_question_part_responses_interview_response_id_fkey";
+            columns: ["interview_response_id"];
+            isOneToOne: false;
+            referencedRelation: "interview_responses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "interview_question_part_responses_question_part_id_fkey";
+            columns: ["question_part_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaire_question_parts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       interview_response_actions: {
         Row: {
           company_id: string;
@@ -961,6 +1023,7 @@ export type Database = {
           is_unknown: boolean;
           questionnaire_question_id: number;
           rating_score: number | null;
+          score_source: Database["public"]["Enums"]["rating_score_source"];
           updated_at: string;
         };
         Insert: {
@@ -977,6 +1040,7 @@ export type Database = {
           is_unknown?: boolean;
           questionnaire_question_id: number;
           rating_score?: number | null;
+          score_source?: Database["public"]["Enums"]["rating_score_source"];
           updated_at?: string;
         };
         Update: {
@@ -993,6 +1057,7 @@ export type Database = {
           is_unknown?: boolean;
           questionnaire_question_id?: number;
           rating_score?: number | null;
+          score_source?: Database["public"]["Enums"]["rating_score_source"];
           updated_at?: string;
         };
         Relationships: [
@@ -3119,6 +3184,7 @@ export type Database = {
         | "percentage"
         | "number";
       questionnaire_statuses: "draft" | "active" | "under_review" | "archived";
+      rating_score_source: "direct" | "calculated" | "override";
       recommendation_status: "not_started" | "in_progress" | "completed";
       role_levels:
         | "executive"
@@ -3305,6 +3371,7 @@ export const Constants = {
         "number",
       ],
       questionnaire_statuses: ["draft", "active", "under_review", "archived"],
+      rating_score_source: ["direct", "calculated", "override"],
       recommendation_status: ["not_started", "in_progress", "completed"],
       role_levels: [
         "executive",
