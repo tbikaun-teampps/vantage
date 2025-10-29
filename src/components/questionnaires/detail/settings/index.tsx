@@ -26,11 +26,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 
 export function Settings() {
-  const navigate = useNavigate();
+  const navigate = useCompanyAwareNavigate();
   const userCanAdmin = useCanAdmin();
   const routes = useCompanyRoutes();
 
@@ -145,7 +145,6 @@ export function Settings() {
 
           {userCanAdmin && (
             <div className="border-t pt-6 space-y-4">
-              {/* Duplicate Zone */}
               <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
