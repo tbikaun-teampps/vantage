@@ -19,13 +19,10 @@ export interface LabelledScaleScoring {
 
 /**
  * Scoring configuration for numeric question parts (scale, number, percentage)
- * Uses thresholds to define upper bounds for each level (except the last)
- * Example: [30, 70] for 3 levels with range 0-100 means:
- *   Level 1: 0-30, Level 2: 31-70, Level 3: 71-100
+ * Explicit ranges that map numeric values to rating scale levels
+ * Example: [{ min: 0, max: 30, level: 1 }, { min: 31, max: 70, level: 2 }]
  */
-export interface NumericScoring {
-  thresholds: number[]; // Upper bounds for levels 1 through N-1
-}
+export type NumericScoring = NumericRange[];
 
 /**
  * Union type for all possible scoring configurations
@@ -80,37 +77,15 @@ export function isLabelledScaleScoring(
 }
 
 export function isNumericScoring(scoring: PartScoring): scoring is NumericScoring {
-  return "thresholds" in scoring;
+  return Array.isArray(scoring);
 }
 
 /**
- * Get ranges for numeric question types based on user-defined thresholds
- * Thresholds define the upper bounds for levels 1 through N-1
- * @param part - The question part with min/max options
- * @param thresholds - Upper bounds for each level except the last
+ * Get ranges for numeric question types
+ * Since ranges are now explicitly defined, this just returns them
+ * @param ranges - The explicit range configuration
  */
-export function getNumericRanges(
-  part: QuestionPart,
-  thresholds: number[]
-): NumericRange[] {
-  const min = part.options.min || 0;
-  const max = part.options.max || 100;
-  const numLevels = thresholds.length + 1;
-
-  const ranges: NumericRange[] = [];
-
-  // Build ranges from thresholds
-  for (let i = 0; i < numLevels; i++) {
-    const rangeMin = i === 0 ? min : thresholds[i - 1] + 1;
-    const rangeMax = i === numLevels - 1 ? max : thresholds[i];
-
-    ranges.push({
-      min: rangeMin,
-      max: rangeMax,
-      level: i + 1,
-    });
-  }
-
+export function getNumericRanges(ranges: NumericRange[]): NumericRange[] {
   return ranges;
 }
 
@@ -156,8 +131,7 @@ export function calculatePartLevel(
     case "number":
     case "percentage":
       if (typeof answer === "number" && scoring && isNumericScoring(scoring)) {
-        const ranges = getNumericRanges(part, scoring.thresholds);
-        return calculateNumericLevel(answer, ranges);
+        return calculateNumericLevel(answer, scoring);
       }
       return 1;
 

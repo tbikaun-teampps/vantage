@@ -41,7 +41,6 @@ import {
   type NumericRange,
   isBooleanScoring,
   isNumericScoring,
-  getNumericRanges,
   calculatePartLevel,
   calculateAverageLevel,
 } from "./question-parts-weighted-scoring-types";
@@ -256,28 +255,78 @@ export function QuestionPartsWeightedScoringBuilder({
     });
   };
 
-  const handleThresholdChange = (
+  const handleRangeChange = (
     partId: string,
-    thresholdIndex: number,
+    rangeIndex: number,
+    field: "min" | "max" | "level",
     value: string
   ) => {
-    const numValue = parseFloat(value);
+    const numValue = field === "level" ? parseInt(value, 10) : parseFloat(value);
     if (value !== "" && isNaN(numValue)) {
       return; // Invalid input, ignore
     }
 
     setConfig((prev) => {
       const prevScoring = prev.partScoring[partId] as NumericScoring;
-      const newThresholds = [...(prevScoring?.thresholds || [])];
-      newThresholds[thresholdIndex] = numValue;
+      const newRanges = [...(prevScoring || [])];
+
+      if (!newRanges[rangeIndex]) {
+        newRanges[rangeIndex] = { min: 0, max: 100, level: 1 };
+      }
+
+      newRanges[rangeIndex] = {
+        ...newRanges[rangeIndex],
+        [field]: numValue,
+      };
 
       return {
         ...prev,
         partScoring: {
           ...prev.partScoring,
-          [partId]: {
-            thresholds: newThresholds,
-          },
+          [partId]: newRanges,
+        },
+      };
+    });
+  };
+
+  const handleAddRange = (partId: string, part: QuestionPart) => {
+    const min = part.options.min || 0;
+    const max = part.options.max || 100;
+
+    setConfig((prev) => {
+      const prevScoring = prev.partScoring[partId] as NumericScoring;
+      const newRanges = [...(prevScoring || [])];
+
+      // Find the next available min value
+      const lastRange = newRanges[newRanges.length - 1];
+      const newMin = lastRange ? lastRange.max + 1 : min;
+
+      newRanges.push({
+        min: newMin,
+        max: max,
+        level: 1,
+      });
+
+      return {
+        ...prev,
+        partScoring: {
+          ...prev.partScoring,
+          [partId]: newRanges,
+        },
+      };
+    });
+  };
+
+  const handleRemoveRange = (partId: string, rangeIndex: number) => {
+    setConfig((prev) => {
+      const prevScoring = prev.partScoring[partId] as NumericScoring;
+      const newRanges = (prevScoring || []).filter((_, i) => i !== rangeIndex);
+
+      return {
+        ...prev,
+        partScoring: {
+          ...prev.partScoring,
+          [partId]: newRanges,
         },
       };
     });
@@ -347,35 +396,75 @@ export function QuestionPartsWeightedScoringBuilder({
 
         const min = part.options.min || 0;
         const max = part.options.max || 100;
-        const thresholds = scoring.thresholds;
+        const ranges = scoring;
 
-        // Validate thresholds array length
-        if (thresholds.length !== maxLevel - 1) {
-          toast.error(
-            `Invalid number of thresholds for "${part.text}". Expected ${maxLevel - 1}, got ${thresholds.length}`
-          );
+        // Validate at least one range exists
+        if (ranges.length === 0) {
+          toast.error(`At least one range is required for "${part.text}"`);
           return false;
         }
 
-        // Validate thresholds are in ascending order and within bounds
-        for (let i = 0; i < thresholds.length; i++) {
-          const threshold = thresholds[i];
+        // Validate each range
+        for (let i = 0; i < ranges.length; i++) {
+          const range = ranges[i];
 
-          // Check threshold is within valid range
-          if (threshold < min || threshold >= max) {
+          // Validate range bounds are within question min/max
+          if (range.min < min || range.max > max) {
             toast.error(
-              `Threshold ${i + 1} for "${part.text}" must be between ${min} and ${max - 1}`
+              `Range ${i + 1} for "${part.text}" must be within ${min}-${max}`
             );
             return false;
           }
 
-          // Check ascending order
-          if (i > 0 && threshold <= thresholds[i - 1]) {
+          // Validate min < max
+          if (range.min > range.max) {
             toast.error(
-              `Thresholds for "${part.text}" must be in ascending order`
+              `Range ${i + 1} for "${part.text}": min must be less than or equal to max`
             );
             return false;
           }
+
+          // Validate level is within bounds
+          if (range.level < 1 || range.level > maxLevel) {
+            toast.error(
+              `Range ${i + 1} for "${part.text}": level must be between 1 and ${maxLevel}`
+            );
+            return false;
+          }
+
+          // Check for overlaps with other ranges
+          for (let j = i + 1; j < ranges.length; j++) {
+            const otherRange = ranges[j];
+            if (
+              (range.min >= otherRange.min && range.min <= otherRange.max) ||
+              (range.max >= otherRange.min && range.max <= otherRange.max) ||
+              (otherRange.min >= range.min && otherRange.min <= range.max)
+            ) {
+              toast.error(
+                `Ranges for "${part.text}" overlap - ranges ${i + 1} and ${j + 1}`
+              );
+              return false;
+            }
+          }
+        }
+
+        // Check for full coverage (no gaps)
+        const sortedRanges = [...ranges].sort((a, b) => a.min - b.min);
+        let covered = min;
+        for (const range of sortedRanges) {
+          if (range.min > covered) {
+            toast.error(
+              `Gap detected in ranges for "${part.text}" between ${covered} and ${range.min}`
+            );
+            return false;
+          }
+          covered = Math.max(covered, range.max + 1);
+        }
+        if (covered <= max) {
+          toast.error(
+            `Incomplete coverage for "${part.text}" - missing range from ${covered} to ${max}`
+          );
+          return false;
         }
       }
     }
@@ -538,95 +627,114 @@ export function QuestionPartsWeightedScoringBuilder({
       const min = part.options.min || 0;
       const max = part.options.max || 100;
       const numericScoring = scoring as NumericScoring | undefined;
-      const thresholds = numericScoring?.thresholds || [];
-      const ranges = numericScoring
-        ? getNumericRanges(part, thresholds)
-        : [];
+      const ranges = numericScoring || [];
 
       return (
         <div className="space-y-3">
-          {/* Threshold inputs for levels 1 through N-1 */}
+          {/* Range inputs */}
           <div className="space-y-3">
-            {Array.from({ length: maxLevel - 1 }, (_, i) => {
-              const levelNum = i + 1;
+            {ranges.map((range, i) => {
               const levelName = ratingScaleLevels.find(
-                (l) => l.level === levelNum
+                (l) => l.level === range.level
               )?.name;
-              const threshold = thresholds[i];
-              const rangeMin = i === 0 ? min : thresholds[i - 1] + 1;
-              const rangeMax = threshold;
 
               return (
-                <div key={i} className="space-y-1">
-                  <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
-                    <Label htmlFor={`${partId}-threshold-${i}`} className="text-sm">
-                      Level {levelNum} {levelName && `(${levelName})`} upper bound
-                    </Label>
-                    <Input
-                      id={`${partId}-threshold-${i}`}
-                      type="number"
-                      min={i === 0 ? min : thresholds[i - 1] + 1}
-                      max={max - 1}
-                      value={threshold ?? ""}
-                      onChange={(e) =>
-                        handleThresholdChange(partId, i, e.target.value)
-                      }
-                      disabled={isProcessing}
-                      className="w-24 h-8"
-                      placeholder={`${max}`}
-                    />
+                <div key={i} className="border rounded p-3 space-y-2 bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium">Range {i + 1}</div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveRange(partId, i)}
+                      disabled={isProcessing || ranges.length === 1}
+                      className="h-6 px-2"
+                    >
+                      Remove
+                    </Button>
                   </div>
-                  {threshold !== undefined && (
-                    <div className="text-xs text-muted-foreground pl-1">
-                      Range: {rangeMin} - {rangeMax}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor={`${partId}-range-${i}-min`} className="text-xs">
+                        Min
+                      </Label>
+                      <Input
+                        id={`${partId}-range-${i}-min`}
+                        type="number"
+                        value={range.min ?? ""}
+                        onChange={(e) =>
+                          handleRangeChange(partId, i, "min", e.target.value)
+                        }
+                        disabled={isProcessing}
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`${partId}-range-${i}-max`} className="text-xs">
+                        Max
+                      </Label>
+                      <Input
+                        id={`${partId}-range-${i}-max`}
+                        type="number"
+                        value={range.max ?? ""}
+                        onChange={(e) =>
+                          handleRangeChange(partId, i, "max", e.target.value)
+                        }
+                        disabled={isProcessing}
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`${partId}-range-${i}-level`} className="text-xs">
+                        Level
+                      </Label>
+                      <Select
+                        value={range.level?.toString() || "1"}
+                        onValueChange={(value) =>
+                          handleRangeChange(partId, i, "level", value)
+                        }
+                        disabled={isProcessing}
+                      >
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {levelOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value.toString()}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  {levelName && (
+                    <div className="text-xs text-muted-foreground">
+                      Maps to: {levelName}
                     </div>
                   )}
                 </div>
               );
             })}
-
-            {/* Final level (read-only, auto-calculated) */}
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-muted-foreground">
-                Level {maxLevel}{" "}
-                {ratingScaleLevels.find((l) => l.level === maxLevel)?.name &&
-                  `(${ratingScaleLevels.find((l) => l.level === maxLevel)?.name})`}
-              </div>
-              <div className="text-xs text-muted-foreground pl-1">
-                Range: {thresholds[maxLevel - 2] !== undefined ? thresholds[maxLevel - 2] + 1 : min} - {max}
-              </div>
-            </div>
           </div>
 
-          {/* Preview of all ranges */}
-          {ranges.length > 0 && (
-            <div className="pt-2 border-t">
-              <div className="text-xs font-medium text-muted-foreground mb-2">
-                Complete mapping:
-              </div>
-              <div className="space-y-1">
-                {ranges.map((range) => {
-                  const levelName = ratingScaleLevels.find(
-                    (l) => l.level === range.level
-                  )?.name;
-                  return (
-                    <div
-                      key={range.level}
-                      className="text-xs bg-muted p-2 rounded flex items-center justify-between"
-                    >
-                      <span>
-                        {range.min} - {range.max}
-                      </span>
-                      <span className="font-medium">
-                        → Level {range.level}
-                        {levelName && ` (${levelName})`}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {/* Add range button */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleAddRange(partId, part)}
+            disabled={isProcessing}
+            className="w-full"
+          >
+            Add Range
+          </Button>
+
+          {/* Help text */}
+          <div className="text-xs text-muted-foreground">
+            Define numeric ranges ({min} - {max}) and their corresponding levels.
+            Ranges must not overlap and should cover the entire range.
+          </div>
         </div>
       );
     }
@@ -823,20 +931,25 @@ function createDefaultConfig(
       part.answer_type === "number" ||
       part.answer_type === "percentage"
     ) {
-      // Numeric questions: generate evenly distributed thresholds
+      // Numeric questions: generate evenly distributed ranges
       const min = part.options.min || 0;
       const max = part.options.max || 100;
-      const thresholds: number[] = [];
+      const ranges: NumericRange[] = [];
+      const rangeSize = (max - min) / maxLevel;
 
-      // Generate N-1 thresholds for N levels
-      for (let i = 0; i < maxLevel - 1; i++) {
-        const threshold = Math.floor(min + ((max - min) * (i + 1)) / maxLevel);
-        thresholds.push(threshold);
+      // Generate ranges for each level
+      for (let i = 0; i < maxLevel; i++) {
+        const rangeMin = Math.floor(min + i * rangeSize);
+        const rangeMax = i === maxLevel - 1 ? max : Math.floor(min + (i + 1) * rangeSize) - 1;
+
+        ranges.push({
+          min: rangeMin,
+          max: rangeMax,
+          level: i + 1,
+        });
       }
 
-      partScoring[partId] = {
-        thresholds,
-      };
+      partScoring[partId] = ranges;
     }
   });
 
