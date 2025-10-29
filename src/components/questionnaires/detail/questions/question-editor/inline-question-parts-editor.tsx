@@ -310,7 +310,7 @@ export function InlineQuestionPartsEditor({
         <div className="grid w-full gap-2">
           <Label htmlFor="question-parts">Question Elements</Label>
           <span className="text-xs text-muted-foreground">
-            Define the individual parts that make up this question. Each part
+            Define the individual elements that make up this question. Each element
             can have its own answer type and is mappable to the questions rating
             scale. This makes it easier to interviewees to answer questions, without
             overwhelming them with a single large rating scale.
@@ -425,7 +425,7 @@ export function InlineQuestionPartsEditor({
             ) : (
               <div className="border border-border rounded p-4 text-center">
                 <span className="text-sm text-muted-foreground">
-                  No question parts added yet
+                  No question elements added yet
                 </span>
               </div>
             )}
@@ -456,7 +456,7 @@ export function InlineQuestionPartsEditor({
                     disabled={disabled}
                   >
                     <IconPlus className="h-3 w-3 mr-1" />
-                    Add Part
+                    Add Element
                   </Button>
                 )}
               </div>
