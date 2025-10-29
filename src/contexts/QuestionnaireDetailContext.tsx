@@ -151,7 +151,9 @@ export function QuestionnaireDetailProvider({
     return count;
   }, [questionsTab.questionCount, sections]);
 
-  const ratingScaleCount = ratingScales.length;
+  const ratingScaleCount = useMemo(() => {
+    return ratingScales.length;
+  }, [ratingScales]);
 
   // Status functions
   const getGeneralStatus = (): "complete" | "incomplete" => {
