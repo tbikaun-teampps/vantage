@@ -108,7 +108,7 @@ export function CreateInterviewDialog({
       }
     }
     loadRoles();
-  }, [selectedAssessmentId]);
+  }, [selectedAssessmentId, open]);
 
   // Generate default name when assessment is selected
   useEffect(() => {
@@ -124,7 +124,7 @@ export function CreateInterviewDialog({
         setInterviewName(`${prefix} - ${timestamp}`);
       }
     }
-  }, [selectedAssessmentId, assessments, isIndividualInterview]);
+  }, [selectedAssessmentId, assessments, isIndividualInterview, open]);
 
   // Validate that selected roles have applicable questions
   useEffect(() => {
@@ -151,7 +151,7 @@ export function CreateInterviewDialog({
     }
 
     validateRoleApplicability();
-  }, [selectedAssessmentId, selectedRoleIds]);
+  }, [selectedAssessmentId, selectedRoleIds, open]);
 
   // Load contacts when role is selected for individual interviews
   useEffect(() => {
@@ -186,7 +186,26 @@ export function CreateInterviewDialog({
     showIndividualOptions,
     selectedRoleIds,
     companyId,
+    open,
   ]);
+
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      if (mode === "standalone") {
+        setSelectedAssessmentId(undefined);
+      }
+      setInterviewName("");
+      setInterviewNotes("");
+      setIsIndividualInterview(false);
+      setSelectedRoleIds([]);
+      setAvailableRoles([]);
+      setAvailableContacts([]);
+      setSelectedContactIds([]);
+      setIsValidatingRoles(false);
+      setHasApplicableQuestions(true);
+    }
+  }, [open, mode]);
 
   // Handle create interview
   const handleCreateInterview = async () => {
@@ -271,18 +290,6 @@ export function CreateInterviewDialog({
   // Handle dialog close
   const handleClose = () => {
     onOpenChange(false);
-    if (mode === "standalone") {
-      setSelectedAssessmentId(undefined);
-    }
-    setInterviewName("");
-    setInterviewNotes("");
-    setIsIndividualInterview(false);
-    setSelectedRoleIds([]);
-    setAvailableRoles([]);
-    setAvailableContacts([]);
-    setSelectedContactIds([]);
-    setIsValidatingRoles(false);
-    setHasApplicableQuestions(true);
   };
 
   // Filter active assessments for standalone mode
