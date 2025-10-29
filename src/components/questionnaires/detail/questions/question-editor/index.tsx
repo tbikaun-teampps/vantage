@@ -86,28 +86,29 @@ export function QuestionEditor({
           helperText="Provide context or instructions to help auditors and interviewees understand the question(s)."
         />
 
-        {/* <InlineFieldEditor
-        label="Question Text"
-        value={question.question_text}
-        placeholder="Enter the full question text"
-        type="textarea"
-        maxLength={2000}
-        minRows={4}
-        disabled={isProcessing}
-        validation={(value) => {
-          if (!value.trim()) return "Question text is required";
-          if (value.length > 2000)
-            return "Question text must be less than 2000 characters";
-          return null;
-        }}
-        onSave={async (newValue) => {
-          await updateQuestion({
-            id: question.id,
-            updates: { question_text: newValue },
-          });
-        }}
-        required
-      /> */}
+        <InlineFieldEditor
+          label="Question Text"
+          value={question.question_text}
+          placeholder="Enter the full question text"
+          type="textarea"
+          maxLength={2000}
+          minRows={4}
+          disabled={isProcessing}
+          validation={(value) => {
+            if (!value.trim()) return "Question text is required";
+            if (value.length > 2000)
+              return "Question text must be less than 2000 characters";
+            return null;
+          }}
+          onSave={async (newValue) => {
+            await updateQuestion({
+              id: question.id,
+              updates: { question_text: newValue },
+            });
+          }}
+          required
+          helperText="Enter the complete text of the question to be presented to auditors when performing an interview. Auditors directly select a question rating, and do not answer question elements. If no question text is provided, the text of the question elements will be used instead (if available)."
+        />
 
         <InlineQuestionPartsEditor
           questionId={question.id}
