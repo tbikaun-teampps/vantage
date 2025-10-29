@@ -22,6 +22,39 @@ import {
 } from "./utils";
 import { InternalServerError, NotFoundError } from "../plugins/errorHandler";
 import { EmailService } from "./EmailService";
+import type { NumericScoring } from "../types/entities/weighted-scoring";
+
+/**
+ * Numeric range type for threshold-based scoring
+ */
+interface NumericRange {
+  min: number;
+  max: number;
+  level: number;
+}
+
+/**
+ * Type guard to check if a scoring configuration is numeric
+ */
+function isNumericScoring(scoring: any): scoring is NumericScoring {
+  return Array.isArray(scoring);
+}
+
+/**
+ * Calculate which level a numeric answer maps to
+ */
+function calculateNumericLevel(
+  answer: number,
+  ranges: NumericRange[]
+): number {
+  for (const range of ranges) {
+    if (answer >= range.min && answer <= range.max) {
+      return range.level;
+    }
+  }
+  // Default to highest level if answer exceeds all ranges
+  return ranges[ranges.length - 1]?.level || 1;
+}
 
 interface AssessmentWithQuestionnaire {
   id: number;
@@ -1444,7 +1477,7 @@ export class InterviewsService {
 
       const ratingScaleMap: {
         version: string;
-        partScoring: Record<string, Record<string, number>>;
+        partScoring: Record<string, Record<string, number> | NumericScoring>;
       } = question.rating_scale_mapping;
       console.log("Question rating scale mapping:", ratingScaleMap);
 
@@ -1482,10 +1515,23 @@ export class InterviewsService {
       let answeredParts = 0;
 
       for (const answer of question_part_answers) {
-        const partMapping =
-          ratingScaleMap.partScoring[answer.question_part_id.toString()];
+        const partId = answer.question_part_id.toString();
+        const partMapping = ratingScaleMap.partScoring[partId];
+
         if (partMapping) {
-          const score = partMapping[answer.answer_value];
+          let score: number | undefined;
+
+          // Check if this is numeric scoring with ranges
+          if (isNumericScoring(partMapping)) {
+            // Numeric scoring: calculate level from ranges
+            if (typeof answer.answer_value === "number") {
+              score = calculateNumericLevel(answer.answer_value, partMapping);
+            }
+          } else {
+            // Boolean or labelled scale scoring: direct lookup
+            score = (partMapping as Record<string, number>)[answer.answer_value];
+          }
+
           if (score !== undefined) {
             totalScore += score;
             answeredParts += 1;

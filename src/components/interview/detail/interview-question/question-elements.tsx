@@ -85,7 +85,9 @@ export function InterviewQuestionElements({
             <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
               <Button
                 variant="outline"
-                onClick={() => handleSelection(part.id, booleanOptions.false_label)}
+                onClick={() =>
+                  handleSelection(part.id, booleanOptions.false_label)
+                }
                 className={cn(
                   "transition-all duration-200",
                   selectedValue === booleanOptions.false_label &&
@@ -96,7 +98,9 @@ export function InterviewQuestionElements({
               </Button>
               <Button
                 variant="outline"
-                onClick={() => handleSelection(part.id, booleanOptions.true_label)}
+                onClick={() =>
+                  handleSelection(part.id, booleanOptions.true_label)
+                }
                 className={cn(
                   "transition-all duration-200",
                   selectedValue === booleanOptions.true_label &&
@@ -105,6 +109,45 @@ export function InterviewQuestionElements({
               >
                 {booleanOptions.true_label}
               </Button>
+            </div>
+          );
+        }
+        return null;
+      }
+      case "scale": {
+        // Scale has the options {"max": number, "min": number, "step": number}
+        if (
+          "max" in part.options &&
+          "min" in part.options &&
+          "step" in part.options
+        ) {
+          const scaleOptions = part.options;
+          const scaleValues = [];
+          for (
+            let val = scaleOptions.min;
+            val <= scaleOptions.max;
+            val += scaleOptions.step
+          ) {
+            scaleValues.push(val);
+          }
+          return (
+            <div className="mt-2 grid grid-cols-10 gap-4 text-sm ">
+              {scaleValues.map((value: number, index: number) => {
+                const isSelected = selectedValue === value.toString();
+                return (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    onClick={() => handleSelection(part.id, value.toString())}
+                    className={cn(
+                      "whitespace-normal text-wrap min-w-0 flex-1 h-16 break-words transition-all duration-200",
+                      isSelected && "bg-primary text-primary-foreground"
+                    )}
+                  >
+                    {value}
+                  </Button>
+                );
+              })}
             </div>
           );
         }

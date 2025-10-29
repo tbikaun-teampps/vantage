@@ -21,12 +21,20 @@ export interface LabelledScaleScoring {
 }
 
 /**
- * Scoring configuration for numeric question parts (scale, number, percentage)
- * Controls whether higher values map to higher or lower levels
+ * Numeric range for numeric question parts
  */
-export interface NumericScoring {
-  reversed: boolean; // If true, higher values map to lower levels
+export interface NumericRange {
+  min: number;
+  max: number;
+  level: number;
 }
+
+/**
+ * Scoring configuration for numeric question parts (scale, number, percentage)
+ * Explicit ranges that map numeric values to rating scale levels
+ * Example: [{ min: 0, max: 30, level: 1 }, { min: 31, max: 70, level: 2 }]
+ */
+export type NumericScoring = NumericRange[];
 
 /**
  * Union type for all possible scoring configurations

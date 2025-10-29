@@ -19,10 +19,12 @@ export interface LabelledScaleScoring {
 
 /**
  * Scoring configuration for numeric question parts (scale, number, percentage)
- * Controls whether higher values map to higher or lower levels
+ * Uses thresholds to define upper bounds for each level (except the last)
+ * Example: [30, 70] for 3 levels with range 0-100 means:
+ *   Level 1: 0-30, Level 2: 31-70, Level 3: 71-100
  */
 export interface NumericScoring {
-  reversed: boolean; // If true, higher values map to lower levels
+  thresholds: number[]; // Upper bounds for levels 1 through N-1
 }
 
 /**
@@ -78,37 +80,34 @@ export function isLabelledScaleScoring(
 }
 
 export function isNumericScoring(scoring: PartScoring): scoring is NumericScoring {
-  return "reversed" in scoring;
+  return "thresholds" in scoring;
 }
 
 /**
- * Get auto-calculated ranges for numeric question types
- * Distributes the min-max range evenly across all levels
+ * Get ranges for numeric question types based on user-defined thresholds
+ * Thresholds define the upper bounds for levels 1 through N-1
  * @param part - The question part with min/max options
- * @param numLevels - Number of rating scale levels
- * @param reversed - If true, higher values map to lower levels
+ * @param thresholds - Upper bounds for each level except the last
  */
 export function getNumericRanges(
   part: QuestionPart,
-  numLevels: number,
-  reversed = false
+  thresholds: number[]
 ): NumericRange[] {
   const min = part.options.min || 0;
   const max = part.options.max || 100;
-  const rangeSize = (max - min) / numLevels;
+  const numLevels = thresholds.length + 1;
 
   const ranges: NumericRange[] = [];
-  for (let i = 0; i < numLevels; i++) {
-    const rangeMin = min + i * rangeSize;
-    const rangeMax = i === numLevels - 1 ? max : min + (i + 1) * rangeSize;
 
-    // If reversed, higher ranges get lower levels
-    const level = reversed ? numLevels - i : i + 1;
+  // Build ranges from thresholds
+  for (let i = 0; i < numLevels; i++) {
+    const rangeMin = i === 0 ? min : thresholds[i - 1] + 1;
+    const rangeMax = i === numLevels - 1 ? max : thresholds[i];
 
     ranges.push({
-      min: Math.round(rangeMin * 100) / 100,
-      max: Math.round(rangeMax * 100) / 100,
-      level: level,
+      min: rangeMin,
+      max: rangeMax,
+      level: i + 1,
     });
   }
 
@@ -156,9 +155,8 @@ export function calculatePartLevel(
     case "scale":
     case "number":
     case "percentage":
-      if (typeof answer === "number") {
-        const reversed = scoring && isNumericScoring(scoring) ? scoring.reversed : false;
-        const ranges = getNumericRanges(part, numLevels, reversed);
+      if (typeof answer === "number" && scoring && isNumericScoring(scoring)) {
+        const ranges = getNumericRanges(part, scoring.thresholds);
         return calculateNumericLevel(answer, ranges);
       }
       return 1;

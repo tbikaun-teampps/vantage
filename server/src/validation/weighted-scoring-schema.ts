@@ -28,12 +28,53 @@ const LabelledScaleScoringSchema = z.record(
 );
 
 /**
- * Zod schema for numeric scoring configuration
- * Validates that reversed flag controls whether higher values map to lower levels
+ * Zod schema for numeric range
  */
-const NumericScoringSchema = z.object({
-  reversed: z.boolean(),
+const NumericRangeSchema = z.object({
+  min: z.number(),
+  max: z.number(),
+  level: z
+    .number()
+    .int("Level must be an integer")
+    .min(1, "Level must be at least 1"),
 });
+
+/**
+ * Zod schema for numeric scoring configuration
+ * Validates array of ranges with overlap and gap checking
+ */
+const NumericScoringSchema = z
+  .array(NumericRangeSchema)
+  .min(1, "At least one range is required")
+  .refine(
+    (ranges) => {
+      // Check for overlapping ranges
+      for (let i = 0; i < ranges.length; i++) {
+        const range = ranges[i];
+
+        // Check min <= max
+        if (range.min > range.max) {
+          return false;
+        }
+
+        // Check for overlaps with other ranges
+        for (let j = i + 1; j < ranges.length; j++) {
+          const otherRange = ranges[j];
+          if (
+            (range.min >= otherRange.min && range.min <= otherRange.max) ||
+            (range.max >= otherRange.min && range.max <= otherRange.max) ||
+            (otherRange.min >= range.min && otherRange.min <= range.max)
+          ) {
+            return false;
+          }
+        }
+      }
+      return true;
+    },
+    {
+      message: "Ranges must not overlap and min must be less than or equal to max",
+    }
+  );
 
 /**
  * Union schema for all scoring types

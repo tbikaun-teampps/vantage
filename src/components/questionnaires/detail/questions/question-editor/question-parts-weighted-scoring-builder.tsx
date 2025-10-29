@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -8,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -86,7 +86,10 @@ export function QuestionPartsWeightedScoringBuilder({
   useEffect(() => {
     if (!mappingData) {
       // No existing mapping - create defaults
-      const defaultConfig = createDefaultConfig(questionParts, ratingScaleLevels.length);
+      const defaultConfig = createDefaultConfig(
+        questionParts,
+        ratingScaleLevels.length
+      );
       setConfig(defaultConfig);
       return;
     }
@@ -118,13 +121,19 @@ export function QuestionPartsWeightedScoringBuilder({
       if (part.answer_type === "boolean") {
         // Choose answer with lower level
         const boolScoring = scoring as { true: number; false: number };
-        answer = (boolScoring?.false || 1) <= (boolScoring?.true || numLevels) ? false : true;
+        answer =
+          (boolScoring?.false || 1) <= (boolScoring?.true || numLevels)
+            ? false
+            : true;
       } else if (part.answer_type === "labelled_scale") {
         const labels = part.options.labels || [];
         const labelScoring = scoring as Record<string, number>;
         // Find label with minimum level
         const minLabel = labels.reduce((min, label) =>
-          (labelScoring?.[label] || numLevels) < (labelScoring?.[min] || numLevels) ? label : min
+          (labelScoring?.[label] || numLevels) <
+          (labelScoring?.[min] || numLevels)
+            ? label
+            : min
         );
         answer = minLabel;
       } else {
@@ -156,12 +165,17 @@ export function QuestionPartsWeightedScoringBuilder({
       let answer: boolean | string | number;
       if (part.answer_type === "boolean") {
         const boolScoring = scoring as { true: number; false: number };
-        answer = (boolScoring?.true || numLevels) >= (boolScoring?.false || 1) ? true : false;
+        answer =
+          (boolScoring?.true || numLevels) >= (boolScoring?.false || 1)
+            ? true
+            : false;
       } else if (part.answer_type === "labelled_scale") {
         const labels = part.options.labels || [];
         const labelScoring = scoring as Record<string, number>;
         const maxLabel = labels.reduce((max, label) =>
-          (labelScoring?.[label] || 1) > (labelScoring?.[max] || 1) ? label : max
+          (labelScoring?.[label] || 1) > (labelScoring?.[max] || 1)
+            ? label
+            : max
         );
         answer = maxLabel;
       } else {
@@ -242,14 +256,27 @@ export function QuestionPartsWeightedScoringBuilder({
     });
   };
 
-  const handleReversedToggle = (partId: string, reversed: boolean) => {
+  const handleThresholdChange = (
+    partId: string,
+    thresholdIndex: number,
+    value: string
+  ) => {
+    const numValue = parseFloat(value);
+    if (value !== "" && isNaN(numValue)) {
+      return; // Invalid input, ignore
+    }
+
     setConfig((prev) => {
+      const prevScoring = prev.partScoring[partId] as NumericScoring;
+      const newThresholds = [...(prevScoring?.thresholds || [])];
+      newThresholds[thresholdIndex] = numValue;
+
       return {
         ...prev,
         partScoring: {
           ...prev.partScoring,
           [partId]: {
-            reversed,
+            thresholds: newThresholds,
           },
         },
       };
@@ -259,17 +286,8 @@ export function QuestionPartsWeightedScoringBuilder({
   const validateConfig = (): boolean => {
     const maxLevel = ratingScaleLevels.length;
 
-    // Check that all non-numeric parts have scoring configured
+    // Check that all parts have scoring configured
     for (const part of questionParts) {
-      // Numeric questions don't need config - they use auto-calculated ranges
-      if (
-        part.answer_type === "scale" ||
-        part.answer_type === "number" ||
-        part.answer_type === "percentage"
-      ) {
-        continue;
-      }
-
       const partId = part.id.toString();
       const scoring = config.partScoring[partId];
 
@@ -299,17 +317,62 @@ export function QuestionPartsWeightedScoringBuilder({
         }
       } else if (part.answer_type === "labelled_scale") {
         const labels = part.options.labels || [];
+        const labelScoring = scoring as Record<string, number>;
         for (const label of labels) {
-          if (!(label in scoring)) {
+          if (!(label in labelScoring)) {
             toast.error(
               `Missing level assignment for label "${label}" in "${part.text}"`
             );
             return false;
           }
-          const level = scoring[label];
+          const level = labelScoring[label];
           if (level < 1 || level > maxLevel) {
             toast.error(
               `Level for "${label}" in "${part.text}" must be between 1 and ${maxLevel}`
+            );
+            return false;
+          }
+        }
+      } else if (
+        part.answer_type === "scale" ||
+        part.answer_type === "number" ||
+        part.answer_type === "percentage"
+      ) {
+        if (!isNumericScoring(scoring)) {
+          toast.error(
+            `Invalid configuration for numeric question "${part.text}"`
+          );
+          return false;
+        }
+
+        const min = part.options.min || 0;
+        const max = part.options.max || 100;
+        const thresholds = scoring.thresholds;
+
+        // Validate thresholds array length
+        if (thresholds.length !== maxLevel - 1) {
+          toast.error(
+            `Invalid number of thresholds for "${part.text}". Expected ${maxLevel - 1}, got ${thresholds.length}`
+          );
+          return false;
+        }
+
+        // Validate thresholds are in ascending order and within bounds
+        for (let i = 0; i < thresholds.length; i++) {
+          const threshold = thresholds[i];
+
+          // Check threshold is within valid range
+          if (threshold < min || threshold >= max) {
+            toast.error(
+              `Threshold ${i + 1} for "${part.text}" must be between ${min} and ${max - 1}`
+            );
+            return false;
+          }
+
+          // Check ascending order
+          if (i > 0 && threshold <= thresholds[i - 1]) {
+            toast.error(
+              `Thresholds for "${part.text}" must be in ascending order`
             );
             return false;
           }
@@ -360,13 +423,18 @@ export function QuestionPartsWeightedScoringBuilder({
     const levelOptions = Array.from({ length: maxLevel }, (_, i) => {
       const level = i + 1;
       const levelName = ratingScaleLevels.find((l) => l.level === level)?.name;
-      return { value: level, label: levelName ? `Level ${level} (${levelName})` : `Level ${level}` };
+      return {
+        value: level,
+        label: levelName ? `Level ${level} (${levelName})` : `Level ${level}`,
+      };
     });
 
     if (part.answer_type === "boolean") {
       const trueLabel = part.options.true_label || "Yes";
       const falseLabel = part.options.false_label || "No";
-      const boolScoring = scoring as { true: number; false: number } | undefined;
+      const boolScoring = scoring as
+        | { true: number; false: number }
+        | undefined;
 
       return (
         <div className="space-y-3">
@@ -376,7 +444,9 @@ export function QuestionPartsWeightedScoringBuilder({
             </Label>
             <Select
               value={boolScoring?.true?.toString() || "1"}
-              onValueChange={(value) => handleLevelChange(partId, "true", value)}
+              onValueChange={(value) =>
+                handleLevelChange(partId, "true", value)
+              }
               disabled={isProcessing}
             >
               <SelectTrigger className="w-40 h-8">
@@ -397,7 +467,9 @@ export function QuestionPartsWeightedScoringBuilder({
             </Label>
             <Select
               value={boolScoring?.false?.toString() || "1"}
-              onValueChange={(value) => handleLevelChange(partId, "false", value)}
+              onValueChange={(value) =>
+                handleLevelChange(partId, "false", value)
+              }
               disabled={isProcessing}
             >
               <SelectTrigger className="w-40 h-8">
@@ -436,7 +508,9 @@ export function QuestionPartsWeightedScoringBuilder({
               </Label>
               <Select
                 value={labelScoring?.[label]?.toString() || "1"}
-                onValueChange={(value) => handleLevelChange(partId, label, value)}
+                onValueChange={(value) =>
+                  handleLevelChange(partId, label, value)
+                }
                 disabled={isProcessing}
               >
                 <SelectTrigger className="w-40 h-8">
@@ -461,51 +535,98 @@ export function QuestionPartsWeightedScoringBuilder({
       part.answer_type === "number" ||
       part.answer_type === "percentage"
     ) {
-      // Numeric questions use auto-calculated ranges - display them read-only
+      const min = part.options.min || 0;
+      const max = part.options.max || 100;
       const numericScoring = scoring as NumericScoring | undefined;
-      const reversed = numericScoring?.reversed || false;
-      const ranges = getNumericRanges(part, maxLevel, reversed);
+      const thresholds = numericScoring?.thresholds || [];
+      const ranges = numericScoring
+        ? getNumericRanges(part, thresholds)
+        : [];
 
       return (
         <div className="space-y-3">
-          {/* Toggle for reversing the mapping */}
-          <div className="flex items-center justify-between gap-3 p-2 rounded border bg-muted/30">
-            <Label htmlFor={`${partId}-reversed`} className="text-sm cursor-pointer">
-              Reverse mapping (higher values = lower levels)
-            </Label>
-            <Switch
-              id={`${partId}-reversed`}
-              checked={reversed}
-              onCheckedChange={(checked) => handleReversedToggle(partId, checked)}
-              disabled={isProcessing}
-            />
+          {/* Threshold inputs for levels 1 through N-1 */}
+          <div className="space-y-3">
+            {Array.from({ length: maxLevel - 1 }, (_, i) => {
+              const levelNum = i + 1;
+              const levelName = ratingScaleLevels.find(
+                (l) => l.level === levelNum
+              )?.name;
+              const threshold = thresholds[i];
+              const rangeMin = i === 0 ? min : thresholds[i - 1] + 1;
+              const rangeMax = threshold;
+
+              return (
+                <div key={i} className="space-y-1">
+                  <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
+                    <Label htmlFor={`${partId}-threshold-${i}`} className="text-sm">
+                      Level {levelNum} {levelName && `(${levelName})`} upper bound
+                    </Label>
+                    <Input
+                      id={`${partId}-threshold-${i}`}
+                      type="number"
+                      min={i === 0 ? min : thresholds[i - 1] + 1}
+                      max={max - 1}
+                      value={threshold ?? ""}
+                      onChange={(e) =>
+                        handleThresholdChange(partId, i, e.target.value)
+                      }
+                      disabled={isProcessing}
+                      className="w-24 h-8"
+                      placeholder={`${max}`}
+                    />
+                  </div>
+                  {threshold !== undefined && (
+                    <div className="text-xs text-muted-foreground pl-1">
+                      Range: {rangeMin} - {rangeMax}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Final level (read-only, auto-calculated) */}
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-muted-foreground">
+                Level {maxLevel}{" "}
+                {ratingScaleLevels.find((l) => l.level === maxLevel)?.name &&
+                  `(${ratingScaleLevels.find((l) => l.level === maxLevel)?.name})`}
+              </div>
+              <div className="text-xs text-muted-foreground pl-1">
+                Range: {thresholds[maxLevel - 2] !== undefined ? thresholds[maxLevel - 2] + 1 : min} - {max}
+              </div>
+            </div>
           </div>
 
-          {/* Auto-calculated ranges display */}
-          <div>
-            <div className="text-xs font-medium text-muted-foreground mb-2">
-              Auto-calculated level ranges:
+          {/* Preview of all ranges */}
+          {ranges.length > 0 && (
+            <div className="pt-2 border-t">
+              <div className="text-xs font-medium text-muted-foreground mb-2">
+                Complete mapping:
+              </div>
+              <div className="space-y-1">
+                {ranges.map((range) => {
+                  const levelName = ratingScaleLevels.find(
+                    (l) => l.level === range.level
+                  )?.name;
+                  return (
+                    <div
+                      key={range.level}
+                      className="text-xs bg-muted p-2 rounded flex items-center justify-between"
+                    >
+                      <span>
+                        {range.min} - {range.max}
+                      </span>
+                      <span className="font-medium">
+                        → Level {range.level}
+                        {levelName && ` (${levelName})`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div className="space-y-1">
-              {ranges.map((range) => {
-                const levelName = ratingScaleLevels.find((l) => l.level === range.level)?.name;
-                return (
-                  <div
-                    key={range.level}
-                    className="text-xs bg-muted p-2 rounded flex items-center justify-between"
-                  >
-                    <span>
-                      {range.min} - {range.max}
-                    </span>
-                    <span className="font-medium">
-                      → Level {range.level}
-                      {levelName && ` (${levelName})`}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          )}
         </div>
       );
     }
@@ -523,7 +644,8 @@ export function QuestionPartsWeightedScoringBuilder({
         <DialogHeader>
           <DialogTitle>Configure Question Level Mapping</DialogTitle>
           <DialogDescription>
-            Assign rating scale levels to each answer option. Multiple question parts are averaged together to determine the final level.
+            Assign rating scale levels to each answer option. Multiple question
+            parts are averaged together to determine the final level.
           </DialogDescription>
         </DialogHeader>
 
@@ -616,7 +738,9 @@ export function QuestionPartsWeightedScoringBuilder({
                                     Level {scenario.averageLevel}
                                   </span>
                                   {levelName && (
-                                    <span className="text-xs">({levelName})</span>
+                                    <span className="text-xs">
+                                      ({levelName})
+                                    </span>
                                   )}
                                 </div>
                               </TableCell>
@@ -650,10 +774,7 @@ export function QuestionPartsWeightedScoringBuilder({
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleSave}
-              disabled={isPending || isProcessing}
-            >
+            <Button onClick={handleSave} disabled={isPending || isProcessing}>
               {isProcessing ? "Saving..." : "Save Configuration"}
             </Button>
           </div>
@@ -690,8 +811,9 @@ function createDefaultConfig(
           labelScoring[label] = maxLevel;
         } else {
           // Distribute evenly: map label index to levels
-          const levelForLabel =
-            Math.round(((index / (labels.length - 1)) * (maxLevel - 1)) + 1);
+          const levelForLabel = Math.round(
+            (index / (labels.length - 1)) * (maxLevel - 1) + 1
+          );
           labelScoring[label] = levelForLabel;
         }
       });
@@ -701,9 +823,19 @@ function createDefaultConfig(
       part.answer_type === "number" ||
       part.answer_type === "percentage"
     ) {
-      // Numeric questions: default to non-reversed (higher values = higher levels)
+      // Numeric questions: generate evenly distributed thresholds
+      const min = part.options.min || 0;
+      const max = part.options.max || 100;
+      const thresholds: number[] = [];
+
+      // Generate N-1 thresholds for N levels
+      for (let i = 0; i < maxLevel - 1; i++) {
+        const threshold = Math.floor(min + ((max - min) * (i + 1)) / maxLevel);
+        thresholds.push(threshold);
+      }
+
       partScoring[partId] = {
-        reversed: false,
+        thresholds,
       };
     }
   });
