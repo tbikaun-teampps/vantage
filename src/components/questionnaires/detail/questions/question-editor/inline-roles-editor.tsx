@@ -79,6 +79,10 @@ export function InlineRolesEditor({
       <div className="flex flex-col w-full gap-2">
         <div className="grid w-full gap-2">
           <Label htmlFor="applicable-roles">Applicable Roles</Label>
+          <span className="text-xs text-muted-foreground">
+            Select the applicable roles for this question. These roles will
+            determine who can view and answer the question.
+          </span>
           <div id="applicable-roles" className="space-y-2">
             {questionRoles && questionRoles.length > 0 ? (
               <div className="flex flex-wrap gap-1">
@@ -119,6 +123,10 @@ export function InlineRolesEditor({
     <div className="flex flex-col w-full gap-2">
       <div className="grid w-full gap-2">
         <Label htmlFor="applicable-roles">Applicable Roles</Label>
+        <span className="text-xs text-muted-foreground">
+          Select the applicable roles for this question. These roles will
+          determine who can view and answer the question.
+        </span>
         {sharedRoles.length === 0 ? (
           <div className="border border-border rounded p-4 text-center">
             <span className="text-sm text-muted-foreground">

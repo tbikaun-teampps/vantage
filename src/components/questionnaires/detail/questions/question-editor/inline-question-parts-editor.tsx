@@ -444,7 +444,7 @@ export function InlineQuestionPartsEditor({
                     disabled={disabled}
                   >
                     <IconTableOptions className="h-3 w-3 mr-1" />
-                    Configure Mappings
+                    Configure Rating Scale Mappings
                   </Button>
                 )}
               </div>

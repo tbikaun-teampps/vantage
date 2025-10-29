@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { IconLibraryPlus, IconPencil, IconPlus } from "@tabler/icons-react";
+import { IconPencil } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { QuestionRatingScaleDialog } from "@/components/questionnaires/detail/questions/question-editor/question-rating-scale-dialog";
 import type {
@@ -24,7 +24,6 @@ export function InlineRatingScalesEditor({
   question,
   availableRatingScales = [],
   disabled = false,
-  questionnaireId,
 }: InlineRatingScalesEditorProps) {
   const userCanAdmin = useCanAdmin();
 
@@ -33,9 +32,7 @@ export function InlineRatingScalesEditor({
     isAddingRatingScale,
     updateQuestionRatingScale,
     isUpdatingRatingScale,
-    // deleteQuestionRatingScale,
     isDeletingRatingScale,
-    // addAllQuestionnaireRatingScales,
     isAddingAllRatingScales,
   } = useQuestionActions();
 
@@ -59,17 +56,6 @@ export function InlineRatingScalesEditor({
   const unassignedRatingScales = availableRatingScales.filter(
     (rs) => !assignedRatingScaleIds.includes(rs.id)
   );
-
-  // const handleEdit = () => {
-  //   if (disabled) return;
-  //   handleAddRatingScale(); // Open the dialog directly
-  // };
-
-  // const handleAddRatingScale = () => {
-  //   setRatingFormData({ ratingScaleId: "", description: "" });
-  //   setEditingRating(null);
-  //   setShowRatingDialog(true);
-  // };
 
   const handleEditRatingScale = (
     ratingScale: QuestionRatingScaleWithDetails
@@ -122,79 +108,49 @@ export function InlineRatingScalesEditor({
     setRatingFormData({ ratingScaleId: "", description: "" });
   };
 
-  // const handleAddAllRatingScales = async () => {
-  //   if (!questionnaireId || !question.id) return;
-
-  //   try {
-  //     await addAllQuestionnaireRatingScales({
-  //       questionnaireId,
-  //       questionId: question.id,
-  //     });
-  //     toast.success("All questionnaire rating scales added successfully");
-  //   } catch (error) {
-  //     toast.error(
-  //       error instanceof Error
-  //         ? error.message
-  //         : "Failed to add all rating scales"
-  //     );
-  //   }
-  // };
-
-  // const handleDeleteRatingScale = async () => {
-  //   if (!editingRating) return;
-
-  //   try {
-  //     await deleteQuestionRatingScale({
-  //       questionId: question.id,
-  //       questionRatingScaleId: editingRating.id,
-  //     });
-  //     setShowRatingDialog(false);
-  //     toast.success("Rating scale removed successfully");
-  //   } catch (error) {
-  //     toast.error(
-  //       error instanceof Error ? error.message : "Failed to delete rating scale"
-  //     );
-  //   }
-  // };
-
   return (
     <div className="flex flex-col w-full gap-2">
       <div className="grid w-full gap-2">
-        <Label htmlFor="rating-scales">Rating Scales</Label>
+        <Label htmlFor="rating-scales">Question Rating Scales</Label>
+        <span className="text-xs text-muted-foreground">
+          Update the descriptions of rating scales specific to this question.
+        </span>
         <div id="rating-scales" className="space-y-2">
           {question.question_rating_scales &&
           question.question_rating_scales.length > 0 ? (
-            question.question_rating_scales.sort((a,b) => a.value - b.value).map((qrs) => (
-              <div
-                key={qrs.id}
-                className="text-sm bg-muted/50 rounded-md p-2 border border-border"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center">
-                    <div className="w-[40px]">
-                      <Badge variant="outline" className="text-xs">
-                        {qrs.value}
-                      </Badge>
+            question.question_rating_scales
+              .sort((a, b) => a.value - b.value)
+              .map((qrs) => (
+                <div
+                  key={qrs.id}
+                  className="text-sm bg-muted/50 rounded-md p-2 border border-border"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center">
+                      <div className="w-[40px]">
+                        <Badge variant="outline" className="text-xs">
+                          {qrs.value}
+                        </Badge>
+                      </div>
+                      <span className="font-medium">{qrs.name}</span>
                     </div>
-                    <span className="font-medium">{qrs.name}</span>
+                    {userCanAdmin && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 cursor-pointer"
+                        onClick={() => handleEditRatingScale(qrs)}
+                        disabled={disabled}
+                      >
+                        <IconPencil className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
-                  {userCanAdmin && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-6 cursor-pointer"
-                      onClick={() => handleEditRatingScale(qrs)}
-                      disabled={disabled}
-                    >
-                      <IconPencil className="h-3 w-3" />
-                    </Button>
-                  )}
+                  <div className="ml-[40px]">
+                    <p className="text-muted-foreground">{qrs.description}</p>
+                  </div>
                 </div>
-                <div className="ml-[40px]">
-                  <p className="text-muted-foreground">{qrs.description}</p>
-                </div>
-              </div>
-            ))
+              ))
           ) : (
             <div className="border border-border rounded p-4 text-center">
               <span className="text-sm text-muted-foreground">
@@ -203,36 +159,7 @@ export function InlineRatingScalesEditor({
             </div>
           )}
         </div>
-        {/* <div className="flex justify-end gap-2">
-          {questionnaireId &&
-            availableRatingScales.length > 0 &&
-            userCanAdmin && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="cursor-pointer"
-                onClick={handleAddAllRatingScales}
-                disabled={disabled || isLoading}
-              >
-                <IconLibraryPlus className="h-3 w-3 mr-1" />
-                Add All
-              </Button>
-            )}
-          {userCanAdmin && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="cursor-pointer"
-              onClick={handleEdit}
-              disabled={disabled}
-            >
-              <IconPlus className="h-3 w-3 mr-1" />
-              Add
-            </Button>
-          )}
-        </div> */}
 
-        {/* Rating Scale Assignment Dialog */}
         <QuestionRatingScaleDialog
           open={showRatingDialog}
           handleClose={handleCancelRatingDialog}

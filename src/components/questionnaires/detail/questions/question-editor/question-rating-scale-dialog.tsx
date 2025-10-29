@@ -45,12 +45,12 @@ export function QuestionRatingScaleDialog({
         <DialogHeader>
           <DialogTitle>
             {isEditing
-              ? "Edit Question Rating Scale"
-              : "Add QuestionRating Scale"}
+              ? "Edit Question Rating Scale Description"
+              : "Add Question Rating Scale Description"}
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? "Update the rating scale assignment for this question."
+              ? "Update the rating scale description for this question."
               : "Assign a rating scale to this question with a specific description."}
           </DialogDescription>
         </DialogHeader>
@@ -114,21 +114,6 @@ export function QuestionRatingScaleDialog({
 
         <DialogFooter>
           <div className="flex w-full justify-end">
-            {/* Delete button - only show when editing */}
-            {/* <div>
-              {isEditing && handleDeleteRatingScale && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={handleDeleteRatingScale}
-                  disabled={isProcessing}
-                >
-                  <IconTrash className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              )}
-            </div> */}
-
             {/* Cancel and Save buttons */}
             <div className="flex gap-2">
               <Button
@@ -154,8 +139,8 @@ export function QuestionRatingScaleDialog({
                     ? "Updating..."
                     : "Adding..."
                   : isEditing
-                    ? "Update Rating Scale"
-                    : "Add Rating Scale"}
+                    ? "Update"
+                    : "Add"}
               </Button>
             </div>
           </div>

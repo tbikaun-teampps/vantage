@@ -31,28 +31,31 @@ export default function MultiSelect({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
         setSearchValue("");
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
       return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener("mousedown", handleClickOutside);
       };
     }
   }, [isOpen]);
 
   // Helper function to get option display value
   const getOptionValue = (option: string | Option): string => {
-    return typeof option === 'string' ? option : option.name;
+    return typeof option === "string" ? option : option.name;
   };
 
   const toggleOption = (option: string | Option) => {
     if (disabled) return;
-    
+
     const optionValue = getOptionValue(option);
     const newValue = value.includes(optionValue)
       ? value.filter((v) => v !== optionValue)
@@ -72,19 +75,22 @@ export default function MultiSelect({
   };
 
   // Filter options based on search
-  const filteredOptions = searchable ? 
-    options.filter(option => {
-      const optionValue = getOptionValue(option);
-      return optionValue.toLowerCase().includes(searchValue.toLowerCase());
-    }) : options;
+  const filteredOptions = searchable
+    ? options.filter((option) => {
+        const optionValue = getOptionValue(option);
+        return optionValue.toLowerCase().includes(searchValue.toLowerCase());
+      })
+    : options;
 
   return (
     <div className="relative" ref={containerRef}>
-      <div className={`min-h-[40px] border border-input rounded-md px-3 py-2 text-sm ring-offset-background ${
-        disabled 
-          ? 'bg-muted cursor-not-allowed opacity-60' 
-          : 'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2'
-      }`}>
+      <div
+        className={`min-h-[40px] border border-input rounded-md px-3 py-2 text-sm ring-offset-background ${
+          disabled
+            ? "bg-muted cursor-not-allowed opacity-60"
+            : "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+        }`}
+      >
         <div className="flex flex-wrap gap-1">
           {value.map((item) => (
             <Badge key={item} variant="secondary" className="text-xs">
@@ -105,7 +111,7 @@ export default function MultiSelect({
           ))}
           <input
             className={`flex-1 min-w-[120px] bg-transparent outline-none placeholder:text-muted-foreground ${
-              disabled ? 'cursor-not-allowed' : 'cursor-pointer'
+              disabled ? "cursor-not-allowed" : "cursor-pointer"
             }`}
             placeholder={value.length === 0 ? placeholder : ""}
             onClick={handleInputClick}
@@ -135,11 +141,11 @@ export default function MultiSelect({
             {filteredOptions.map((option) => {
               const optionValue = getOptionValue(option);
               const isSelected = value.includes(optionValue);
-              const isObject = typeof option === 'object';
-              
+              const isObject = typeof option === "object";
+
               return (
                 <div
-                  key={typeof option === 'string' ? option : option.id}
+                  key={typeof option === "string" ? option : option.id}
                   className="px-3 py-2 text-sm cursor-pointer hover:bg-accent flex items-start gap-2"
                   onClick={() => toggleOption(option)}
                 >
@@ -169,7 +175,9 @@ export default function MultiSelect({
             })}
             {filteredOptions.length === 0 && (
               <div className="px-3 py-2 text-sm text-muted-foreground">
-                {searchable && searchValue ? "No roles found" : "No options available"}
+                {searchable && searchValue
+                  ? "No roles found"
+                  : "No options available"}
               </div>
             )}
           </div>

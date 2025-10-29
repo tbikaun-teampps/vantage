@@ -74,12 +74,12 @@ export function QuestionPartsDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Edit Question Part" : "Add Question Part"}
+            {isEditing ? "Edit Question Element" : "Add Question Element"}
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? "Update the question part details and its mapping to the global scale."
-              : "Add a new question part with its answer type and scale mapping."}
+              ? "Update the question element details. Ensure you reconfigure your rating scales if necessary."
+              : "Add a new question element with its answer type. Review the rating scale mappings to ensure it fits your needs."}
           </DialogDescription>
         </DialogHeader>
 
@@ -267,13 +267,16 @@ export function QuestionPartsDialog({
                   id="step"
                   type="number"
                   value={
-                    data.answer_type === "scale" ? data.step : data.decimals
+                    data.answer_type === "scale"
+                      ? data.step
+                      : data.decimal_places
                   }
                   onChange={(e) =>
                     setData((prev) => ({
                       ...prev,
-                      [data.answer_type === "scale" ? "step" : "decimals"]:
-                        e.target.value,
+                      [data.answer_type === "scale"
+                        ? "step"
+                        : "decimal_places"]: e.target.value,
                     }))
                   }
                   placeholder={data.answer_type === "scale" ? "1" : "0"}
@@ -322,8 +325,8 @@ export function QuestionPartsDialog({
                     ? "Updating..."
                     : "Adding..."
                   : isEditing
-                    ? "Update Part"
-                    : "Add Part"}
+                    ? "Update Element"
+                    : "Add Element"}
               </Button>
             </div>
           </div>
