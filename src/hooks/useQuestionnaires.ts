@@ -14,6 +14,7 @@ import {
   duplicateQuestionnaire,
 } from "@/lib/api/questionnaires";
 import { settingsKeys } from "@/hooks/questionnaire/useSettings";
+import { questionsKeys } from "@/hooks/questionnaire/useQuestions";
 
 // Query key factory for cache management
 const questionnaireKeys = {
@@ -104,6 +105,7 @@ export function useQuestionnaireActions() {
       // Invalidate all related queries to ensure UI updates everywhere
       queryClient.invalidateQueries({ queryKey: questionnaireKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: settingsKeys.basic(id) });
+      queryClient.invalidateQueries({ queryKey: questionsKeys.structure(id) });
     },
   });
 
