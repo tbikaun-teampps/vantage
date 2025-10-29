@@ -1928,9 +1928,10 @@ export class QuestionnaireService {
   }
 
   async deleteQuestionPart(partId: number): Promise<boolean> {
+    // Fetch the part to validate it exists and get the question ID
     const { data: existingData, error: fetchError } = await this.supabase
       .from("questionnaire_question_parts")
-      .select("id")
+      .select("id, questionnaire_question_id")
       .eq("id", partId)
       .eq("is_deleted", false)
       .single();
@@ -1938,6 +1939,35 @@ export class QuestionnaireService {
     if (fetchError) throw fetchError;
     if (!existingData) throw new NotFoundError("Question part not found");
 
+    // Fetch the question to get its current rating_scale_mapping
+    const { data: question, error: questionError } = await this.supabase
+      .from("questionnaire_questions")
+      .select("id, rating_scale_mapping")
+      .eq("id", existingData.questionnaire_question_id)
+      .eq("is_deleted", false)
+      .single();
+
+    if (questionError) throw questionError;
+    if (!question) throw new NotFoundError("Question not found");
+
+    // Remove the deleted part from the rating_scale_mapping if it exists
+    if (question.rating_scale_mapping) {
+      const currentMapping = question.rating_scale_mapping as unknown as WeightedScoringConfig;
+      const updatedMapping = this.removePartFromMapping(currentMapping, partId);
+
+      // Update the question's rating_scale_mapping
+      const { error: updateError } = await this.supabase
+        .from("questionnaire_questions")
+        .update({
+          rating_scale_mapping: updatedMapping as unknown as Json,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", question.id);
+
+      if (updateError) throw updateError;
+    }
+
+    // Soft delete the part
     const { error } = await this.supabase
       .from("questionnaire_question_parts")
       .update({
@@ -1978,6 +2008,36 @@ export class QuestionnaireService {
       .single();
 
     if (createError) throw createError;
+
+    // Fetch the question to get its current rating_scale_mapping
+    const { data: question, error: questionError } = await this.supabase
+      .from("questionnaire_questions")
+      .select("id, rating_scale_mapping")
+      .eq("id", originalPart.questionnaire_question_id)
+      .eq("is_deleted", false)
+      .single();
+
+    if (questionError) throw questionError;
+    if (!question) throw new NotFoundError("Question not found");
+
+    // Copy the original part's scoring config to the new part if it exists
+    if (question.rating_scale_mapping) {
+      const currentMapping = question.rating_scale_mapping as unknown as WeightedScoringConfig;
+      const updatedMapping = this.copyPartInMapping(currentMapping, partId, newPart.id);
+
+      // Only update if the mapping actually changed (i.e., original part had a config)
+      if (updatedMapping !== currentMapping) {
+        const { error: updateError } = await this.supabase
+          .from("questionnaire_questions")
+          .update({
+            rating_scale_mapping: updatedMapping as unknown as Json,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", question.id);
+
+        if (updateError) throw updateError;
+      }
+    }
 
     return newPart;
   }
@@ -2100,5 +2160,64 @@ export class QuestionnaireService {
     if (updateError) throw updateError;
 
     return updatedQuestion;
+  }
+
+  /**
+   * Helper method to remove a part from the rating scale mapping
+   * Returns null if the mapping becomes empty after removal
+   */
+  private removePartFromMapping(
+    mapping: WeightedScoringConfig | null,
+    partId: number
+  ): WeightedScoringConfig | null {
+    if (!mapping) return null;
+
+    const partIdStr = partId.toString();
+
+    // Create new partScoring without the deleted part
+    const remainingPartScoring = Object.keys(mapping.partScoring)
+      .filter(key => key !== partIdStr)
+      .reduce((acc, key) => {
+        acc[key] = mapping.partScoring[key];
+        return acc;
+      }, {} as typeof mapping.partScoring);
+
+    // If no parts remain in the mapping, return null
+    if (Object.keys(remainingPartScoring).length === 0) {
+      return null;
+    }
+
+    return {
+      ...mapping,
+      partScoring: remainingPartScoring,
+    };
+  }
+
+  /**
+   * Helper method to copy a part's scoring config to a new part in the mapping
+   * Returns the updated mapping or the original if source part not found
+   */
+  private copyPartInMapping(
+    mapping: WeightedScoringConfig | null,
+    sourcePartId: number,
+    targetPartId: number
+  ): WeightedScoringConfig | null {
+    if (!mapping) return null;
+
+    const sourcePartIdStr = sourcePartId.toString();
+    const targetPartIdStr = targetPartId.toString();
+
+    // If source part doesn't exist in mapping, return original
+    if (!mapping.partScoring[sourcePartIdStr]) {
+      return mapping;
+    }
+
+    return {
+      ...mapping,
+      partScoring: {
+        ...mapping.partScoring,
+        [targetPartIdStr]: mapping.partScoring[sourcePartIdStr],
+      },
+    };
   }
 }
