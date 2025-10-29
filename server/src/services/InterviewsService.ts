@@ -1054,12 +1054,12 @@ export class InterviewsService {
 
     const isIndividualInterview = data.is_individual;
 
-    const totalQuestions = data?.interview_responses?.length || 0;
+    const totalQuestions = data.interview_responses.length || 0;
     // Answered questions are those that have:
     // - rating_score set OR is_unknown marked as true
     // - For individual interviews, also need at least one response role
     // If the interview is individual (single role), then just need rating_score or is_unknown
-    const answeredQuestions = data?.interview_responses
+    const answeredQuestions = data.interview_responses
       ? data.interview_responses.filter((response) => {
           const hasAnswer =
             response.rating_score !== null || response.is_unknown === true;
@@ -1520,7 +1520,7 @@ export class InterviewsService {
           // Check if this is numeric scoring with ranges
           if (isNumericScoring(partMapping)) {
             score = calculateNumericLevel(
-              parseFloat(answer.answer_value),  // Convert answer to number
+              parseFloat(answer.answer_value), // Convert answer to number
               partMapping
             );
           } else {
