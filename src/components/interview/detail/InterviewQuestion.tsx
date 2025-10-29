@@ -37,8 +37,9 @@ export function InterviewQuestion({
   onComplete,
 }: InterviewQuestionProps) {
   const isMobile = useIsMobile();
-  const [isCompletionDialogOpen, setIsCompletionDialogOpen] = useState(false);
-  const [isCompleting, setIsCompleting] = useState(false);
+  const [isCompletionDialogOpen, setIsCompletionDialogOpen] =
+    useState<boolean>(false);
+  const [isCompleting, setIsCompleting] = useState<boolean>(false);
 
   const { data: question, isLoading: isLoadingQuestion } = useInterviewQuestion(
     interviewId,
@@ -189,11 +190,12 @@ export function InterviewQuestion({
                         handleSave();
                         return;
                       }
-                      // If at last question, show completion dialog
-                      if (isLast) {
+                      // If at last question, show completion dialog (if individual interview)
+                      if (isLast && isIndividualInterview) {
                         setIsCompletionDialogOpen(true);
                         return;
                       }
+
                       // Otherwise, navigate to next
                       onNext();
                     }}

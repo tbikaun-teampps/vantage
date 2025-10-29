@@ -1415,7 +1415,11 @@ export class InterviewsService {
       throw new NotFoundError("Interview response not found");
     }
 
-    if (question_part_answers !== undefined && question_part_answers !== null) {
+    if (
+      question_part_answers !== undefined &&
+      question_part_answers !== null &&
+      question_part_answers.length > 0
+    ) {
       // Before updating the question part answers, validate that its possible
       // to calculate the rating score from the answers provided.
       // 1. Fetch the associated questions 'rating_scale_mapping' which maps
@@ -1478,7 +1482,8 @@ export class InterviewsService {
       let answeredParts = 0;
 
       for (const answer of question_part_answers) {
-        const partMapping = ratingScaleMap.partScoring[answer.question_part_id.toString()];
+        const partMapping =
+          ratingScaleMap.partScoring[answer.question_part_id.toString()];
         if (partMapping) {
           const score = partMapping[answer.answer_value];
           if (score !== undefined) {

@@ -931,8 +931,6 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
             | null;
         };
 
-      console.log("question_part_answers: ", question_part_answers);
-
       const updatedResponse =
         await request.interviewsService!.updateInterviewResponse(
           responseId,
