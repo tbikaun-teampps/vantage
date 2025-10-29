@@ -1859,10 +1859,10 @@ export class QuestionnaireService {
   }
 
   async createQuestionPart(data: CreateQuestionPartData): Promise<QuestionPart> {
-    // validate question exists and get the company_id associated with it
+    // validate question exists and get the company_id and rating_scale_mapping associated with it
     const { data: question, error: questionError } = await this.supabase
       .from("questionnaire_questions")
-      .select("id, questionnaire_id, company_id")
+      .select("id, questionnaire_id, company_id, rating_scale_mapping")
       .eq("id", data.questionnaire_question_id)
       .eq("is_deleted", false)
       .single();
@@ -1887,6 +1887,54 @@ export class QuestionnaireService {
       .single();
 
     if (error) throw error;
+
+    // Auto-create or update rating_scale_mapping with defaults for the new part
+    const maxLevel = await this.getMaxLevelForQuestionnaire(
+      question.questionnaire_id
+    );
+    const defaultScoring = this.createDefaultPartScoring(
+      data.answer_type,
+      data.options,
+      maxLevel
+    );
+
+    // Only update mapping if scoring was generated (not null for text types)
+    if (defaultScoring !== null) {
+      const partIdStr = insertedData.id.toString();
+      let updatedMapping: WeightedScoringConfig;
+
+      if (question.rating_scale_mapping) {
+        // Add to existing mapping
+        const currentMapping = question.rating_scale_mapping as unknown as WeightedScoringConfig;
+        updatedMapping = {
+          ...currentMapping,
+          partScoring: {
+            ...currentMapping.partScoring,
+            [partIdStr]: defaultScoring,
+          },
+        };
+      } else {
+        // Create new mapping
+        updatedMapping = {
+          version: "weighted",
+          partScoring: {
+            [partIdStr]: defaultScoring,
+          },
+        };
+      }
+
+      // Update the question's rating_scale_mapping
+      const { error: updateError } = await this.supabase
+        .from("questionnaire_questions")
+        .update({
+          rating_scale_mapping: updatedMapping as unknown as Json,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", question.id);
+
+      if (updateError) throw updateError;
+    }
+
     return insertedData;
   }
 
@@ -2009,10 +2057,10 @@ export class QuestionnaireService {
 
     if (createError) throw createError;
 
-    // Fetch the question to get its current rating_scale_mapping
+    // Fetch the question to get its current rating_scale_mapping and questionnaire_id
     const { data: question, error: questionError } = await this.supabase
       .from("questionnaire_questions")
-      .select("id, rating_scale_mapping")
+      .select("id, questionnaire_id, rating_scale_mapping")
       .eq("id", originalPart.questionnaire_question_id)
       .eq("is_deleted", false)
       .single();
@@ -2020,23 +2068,67 @@ export class QuestionnaireService {
     if (questionError) throw questionError;
     if (!question) throw new NotFoundError("Question not found");
 
-    // Copy the original part's scoring config to the new part if it exists
+    // Try to copy the original part's scoring config, or generate defaults as fallback
+    const partIdStr = partId.toString();
+    const newPartIdStr = newPart.id.toString();
+    let updatedMapping: WeightedScoringConfig | null = null;
+
     if (question.rating_scale_mapping) {
       const currentMapping = question.rating_scale_mapping as unknown as WeightedScoringConfig;
-      const updatedMapping = this.copyPartInMapping(currentMapping, partId, newPart.id);
 
-      // Only update if the mapping actually changed (i.e., original part had a config)
-      if (updatedMapping !== currentMapping) {
-        const { error: updateError } = await this.supabase
-          .from("questionnaire_questions")
-          .update({
-            rating_scale_mapping: updatedMapping as unknown as Json,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", question.id);
+      // Check if original part has scoring configured
+      if (currentMapping.partScoring[partIdStr]) {
+        // Copy from original part
+        updatedMapping = this.copyPartInMapping(currentMapping, partId, newPart.id);
+      } else {
+        // Original part not in mapping, generate defaults for the new part
+        const maxLevel = await this.getMaxLevelForQuestionnaire(question.questionnaire_id);
+        const defaultScoring = this.createDefaultPartScoring(
+          originalPart.answer_type,
+          originalPart.options,
+          maxLevel
+        );
 
-        if (updateError) throw updateError;
+        if (defaultScoring !== null) {
+          updatedMapping = {
+            ...currentMapping,
+            partScoring: {
+              ...currentMapping.partScoring,
+              [newPartIdStr]: defaultScoring,
+            },
+          };
+        }
       }
+    } else {
+      // No mapping exists, create new one with defaults for the duplicated part
+      const maxLevel = await this.getMaxLevelForQuestionnaire(question.questionnaire_id);
+      const defaultScoring = this.createDefaultPartScoring(
+        originalPart.answer_type,
+        originalPart.options,
+        maxLevel
+      );
+
+      if (defaultScoring !== null) {
+        updatedMapping = {
+          version: "weighted",
+          partScoring: {
+            [newPartIdStr]: defaultScoring,
+          },
+        };
+      }
+    }
+
+    // Update the mapping if changes were made
+    if (updatedMapping !== null) {
+      const { error: updateError } = await this.supabase
+        .from("questionnaire_questions")
+        .update({
+          rating_scale_mapping: updatedMapping as unknown as Json,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", question.id);
+
+      if (updateError) throw updateError;
     }
 
     return newPart;
@@ -2219,5 +2311,91 @@ export class QuestionnaireService {
         [targetPartIdStr]: mapping.partScoring[sourcePartIdStr],
       },
     };
+  }
+
+  /**
+   * Helper method to get maxLevel from questionnaire rating scales
+   * Returns the count of rating scales, or 3 as a default if none exist
+   */
+  private async getMaxLevelForQuestionnaire(
+    questionnaireId: number
+  ): Promise<number> {
+    const { data: ratingScales, error } = await this.supabase
+      .from("questionnaire_rating_scales")
+      .select("id")
+      .eq("questionnaire_id", questionnaireId)
+      .eq("is_deleted", false);
+
+    if (error) throw error;
+
+    // Return count of rating scales, or default to 3 if none exist
+    return ratingScales && ratingScales.length > 0 ? ratingScales.length : 3;
+  }
+
+  /**
+   * Helper method to create default scoring for a question part
+   * Returns null for unscorable types (like text)
+   */
+  private createDefaultPartScoring(
+    answerType: string,
+    options: Json,
+    maxLevel: number
+  ): WeightedScoringConfig["partScoring"][string] | null {
+    const opts = options as { min?: number; max?: number; labels?: string[] };
+
+    switch (answerType) {
+      case "boolean":
+        // True maps to highest level, false to lowest
+        return {
+          true: maxLevel,
+          false: 1,
+        };
+
+      case "labelled_scale": {
+        const labels = opts.labels || [];
+        if (labels.length === 0) return null; // Can't score without labels
+
+        // Distribute labels evenly across levels
+        if (labels.length === 1) {
+          return { [labels[0]]: maxLevel };
+        }
+
+        const scoring: { [label: string]: number } = {};
+        labels.forEach((label, index) => {
+          // Linear distribution from 1 to maxLevel
+          const level = Math.round(
+            1 + (index / (labels.length - 1)) * (maxLevel - 1)
+          );
+          scoring[label] = level;
+        });
+        return scoring;
+      }
+
+      case "scale":
+      case "number":
+      case "percentage": {
+        const min = opts.min ?? 0;
+        const max = opts.max ?? 100;
+        const rangeSize = (max - min) / maxLevel;
+
+        const ranges: Array<{ min: number; max: number; level: number }> = [];
+        for (let level = 1; level <= maxLevel; level++) {
+          const rangeMin = min + (level - 1) * rangeSize;
+          const rangeMax =
+            level === maxLevel ? max : min + level * rangeSize - 0.01;
+
+          ranges.push({
+            min: Math.round(rangeMin * 100) / 100,
+            max: Math.round(rangeMax * 100) / 100,
+            level,
+          });
+        }
+        return ranges;
+      }
+
+      default:
+        // Unknown or unscorable type (e.g., text)
+        return null;
+    }
   }
 }
