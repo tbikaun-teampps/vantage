@@ -528,8 +528,8 @@ export function QuestionPartsWeightedScoringBuilder({
         | undefined;
 
       return (
-        <div className="space-y-3">
-          <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
+        <div className="flex gap-8 justify-center">
+          <div className="flex gap-4">
             <Label htmlFor={`${partId}-true`} className="text-sm">
               {trueLabel}
             </Label>
@@ -552,7 +552,7 @@ export function QuestionPartsWeightedScoringBuilder({
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
+          <div className="flex gap-4">
             <Label htmlFor={`${partId}-false`} className="text-sm">
               {falseLabel}
             </Label>
