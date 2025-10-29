@@ -8,25 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import type { AssessmentMeasurement } from "../../../types/assessment-measurements";
 import { cn } from "@/lib/utils";
 
-// Status options for measurements
 export const MEASUREMENT_STATUS_OPTIONS = [
   {
-    value: "configured",
-    label: "Configured",
-    icon: IconCheck,
-    iconColor: "text-green-600",
+    value: "available",
+    label: "Available",
+    icon: IconAlertCircle,
+    iconColor: "text-blue-600",
   },
   {
-    value: "pending",
-    label: "Pending",
+    value: "unavailable",
+    label: "Unavailable",
     icon: IconAlertCircle,
-    iconColor: "text-yellow-600",
-  },
-  {
-    value: "error",
-    label: "Error",
-    icon: IconAlertCircle,
-    iconColor: "text-red-600",
+    iconColor: "text-orange-600",
   },
   {
     value: "in_use",
@@ -36,7 +29,6 @@ export const MEASUREMENT_STATUS_OPTIONS = [
   },
 ];
 
-// Get status icon component
 function StatusIcon({ status }: { status: string }) {
   const option = MEASUREMENT_STATUS_OPTIONS.find((opt) => opt.value === status);
   if (!option) return <IconAlertCircle className="h-4 w-4 text-gray-400" />;
@@ -44,10 +36,7 @@ function StatusIcon({ status }: { status: string }) {
   return <option.icon className={`h-4 w-4 ${option.iconColor}`} />;
 }
 
-// Create measurement table columns
-export function createMeasurementColumns(
-  onRowSelect: (measurement: AssessmentMeasurement) => void
-): ColumnDef<AssessmentMeasurement>[] {
+export function createMeasurementColumns(): ColumnDef<AssessmentMeasurement>[] {
   return [
     {
       id: "selected",
@@ -101,17 +90,31 @@ export function createMeasurementColumns(
       accessorKey: "status",
       header: () => <div>Status</div>,
       cell: ({ row }) => (
-        <div key={row.original.id}>
+        <div key={row.original.id} className="flex gap-2">
           <Badge
             className={cn(
               "flex items-center gap-1 capitalize",
-              row.original.status === "in_use" && "bg-green-100 text-green-800"
+              row.original.status === "available" &&
+                "bg-blue-100 text-blue-800",
+              row.original.status === "unavailable" &&
+                "bg-orange-100 text-orange-800"
             )}
             variant="secondary"
           >
             <StatusIcon status={row.original.status} />
             {row.original.status.replaceAll("_", " ")}
           </Badge>
+          {row.original.isInUse && (
+            <Badge
+              className={cn(
+                "flex items-center gap-1 capitalize bg-green-100 text-green-800"
+              )}
+              variant="secondary"
+            >
+              <StatusIcon status="in_use" />
+              In Use
+            </Badge>
+          )}
         </div>
       ),
     },

@@ -46,14 +46,18 @@ export function MeasurementManagement({
   const { addMeasurement, deleteMeasurement, isDeleting } =
     useAssessmentMeasurementActions();
 
-  // Sort measurements to show "in use" ones first
+  // Sort measurements: isInUse first, then available, then unavailable. Each group alphabetically.
   const sortedMeasurements = useMemo(() => {
     return [...allMeasurements].sort((a, b) => {
-      // Sort by isInUse first (true comes before false)
+      // Sort by isInUse first (in use comes first)
       if (a.isInUse !== b.isInUse) {
         return a.isInUse ? -1 : 1;
       }
-      // Then sort alphabetically by name
+      // Within same isInUse status, sort by active status (available before unavailable)
+      if (a.active !== b.active) {
+        return a.active ? -1 : 1;
+      }
+      // Within same group, sort alphabetically by name
       return a.name.localeCompare(b.name);
     });
   }, [allMeasurements]);
@@ -159,7 +163,7 @@ export function MeasurementManagement({
     toast.info(`Upload data for "${measurement.name}" - not implemented yet`);
   };
 
-  const columns = createMeasurementColumns(handleRowSelect);
+  const columns = createMeasurementColumns();
 
   return (
     <>

@@ -107,6 +107,7 @@ export async function getMeasurementDefinitions(): Promise<
     objective: string;
     calculation: string;
     required_csv_columns: Record<string, string>;
+    active: boolean;
   }>
 > {
   const response = await apiClient.get<
@@ -120,6 +121,7 @@ export async function getMeasurementDefinitions(): Promise<
         objective: string;
         calculation: string;
         required_csv_columns: Record<string, string>;
+        active: boolean;
       }>
     >
   >("/shared/measurement-definitions");

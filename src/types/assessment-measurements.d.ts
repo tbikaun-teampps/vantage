@@ -2,7 +2,7 @@ import type { Measurement } from "@/types/desktop-assessment";
 
 export interface AssessmentMeasurement extends Measurement {
   active: boolean; // Whether this measurement is active and can be added
-  status: "configured" | "pending" | "error" | "in_use" | "available";
+  status: "unavailable" | "in_use" | "available";
   data_status: "uploaded" | "not_uploaded" | "partial";
   updated_at: string | null;
   completion: number;

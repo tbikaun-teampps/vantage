@@ -64,31 +64,15 @@ export function useAssessmentMeasurements(assessmentId?: number) {
     return definitionsQuery.data.map((definition) => {
       // Count how many instances exist for this measurement definition
       const instances = uploadedMeasurements.filter(
-        (m) => m.measurement_id === definition.id
+        (m) => m.measurement_definition_id === definition.id
       );
       const instanceCount = instances.length;
-
-      // For backwards compatibility, use the first instance if it exists
-      const uploaded = instances[0];
-
-      if (uploaded) {
-        return {
-          ...definition,
-          ...uploaded,
-          id: definition.id, // CRITICAL: Preserve definition ID, don't let uploaded.id overwrite it
-          status: "in_use" as const,
-          isInUse: true,
-          measurementRecordId: uploaded.id, // Store the measurements_calculated.id for deletion
-          instanceCount, // Add count of all instances for this definition
-        };
-      }
 
       return {
         ...definition,
         status: definition.active ? "available" : "unavailable",
-        updated_at: null,
-        isInUse: false,
-        instanceCount: 0, // No instances for this definition
+        isInUse: instanceCount > 0,
+        instanceCount,
       };
     });
   }, [definitionsQuery.data, measurementsQuery.data]);
