@@ -13,6 +13,11 @@ type QuestionPart = {
     | {
         true_label: string;
         false_label: string;
+      }
+    | {
+        max: number;
+        min: number;
+        step: number;
       };
 };
 
@@ -52,109 +57,131 @@ export function InterviewQuestionElements({
 
     const selectedValue = form.watch(`question_part_${part.id}`);
 
-    switch (part.answer_type) {
-      case "labelled_scale": {
-        if ("labels" in part.options) {
-          return (
-            <div className="mt-2 grid grid-cols-4 gap-4 text-sm ">
-              {part.options.labels.map((label: string, index: number) => {
-                const isSelected = selectedValue === label;
-                return (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    onClick={() => handleSelection(part.id, label)}
-                    className={cn(
-                      "whitespace-normal text-wrap min-w-0 flex-1 h-16 break-words transition-all duration-200",
-                      isSelected && "bg-primary text-primary-foreground"
-                    )}
-                  >
-                    {label}
-                  </Button>
-                );
-              })}
-            </div>
-          );
-        }
-        return null;
+    if (part.answer_type === "labelled_scale") {
+      if ("labels" in part.options) {
+        return (
+          <div className="mt-2 grid grid-cols-4 gap-4 text-sm ">
+            {part.options.labels.map((label: string, index: number) => {
+              const isSelected = selectedValue === label;
+              return (
+                <Button
+                  key={index}
+                  variant="outline"
+                  onClick={() => handleSelection(part.id, label)}
+                  className={cn(
+                    "whitespace-normal text-wrap min-w-0 flex-1 h-16 break-words transition-all duration-200",
+                    isSelected && "bg-primary text-primary-foreground"
+                  )}
+                >
+                  {label}
+                </Button>
+              );
+            })}
+          </div>
+        );
       }
-      case "boolean": {
-        if ("true_label" in part.options && "false_label" in part.options) {
-          const booleanOptions = part.options;
-          return (
-            <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
-              <Button
-                variant="outline"
-                onClick={() =>
-                  handleSelection(part.id, booleanOptions.false_label)
-                }
-                className={cn(
-                  "transition-all duration-200",
-                  selectedValue === booleanOptions.false_label &&
-                    "bg-primary text-primary-foreground"
-                )}
-              >
-                {booleanOptions.false_label}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() =>
-                  handleSelection(part.id, booleanOptions.true_label)
-                }
-                className={cn(
-                  "transition-all duration-200",
-                  selectedValue === booleanOptions.true_label &&
-                    "bg-primary text-primary-foreground"
-                )}
-              >
-                {booleanOptions.true_label}
-              </Button>
-            </div>
-          );
-        }
-        return null;
+      return null;
+    } else if (part.answer_type === "boolean") {
+      if ("true_label" in part.options && "false_label" in part.options) {
+        const booleanOptions = part.options;
+        return (
+          <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+            <Button
+              variant="outline"
+              onClick={() =>
+                handleSelection(part.id, booleanOptions.false_label)
+              }
+              className={cn(
+                "transition-all duration-200",
+                selectedValue === booleanOptions.false_label &&
+                  "bg-primary text-primary-foreground"
+              )}
+            >
+              {booleanOptions.false_label}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() =>
+                handleSelection(part.id, booleanOptions.true_label)
+              }
+              className={cn(
+                "transition-all duration-200",
+                selectedValue === booleanOptions.true_label &&
+                  "bg-primary text-primary-foreground"
+              )}
+            >
+              {booleanOptions.true_label}
+            </Button>
+          </div>
+        );
       }
-      case "scale": {
-        // Scale has the options {"max": number, "min": number, "step": number}
-        if (
-          "max" in part.options &&
-          "min" in part.options &&
-          "step" in part.options
+      return null;
+    } else if (["scale", "number"].includes(part.answer_type)) {
+      // Scale has the options {"max": number, "min": number, "step": number}
+      if (
+        "max" in part.options &&
+        "min" in part.options &&
+        "step" in part.options
+      ) {
+        const scaleOptions = part.options;
+        const scaleValues = [];
+        for (
+          let val = scaleOptions.min;
+          val <= scaleOptions.max;
+          val += scaleOptions.step
         ) {
-          const scaleOptions = part.options;
-          const scaleValues = [];
-          for (
-            let val = scaleOptions.min;
-            val <= scaleOptions.max;
-            val += scaleOptions.step
-          ) {
-            scaleValues.push(val);
-          }
-          return (
-            <div className="mt-2 grid grid-cols-10 gap-4 text-sm ">
-              {scaleValues.map((value: number, index: number) => {
-                const isSelected = selectedValue === value.toString();
-                return (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    onClick={() => handleSelection(part.id, value.toString())}
-                    className={cn(
-                      "whitespace-normal text-wrap min-w-0 flex-1 h-16 break-words transition-all duration-200",
-                      isSelected && "bg-primary text-primary-foreground"
-                    )}
-                  >
-                    {value}
-                  </Button>
-                );
-              })}
-            </div>
-          );
+          scaleValues.push(val);
         }
-        return null;
+        return (
+          <div className="mt-2 grid grid-cols-10 gap-4 text-sm ">
+            {scaleValues.map((value: number, index: number) => {
+              const isSelected = selectedValue === value.toString();
+              return (
+                <Button
+                  key={index}
+                  variant="outline"
+                  onClick={() => handleSelection(part.id, value.toString())}
+                  className={cn(
+                    "whitespace-normal text-wrap min-w-0 flex-1 h-16 break-words transition-all duration-200",
+                    isSelected && "bg-primary text-primary-foreground"
+                  )}
+                >
+                  {value}
+                </Button>
+              );
+            })}
+          </div>
+        );
       }
-      default:
-        return null;
+      return null;
+    } else if (part.answer_type === "percentage") {
+      // Percentage scale from 0 to 100
+      const percentageValues = [];
+      for (let val = 0; val <= 100; val += 10) {
+        percentageValues.push(val);
+      }
+      return (
+        <div className="mt-2 grid grid-cols-10 gap-4 text-sm ">
+          {percentageValues.map((value: number, index: number) => {
+            const isSelected = selectedValue === value.toString();
+            return (
+              <Button
+                key={index}
+                variant="outline"
+                onClick={() => handleSelection(part.id, value.toString())}
+                className={cn(
+                  "whitespace-normal text-wrap min-w-0 flex-1 h-16 break-words transition-all duration-200",
+                  isSelected && "bg-primary text-primary-foreground"
+                )}
+              >
+                {value}%
+              </Button>
+            );
+          })}
+        </div>
+      );
+    } else {
+      return null;
     }
   };
 

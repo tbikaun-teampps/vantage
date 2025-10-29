@@ -47,6 +47,7 @@ import {
 import { toast } from "sonner";
 import { useQuestionRatingScaleMapping } from "@/hooks/questionnaire/useQuestionParts";
 import { Info } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface RatingScaleLevel {
   level: number;
@@ -261,7 +262,8 @@ export function QuestionPartsWeightedScoringBuilder({
     field: "min" | "max" | "level",
     value: string
   ) => {
-    const numValue = field === "level" ? parseInt(value, 10) : parseFloat(value);
+    const numValue =
+      field === "level" ? parseInt(value, 10) : parseFloat(value);
     if (value !== "" && isNaN(numValue)) {
       return; // Invalid input, ignore
     }
@@ -582,12 +584,9 @@ export function QuestionPartsWeightedScoringBuilder({
       const labelScoring = scoring as Record<string, number> | undefined;
 
       return (
-        <div className="space-y-3">
+        <div className="grid grid-cols-5 gap-2">
           {labels.map((label) => (
-            <div
-              key={label}
-              className="grid grid-cols-[1fr_auto] gap-2 items-center"
-            >
+            <div key={label} className="flex items-center gap-4">
               <Label
                 htmlFor={`${partId}-${label}`}
                 className="text-sm truncate"
@@ -632,14 +631,13 @@ export function QuestionPartsWeightedScoringBuilder({
       return (
         <div className="space-y-3">
           {/* Range inputs */}
-          <div className="space-y-3">
+          <div className="space-y-3 grid grid-cols-3 gap-2 ">
             {ranges.map((range, i) => {
-              const levelName = ratingScaleLevels.find(
-                (l) => l.level === range.level
-              )?.name;
-
               return (
-                <div key={i} className="border rounded p-3 space-y-2 bg-muted/30">
+                <div
+                  key={i}
+                  className="border rounded p-3 space-y-2 bg-muted/30"
+                >
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-medium">Range {i + 1}</div>
                     <Button
@@ -655,7 +653,10 @@ export function QuestionPartsWeightedScoringBuilder({
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
-                      <Label htmlFor={`${partId}-range-${i}-min`} className="text-xs">
+                      <Label
+                        htmlFor={`${partId}-range-${i}-min`}
+                        className="text-xs"
+                      >
                         Min
                       </Label>
                       <Input
@@ -670,7 +671,10 @@ export function QuestionPartsWeightedScoringBuilder({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor={`${partId}-range-${i}-max`} className="text-xs">
+                      <Label
+                        htmlFor={`${partId}-range-${i}-max`}
+                        className="text-xs"
+                      >
                         Max
                       </Label>
                       <Input
@@ -685,7 +689,10 @@ export function QuestionPartsWeightedScoringBuilder({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor={`${partId}-range-${i}-level`} className="text-xs">
+                      <Label
+                        htmlFor={`${partId}-range-${i}-level`}
+                        className="text-xs"
+                      >
                         Level
                       </Label>
                       <Select
@@ -700,7 +707,10 @@ export function QuestionPartsWeightedScoringBuilder({
                         </SelectTrigger>
                         <SelectContent>
                           {levelOptions.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value.toString()}>
+                            <SelectItem
+                              key={opt.value}
+                              value={opt.value.toString()}
+                            >
                               {opt.label}
                             </SelectItem>
                           ))}
@@ -708,11 +718,6 @@ export function QuestionPartsWeightedScoringBuilder({
                       </Select>
                     </div>
                   </div>
-                  {levelName && (
-                    <div className="text-xs text-muted-foreground">
-                      Maps to: {levelName}
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -731,9 +736,9 @@ export function QuestionPartsWeightedScoringBuilder({
           </Button>
 
           {/* Help text */}
-          <div className="text-xs text-muted-foreground">
-            Define numeric ranges ({min} - {max}) and their corresponding levels.
-            Ranges must not overlap and should cover the entire range.
+          <div className="text-xs text-muted-foreground text-center">
+            Define numeric ranges ({min} - {max}) and their corresponding
+            levels. Ranges must not overlap and should cover the entire range.
           </div>
         </div>
       );
@@ -750,42 +755,40 @@ export function QuestionPartsWeightedScoringBuilder({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="min-w-[90vw] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Configure Question Level Mapping</DialogTitle>
+          <DialogTitle>
+            Configure Question Answer to Rating Scale Mapping
+          </DialogTitle>
           <DialogDescription>
-            Assign rating scale levels to each answer option. Multiple question
-            parts are averaged together to determine the final level.
+            Specify how answers to each question part map to rating scale
+            levels. These are used to automatically calculate the overall
+            question rating score based on weighted averages.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-auto space-y-6">
           {/* Panel 1: Question Configuration */}
-          <Card className="shadow-none border-none p-0">
-            <CardHeader>
-              <CardTitle className="text-lg">Level Assignment</CardTitle>
-              <CardDescription>
-                Assign which rating scale level each answer option maps to
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6 grid grid-cols-2 gap-4">
-              {questionParts.map((part) => (
-                <div
-                  key={part.id}
-                  className="border rounded-lg p-4 space-y-3 bg-card"
-                >
-                  <div className="space-y-1">
-                    <div className="font-medium text-sm">{part.text}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {part.answer_type}
-                    </div>
+          <div className="space-y-4">
+            {questionParts.map((part, index) => (
+              <div key={part.id} className="py-2 space-y-3">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="flex-1 border-t border-gray-300" />
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="font-medium text-lg whitespace-nowrap">
+                      {index + 1}. {part.text}
+                    </span>
+                    <Badge variant="secondary" className="text-xs capitalize">
+                      {part.answer_type.replaceAll("_", " ")}
+                    </Badge>
                   </div>
-                  {renderPartScoring(part)}
+                  <div className="flex-1 border-t border-gray-300" />
                 </div>
-              ))}
-            </CardContent>
-          </Card>
+                {renderPartScoring(part)}
+              </div>
+            ))}
+          </div>
 
           {/* Panel 2: Preview */}
-          <Card className="shadow-none border-none p-0">
+          {/* <Card className="shadow-none border-none p-0">
             <CardHeader>
               <CardTitle className="text-lg">Preview</CardTitle>
               <CardDescription>
@@ -861,7 +864,7 @@ export function QuestionPartsWeightedScoringBuilder({
                 </Card>
               )}
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
 
         <DialogFooter className="flex justify-between">
@@ -940,7 +943,8 @@ function createDefaultConfig(
       // Generate ranges for each level
       for (let i = 0; i < maxLevel; i++) {
         const rangeMin = Math.floor(min + i * rangeSize);
-        const rangeMax = i === maxLevel - 1 ? max : Math.floor(min + (i + 1) * rangeSize) - 1;
+        const rangeMax =
+          i === maxLevel - 1 ? max : Math.floor(min + (i + 1) * rangeSize) - 1;
 
         ranges.push({
           min: rangeMin,
