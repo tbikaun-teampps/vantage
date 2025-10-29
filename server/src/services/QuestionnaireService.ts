@@ -264,9 +264,10 @@ export class QuestionnaireService {
 
     if (questionnaireError) throw questionnaireError;
 
-    // Duplicate rating scales
+    // Duplicate rating scales and create ID mapping
+    const ratingScaleIdMapping = new Map<number, number>();
     if (originalQuestionnaire.questionnaire_rating_scales.length > 0) {
-      const { error: ratingError } = await this.supabase
+      const { data: newRatingScales, error: ratingError } = await this.supabase
         .from("questionnaire_rating_scales")
         .insert(
           originalQuestionnaire.questionnaire_rating_scales.map((scale) => ({
@@ -278,9 +279,18 @@ export class QuestionnaireService {
             created_by: this.userId,
             company_id: newQuestionnaire.company_id,
           }))
-        );
+        )
+        .select();
 
       if (ratingError) throw ratingError;
+
+      // Build mapping from original rating scale ID to new rating scale ID
+      // Rating scales are inserted in same order, so we can match by index
+      if (newRatingScales) {
+        originalQuestionnaire.questionnaire_rating_scales.forEach((originalScale, index) => {
+          ratingScaleIdMapping.set(originalScale.id, newRatingScales[index].id);
+        });
+      }
     }
 
     // Duplicate sections, steps, and questions
@@ -344,58 +354,127 @@ export class QuestionnaireService {
 
           // Duplicate question rating scale associations
           if (question.question_rating_scales.length > 0) {
-            // Get the new rating scale IDs that correspond to the original ones
-            const { data: newRatingScales } = await this.supabase
-              .from("questionnaire_rating_scales")
-              .select("id, value, name")
-              .eq("questionnaire_id", newQuestionnaire.id);
-
-            if (newRatingScales) {
-              // Create a mapping from original rating scales to new ones
-              const ratingScaleMap = new Map();
-              question.question_rating_scales.forEach((qrs) => {
-                const matchingNewScale = newRatingScales.find(
-                  (nrs) => nrs.id === qrs.questionnaire_rating_scale_id
-                );
-                if (matchingNewScale) {
-                  ratingScaleMap.set(
-                    qrs.questionnaire_rating_scale_id,
-                    matchingNewScale.id
+            // Use the rating scale ID mapping created earlier
+            // Map old rating scale IDs to new ones
+            const questionRatingScalesToInsert =
+              question.question_rating_scales
+                .map((qrs) => {
+                  const newRatingScaleId = ratingScaleIdMapping.get(
+                    qrs.questionnaire_rating_scale_id
                   );
+                  if (newRatingScaleId) {
+                    return {
+                      questionnaire_question_id: newQuestion.id,
+                      questionnaire_rating_scale_id: newRatingScaleId,
+                      description: qrs.description,
+                      questionnaire_id: newQuestionnaire.id,
+                      created_by: this.userId,
+                      company_id: newQuestionnaire.company_id,
+                    };
+                  }
+                  return null;
+                })
+                .filter(
+                  (item): item is NonNullable<typeof item> => item !== null
+                );
+
+            if (questionRatingScalesToInsert.length > 0) {
+              const { error: qrsError } = await this.supabase
+                .from("questionnaire_question_rating_scales")
+                .insert(questionRatingScalesToInsert);
+
+              if (qrsError) throw qrsError;
+            }
+          }
+
+          // Duplicate question parts if any exist
+          const { data: originalParts, error: partsError } =
+            await this.supabase
+              .from("questionnaire_question_parts")
+              .select("*")
+              .eq("questionnaire_question_id", question.id)
+              .eq("is_deleted", false)
+              .order("order_index", { ascending: true });
+
+          if (partsError) throw partsError;
+
+          let newParts = null;
+          if (originalParts && originalParts.length > 0) {
+            // Insert all parts for the new question
+            const partsToInsert = originalParts.map((part) => ({
+              questionnaire_question_id: newQuestion.id,
+              text: part.text,
+              answer_type: part.answer_type,
+              options: part.options,
+              order_index: part.order_index,
+              company_id: newQuestionnaire.company_id,
+              created_by: this.userId,
+            }));
+
+            const { data: insertedParts, error: insertPartsError } =
+              await this.supabase
+                .from("questionnaire_question_parts")
+                .insert(partsToInsert)
+                .select();
+
+            if (insertPartsError) throw insertPartsError;
+            newParts = insertedParts;
+          }
+
+          // Copy rating_scale_mapping if it exists
+          // Fetch the original question's rating_scale_mapping
+          const { data: originalQuestionData, error: fetchQuestionError } =
+            await this.supabase
+              .from("questionnaire_questions")
+              .select("rating_scale_mapping")
+              .eq("id", question.id)
+              .single();
+
+          if (fetchQuestionError) throw fetchQuestionError;
+
+          if (originalQuestionData?.rating_scale_mapping) {
+            const originalMapping = originalQuestionData.rating_scale_mapping as unknown as WeightedScoringConfig;
+            let transformedMapping: WeightedScoringConfig;
+
+            // If question has parts and mapping has partScoring, transform part IDs
+            if (newParts && originalParts && originalMapping.partScoring && Object.keys(originalMapping.partScoring).length > 0) {
+              // Build mapping from old part IDs to new part IDs
+              const partIdMapping = new Map<string, string>();
+              originalParts.forEach((oldPart, index) => {
+                partIdMapping.set(
+                  oldPart.id.toString(),
+                  newParts![index].id.toString()
+                );
+              });
+
+              // Transform the partScoring object to use new part IDs
+              const transformedPartScoring: typeof originalMapping.partScoring = {};
+              Object.keys(originalMapping.partScoring).forEach((oldPartIdStr) => {
+                const newPartIdStr = partIdMapping.get(oldPartIdStr);
+                if (newPartIdStr) {
+                  transformedPartScoring[newPartIdStr] = originalMapping.partScoring[oldPartIdStr];
                 }
               });
 
-              // Insert the question rating scale associations
-              const questionRatingScalesToInsert =
-                question.question_rating_scales
-                  .map((qrs) => {
-                    const newRatingScaleId = ratingScaleMap.get(
-                      qrs.questionnaire_rating_scale_id
-                    );
-                    if (newRatingScaleId) {
-                      return {
-                        questionnaire_question_id: newQuestion.id,
-                        questionnaire_rating_scale_id: newRatingScaleId,
-                        description: qrs.description,
-                        questionnaire_id: newQuestionnaire.id,
-                        created_by: this.userId,
-                        company_id: newQuestionnaire.company_id,
-                      };
-                    }
-                    return null;
-                  })
-                  .filter(
-                    (item): item is NonNullable<typeof item> => item !== null
-                  );
-
-              if (questionRatingScalesToInsert.length > 0) {
-                const { error: qrsError } = await this.supabase
-                  .from("questionnaire_question_rating_scales")
-                  .insert(questionRatingScalesToInsert);
-
-                if (qrsError) throw qrsError;
-              }
+              transformedMapping = {
+                ...originalMapping,
+                partScoring: transformedPartScoring,
+              };
+            } else {
+              // No parts or no partScoring, copy mapping as-is
+              transformedMapping = originalMapping;
             }
+
+            // Update the new question with the mapping
+            const { error: updateMappingError } = await this.supabase
+              .from("questionnaire_questions")
+              .update({
+                rating_scale_mapping: transformedMapping as unknown as Json,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", newQuestion.id);
+
+            if (updateMappingError) throw updateMappingError;
           }
         }
       }
