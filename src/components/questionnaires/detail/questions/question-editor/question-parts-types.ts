@@ -14,10 +14,6 @@ export interface QuestionPartOptions {
   step?: number;
   decimal_places?: number;
 
-  // For boolean type
-  true_label?: string;
-  false_label?: string;
-
   // For labelled_scale type
   labels?: string[];
 }
@@ -53,9 +49,6 @@ export interface QuestionPartFormData {
   max: string;
   step: string;
   decimal_places: string;
-  // Options for boolean
-  true_label: string;
-  false_label: string;
   // Options for labelled_scale
   labels: string[];
 }

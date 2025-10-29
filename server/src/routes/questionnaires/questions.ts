@@ -15,7 +15,7 @@ import {
 
 /**
  * Validate question part options based on answer type
- * - Boolean: { true_label: string, false_label: string }
+ * - Boolean: {  } - uses true/false by default
  * - Number: { min: number, max: number, decimal_places: number }
  * - Percentage: { } - uses 0-100 by default
  * - Scale : { min: number, max: number, step: number }
@@ -49,17 +49,6 @@ function validateQuestionPartOptions(answerType: string, options: any): void {
         );
       }
       break;
-    case "boolean":
-      if (
-        !options ||
-        typeof (options as any).true_label !== "string" ||
-        typeof (options as any).false_label !== "string"
-      ) {
-        throw new Error(
-          "Invalid options for boolean. 'true_label' and 'false_label' strings are required."
-        );
-      }
-      break;
     case "number":
       if (
         !options ||
@@ -71,6 +60,9 @@ function validateQuestionPartOptions(answerType: string, options: any): void {
           "Invalid options for number. 'min', 'max', and 'decimal_places' numbers are required."
         );
       }
+      break;
+    case "boolean":
+      // No specific options required
       break;
     case "percentage":
       // No specific options required

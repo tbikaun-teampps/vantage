@@ -521,8 +521,6 @@ export function QuestionPartsWeightedScoringBuilder({
     });
 
     if (part.answer_type === "boolean") {
-      const trueLabel = part.options.true_label || "Yes";
-      const falseLabel = part.options.false_label || "No";
       const boolScoring = scoring as
         | { true: number; false: number }
         | undefined;
@@ -531,7 +529,7 @@ export function QuestionPartsWeightedScoringBuilder({
         <div className="flex gap-8 justify-center">
           <div className="flex gap-4">
             <Label htmlFor={`${partId}-true`} className="text-sm">
-              {trueLabel}
+              Yes
             </Label>
             <Select
               value={boolScoring?.true?.toString() || "1"}
@@ -554,7 +552,7 @@ export function QuestionPartsWeightedScoringBuilder({
           </div>
           <div className="flex gap-4">
             <Label htmlFor={`${partId}-false`} className="text-sm">
-              {falseLabel}
+              No
             </Label>
             <Select
               value={boolScoring?.false?.toString() || "1"}

@@ -11,10 +11,6 @@ type QuestionPart = {
         labels: string[];
       }
     | {
-        true_label: string;
-        false_label: string;
-      }
-    | {
         max: number;
         min: number;
         step: number;
@@ -82,40 +78,30 @@ export function InterviewQuestionElements({
       }
       return null;
     } else if (part.answer_type === "boolean") {
-      if ("true_label" in part.options && "false_label" in part.options) {
-        const booleanOptions = part.options;
-        return (
-          <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
-            <Button
-              variant="outline"
-              onClick={() =>
-                handleSelection(part.id, booleanOptions.false_label)
-              }
-              className={cn(
-                "transition-all duration-200",
-                selectedValue === booleanOptions.false_label &&
-                  "bg-primary text-primary-foreground"
-              )}
-            >
-              {booleanOptions.false_label}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() =>
-                handleSelection(part.id, booleanOptions.true_label)
-              }
-              className={cn(
-                "transition-all duration-200",
-                selectedValue === booleanOptions.true_label &&
-                  "bg-primary text-primary-foreground"
-              )}
-            >
-              {booleanOptions.true_label}
-            </Button>
-          </div>
-        );
-      }
-      return null;
+      return (
+        <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+          <Button
+            variant="outline"
+            onClick={() => handleSelection(part.id, "false")}
+            className={cn(
+              "transition-all duration-200",
+              selectedValue === "false" && "bg-primary text-primary-foreground"
+            )}
+          >
+            No
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => handleSelection(part.id, "true")}
+            className={cn(
+              "transition-all duration-200",
+              selectedValue === "true" && "bg-primary text-primary-foreground"
+            )}
+          >
+            Yes
+          </Button>
+        </div>
+      );
     } else if (["scale", "number"].includes(part.answer_type)) {
       // Scale has the options {"max": number, "min": number, "step": number}
       if (
@@ -186,7 +172,7 @@ export function InterviewQuestionElements({
   };
 
   return (
-    <div>
+    <div className="px-6">
       <div className="mt-6 mb-4 text-lg font-medium">Question Elements</div>
       <div className="flex flex-col gap-4">
         {question.question_parts && question.question_parts.length > 0 ? (

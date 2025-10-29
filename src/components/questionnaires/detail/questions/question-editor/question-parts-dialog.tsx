@@ -132,38 +132,6 @@ export function QuestionPartsDialog({
           </div>
 
           {/* Answer Type Specific Options */}
-          {data.answer_type === "boolean" && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="true_label">True Label</Label>
-                <Input
-                  id="true_label"
-                  value={data.true_label}
-                  onChange={(e) =>
-                    setData((prev) => ({ ...prev, true_label: e.target.value }))
-                  }
-                  placeholder="Yes"
-                  disabled={isProcessing}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="false_label">False Label</Label>
-                <Input
-                  id="false_label"
-                  value={data.false_label}
-                  onChange={(e) =>
-                    setData((prev) => ({
-                      ...prev,
-                      false_label: e.target.value,
-                    }))
-                  }
-                  placeholder="No"
-                  disabled={isProcessing}
-                />
-              </div>
-            </div>
-          )}
-
           {data.answer_type === "labelled_scale" && (
             <div className="space-y-2">
               <Label htmlFor="labels" className="required">

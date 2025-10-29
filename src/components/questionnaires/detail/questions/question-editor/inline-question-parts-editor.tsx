@@ -41,8 +41,6 @@ const getDefaultFormData = (): QuestionPartFormData => ({
   max: "5",
   step: "1",
   decimal_places: "0",
-  true_label: "Yes",
-  false_label: "No",
   labels: ["", ""],
 });
 
@@ -60,7 +58,7 @@ const getAnswerTypeLabel = (answer_type: AnswerType): string => {
 const getAnswerTypeDetails = (part: QuestionPart): string => {
   switch (part.answer_type) {
     case "boolean":
-      return `${part.options.true_label || "Yes"} / ${part.options.false_label || "No"}`;
+      return `Yes / No`;
     case "scale":
       return `${part.options.min || 1}-${part.options.max || 5}${part.options.step ? ` (step: ${part.options.step})` : ""}`;
     case "labelled_scale":
@@ -144,8 +142,6 @@ export function InlineQuestionPartsEditor({
       max: part.options.max?.toString() || "5",
       step: part.options.step?.toString() || "1",
       decimal_places: part.options.decimal_places?.toString() || "0",
-      true_label: part.options.true_label || "Yes",
-      false_label: part.options.false_label || "No",
       labels: part.options.labels || ["", ""],
     });
     setEditingPart(part);
@@ -173,10 +169,6 @@ export function InlineQuestionPartsEditor({
           formData.answer_type === "number"
             ? parseInt(formData.decimal_places)
             : undefined,
-        true_label:
-          formData.answer_type === "boolean" ? formData.true_label : undefined,
-        false_label:
-          formData.answer_type === "boolean" ? formData.false_label : undefined,
         labels:
           formData.answer_type === "labelled_scale"
             ? formData.labels.filter((l) => l.trim().length > 0)

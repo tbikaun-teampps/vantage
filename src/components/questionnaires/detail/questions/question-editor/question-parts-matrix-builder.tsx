@@ -242,8 +242,6 @@ export function QuestionPartsMatrixBuilder({
     const mapping = mappings[partIdStr] || getDefaultMapping(part);
 
     if (part.answer_type === "boolean") {
-      const trueLabel = part.options.true_label || "Yes";
-      const falseLabel = part.options.false_label || "No";
       const trueLevels = (mapping.true as number[]) || [];
       const falseLevels = (mapping.false as number[]) || [];
 
@@ -257,7 +255,7 @@ export function QuestionPartsMatrixBuilder({
               }
               disabled={isProcessing}
             />
-            <span className="text-sm">{trueLabel}</span>
+            <span className="text-sm">Yes</span>
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox
@@ -267,7 +265,7 @@ export function QuestionPartsMatrixBuilder({
               }
               disabled={isProcessing}
             />
-            <span className="text-sm">{falseLabel}</span>
+            <span className="text-sm">No</span>
           </div>
         </div>
       );
