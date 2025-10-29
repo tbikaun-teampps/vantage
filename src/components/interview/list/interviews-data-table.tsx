@@ -10,12 +10,10 @@ import {
   IconLockOpen,
   IconCopy,
   IconLoader2,
-  IconEyeOff,
   IconMail,
   IconDots,
   IconTrash,
   IconEye,
-  IconCalendar,
   IconEdit,
   IconUsers,
   IconUser,
@@ -426,15 +424,42 @@ export function InterviewsDataTable({
     {
       accessorKey: "role",
       header: "Roles",
-      cell: ({ row }) => (
-        <div
-          className="truncate text-xs"
-          title={row.original.interviewee?.role || undefined}
-        >
-          {row.original.interviewee?.role || "All"}
-        </div>
-      ),
+      cell: ({ row }) => {
+        if (row.original.interviewee?.role) {
+          return (
+            <div
+              className="truncate text-xs"
+              title={row.original.interviewee?.role}
+            >
+              {row.original.interviewee?.role}
+            </div>
+          );
+        }
+
+        if (row.original.interview_roles.length > 0) {
+          const uniqueRoles = Array.from(
+            new Set(
+              row.original.interview_roles
+                .map((r) => r?.role?.shared_role?.name)
+                .filter(Boolean)
+            )
+          );
+          const roles = uniqueRoles.join(", ");
+          return (
+            <div className="truncate text-xs" title={roles}>
+              {roles}
+            </div>
+          );
+        }
+
+        return (
+          <div className="truncate text-xs" title="All Roles">
+            All Company Roles
+          </div>
+        );
+      },
     },
+
     {
       accessorKey: "status",
       header: "Status",
