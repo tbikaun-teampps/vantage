@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 type QuestionPart = {
@@ -36,6 +37,7 @@ export function InterviewQuestionElements({
   question,
   form,
 }: InterviewQuestionElementsProps) {
+  const isMobile = useIsMobile();
   const handleSelection = (questionPartId: number, label: string) => {
     const fieldName = `question_part_${questionPartId}`;
     const currentValue = form.watch(fieldName);
@@ -56,7 +58,12 @@ export function InterviewQuestionElements({
     if (part.answer_type === "labelled_scale") {
       if ("labels" in part.options) {
         return (
-          <div className="mt-2 grid grid-cols-4 gap-4 text-sm ">
+          <div
+            className={cn(
+              "mt-2 grid gap-4 text-sm",
+              isMobile ? "grid-cols-2" : "grid-cols-4"
+            )}
+          >
             {part.options.labels.map((label: string, index: number) => {
               const isSelected = selectedValue === label;
               return (
@@ -65,8 +72,9 @@ export function InterviewQuestionElements({
                   variant="outline"
                   onClick={() => handleSelection(part.id, label)}
                   className={cn(
-                    "whitespace-normal text-wrap min-w-0 flex-1 h-16 break-words transition-all duration-200",
-                    isSelected && "bg-primary text-primary-foreground"
+                    "whitespace-normal text-wrap min-w-0 flex-1 break-words transition-all duration-200",
+                    isSelected && "bg-primary text-primary-foreground",
+                    isMobile ? "h-12" : "h-16"
                   )}
                 >
                   {label}
@@ -85,7 +93,8 @@ export function InterviewQuestionElements({
             onClick={() => handleSelection(part.id, "false")}
             className={cn(
               "transition-all duration-200",
-              selectedValue === "false" && "bg-primary text-primary-foreground"
+              selectedValue === "false" && "bg-primary text-primary-foreground",
+              isMobile ? "h-12" : "h-16"
             )}
           >
             No
@@ -95,7 +104,8 @@ export function InterviewQuestionElements({
             onClick={() => handleSelection(part.id, "true")}
             className={cn(
               "transition-all duration-200",
-              selectedValue === "true" && "bg-primary text-primary-foreground"
+              selectedValue === "true" && "bg-primary text-primary-foreground",
+              isMobile ? "h-12" : "h-16"
             )}
           >
             Yes
@@ -119,7 +129,12 @@ export function InterviewQuestionElements({
           scaleValues.push(val);
         }
         return (
-          <div className="mt-2 grid grid-cols-10 gap-4 text-sm ">
+          <div
+            className={cn(
+              "mt-2 grid gap-4 text-sm",
+              isMobile ? "grid-cols-5" : "grid-cols-10"
+            )}
+          >
             {scaleValues.map((value: number, index: number) => {
               const isSelected = selectedValue === value.toString();
               return (
@@ -128,8 +143,9 @@ export function InterviewQuestionElements({
                   variant="outline"
                   onClick={() => handleSelection(part.id, value.toString())}
                   className={cn(
-                    "whitespace-normal text-wrap min-w-0 flex-1 h-16 break-words transition-all duration-200",
-                    isSelected && "bg-primary text-primary-foreground"
+                    "whitespace-normal text-wrap min-w-0 flex-1 break-words transition-all duration-200",
+                    isSelected && "bg-primary text-primary-foreground",
+                    isMobile ? "h-12" : "h-16"
                   )}
                 >
                   {value}
@@ -147,7 +163,12 @@ export function InterviewQuestionElements({
         percentageValues.push(val);
       }
       return (
-        <div className="mt-2 grid grid-cols-10 gap-4 text-sm ">
+        <div
+          className={cn(
+            "mt-2 grid gap-4 text-sm",
+            isMobile ? "grid-cols-5" : "grid-cols-10"
+          )}
+        >
           {percentageValues.map((value: number, index: number) => {
             const isSelected = selectedValue === value.toString();
             return (
@@ -156,8 +177,9 @@ export function InterviewQuestionElements({
                 variant="outline"
                 onClick={() => handleSelection(part.id, value.toString())}
                 className={cn(
-                  "whitespace-normal text-wrap min-w-0 flex-1 h-16 break-words transition-all duration-200",
-                  isSelected && "bg-primary text-primary-foreground"
+                  "whitespace-normal text-wrap min-w-0 flex-1 break-words transition-all duration-200",
+                  isSelected && "bg-primary text-primary-foreground",
+                  isMobile ? "h-12" : "h-16"
                 )}
               >
                 {value}%
@@ -172,20 +194,19 @@ export function InterviewQuestionElements({
   };
 
   return (
-    <div className="px-6">
-      <div className="mt-6 mb-4 text-lg font-medium">Question Elements</div>
+    <div className={cn(isMobile ? "px-2" : "px-6")}>
+      {/* <div className="mt-6 mb-4 text-lg font-medium">Question Elements</div> */}
       <div className="flex flex-col gap-4">
         {question.question_parts && question.question_parts.length > 0 ? (
           question.question_parts
             .sort((a, b) => a.order_index - b.order_index)
             .map((part) => (
               <div key={part.id}>
-                <div className="p-4 border border-border rounded-md bg-muted/50">
+                <div>
                   <div className="flex gap-4">
                     <div className="mb-2 font-medium">
-                      {part.order_index + 1}
+                      {part.order_index + 1}. {part.text}
                     </div>
-                    <div className="mb-2">{part.text}</div>
                   </div>
                 </div>
                 {renderOptions(part)}

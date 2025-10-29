@@ -44,7 +44,7 @@ export function InterviewQuestionHeader({
   }
 
   return (
-    <div>
+    <div className={cn(isMobile ? "px-6 mt-4" : "")}>
       <div
         className="w-full flex justify-center"
         data-tour="interview-progress"
@@ -88,7 +88,9 @@ export function InterviewQuestionHeader({
               <div className="flex items-center space-x-2">
                 <InterviewComments responseId={responseId} />
                 <InterviewEvidence responseId={responseId} />
-                {!isIndividualInterview && <InterviewActions responseId={responseId} />}
+                {!isIndividualInterview && (
+                  <InterviewActions responseId={responseId} />
+                )}
               </div>
             )}
           </div>

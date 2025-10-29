@@ -1,3 +1,6 @@
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+
 interface InterviewQuestionContentProps {
   isIndividualInterview: boolean;
   question: {
@@ -15,10 +18,14 @@ export function InterviewQuestionContent({
   isIndividualInterview,
   question,
 }: InterviewQuestionContentProps) {
+  const isMobile = useIsMobile();
   // For individual interviews, show centered content box
   if (isIndividualInterview) {
     return (
-      <div className="flex justify-center px-6" data-tour="interview-question">
+      <div
+        className={cn("flex justify-center", isMobile ? "px-2 text-center" : "px-6")}
+        data-tour="interview-question"
+      >
         <div className="w-full">
           <div className="rounded-xl p-8 bg-muted">
             <div className="space-y-4">
@@ -46,7 +53,10 @@ export function InterviewQuestionContent({
     "";
 
   return (
-    <div className="space-y-4 px-6" data-tour="interview-question">
+    <div
+      className={cn("space-y-4", isMobile ? "px-2" : "px-6")}
+      data-tour="interview-question"
+    >
       {question.context ? (
         // Traditional layout when context exists
         <div className="flex flex-col">
