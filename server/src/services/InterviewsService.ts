@@ -43,10 +43,7 @@ function isNumericScoring(scoring: any): scoring is NumericScoring {
 /**
  * Calculate which level a numeric answer maps to
  */
-function calculateNumericLevel(
-  answer: number,
-  ranges: NumericRange[]
-): number {
+function calculateNumericLevel(answer: number, ranges: NumericRange[]): number {
   for (const range of ranges) {
     if (answer >= range.min && answer <= range.max) {
       return range.level;
@@ -1479,7 +1476,6 @@ export class InterviewsService {
         version: string;
         partScoring: Record<string, Record<string, number> | NumericScoring>;
       } = question.rating_scale_mapping;
-      console.log("Question rating scale mapping:", ratingScaleMap);
 
       const upsertData = question_part_answers.map((answer) => ({
         interview_response_id: responseId,
@@ -1523,13 +1519,15 @@ export class InterviewsService {
 
           // Check if this is numeric scoring with ranges
           if (isNumericScoring(partMapping)) {
-            // Numeric scoring: calculate level from ranges
-            if (typeof answer.answer_value === "number") {
-              score = calculateNumericLevel(answer.answer_value, partMapping);
-            }
+            score = calculateNumericLevel(
+              parseFloat(answer.answer_value),  // Convert answer to number
+              partMapping
+            );
           } else {
             // Boolean or labelled scale scoring: direct lookup
-            score = (partMapping as Record<string, number>)[answer.answer_value];
+            score = (partMapping as Record<string, number>)[
+              answer.answer_value
+            ];
           }
 
           if (score !== undefined) {
@@ -1551,6 +1549,10 @@ export class InterviewsService {
           ? Math.floor(calculatedRatingScore)
           : null;
 
+      console.log(
+        "Calculated rating score from question parts:",
+        calculatedRatingScore
+      );
       console.log("Final calculated rating score:", finalRatingScore);
 
       // Update the response with the calculated rating score
