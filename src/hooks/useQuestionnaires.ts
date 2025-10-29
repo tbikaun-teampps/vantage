@@ -55,8 +55,8 @@ export function useQuestionnaireActions() {
     mutationFn: (data: CreateQuestionnaireData) => createQuestionnaire(data),
     onSuccess: (newQuestionnaire) => {
       // Add to questionnaires list
-      queryClient.setQueryData(
-        questionnaireKeys.list(),
+      queryClient.setQueriesData(
+        { queryKey: questionnaireKeys.lists() },
         (old: QuestionnaireWithCounts[] = []) => {
           const newWithCounts = {
             ...newQuestionnaire,
@@ -69,7 +69,7 @@ export function useQuestionnaireActions() {
       );
 
       // Invalidate to get fresh data with counts
-      queryClient.invalidateQueries({ queryKey: questionnaireKeys.list() });
+      queryClient.invalidateQueries({ queryKey: questionnaireKeys.lists() });
     },
   });
 
@@ -83,8 +83,8 @@ export function useQuestionnaireActions() {
     }) => updateQuestionnaire(id, updates),
     onSuccess: (updatedQuestionnaire, { id }) => {
       // Update questionnaire list
-      queryClient.setQueryData(
-        questionnaireKeys.list(),
+      queryClient.setQueriesData(
+        { queryKey: questionnaireKeys.lists() },
         (old: QuestionnaireWithCounts[] = []) =>
           old.map((q) => (q.id === id ? { ...q, ...updatedQuestionnaire } : q))
       );
@@ -111,8 +111,8 @@ export function useQuestionnaireActions() {
     mutationFn: (id: number) => deleteQuestionnaire(id),
     onSuccess: (_, id) => {
       // Remove from questionnaires list
-      queryClient.setQueryData(
-        questionnaireKeys.list(),
+      queryClient.setQueriesData(
+        { queryKey: questionnaireKeys.lists() },
         (old: QuestionnaireWithCounts[] = []) => old.filter((q) => q.id !== id)
       );
 
@@ -125,7 +125,7 @@ export function useQuestionnaireActions() {
     mutationFn: (id: number) => duplicateQuestionnaire(id),
     onSuccess: () => {
       // Refresh questionnaires list to get the new duplicate
-      queryClient.invalidateQueries({ queryKey: questionnaireKeys.list() });
+      queryClient.invalidateQueries({ queryKey: questionnaireKeys.lists() });
     },
   });
 
