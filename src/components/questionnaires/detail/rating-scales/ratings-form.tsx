@@ -142,67 +142,51 @@ export default function RatingsForm({
 
   const handleAdd = async () => {
     if (!validateForm()) return;
+    await createRatingScale({
+      questionnaireId,
+      ratingData: {
+        value: parseInt(formData.value),
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+      },
+    });
 
-    try {
-      await createRatingScale({
-        questionnaireId,
-        ratingData: {
-          value: parseInt(formData.value),
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-        },
-      });
-
-      resetForm();
-      setShowAddDialog(false);
-      toast.success("Rating scale created successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create rating scale"
-      );
-    }
+    resetForm();
+    setShowAddDialog(false);
   };
 
   const handleUpdate = async () => {
     if (!validateForm() || !editingRating) return;
+    // Build updates object with only dirty fields
+    const updates: Record<string, any> = {};
 
-    try {
-      // Build updates object with only dirty fields
-      const updates: Record<string, any> = {};
+    if (parseInt(formData.value) !== editingRating.value) {
+      updates.value = parseInt(formData.value);
+    }
 
-      if (parseInt(formData.value) !== editingRating.value) {
-        updates.value = parseInt(formData.value);
-      }
+    if (formData.name.trim() !== editingRating.name) {
+      updates.name = formData.name.trim();
+    }
 
-      if (formData.name.trim() !== editingRating.name) {
-        updates.name = formData.name.trim();
-      }
+    if (formData.description.trim() !== (editingRating.description || "")) {
+      updates.description = formData.description.trim();
+    }
 
-      if (formData.description.trim() !== (editingRating.description || "")) {
-        updates.description = formData.description.trim();
-      }
-
-      // If nothing changed, just close the dialog
-      if (Object.keys(updates).length === 0) {
-        resetForm();
-        setEditingRating(null);
-        toast.info("No changes to save");
-        return;
-      }
-
-      await updateRatingScale({
-        id: editingRating.id,
-        updates,
-      });
-
+    // If nothing changed, just close the dialog
+    if (Object.keys(updates).length === 0) {
       resetForm();
       setEditingRating(null);
-      toast.success("Rating scale updated successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update rating scale"
-      );
+      toast.info("No changes to save");
+      return;
     }
+
+    await updateRatingScale({
+      id: editingRating.id,
+      updates,
+    });
+
+    resetForm();
+    setEditingRating(null);
   };
 
   const handleEdit = (rating: QuestionnaireRatingScale) => {
@@ -222,16 +206,8 @@ export default function RatingsForm({
 
   const confirmDelete = async () => {
     if (!deleteRating) return;
-
-    try {
-      await deleteRatingScale(deleteRating.id);
-      setDeleteRating(null);
-      toast.success("Rating scale deleted successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to delete rating scale"
-      );
-    }
+    await deleteRatingScale(deleteRating.id);
+    setDeleteRating(null);
   };
 
   const handleCancel = () => {
