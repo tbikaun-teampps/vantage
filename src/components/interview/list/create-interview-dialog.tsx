@@ -388,6 +388,22 @@ export function CreateInterviewDialog({
             />
           </div>
 
+          {/* Warning when no roles are available */}
+          {selectedAssessmentId &&
+            !isLoadingRoles &&
+            availableRoles.length === 0 && (
+              <div className="rounded-md border border-destructive bg-destructive/10 p-4">
+                <p className="text-sm font-medium text-destructive">
+                  No roles available
+                </p>
+                <p className="text-sm text-destructive/90 mt-1">
+                  The location of this assessment has no roles configured. Please add roles to
+                  your company structure before creating interviews, as roles
+                  are required to identify who will provide answers.
+                </p>
+              </div>
+            )}
+
           {/* Group Interview Role Selection - Optional */}
           {!isIndividualInterview && availableRoles.length > 0 && (
             <div className="space-y-3">
@@ -666,6 +682,9 @@ export function CreateInterviewDialog({
               isCreatingIndividual ||
               isValidatingRoles ||
               !hasApplicableQuestions ||
+              (selectedAssessmentId &&
+                !isLoadingRoles &&
+                availableRoles.length === 0) ||
               (isIndividualInterview &&
                 showIndividualOptions &&
                 (selectedRoleIds.length === 0 ||
