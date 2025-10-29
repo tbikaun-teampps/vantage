@@ -47,29 +47,17 @@ export const companySchemas = {
 
     contactParams: Type.Object({
       companyId: Type.String(),
-      entityType: Type.Union([
-        Type.Literal("company"),
-        Type.Literal("business-unit"),
-        Type.Literal("region"),
-        Type.Literal("site"),
-        Type.Literal("asset-group"),
-        Type.Literal("work-group"),
-        Type.Literal("role"),
-      ]),
+      entityType: Type.String({
+        enum: ["company", "business-unit", "region", "site", "asset-group", "work-group", "role"]
+      }),
       entityId: Type.String(),
     }),
 
     contactDeleteParams: Type.Object({
       companyId: Type.String(),
-      entityType: Type.Union([
-        Type.Literal("company"),
-        Type.Literal("business-unit"),
-        Type.Literal("region"),
-        Type.Literal("site"),
-        Type.Literal("asset-group"),
-        Type.Literal("work-group"),
-        Type.Literal("role"),
-      ]),
+      entityType: Type.String({
+        enum: ["company", "business-unit", "region", "site", "asset-group", "work-group", "role"]
+      }),
       entityId: Type.String(),
       contactId: Type.String(),
     }),
@@ -88,14 +76,9 @@ export const companySchemas = {
   querystring: {
     entityType: Type.Object(
       {
-        type: Type.Union([
-          Type.Literal("business-units"),
-          Type.Literal("regions"),
-          Type.Literal("sites"),
-          Type.Literal("asset-groups"),
-          Type.Literal("work-groups"),
-          Type.Literal("roles"),
-        ]),
+        type: Type.String({
+          enum: ["business-units", "regions", "sites", "asset-groups", "work-groups", "roles"]
+        }),
       },
       { additionalProperties: false }
     ),
@@ -143,24 +126,18 @@ export const companySchemas = {
     addTeamMember: Type.Object(
       {
         email: Type.String({ format: "email" }),
-        role: Type.Union([
-          Type.Literal("owner"),
-          Type.Literal("admin"),
-          Type.Literal("viewer"),
-          Type.Literal("interviewee"),
-        ]),
+        role: Type.String({
+          enum: ["owner", "admin", "viewer", "interviewee"]
+        }),
       },
       { additionalProperties: false }
     ),
 
     updateTeamMember: Type.Object(
       {
-        role: Type.Union([
-          Type.Literal("owner"),
-          Type.Literal("admin"),
-          Type.Literal("viewer"),
-          Type.Literal("interviewee"),
-        ]),
+        role: Type.String({
+          enum: ["owner", "admin", "viewer", "interviewee"]
+        }),
       },
       { additionalProperties: false }
     ),
@@ -226,7 +203,7 @@ export const companySchemas = {
           id: Type.Number(),
           user_id: Type.String(),
           company_id: Type.String(),
-          role: Type.String(),
+          role: Type.String(), // "owner" | "admin" | "viewer" | "interviewee"
           created_at: Type.String(),
           updated_at: Type.String(),
           user: Type.Object({

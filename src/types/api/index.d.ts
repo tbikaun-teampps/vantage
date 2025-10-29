@@ -2227,6 +2227,7 @@ export interface paths {
           "application/json": {
             /** Format: email */
             email: string;
+            /** @enum {string} */
             role: "owner" | "admin" | "viewer" | "interviewee";
           };
         };
@@ -2334,6 +2335,7 @@ export interface paths {
       requestBody: {
         content: {
           "application/json": {
+            /** @enum {string} */
             role: "owner" | "admin" | "viewer" | "interviewee";
           };
         };
@@ -3200,18 +3202,6 @@ export interface paths {
       };
       requestBody?: never;
       responses: {
-        /** @description Default Response */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": {
-              success?: boolean;
-              data?: Record<string, never>[];
-            };
-          };
-        };
         /** @description Default Response */
         401: {
           headers: {
@@ -5450,6 +5440,318 @@ export interface paths {
             };
           };
         };
+        /** @description Default Response */
+        403: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/questionnaires/questions/{questionId}/parts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          questionId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    /** @description Add a new question part to a question */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          questionId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            text: string;
+            order_index: number;
+            options: Record<string, never>;
+            /** @enum {string} */
+            answer_type:
+              | "text"
+              | "labelled_scale"
+              | "scale"
+              | "boolean"
+              | "percentage"
+              | "number";
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/questionnaires/questions/{questionId}/parts/{partId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          questionId: string;
+          partId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            text?: string;
+            order_index?: number;
+            options?: Record<string, never>;
+            /** @enum {string} */
+            answer_type?:
+              | "text"
+              | "labelled_scale"
+              | "scale"
+              | "boolean"
+              | "percentage"
+              | "number";
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          questionId: string;
+          partId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/questionnaires/questions/{questionId}/parts/{partId}/duplicate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Duplicate a question part */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          questionId: string;
+          partId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/questionnaires/questions/{questionId}/parts/reorder": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          questionId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            questionId: number;
+            partIdsInOrder: number[];
+          };
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/questionnaires/questions/{questionId}/rating-scale-mapping": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          questionId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    /** @description Update the rating scale mapping for a question */
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          questionId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            rating_scale_mapping: Record<string, never>;
+          };
+        };
+      };
+      responses: {
         /** @description Default Response */
         403: {
           headers: {
@@ -8476,6 +8778,7 @@ export interface paths {
           status?: string[];
           program_phase_id?: string;
           questionnaire_id?: string;
+          detailed?: boolean;
         };
         header?: never;
         path?: never;
@@ -9177,6 +9480,12 @@ export interface paths {
             rating_score?: number | null;
             role_ids?: ((number[] | null) | null) | null;
             is_unknown?: boolean | null;
+            question_part_answers?:
+              | {
+                  question_part_id: number;
+                  answer_value: string;
+                }[]
+              | null;
           };
         };
       };
@@ -9523,9 +9832,11 @@ export interface components {
     addTeamMember: {
       /** Format: email */
       email: string;
+      /** @enum {string} */
       role: "owner" | "admin" | "viewer" | "interviewee";
     };
     updateTeamMember: {
+      /** @enum {string} */
       role: "owner" | "admin" | "viewer" | "interviewee";
     };
     company: {

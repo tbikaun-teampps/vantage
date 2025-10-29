@@ -1589,7 +1589,6 @@ export class CompaniesService {
       .from("user_companies")
       .select("*")
       .eq("company_id", companyId)
-      .neq("role", "interviewee")
       .order("created_at", { ascending: true });
 
     if (error) throw error;
@@ -1721,6 +1720,11 @@ export class CompaniesService {
       throw new Error("Only owners and admins can update team members");
     }
 
+    // Prevent users from changing their own role
+    if (userId === this.userId) {
+      throw new Error("You cannot change your own role");
+    }
+
     // Get the team member being updated
     const { data: memberData, error: memberError } = await this.supabase
       .from("user_companies")
@@ -1805,6 +1809,11 @@ export class CompaniesService {
 
     if (company.role !== "owner" && company.role !== "admin") {
       throw new Error("Only owners and admins can remove team members");
+    }
+
+    // Prevent users from removing themselves
+    if (userId === this.userId) {
+      throw new Error("You cannot remove yourself from the company");
     }
 
     // Get the team member being removed

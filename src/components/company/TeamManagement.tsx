@@ -50,12 +50,13 @@ import { UserPlus, Trash2, Edit } from "lucide-react";
 import { Loader } from "../loader";
 import { DashboardPage } from "../dashboard";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { useProfile } from "@/hooks/useProfile";
 
 const roleLabels: Record<CompanyRole, string> = {
   owner: "Owner",
   admin: "Admin",
   viewer: "Viewer",
-  // interviewee: "Interviewee",
+  interviewee: "Interviewee",
 };
 
 const roleBadgeVariants: Record<
@@ -65,7 +66,7 @@ const roleBadgeVariants: Record<
   owner: "default",
   admin: "secondary",
   viewer: "outline",
-  // interviewee: "outline",
+  interviewee: "outline",
 };
 
 export function TeamManagement() {
@@ -80,6 +81,7 @@ export function TeamManagement() {
     removeTeamMember,
     isRemovingMember,
   } = useTeamActions();
+  const { data: profile } = useProfile();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState("");
@@ -245,118 +247,122 @@ export function TeamManagement() {
                         {roleLabels[member.role]}
                       </Badge>
                     </TableCell>
-                    {canManageTeam && (
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Dialog
-                            open={editingMember?.id === member.id}
-                            onOpenChange={(open) => {
-                              if (open) {
-                                setEditingMember(member);
-                                setEditRole(member.role);
-                              } else {
-                                setEditingMember(null);
-                              }
-                            }}
-                          >
-                            <DialogTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Update Role</DialogTitle>
-                                <DialogDescription>
-                                  Change the role for {member.user.email}
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="edit-role">Role</Label>
-                                  <Select
-                                    value={editRole}
-                                    onValueChange={(value) =>
-                                      setEditRole(value as CompanyRole)
-                                    }
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="owner">
-                                        Owner
-                                      </SelectItem>
-                                      <SelectItem value="admin">
-                                        Admin
-                                      </SelectItem>
-                                      <SelectItem value="viewer">
-                                        Viewer
-                                      </SelectItem>
-                                      {/* <SelectItem value="interviewee">
-                                        Interviewee
-                                      </SelectItem> */}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button
-                                  variant="outline"
-                                  onClick={() => setEditingMember(null)}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  onClick={handleUpdateRole}
-                                  disabled={isUpdatingMember}
-                                >
-                                  {isUpdatingMember
-                                    ? "Updating..."
-                                    : "Update Role"}
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-
-                          {member.role !== "owner" && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
+                    {/* Only show actions for other members when the user can manage the team (admin/owner).
+                        Owners cannot be removed or have their role changed. Interviewees are not manageable here.
+                    */}
+                    {canManageTeam &&
+                      profile?.id !== member.user.id &&
+                      member.role !== "interviewee" && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Dialog
+                              open={editingMember?.id === member.id}
+                              onOpenChange={(open) => {
+                                if (open) {
+                                  setEditingMember(member);
+                                  setEditRole(member.role);
+                                } else {
+                                  setEditingMember(null);
+                                }
+                              }}
+                            >
+                              <DialogTrigger asChild>
                                 <Button variant="ghost" size="sm">
-                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                  <Edit className="h-4 w-4" />
                                 </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>
-                                    Remove Team Member
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to remove{" "}
-                                    {member.user.email} from this company? This
-                                    action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() =>
-                                      handleRemoveMember(member.user_id)
-                                    }
-                                    disabled={isRemovingMember}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Update Role</DialogTitle>
+                                  <DialogDescription>
+                                    Change the role for {member.user.email}
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="edit-role">Role</Label>
+                                    <Select
+                                      value={editRole}
+                                      onValueChange={(value) =>
+                                        setEditRole(value as CompanyRole)
+                                      }
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="owner">
+                                          Owner
+                                        </SelectItem>
+                                        <SelectItem value="admin">
+                                          Admin
+                                        </SelectItem>
+                                        <SelectItem value="viewer">
+                                          Viewer
+                                        </SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                                <DialogFooter>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => setEditingMember(null)}
                                   >
-                                    {isRemovingMember
-                                      ? "Removing..."
-                                      : "Remove"}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </div>
-                      </TableCell>
-                    )}
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    onClick={handleUpdateRole}
+                                    disabled={isUpdatingMember}
+                                  >
+                                    {isUpdatingMember
+                                      ? "Updating..."
+                                      : "Update Role"}
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+
+                            {member.role !== "owner" && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Remove Team Member
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to remove{" "}
+                                      {member.user.email} from this company?
+                                      This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>
+                                      Cancel
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() =>
+                                        handleRemoveMember(member.user_id)
+                                      }
+                                      disabled={isRemovingMember}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      {isRemovingMember
+                                        ? "Removing..."
+                                        : "Remove"}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
                   </TableRow>
                 ))
               )}
