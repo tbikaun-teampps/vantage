@@ -26,6 +26,7 @@ import type {
   UpdateBrandingData,
   CompanyBranding,
 } from "../types/entities/companies.js";
+import { NotFoundError } from "../plugins/errorHandler.js";
 
 // Map EntityType to the corresponding return type
 type EntityTypeMap = {
@@ -105,50 +106,54 @@ export class CompaniesService {
   }
 
   async getCompanies(): Promise<CompanyWithRole[]> {
-    // Use !inner to ensure only companies with matching user associations are returned
+    // Query from user_companies side to get role directly without array
     const { data, error } = await this.supabase
-      .from("companies")
-      .select("*, user_companies!inner(user_id, role)")
-      .eq("is_deleted", false)
-      .eq("user_companies.user_id", this.userId)
-      .eq("is_demo", this.userSubscriptionTier === "demo") // Ensure demo users only see demo companies
-      .order("name", { ascending: true });
+      .from("user_companies")
+      .select("role, companies!inner(*)")
+      .eq("companies.is_deleted", false)
+      .eq("companies.is_demo", this.userSubscriptionTier === "demo") // Ensure demo users only see demo companies
+      .eq("user_id", this.userId)
+      .order("companies(name)", { ascending: true });
 
     if (error) throw error;
     const companies =
-      data?.map((company) => {
-        const { user_companies, ...companyData } = company;
+      data?.map((item) => {
+        const { role, companies: companyData } = item;
         return {
           ...companyData,
-          role: user_companies[0]?.role || null,
+          role,
         };
       }) || [];
 
-    // console.log("companies: ", companies);
+    console.log("companies: ", companies);
 
     return companies;
   }
 
-  async getCompanyById(companyId: string): Promise<CompanyWithRole | null> {
-    // Use !inner to ensure user has access to this company
+  async getCompanyById(companyId: string): Promise<CompanyWithRole> {
+    // Query from user_companies side to get role directly without array
+    console.log("companyId: ", companyId, " userId: ", this.userId);
     const { data, error } = await this.supabase
-      .from("companies")
-      .select("*, user_companies!inner(user_id, role)")
-      .eq("id", companyId)
-      .eq("is_deleted", false)
-      .eq("user_companies.user_id", this.userId)
-      .eq("is_demo", this.userSubscriptionTier === "demo") // Ensure demo users only see demo companies
+      .from("user_companies")
+      .select("role, companies!inner(*)")
+      .eq("companies.id", companyId)
+      .eq("companies.is_deleted", false)
+      .eq("companies.is_demo", this.userSubscriptionTier === "demo") // Ensure demo users only see demo companies
+      .eq("user_id", this.userId)
       .maybeSingle();
+
+    console.log("data: ", data);
+    console.log("error: ", error);
 
     if (error) throw error;
 
-    if (!data) return null;
+    if (!data) throw new NotFoundError("Company not found");
 
-    // Remove user_companies from response
-    const { user_companies, ...companyData } = data;
+    // Extract company data and role
+    const { role, companies: companyData } = data;
     return {
       ...companyData,
-      role: user_companies[0]?.role || null,
+      role,
     };
   }
 

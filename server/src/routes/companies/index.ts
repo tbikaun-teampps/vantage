@@ -82,10 +82,6 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       const { companyId } = request.params as { companyId: string };
       const company = await request.companiesService!.getCompanyById(companyId);
 
-      if (!company) {
-        throw new NotFoundError("Company not found");
-      }
-
       return {
         success: true,
         data: company,
