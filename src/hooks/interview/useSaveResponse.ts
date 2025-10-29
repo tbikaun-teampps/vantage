@@ -85,7 +85,13 @@ export function useSaveInterviewResponse() {
           currentStatus === "pending"
         ) {
           toast.info("All responses cleared");
+        } else {
+          // No status change - regular save
+          toast.success("Response saved");
         }
+      } else {
+        // Initial save or no status data available
+        toast.success("Response saved");
       }
     },
     onError: (error) => {

@@ -11,6 +11,7 @@ import {
 } from "./InterviewCompletionDialog";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
 import { useInterviewNavigation } from "@/hooks/interview/useInterviewNavigation";
+import { useInterviewProgress } from "@/hooks/interview/useInterviewProgress";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MobileActionBar } from "./MobileActionBar";
@@ -51,6 +52,14 @@ export function InterviewQuestion({
     interviewId,
     isIndividualInterview
   );
+
+  // Get progress data to check if all questions are answered
+  const { data: progress } = useInterviewProgress(interviewId);
+
+  // Check if all questions in the interview are answered
+  const allQuestionsAnswered =
+    progress?.answered_questions === progress?.total_questions &&
+    (progress?.total_questions ?? 0) > 0;
 
   // Handle completion confirmation
   const handleCompleteConfirm = async (feedback: InterviewFeedback) => {
@@ -190,8 +199,8 @@ export function InterviewQuestion({
                         handleSave();
                         return;
                       }
-                      // If at last question, show completion dialog (if individual interview)
-                      if (isLast && isIndividualInterview) {
+                      // If at last question, show completion dialog (if individual interview and all questions answered)
+                      if (isLast && isIndividualInterview && allQuestionsAnswered) {
                         setIsCompletionDialogOpen(true);
                         return;
                       }
@@ -204,7 +213,7 @@ export function InterviewQuestion({
                       ? "Saving..."
                       : canSave
                         ? "Save"
-                        : isLast
+                        : isLast && allQuestionsAnswered
                           ? "Complete"
                           : "Next"}
                   </Button>
@@ -219,7 +228,7 @@ export function InterviewQuestion({
                 onSave={handleSave}
                 isIndividualInterview={isIndividualInterview}
                 onComplete={
-                  isLast && isQuestionAnswered() && !canSave
+                  isLast && isQuestionAnswered() && !canSave && allQuestionsAnswered
                     ? () => setIsCompletionDialogOpen(true)
                     : undefined
                 }

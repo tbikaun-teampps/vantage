@@ -32,7 +32,6 @@ export async function submitFeedback(
 
     return response.data;
   } catch (error) {
-    console.error("Feedback submission error:", error);
     return {
       success: false,
       message:
