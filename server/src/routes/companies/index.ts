@@ -21,6 +21,7 @@ import type {
 import { AssessmentFilters } from "../../types/entities/assessments";
 import { questionnaireSchemas } from "../../schemas/questionnaire";
 import { QuestionnaireService } from "../../services/QuestionnaireService";
+import { RecommendationsService } from "../../services/RecommendationsService";
 
 export async function companiesRoutes(fastify: FastifyInstance) {
   // Add "Companies" tag to all routes in this router
@@ -267,16 +268,16 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         description: "Get all recommendations for a company",
         params: companySchemas.params.companyId,
         response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: { type: "object" },
-              },
-            },
-          },
+          // 200: {
+          //   type: "object",
+          //   properties: {
+          //     success: { type: "boolean" },
+          //     data: {
+          //       type: "array",
+          //       items: { type: "object" },
+          //     },
+          //   },
+          // },
           401: commonResponseSchemas.responses[401],
           500: commonResponseSchemas.responses[500],
         },
@@ -284,9 +285,6 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     },
     async (request) => {
       const { companyId } = request.params as { companyId: string };
-      const { RecommendationsService } = await import(
-        "../../services/RecommendationsService"
-      );
       const recommendationsService = new RecommendationsService(
         request.supabaseClient
       );

@@ -11,6 +11,7 @@ import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import envPlugin from "./plugins/env";
 import supabasePlugin from "./plugins/supabase";
+import llmPlugin from "./plugins/llm";
 import errorHandler from "./plugins/errorHandler";
 import multipart from "@fastify/multipart";
 import { usersRoutes } from "./routes/users";
@@ -32,6 +33,7 @@ const fastify = Fastify({
 // Register plugins
 await fastify.register(envPlugin);
 await fastify.register(supabasePlugin);
+await fastify.register(llmPlugin);
 await fastify.register(errorHandler);
 await fastify.register(multipart, {
   limits: {

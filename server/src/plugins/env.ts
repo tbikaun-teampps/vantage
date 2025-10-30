@@ -3,7 +3,7 @@ import env from "@fastify/env";
 
 const envSchema = {
   type: "object",
-  required: ["SUPABASE_URL", "SUPABASE_ANON_KEY", "RESEND_API_KEY", "SITE_URL", "VANTAGE_LOGO_FULL_URL", "VANTAGE_LOGO_ICON_URL"],
+  required: ["SUPABASE_URL", "SUPABASE_ANON_KEY", "RESEND_API_KEY", "ANTHROPIC_API_KEY", "SITE_URL", "VANTAGE_LOGO_FULL_URL", "VANTAGE_LOGO_ICON_URL"],
   properties: {
     SUPABASE_URL: {
       type: "string",
@@ -24,6 +24,10 @@ const envSchema = {
     RESEND_API_KEY: {
       type: "string",
       description: "Resend API key for sending emails",
+    },
+    ANTHROPIC_API_KEY: {
+      type: "string",
+      description: "Anthropic API key for LLM-powered features",
     },
     SITE_URL: {
       type: "string",
@@ -70,6 +74,7 @@ declare module "fastify" {
       SUPABASE_SERVICE_ROLE_KEY: string;
       SUPABASE_JWT_SIGNING_KEY: string;
       RESEND_API_KEY: string;
+      ANTHROPIC_API_KEY: string;
       SITE_URL: string;
       VANTAGE_LOGO_FULL_URL: string;
       VANTAGE_LOGO_ICON_URL: string;
