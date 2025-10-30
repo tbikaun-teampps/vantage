@@ -344,9 +344,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <div data-sidebar-section="settings">
           <NavSection title="Settings" items={sidebarData.navSettings} />
         </div>
-        <div data-sidebar-section="data">
+        {/* <div data-sidebar-section="data">
           <NavData title="Data" items={sidebarData.navData} />
-        </div>
+        </div> */}
         <NavSecondary items={sidebarData.navSecondary} className="mt-auto" />
       </SidebarContent>
 
