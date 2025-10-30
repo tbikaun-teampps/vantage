@@ -96,6 +96,8 @@ export interface AuthActions {
   setSession: (session: TokenData | null) => void;
   setProfile: (profile: UserProfile | null) => void;
   setLoading: (loading: boolean) => void;
+  setPermissions: (permissions: UserPermissions | null) => void;
+  setCompanies: (companies: UserCompany[]) => void;
 
   signIn: (
     email: string,

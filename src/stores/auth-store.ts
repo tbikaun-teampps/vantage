@@ -19,6 +19,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
   setSession: (session) => set({ session, authenticated: !!session }),
   setProfile: (profile) => set({ profile }),
   setLoading: (loading) => set({ loading }),
+  setPermissions: (permissions) => set({ permissions }),
+  setCompanies: (companies) => set({ companies }),
 
   signIn: async (email: string, password: string) => {
     try {

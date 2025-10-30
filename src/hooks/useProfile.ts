@@ -69,8 +69,8 @@ export function useProfileActions() {
       // Update auth store with complete session data
       authStore.setUser(sessionData.user);
       authStore.setProfile(sessionData.profile);
-      authStore.permissions = sessionData.permissions;
-      authStore.companies = sessionData.companies;
+      authStore.setPermissions(sessionData.permissions);
+      authStore.setCompanies(sessionData.companies);
 
       // Also update React Query cache
       if (user) {
@@ -111,6 +111,41 @@ export function useProfileActions() {
     },
   });
 
+  const refreshSessionMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+
+      // Fetch fresh session data to get updated user state (role, permissions, companies, etc.)
+      const response = await apiClient.get<{
+        success: boolean;
+        data: {
+          user: typeof user;
+          profile: UserProfile;
+          permissions: typeof authStore.permissions;
+          companies: typeof authStore.companies;
+        };
+      }>("/auth/session");
+
+      if (!response.data.success || !response.data.data) {
+        throw new Error("Failed to fetch session data");
+      }
+
+      return response.data.data;
+    },
+    onSuccess: (sessionData) => {
+      // Update auth store with complete session data
+      authStore.setUser(sessionData.user);
+      authStore.setProfile(sessionData.profile);
+      authStore.setPermissions(sessionData.permissions);
+      authStore.setCompanies(sessionData.companies);
+
+      // Also update React Query cache
+      if (user) {
+        queryClient.setQueryData(profileKeys.detail(user.id), sessionData.profile);
+      }
+    },
+  });
+
   return {
     updateProfile: updateProfileMutation.mutateAsync,
     isUpdatingProfile: updateProfileMutation.isPending,
@@ -119,5 +154,9 @@ export function useProfileActions() {
     markOnboarded: markOnboardedMutation.mutateAsync,
     isMarkingOnboarded: markOnboardedMutation.isPending,
     markOnboardedError: markOnboardedMutation.error,
+
+    refreshSession: refreshSessionMutation.mutateAsync,
+    isRefreshingSession: refreshSessionMutation.isPending,
+    refreshSessionError: refreshSessionMutation.error,
   };
 }
