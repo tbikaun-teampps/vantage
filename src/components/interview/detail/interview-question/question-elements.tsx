@@ -61,7 +61,7 @@ export function InterviewQuestionElements({
           <div
             className={cn(
               "mt-2 grid gap-4 text-sm",
-              isMobile ? "grid-cols-2" : "grid-cols-4"
+              isMobile ? "grid-cols-1" : "grid-cols-4"
             )}
           >
             {part.options.labels.map((label: string, index: number) => {
@@ -73,7 +73,8 @@ export function InterviewQuestionElements({
                   onClick={() => handleSelection(part.id, label)}
                   className={cn(
                     "whitespace-normal text-wrap min-w-0 flex-1 break-words transition-all duration-200",
-                    isSelected && "bg-primary text-primary-foreground",
+                    isSelected &&
+                      "bg-green-500 dark:bg-green-400 hover:bg-green-600 dark:hover:bg-green-500 text-primary-foreground",
                     isMobile ? "h-12" : "h-16"
                   )}
                 >
@@ -93,7 +94,8 @@ export function InterviewQuestionElements({
             onClick={() => handleSelection(part.id, "false")}
             className={cn(
               "transition-all duration-200",
-              selectedValue === "false" && "bg-primary text-primary-foreground",
+              selectedValue === "false" &&
+                "bg-green-500 dark:bg-green-400 hover:bg-green-600 dark:hover:bg-green-500 text-primary-foreground",
               isMobile ? "h-12" : "h-16"
             )}
           >
@@ -104,7 +106,8 @@ export function InterviewQuestionElements({
             onClick={() => handleSelection(part.id, "true")}
             className={cn(
               "transition-all duration-200",
-              selectedValue === "true" && "bg-primary text-primary-foreground",
+              selectedValue === "true" &&
+                "bg-green-500 dark:bg-green-400 hover:bg-green-600 dark:hover:bg-green-500 text-primary-foreground",
               isMobile ? "h-12" : "h-16"
             )}
           >
@@ -132,7 +135,7 @@ export function InterviewQuestionElements({
           <div
             className={cn(
               "mt-2 grid gap-4 text-sm",
-              isMobile ? "grid-cols-5" : "grid-cols-10"
+              isMobile ? "grid-cols-3" : "grid-cols-10"
             )}
           >
             {scaleValues.map((value: number, index: number) => {
@@ -144,7 +147,8 @@ export function InterviewQuestionElements({
                   onClick={() => handleSelection(part.id, value.toString())}
                   className={cn(
                     "whitespace-normal text-wrap min-w-0 flex-1 break-words transition-all duration-200",
-                    isSelected && "bg-primary text-primary-foreground",
+                    isSelected &&
+                      "bg-green-500 dark:bg-green-400 hover:bg-green-600 dark:hover:bg-green-500 text-primary-foreground",
                     isMobile ? "h-12" : "h-16"
                   )}
                 >
@@ -166,7 +170,7 @@ export function InterviewQuestionElements({
         <div
           className={cn(
             "mt-2 grid gap-4 text-sm",
-            isMobile ? "grid-cols-5" : "grid-cols-10"
+            isMobile ? "grid-cols-3" : "grid-cols-10"
           )}
         >
           {percentageValues.map((value: number, index: number) => {
@@ -178,7 +182,8 @@ export function InterviewQuestionElements({
                 onClick={() => handleSelection(part.id, value.toString())}
                 className={cn(
                   "whitespace-normal text-wrap min-w-0 flex-1 break-words transition-all duration-200",
-                  isSelected && "bg-primary text-primary-foreground",
+                  isSelected &&
+                    "bg-green-500 dark:bg-green-400 hover:bg-green-600 dark:hover:bg-green-500 text-primary-foreground",
                   isMobile ? "h-12" : "h-16"
                 )}
               >

@@ -388,11 +388,7 @@ export function Questions() {
                       </Button>
 
                       <span className="text-sm font-medium mr-3 flex-shrink-0">
-                        {sectionIndex + 1}
-                      </span>
-
-                      <span className="text-sm font-medium flex-1 truncate">
-                        {section.title}
+                        {sectionIndex + 1}. {section.title}
                       </span>
 
                       <Badge variant="secondary" className="text-xs mr-2">
@@ -477,7 +473,7 @@ export function Questions() {
                                 {sectionIndex + 1}.{stepIndex + 1}
                               </span>
 
-                              <span className="text-sm font-medium flex-1 truncate">
+                              <span className="text-sm font-medium flex-1 min-w-0 truncate">
                                 {step.title}
                               </span>
 
@@ -559,8 +555,8 @@ export function Questions() {
                                         {questionIndex + 1}
                                       </span>
 
-                                      <div className="flex items-center flex-1 truncate mr-3">
-                                        <span className="text-sm font-medium truncate">
+                                      <div className="flex items-center flex-1 min-w-0 truncate mr-3">
+                                        <span className="text-sm font-medium min-w-0 truncate">
                                           {question.title}
                                         </span>
                                         {isQuestionIncomplete(question) && (

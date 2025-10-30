@@ -4,12 +4,14 @@ import { useInterview } from "@/hooks/interview/useInterview";
 import { InterviewExitDialog } from "@/components/interview/detail/InterviewExitDialog";
 import { InterviewLayoutHeader } from "@/components/layouts/interview/header";
 import { InterviewLayoutFooter } from "@/components/layouts/interview/footer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface InterviewLayoutProps {
   children?: React.ReactNode;
 }
 
 export function InterviewLayout({ children }: InterviewLayoutProps) {
+  const isMobile = useIsMobile();
   const { id: interviewId } = useParams<{ id: string }>();
   const { interview, actions, ui } = useInterview(parseInt(interviewId!));
 
@@ -28,7 +30,7 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
           <ErrorBoundary>{children || <Outlet />}</ErrorBoundary>
         </main>
 
-        <InterviewLayoutFooter />
+        {isMobile && <InterviewLayoutFooter />}
       </div>
 
       <InterviewExitDialog

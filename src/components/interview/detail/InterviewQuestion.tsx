@@ -1,22 +1,20 @@
-import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Form } from "@/components/ui/form";
 import { InterviewQuestionHeader } from "./interview-question/header";
 import { InterviewQuestionContent } from "./interview-question/content";
 import { InterviewRatingSection } from "./interview-question/rating-section";
 import { InterviewRolesSection } from "./interview-question/roles-section";
-import {
-  InterviewCompletionDialog,
-  type InterviewFeedback,
-} from "./InterviewCompletionDialog";
+import { type InterviewFeedback } from "./InterviewCompletionDialog";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
-import { useInterviewNavigation } from "@/hooks/interview/useInterviewNavigation";
 import { useInterviewProgress } from "@/hooks/interview/useInterviewProgress";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { MobileActionBar } from "./MobileActionBar";
-import { InterviewActionBar } from "./InterviewActionBar";
+import { useInterviewSummary } from "@/hooks/interview/useInterviewSummary";
+import { Progress } from "@/components/ui/progress";
+import { InterviewSidebar } from "./InterviewSidebar";
 import { InterviewQuestionElements } from "./interview-question/question-elements";
+import { InterviewComments } from "./InterviewComments";
+import { InterviewEvidence } from "./InterviewEvidence";
+import { InterviewActions } from "./InterviewActions";
+import { InterviewNavigation } from "./InterviewNavigation";
 
 interface InterviewQuestionProps {
   questionId: number;
@@ -25,8 +23,8 @@ interface InterviewQuestionProps {
   interviewId: number;
   handleSave: () => void;
   isSaving: boolean;
-  isCompleting?: boolean;
-  onComplete?: (feedback: InterviewFeedback) => Promise<void>;
+  isCompleting: boolean;
+  onComplete: (feedback: InterviewFeedback) => Promise<void>;
 }
 
 export function InterviewQuestion({
@@ -40,46 +38,22 @@ export function InterviewQuestion({
   onComplete,
 }: InterviewQuestionProps) {
   const isMobile = useIsMobile();
-  const [isCompletionDialogOpen, setIsCompletionDialogOpen] =
-    useState<boolean>(false);
 
   const { data: question, isLoading: isLoadingQuestion } = useInterviewQuestion(
     interviewId,
     questionId
   );
 
-  // Use navigation hook for mobile buttons
-  const { isFirst, isLast, onPrevious, onNext } = useInterviewNavigation(
-    interviewId,
-    isIndividualInterview
-  );
-
   // Get progress data to check if all questions are answered
   const { data: progress } = useInterviewProgress(interviewId);
 
-  // Check if all questions in the interview are answered
-  const allQuestionsAnswered =
-    progress?.answered_questions === progress?.total_questions &&
-    (progress?.total_questions ?? 0) > 0;
-
-  // Handle completion confirmation
-  const handleCompleteConfirm = async (feedback: InterviewFeedback) => {
-    if (!onComplete) return;
-
-    await onComplete(feedback);
-    // Dialog will be unmounted by navigation, no need to close manually
-  };
-
-  if (isLoadingQuestion || !question) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-muted-foreground">Loading question...</div>
-      </div>
-    );
-  }
+  // Get interview summary for desktop header
+  const { data: summary } = useInterviewSummary(interviewId);
 
   // Check if current question is answered
   const isQuestionAnswered = () => {
+    // Return false if question hasn't loaded yet
+    if (!question) return false;
     if (isIndividualInterview) {
       // Check if all question_parts have selections in the form
       if (!question.question_parts || question.question_parts.length === 0) {
@@ -87,7 +61,7 @@ export function InterviewQuestion({
       }
 
       // All parts must have a value in the form
-      return question.question_parts.every((part) => {
+      return question.question_parts.every((part: any) => {
         const value = form.watch(`question_part_${part.id}`);
         return value !== undefined && value !== null && value.trim() !== "";
       });
@@ -112,134 +86,178 @@ export function InterviewQuestion({
     }
   };
 
-  // For individual interviews: require all parts answered AND dirty state
-  // For private interviews: just check dirty state
-  const canSave = isIndividualInterview
-    ? isQuestionAnswered() && form.formState.isDirty
-    : form.formState.isDirty;
+  // Mobile layout
+  if (isMobile) {
+    // Show simple loading state for mobile
+    if (isLoadingQuestion || !question) {
+      return (
+        <div className="flex h-screen items-center justify-center">
+          <div className="text-muted-foreground">Loading question...</div>
+        </div>
+      );
+    }
 
+    return (
+      <>
+        <InterviewQuestionHeader
+          interviewId={interviewId}
+          isMobile={isMobile}
+          responseId={question.response.id}
+          breadcrumbs={question.breadcrumbs || {}}
+          isQuestionAnswered={isQuestionAnswered}
+          isIndividualInterview={isIndividualInterview}
+        />
+        <div className="overflow-y-auto max-h-screen p-4">
+          <Form {...form}>
+            <div className="flex flex-col gap-4 max-w-[1600px] mx-auto pb-48">
+              <InterviewQuestionContent
+                isIndividualInterview={isIndividualInterview}
+                question={question}
+              />
+
+              {isIndividualInterview && (
+                <InterviewQuestionElements question={question} form={form} />
+              )}
+
+              {!isIndividualInterview && (
+                <InterviewRatingSection
+                  form={form}
+                  options={question.options.rating_scales}
+                  isMobile={isMobile}
+                />
+              )}
+
+              {!isIndividualInterview && (
+                <InterviewRolesSection
+                  form={form}
+                  isMobile={isMobile}
+                  options={question.options.applicable_roles}
+                />
+              )}
+
+              <InterviewNavigation
+                interviewId={interviewId}
+                responseId={question.response.id}
+                isSaving={isSaving}
+                handleSave={handleSave}
+                isMobile={isMobile}
+                isQuestionAnswered={isQuestionAnswered}
+                isIndividualInterview={isIndividualInterview}
+                isFormDirty={form.formState.isDirty}
+                onComplete={onComplete}
+                isCompleting={isCompleting}
+              />
+            </div>
+          </Form>
+        </div>
+      </>
+    );
+  }
+
+  // Desktop layout - two-column design
   return (
-    <>
-      <InterviewQuestionHeader
+    <div className="flex h-screen overflow-hidden max-w-[1600px] mx-auto">
+      {/* Left Sidebar */}
+      <InterviewSidebar
         interviewId={interviewId}
-        isMobile={isMobile}
-        responseId={question.response.id}
-        breadcrumbs={question.breadcrumbs || {}}
-        isQuestionAnswered={isQuestionAnswered}
         isIndividualInterview={isIndividualInterview}
       />
-      <div
-        className={cn("overflow-y-auto max-h-screen", isMobile ? "p-4" : "")}
-      >
-        <Form {...form}>
-          <div
-            className={cn(
-              "flex flex-col gap-4 max-w-[1600px] mx-auto mb-48",
-              isMobile ? "pb-48" : "" // Padding for mobile action bar (stops being trapped under mobile browser toolbars)
-            )}
-          >
-            <InterviewQuestionContent
-              isIndividualInterview={isIndividualInterview}
-              question={question}
-            />
 
-            {isIndividualInterview && (
-              <InterviewQuestionElements question={question} form={form} />
-            )}
-
-            {!isIndividualInterview && (
-              <InterviewRatingSection
-                form={form}
-                options={question.options.rating_scales}
-                isMobile={isMobile}
-              />
-            )}
-
-            {/* Roles Section - Hidden for individual interviews */}
-            {!isIndividualInterview && question && (
-              <InterviewRolesSection
-                form={form}
-                isMobile={isMobile}
-                options={question.options.applicable_roles}
-              />
-            )}
-            {isMobile ? (
-              <div className="flex gap-4 w-full max-w-2xl">
-                <div
-                  className="flex gap-4 w-full"
-                  data-tour="interview-navigation-mobile"
-                >
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={onPrevious}
-                    disabled={isFirst || isSaving}
-                  >
-                    Back
-                  </Button>
-                  <Button
-                    className={cn(
-                      "flex-1",
-                      isQuestionAnswered() || canSave
-                        ? "bg-green-600 hover:bg-green-700 focus:ring-green-600 text-white"
-                        : ""
-                    )}
-                    disabled={
-                      !isQuestionAnswered() ||
-                      isSaving ||
-                      !question?.response?.id
-                    }
-                    onClick={() => {
-                      // If there are unsaved changes, save first
-                      if (canSave) {
-                        handleSave();
-                        return;
-                      }
-                      // If at last question, show completion dialog (if individual interview and all questions answered)
-                      if (isLast && isIndividualInterview && allQuestionsAnswered) {
-                        setIsCompletionDialogOpen(true);
-                        return;
-                      }
-
-                      // Otherwise, navigate to next
-                      onNext();
-                    }}
-                  >
-                    {isSaving
-                      ? "Saving..."
-                      : canSave
-                        ? "Save"
-                        : isLast && allQuestionsAnswered
-                          ? "Complete"
-                          : "Next"}
-                  </Button>
-                </div>
-                <MobileActionBar responseId={question?.response?.id} />
+      {/* Right Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Content Header with Interview Metadata */}
+        <div className="flex-shrink-0 border-b border-border">
+          {/* Interview & Assessment Names + Action Buttons */}
+          <div className="p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl font-semibold truncate">
+                  {summary?.name || "Interview"}
+                </h1>
+                <p className="text-sm text-muted-foreground truncate">
+                  {summary?.assessment?.name || "Assessment"}
+                </p>
               </div>
-            ) : (
-              // {/* Fixed Action Bar with Dropdown Navigation */}
-              <InterviewActionBar
-                isSaving={isSaving}
-                isDirty={canSave}
-                onSave={handleSave}
-                isIndividualInterview={isIndividualInterview}
-                onComplete={
-                  isLast && isQuestionAnswered() && !canSave && allQuestionsAnswered
-                    ? () => setIsCompletionDialogOpen(true)
-                    : undefined
-                }
-              />
-            )}
+
+              {/* Comments, Evidence + Actions Buttons */}
+              {question && (
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <InterviewComments responseId={question.response.id} />
+                  <InterviewEvidence responseId={question.response.id} />
+                  {!isIndividualInterview && (
+                    <InterviewActions responseId={question.response.id} />
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </Form>
+        </div>
+        {/* Progress Bar */}
+        <div className="relative w-full">
+          <Progress
+            value={progress?.progress_percentage || 0}
+            className="h-4 rounded-none"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs font-medium mix-blend-difference text-white">
+              {progress?.answered_questions || 0}/
+              {progress?.total_questions || 0}
+            </span>
+          </div>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto">
+          {isLoadingQuestion || !question ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-muted-foreground">Loading question...</div>
+            </div>
+          ) : (
+            <Form {...form}>
+              <div className="flex flex-col gap-4 max-w-[1200px] mx-auto p-6 pb-24">
+                <InterviewQuestionContent
+                  isIndividualInterview={isIndividualInterview}
+                  question={question}
+                />
+
+                {isIndividualInterview && (
+                  <InterviewQuestionElements question={question} form={form} />
+                )}
+
+                {!isIndividualInterview && (
+                  <InterviewRatingSection
+                    form={form}
+                    options={question.options.rating_scales}
+                    isMobile={false}
+                  />
+                )}
+
+                {!isIndividualInterview && (
+                  <InterviewRolesSection
+                    form={form}
+                    isMobile={false}
+                    options={question.options.applicable_roles}
+                  />
+                )}
+
+                {/* Desktop Bottom Action Buttons */}
+                <InterviewNavigation
+                  interviewId={interviewId}
+                  responseId={question.response.id}
+                  isSaving={isSaving}
+                  handleSave={handleSave}
+                  isMobile={isMobile}
+                  isQuestionAnswered={isQuestionAnswered}
+                  isIndividualInterview={isIndividualInterview}
+                  isFormDirty={form.formState.isDirty}
+                  onComplete={onComplete}
+                  isCompleting={isCompleting}
+                />
+              </div>
+            </Form>
+          )}
+        </div>
       </div>
-      {/* Completion Dialog */}
-      <InterviewCompletionDialog
-        open={isCompletionDialogOpen}
-        onOpenChange={setIsCompletionDialogOpen}
-        onConfirm={handleCompleteConfirm}
-        isLoading={isCompleting}
-      />
-    </>
+    </div>
   );
 }

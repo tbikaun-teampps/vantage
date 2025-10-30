@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -19,25 +20,18 @@ export function InterviewQuestionContent({
   question,
 }: InterviewQuestionContentProps) {
   const isMobile = useIsMobile();
-  // For individual interviews, show centered content box
+  // For individual interviews
   if (isIndividualInterview) {
     return (
       <div
-        className={cn("flex justify-center", isMobile ? "px-2 text-center" : "px-6")}
+        className={cn("flex justify-center", isMobile ? "px-2" : "px-6")}
         data-tour="interview-question"
       >
         <div className="w-full">
-          <div className="rounded-xl p-8 bg-muted">
-            <div className="space-y-4">
-              <h1 className="text-xl font-bold">Context</h1>
-              <h2 className="text-lg font-bold text-foreground leading-relaxed whitespace-pre-line">
-                {question.context}
-              </h2>
-              <p className="text-muted-foreground">
-                Please answer the question elements below
-              </p>
-            </div>
-          </div>
+          <h1 className="text-lg font-bold">Context</h1>
+          <h2 className="text-foreground leading-relaxed whitespace-pre-line">
+            {question.context}
+          </h2>
         </div>
       </div>
     );

@@ -61,31 +61,28 @@ export function InterviewQuestionHeader({
           </div>
         </div>
       </div>
-      <div className={`flex-shrink-0 ${isMobile ? "py-4" : "p-6"}`}>
+      <div className={`flex-shrink-0 ${isMobile ? "py-4" : "p-4"}`}>
         <div className="max-w-[1600px] mx-auto w-full">
           <div
             className={`flex items-start justify-between ${
               isMobile ? "flex-col space-y-3" : ""
             }`}
           >
-            <div className="w-full" data-tour="interview-question-breadcrumbs">
-              {breadcrumbs &&
-                (isMobile ? (
+            {/* Breadcrumbs - Only show on mobile, desktop uses sidebar instead */}
+            {isMobile && (
+              <div className="w-full" data-tour="interview-question-breadcrumbs">
+                {breadcrumbs && (
                   <MobileBreadCrumbs
                     breadcrumbs={breadcrumbs}
                     isQuestionAnswered={isQuestionAnswered}
                   />
-                ) : (
-                  <DesktopBreadCrumbs
-                    breadcrumbs={breadcrumbs}
-                    isQuestionAnswered={isQuestionAnswered}
-                  />
-                ))}
-            </div>
+                )}
+              </div>
+            )}
 
             {/* Comments, Evidence + Actions Buttons */}
             {!isMobile && (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 ml-auto">
                 <InterviewComments responseId={responseId} />
                 <InterviewEvidence responseId={responseId} />
                 {!isIndividualInterview && (

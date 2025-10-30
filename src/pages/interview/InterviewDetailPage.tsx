@@ -72,7 +72,6 @@ export function InterviewDetailPage({
   // Always show intro for individual interviews
   const [showIntro, setShowIntro] = useState(isIndividualInterview);
 
-  // Fetch data using new 3-endpoint architecture
   const {
     data: structure,
     isLoading: isLoadingStructure,
@@ -135,7 +134,8 @@ export function InterviewDetailPage({
       if (isIndividualInterview && question.response.question_part_responses) {
         question.response.question_part_responses.forEach((response) => {
           if (response.answer_value) {
-            formValues[`question_part_${response.question_part_id}`] = response.answer_value;
+            formValues[`question_part_${response.question_part_id}`] =
+              response.answer_value;
           }
         });
       }
@@ -183,9 +183,6 @@ export function InterviewDetailPage({
 
     const formData = form.getValues();
 
-    console.log('formData', formData);
-
-
     // Convert any question_part_{id} fields to part answers
     const partAnswers: {
       question_part_id: number;
@@ -199,15 +196,13 @@ export function InterviewDetailPage({
         const value = (formData as any)[key];
 
         if (value !== undefined && value !== null) {
-            partAnswers.push({
-              question_part_id: partId,
-              answer_value: value,
-            });
-          }
+          partAnswers.push({
+            question_part_id: partId,
+            answer_value: value,
+          });
         }
       }
-
-      console.log('partAnswers', partAnswers);
+    }
 
     saveResponse({
       interviewId: parseInt(interviewId!),
