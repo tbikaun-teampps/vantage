@@ -50,7 +50,7 @@ export function SelectCompanyPage() {
   const { data: profile } = useProfile();
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [deletingCompanyId, setDeletingCompanyId] = useState<string | null>(null);
   const [deleteConfirmationText, setDeleteConfirmationText] =
     useState<string>("");
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
@@ -110,7 +110,7 @@ export function SelectCompanyPage() {
       return;
     }
 
-    setIsDeleting(true);
+    setDeletingCompanyId(companyToDelete.id);
     try {
       await deleteCompany(companyToDelete.id);
       toast.success("Company deleted successfully");
@@ -124,7 +124,7 @@ export function SelectCompanyPage() {
           : "An unexpected error occurred while deleting the company"
       );
     } finally {
-      setIsDeleting(false);
+      setDeletingCompanyId(null);
     }
   };
 
@@ -204,7 +204,13 @@ export function SelectCompanyPage() {
                 </h3>
                 <div className="grid gap-3">
                   {companies.map((company) => (
-                    <div key={company.id} className="relative group">
+                    <div
+                      key={company.id}
+                      className={cn(
+                        "relative group transition-opacity",
+                        deletingCompanyId === company.id && "opacity-50 pointer-events-none"
+                      )}
+                    >
                       <Button
                         variant="outline"
                         className="justify-start p-4 h-auto w-full overflow-hidden cursor-pointer"
@@ -290,7 +296,7 @@ export function SelectCompanyPage() {
                                 <DropdownMenuItem
                                   onClick={(e) => handleDeleteClick(company, e)}
                                   variant="destructive"
-                                  disabled={isDeleting}
+                                  disabled={deletingCompanyId !== null}
                                 >
                                   <IconTrash className="mr-2 h-4 w-4" />
                                   Delete Company
@@ -340,7 +346,7 @@ export function SelectCompanyPage() {
               deleteConfirmationText={deleteConfirmationText}
               setDeleteConfirmationText={setDeleteConfirmationText}
               handleDeleteCompany={handleDeleteCompany}
-              isDeleting={isDeleting}
+              isDeleting={deletingCompanyId !== null}
               companyToDelete={companyToDelete}
             />
             {companyForBranding && (
