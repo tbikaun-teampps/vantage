@@ -649,8 +649,8 @@ export function QuestionPartsWeightedScoringBuilder({
                       Remove
                     </Button>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="space-y-1">
+                  <div className="flex gap-2">
+                    <div className="space-y-1 w-[80px]">
                       <Label
                         htmlFor={`${partId}-range-${i}-min`}
                         className="text-xs"
@@ -668,7 +668,7 @@ export function QuestionPartsWeightedScoringBuilder({
                         className="h-8"
                       />
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1 w-[80px]">
                       <Label
                         htmlFor={`${partId}-range-${i}-max`}
                         className="text-xs"
