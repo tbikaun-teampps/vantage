@@ -22,10 +22,12 @@ config({ path: envPath });
 class DatabaseNuke {
   private supabase: SupabaseClient;
   private excludedTables: string[];
+  private excludedBuckets: string[];
 
   constructor(supabaseUrl: string, supabaseKey: string) {
     this.supabase = createClient(supabaseUrl, supabaseKey);
-    this.excludedTables = ['profiles', 'shared_roles', 'feedback'];
+    this.excludedTables = ['profiles', 'shared_roles', 'feedback', 'measurement_definitions'];
+    this.excludedBuckets = ['assets'];
   }
 
   async getAllTables() {
@@ -40,20 +42,23 @@ class DatabaseNuke {
       console.log("⚠️  Using fallback table list...");
       return [
         'interview_evidence',
+        'interview_question_part_responses',
         'interview_response_actions',
-        'interview_response_roles', 
+        'interview_response_roles',
         'interview_responses',
-        'interview_questions',
+        'interview_question_applicable_roles',
         'interview_roles',
-        'interview_sections',
-        'interview_steps',
         'interviews',
         'assessment_objectives',
         'assessments',
         'program_phases',
-        'program_objectives', 
+        'program_objectives',
+        'program_measurements',
         'programs',
-        "calculated_metrics",
+        'measurement_alignments',
+        'measurements_calculated',
+        'measurement_definitions',
+        'questionnaire_question_parts',
         'questionnaire_question_rating_scales',
         'questionnaire_question_roles',
         'questionnaire_questions',
@@ -68,6 +73,7 @@ class DatabaseNuke {
         'region_contacts',
         'business_unit_contacts',
         'company_contacts',
+        'user_companies',
         'contacts',
         'roles',
         'work_groups',
@@ -76,29 +82,111 @@ class DatabaseNuke {
         'regions',
         'business_units',
         'companies',
-        "recommendations"
+        'dashboards',
+        'recommendations'
       ];
     }
     
     return data;
   }
 
-  async confirmAction(tablesToDelete: string[]): Promise<boolean> {
+  async getAllBuckets() {
+    console.log("🔍 Fetching all storage buckets...");
+
+    const { data, error } = await this.supabase.storage.listBuckets();
+
+    if (error) {
+      console.log("⚠️  Error fetching buckets:", error.message);
+      return [];
+    }
+
+    return data.map(bucket => bucket.name);
+  }
+
+  async clearBucket(bucketName: string): Promise<number> {
+    console.log(`🗑️  Emptying bucket: ${bucketName}...`);
+
+    try {
+      const { data, error } = await this.supabase.storage.emptyBucket(bucketName);
+
+      if (error) {
+        console.log(`⚠️  Warning: Failed to empty bucket ${bucketName}: ${error.message}`);
+        return 0;
+      }
+
+      console.log(`✅ Successfully emptied bucket ${bucketName}`);
+      console.log(`   ${data.message}`);
+      return 1; // Return success indicator
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.log(`⚠️  Warning: Error emptying bucket ${bucketName}: ${errorMessage}`);
+      return 0;
+    }
+  }
+
+  async nukeBuckets(): Promise<{ clearedCount: number; filesDeleted: number }> {
+    try {
+      console.log("\n🗂️  Starting storage bucket clearing...");
+
+      // Get all buckets
+      const allBuckets = await this.getAllBuckets();
+
+      // Filter out excluded buckets
+      const bucketsToClear = allBuckets.filter(bucket =>
+        !this.excludedBuckets.includes(bucket)
+      );
+
+      if (bucketsToClear.length === 0) {
+        console.log("✨ No buckets to clear (only excluded buckets found or no buckets exist)");
+        return { clearedCount: 0, filesDeleted: 0 };
+      }
+
+      console.log(`📋 Buckets to be cleared: ${bucketsToClear.join(', ')}`);
+      console.log(`✅ Buckets that will be preserved: ${this.excludedBuckets.join(', ')}`);
+
+      let clearedCount = 0;
+
+      for (const bucketName of bucketsToClear) {
+        const success = await this.clearBucket(bucketName);
+        if (success > 0) {
+          clearedCount++;
+        }
+      }
+
+      return { clearedCount, filesDeleted: 0 };
+    } catch (error) {
+      console.error("❌ Error during bucket clearing:", error);
+      return { clearedCount: 0, filesDeleted: 0 };
+    }
+  }
+
+  async confirmAction(tablesToDelete: string[], bucketsToClear: string[]): Promise<boolean> {
     return new Promise((resolve) => {
       const rl = createInterface({
         input: process.stdin,
         output: process.stdout
       });
 
-      console.log("\n⚠️  WARNING: This will permanently delete data from the following tables:");
-      console.log("📋 Tables to be nuked:");
+      console.log("\n⚠️  WARNING: This will permanently delete data from the following:");
+
+      console.log("\n📋 Database Tables to be nuked:");
       tablesToDelete.forEach((table: string) => console.log(`   - ${table}`));
-      
-      console.log("\n✅ Tables that will be preserved:");
+
+      console.log("\n✅ Database Tables that will be preserved:");
       this.excludedTables.forEach((table: string) => console.log(`   - ${table}`));
-      
+
+      if (bucketsToClear.length > 0) {
+        console.log("\n🗂️  Storage Buckets to be cleared:");
+        bucketsToClear.forEach((bucket: string) => console.log(`   - ${bucket}`));
+
+        console.log("\n✅ Storage Buckets that will be preserved:");
+        this.excludedBuckets.forEach((bucket: string) => console.log(`   - ${bucket}`));
+      } else {
+        console.log("\n✨ No storage buckets will be affected");
+      }
+
       console.log("\n💥 This action CANNOT be undone!");
-      
+
       rl.question("\nDo you want to continue? Type 'YES' to confirm: ", (answer) => {
         rl.close();
         resolve(answer === 'YES');
@@ -109,47 +197,65 @@ class DatabaseNuke {
   async nukeDatabase() {
     try {
       console.log("🚀 Starting database nuke process...");
-      
+
       // Get all tables
       const allTables = await this.getAllTables();
-      
+
       // Filter out excluded tables
-      const tablesToDelete = allTables.filter((table: string) => 
+      const tablesToDelete = allTables.filter((table: string) =>
         !this.excludedTables.includes(table)
       );
-      
-      if (tablesToDelete.length === 0) {
-        console.log("✨ No tables to delete (only excluded tables found)");
+
+      // Get all buckets
+      const allBuckets = await this.getAllBuckets();
+
+      // Filter out excluded buckets
+      const bucketsToClear = allBuckets.filter(bucket =>
+        !this.excludedBuckets.includes(bucket)
+      );
+
+      if (tablesToDelete.length === 0 && bucketsToClear.length === 0) {
+        console.log("✨ Nothing to delete (only excluded tables/buckets found)");
         return;
       }
-      
+
       // Ask for confirmation
-      const confirmed = await this.confirmAction(tablesToDelete);
-      
+      const confirmed = await this.confirmAction(tablesToDelete, bucketsToClear);
+
       if (!confirmed) {
         console.log("❌ Operation cancelled by user");
         return;
       }
-      
+
+      // Clear storage buckets first (before deleting table metadata)
+      let bucketStats = { clearedCount: 0, filesDeleted: 0 };
+      if (bucketsToClear.length > 0) {
+        bucketStats = await this.nukeBuckets();
+      }
+
       console.log("\n💥 Starting table deletion...");
       
       // Define deletion order to handle foreign key constraints
       const orderedDeletion = [
         // Most dependent tables first
         'interview_evidence',
+        'interview_question_part_responses',
         'interview_response_actions',
         'interview_response_roles',
         'interview_responses',
-        'interview_questions',
+        'interview_question_applicable_roles',
         'interview_roles',
-        'interview_sections',
-        'interview_steps',
         'interviews',
         'assessment_objectives',
         'assessments',
         'program_phases',
         'program_objectives',
+        'program_measurements',
         'programs',
+        'measurement_alignments',
+        'measurements_calculated',
+        'measurement_definitions',
+        'questionnaire_question_parts',
         'questionnaire_question_rating_scales',
         'questionnaire_question_roles',
         'questionnaire_questions',
@@ -164,6 +270,7 @@ class DatabaseNuke {
         'region_contacts',
         'business_unit_contacts',
         'company_contacts',
+        'user_companies',
         'contacts',
         'roles',
         'work_groups',
@@ -172,23 +279,29 @@ class DatabaseNuke {
         'regions',
         'business_units',
         'companies',
+        'dashboards',
+        'recommendations',
         'feedback',
         // Add any remaining tables not in the ordered list
         ...tablesToDelete.filter((table: string) => ![
           'interview_evidence',
+          'interview_question_part_responses',
           'interview_response_actions',
           'interview_response_roles',
           'interview_responses',
-          'interview_questions',
+          'interview_question_applicable_roles',
           'interview_roles',
-          'interview_sections',
-          'interview_steps',
           'interviews',
           'assessment_objectives',
           'assessments',
           'program_phases',
           'program_objectives',
+          'program_measurements',
           'programs',
+          'measurement_alignments',
+          'measurements_calculated',
+          'measurement_definitions',
+          'questionnaire_question_parts',
           'questionnaire_question_rating_scales',
           'questionnaire_question_roles',
           'questionnaire_questions',
@@ -203,6 +316,7 @@ class DatabaseNuke {
           'region_contacts',
           'business_unit_contacts',
           'company_contacts',
+          'user_companies',
           'contacts',
           'roles',
           'work_groups',
@@ -211,6 +325,8 @@ class DatabaseNuke {
           'regions',
           'business_units',
           'companies',
+          'dashboards',
+          'recommendations',
           'feedback'
         ].includes(table))
       ];
@@ -280,13 +396,19 @@ class DatabaseNuke {
       
       console.log("\n🎉 Database nuke completed!");
       console.log(`📊 Summary:`);
+      console.log(`\n📋 Database Tables:`);
       console.log(`   ✅ Tables processed: ${deletedCount}`);
       console.log(`   ⚠️  Tables skipped: ${skippedCount}`);
       console.log(`   🛡️  Tables preserved: ${this.excludedTables.length} (${this.excludedTables.join(', ')})`);
+      console.log(`\n🗂️  Storage Buckets:`);
+      console.log(`   ✅ Buckets cleared: ${bucketStats.clearedCount}`);
+      console.log(`   🛡️  Buckets preserved: ${this.excludedBuckets.length} (${this.excludedBuckets.join(', ')})`);
       
     } catch (error) {
       console.error("❌ Error during database nuke:", error);
-      console.error("Stack trace:", error.stack);
+      if (error instanceof Error) {
+        console.error("Stack trace:", error.stack);
+      }
       throw error;
     }
   }
