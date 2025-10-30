@@ -3015,7 +3015,25 @@ export interface paths {
           content: {
             "application/json": {
               success?: boolean;
-              data?: Record<string, never>[];
+              data?: {
+                id: string;
+                program: {
+                  id: string;
+                  name: string;
+                };
+                /** Format: date-time */
+                created_at: string;
+                /** Format: date-time */
+                updated_at: string;
+                content: string;
+                context: string;
+                priority: string;
+                status: string;
+                assessment: {
+                  id: string;
+                  name: string;
+                };
+              }[];
             };
           };
         };

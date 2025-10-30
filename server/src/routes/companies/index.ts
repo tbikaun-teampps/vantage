@@ -268,16 +268,55 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         description: "Get all recommendations for a company",
         params: companySchemas.params.companyId,
         response: {
-          // 200: {
-          //   type: "object",
-          //   properties: {
-          //     success: { type: "boolean" },
-          //     data: {
-          //       type: "array",
-          //       items: { type: "object" },
-          //     },
-          //   },
-          // },
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    program: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string" },
+                        name: { type: "string" },
+                      },
+                      required: ["id", "name"],
+                    },
+                    created_at: { type: "string", format: "date-time" },
+                    updated_at: { type: "string", format: "date-time" },
+                    content: { type: "string" },
+                    context: { type: "string" },
+                    priority: { type: "string" },
+                    status: { type: "string" },
+                    assessment: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string" },
+                        name: { type: "string" },
+                        type: { type: "string", enum: ["onsite", "desktop"] },
+                      },
+                      required: ["id", "name", "type"],
+                    },
+                  },
+                  required: [
+                    "id",
+                    "program",
+                    "created_at",
+                    "updated_at",
+                    "content",
+                    "context",
+                    "priority",
+                    "status",
+                    "assessment",
+                  ],
+                },
+              },
+            },
+          },
           401: commonResponseSchemas.responses[401],
           500: commonResponseSchemas.responses[500],
         },

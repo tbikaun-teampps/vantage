@@ -684,7 +684,18 @@ export class RecommendationsService {
   async getAllRecommendations(companyId: string): Promise<Recommendation[]> {
     const { data, error } = await this.supabase
       .from("recommendations")
-      .select("*")
+      .select(
+        `id,
+        created_at,
+        updated_at,
+        content,
+        context,
+        priority,
+        status,
+        program:program_id(id,name),
+        assessment:assessment_id(id,name,type)
+        `
+      )
       .eq("company_id", companyId)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false });
@@ -694,7 +705,7 @@ export class RecommendationsService {
       throw new Error(`Failed to fetch recommendations: ${error.message}`);
     }
 
-    return data || [];
+    return data;
   }
 
   async getRecommendationById(
@@ -850,7 +861,9 @@ export class RecommendationsService {
     let failureCount = 0;
     const errors: Array<{ question: string; error: string }> = [];
 
-    console.log(`Processing ${llmData.length} questions for recommendation generation...`);
+    console.log(
+      `Processing ${llmData.length} questions for recommendation generation...`
+    );
 
     for (const question of llmData) {
       try {
@@ -905,7 +918,8 @@ export class RecommendationsService {
         }
       } catch (error) {
         // Log error but continue processing other questions
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         console.error(
           `Error generating recommendations for question "${question.question_title}":`,
           errorMessage
