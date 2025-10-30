@@ -394,9 +394,10 @@ export class AuthService {
       // Fetch user's companies with roles
       const { data: userCompanies, error: companiesError } = await this.supabase
         .from("user_companies")
-        .select("company_id, role")
+        .select("company_id, role, companies!inner()")
         .eq("user_id", user.id)
-        .neq("role", "interviewee");
+        .neq("role", "interviewee")
+        .eq("companies.is_deleted", false);
 
       if (companiesError) {
         console.error("Failed to fetch user companies:", companiesError);
