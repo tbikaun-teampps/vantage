@@ -3,14 +3,13 @@ import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useInterviewStructure } from "@/hooks/interview/useInterviewStructure";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
 import { useSaveInterviewResponse } from "@/hooks/interview/useSaveResponse";
+import { useCompleteInterview } from "@/hooks/interview/useCompleteInterview";
 import { useMemo, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { LoadingSpinner } from "@/components/loader";
 import { UnauthorizedPage } from "@/pages/UnauthorizedPage";
-import { toast } from "sonner";
-import { completeInterview } from "@/lib/api/interviews";
 import type { InterviewFeedback } from "@/components/interview/detail/InterviewCompletionDialog";
 import { IntroScreen } from "@/components/interview/detail/IntroScreen";
 
@@ -107,6 +106,10 @@ export function InterviewDetailPage({
   // Save mutation
   const { mutate: saveResponse, isPending: isSaving } =
     useSaveInterviewResponse();
+
+  // Complete interview mutation
+  const { mutateAsync: completeInterviewMutation, isPending: isCompleting } =
+    useCompleteInterview();
 
   // Form for current question
   const form = useForm<ResponseFormData>({
@@ -226,17 +229,13 @@ export function InterviewDetailPage({
   };
 
   const handleComplete = async (feedback: InterviewFeedback) => {
-    try {
-      await completeInterview(parseInt(interviewId!), feedback);
+    await completeInterviewMutation({
+      interviewId: parseInt(interviewId!),
+      feedback,
+    });
 
-      toast.success("Interview completed successfully");
-      navigate("/");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to complete interview"
-      );
-      throw error; // Re-throw to let the dialog handle the error state
-    }
+    // Navigate to home after successful completion
+    navigate("/");
   };
 
   // Show intro screen for individual interviews on first load
@@ -257,6 +256,7 @@ export function InterviewDetailPage({
       interviewId={parseInt(interviewId!)}
       handleSave={handleSave}
       isSaving={isSaving}
+      isCompleting={isCompleting}
       onComplete={handleComplete}
     />
   );

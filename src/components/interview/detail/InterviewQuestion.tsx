@@ -25,6 +25,7 @@ interface InterviewQuestionProps {
   interviewId: number;
   handleSave: () => void;
   isSaving: boolean;
+  isCompleting?: boolean;
   onComplete?: (feedback: InterviewFeedback) => Promise<void>;
 }
 
@@ -35,12 +36,12 @@ export function InterviewQuestion({
   interviewId,
   handleSave,
   isSaving,
+  isCompleting = false,
   onComplete,
 }: InterviewQuestionProps) {
   const isMobile = useIsMobile();
   const [isCompletionDialogOpen, setIsCompletionDialogOpen] =
     useState<boolean>(false);
-  const [isCompleting, setIsCompleting] = useState<boolean>(false);
 
   const { data: question, isLoading: isLoadingQuestion } = useInterviewQuestion(
     interviewId,
@@ -65,13 +66,8 @@ export function InterviewQuestion({
   const handleCompleteConfirm = async (feedback: InterviewFeedback) => {
     if (!onComplete) return;
 
-    setIsCompleting(true);
-    try {
-      await onComplete(feedback);
-      setIsCompletionDialogOpen(false);
-    } finally {
-      setIsCompleting(false);
-    }
+    await onComplete(feedback);
+    // Dialog will be unmounted by navigation, no need to close manually
   };
 
   if (isLoadingQuestion || !question) {
