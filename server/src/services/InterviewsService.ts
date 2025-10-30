@@ -149,6 +149,7 @@ export class InterviewsService {
       questionnaire_id,
     } = data;
     const createdInterviews: any[] = [];
+    const failedContacts: Array<{ email: string; reason: string }> = [];
     // Array<
     //   Interview & {
     //     contact: { id: number; full_name: string; email: string };
@@ -216,41 +217,132 @@ export class InterviewsService {
       // Generate unique access code
       const accessCode = await this.generateAccessCode();
 
+      // Normalize email to prevent case-sensitivity and whitespace issues
+      const normalizedEmail = contactInfo.email.trim().toLowerCase();
+
       let userId: string;
-      // Check if user already exists:
+      // Check if user already exists in profiles table
       const { data: profile, error: profileError } = await this.supabaseAdmin
         .from("profiles")
         .select()
-        .eq("email", contactInfo.email)
+        .eq("email", normalizedEmail)
         .maybeSingle();
 
       if (profileError) {
-        console.log("profileError: ", profileError);
-        continue; // Skip this contact on error
+        console.error("Error checking profile: ", profileError);
+        failedContacts.push({
+          email: contactInfo.email,
+          reason: `Database error checking profile: ${profileError.message}`,
+        });
+        continue;
       }
 
       if (!profile) {
-        console.log("No existing profile found for contact, creating user");
-        const {
-          data: { user: newUser },
-          error: userError,
-        } = await this.supabaseAdmin.auth.admin.createUser({
-          email: contactInfo.email,
-          password: crypto.randomUUID(),
-          email_confirm: true,
-          // Must be set with user_metadata not app_metadata
-          // see: https://github.com/supabase/auth/issues/1280
-          user_metadata: {
-            account_type: "interviewee", // Flag for overriding profile subscription_tier default 'demo'. Instead sets as 'interviewee'
-          },
-        });
-        if (userError || !newUser) {
-          console.log("userError: ", userError);
-          continue; // Skip this contact on error
-        }
-        console.log("Created user for contact: ", newUser);
+        // No profile found - try to create user first
+        console.log("No existing profile found for contact, attempting to create user");
 
-        userId = newUser.id;
+        try {
+          const {
+            data: { user: newUser },
+            error: userError,
+          } = await this.supabaseAdmin.auth.admin.createUser({
+            email: normalizedEmail,
+            password: crypto.randomUUID(),
+            email_confirm: true,
+            user_metadata: {
+              account_type: "interviewee",
+            },
+          });
+
+          if (userError) {
+            // Check if error is due to existing email
+            if (userError.message?.includes("already been registered") ||
+                (userError as any).code === "email_exists") {
+              // User exists in auth.users but not in profiles - need to recover
+              console.log("Auth user exists but profile missing, fetching user from auth");
+
+              // Use listUsers to find the user by email
+              const { data: listUsersData, error: listError } =
+                await this.supabaseAdmin.auth.admin.listUsers();
+
+              if (listError || !listUsersData) {
+                console.error("Error listing users: ", listError);
+                failedContacts.push({
+                  email: contactInfo.email,
+                  reason: `User exists but could not retrieve user list: ${listError?.message || "Unknown error"}`,
+                });
+                continue;
+              }
+
+              // Find the user with matching email
+              const existingUser = listUsersData.users.find(
+                (u) => u.email?.toLowerCase() === normalizedEmail
+              );
+
+              if (!existingUser) {
+                console.error("User exists but not found in user list");
+                failedContacts.push({
+                  email: contactInfo.email,
+                  reason: "User exists but could not be located in authentication system",
+                });
+                continue;
+              }
+
+              // Create the missing profile using RPC to ensure consistent logic with trigger
+              console.log(
+                "Creating missing profile for existing auth user: ",
+                existingUser.id
+              );
+
+              const { error: profileInsertError } = await this.supabaseAdmin.rpc(
+                "create_user_profile",
+                {
+                  user_id: existingUser.id,
+                  user_email: normalizedEmail,
+                  user_metadata: existingUser.user_metadata || {},
+                }
+              );
+
+              if (profileInsertError) {
+                console.error("Error creating profile: ", profileInsertError);
+                failedContacts.push({
+                  email: contactInfo.email,
+                  reason: `Failed to create missing profile: ${profileInsertError.message}`,
+                });
+                continue;
+              }
+
+              console.log("Successfully created missing profile for existing auth user");
+              userId = existingUser.id;
+            } else {
+              // Different error - log and skip
+              console.error("Error creating user: ", userError);
+              failedContacts.push({
+                email: contactInfo.email,
+                reason: `Failed to create user: ${userError.message}`,
+              });
+              continue;
+            }
+          } else if (!newUser) {
+            console.error("User creation returned no user object");
+            failedContacts.push({
+              email: contactInfo.email,
+              reason: "User creation failed without error message",
+            });
+            continue;
+          } else {
+            // Successfully created new user (trigger creates profile automatically)
+            console.log("Created new user for contact: ", newUser);
+            userId = newUser.id;
+          }
+        } catch (error) {
+          console.error("Unexpected error during user creation: ", error);
+          failedContacts.push({
+            email: contactInfo.email,
+            reason: `Unexpected error: ${error instanceof Error ? error.message : "Unknown error"}`,
+          });
+          continue;
+        }
       } else {
         console.log("Found existing profile for contact: ", profile);
         userId = profile.id;
@@ -330,16 +422,35 @@ export class InterviewsService {
           contact: contactInfo,
         });
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         console.error(
           `Failed to create interview for contact ${contactId}:`,
-          error
+          errorMessage
         );
-        // Continue with other contacts even if one fails
+        failedContacts.push({
+          email: contactInfo.email,
+          reason: `Interview creation failed: ${errorMessage}`,
+        });
       }
     }
 
+    // Provide detailed feedback about failures
     if (createdInterviews.length === 0) {
-      throw new Error("Failed to create any interviews");
+      const errorDetails = failedContacts
+        .map((f) => `${f.email}: ${f.reason}`)
+        .join("; ");
+      throw new Error(
+        `Failed to create any interviews. Failures: ${errorDetails}`
+      );
+    }
+
+    // Log partial success details
+    if (failedContacts.length > 0) {
+      console.warn(
+        `Created ${createdInterviews.length} interviews, but ${failedContacts.length} contacts failed:`
+      );
+      failedContacts.forEach((f) => console.warn(`  - ${f.email}: ${f.reason}`));
     }
 
     return createdInterviews;

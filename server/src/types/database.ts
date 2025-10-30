@@ -3122,6 +3122,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      create_user_profile: {
+        Args: { user_email: string; user_id: string; user_metadata?: Json };
+        Returns: undefined;
+      };
       get_demo_company: { Args: never; Returns: string };
       has_min_company_role: {
         Args: {

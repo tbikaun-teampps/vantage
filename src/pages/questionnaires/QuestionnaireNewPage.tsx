@@ -68,7 +68,6 @@ export function QuestionnaireNewPage() {
         status: formData.status,
         company_id: companyId,
       });
-      console.log("new questionaire", newQuestionnaire);
       navigate(`/questionnaires/${newQuestionnaire.id}`);
     } catch (error) {
       toast.error(
