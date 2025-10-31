@@ -57,9 +57,7 @@ schema_paths = []
 
 [db.seed]
 enabled = true
-# Note: Seed files are processed in the order they are declared in. Hence, auth and storage must come first.
-sql_paths = ["./seeds/auth.sql", "./seeds/storage.sql", "./seeds/shared.sql", "./seeds/companies.sql", 
-"./seeds/questionnaires.sql", "./seeds/programs.sql", "./seeds/assessments.sql", "./seeds/interviews.sql"]
+sql_paths = "./seed.sql"
 
 [db.network_restrictions]
 # Enable management of network restrictions.

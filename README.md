@@ -37,6 +37,11 @@ npx supabase db reset
 npx supabase status
 ```
 
+Generate a seed from a local database:
+```bash
+npx supabase db dump -f './supabase/seed.sql' --local --data-only
+```
+
 Changes to the database are all done via migrations, including RLS policies, etc.
 
 
