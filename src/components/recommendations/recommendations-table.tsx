@@ -102,6 +102,19 @@ export function RecommendationsTable() {
       enableHiding: false,
     },
     {
+      accessorKey: "title",
+      header: "Title",
+      cell: ({ row }) => {
+        const title = row.original.title;
+        return (
+          <div className="font-medium whitespace-normal max-w-lg text-xs">
+            {title}
+          </div>
+        );
+      },
+      enableHiding: false,
+    },
+    {
       accessorKey: "content",
       header: "Content",
       cell: ({ row }) => {

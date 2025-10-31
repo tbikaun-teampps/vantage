@@ -9,6 +9,7 @@ import { CalculatedMeasurementWithDefinition } from "../types/entities/assessmen
 import { NotFoundError } from "../plugins/errorHandler.js";
 import { InterviewsService } from "./InterviewsService.js";
 import { CreateInterviewData } from "../types/entities/interviews.js";
+import { RecommendationsService } from "./RecommendationsService.js";
 
 export class ProgramService {
   private supabase: SupabaseClient<Database>;
@@ -239,6 +240,17 @@ export class ProgramService {
       actual_end_date?: string | null;
     }
   ): Promise<any> {
+    // Fetch the current phase to get the old status for potential rollback
+    const { data: oldPhase, error: fetchError } = await this.supabase
+      .from("program_phases")
+      .select("status")
+      .eq("id", phaseId)
+      .eq("is_deleted", false)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // Update the program phase
     const { data: phase, error } = await this.supabase
       .from("program_phases")
       .update({
@@ -251,6 +263,75 @@ export class ProgramService {
       .single();
 
     if (error) throw error;
+
+    // If status changed to 'completed', sync all linked assessments
+    if (data.status && data.status === "completed") {
+      try {
+        // Fetch all assessments linked to this phase
+        const { data: assessments, error: assessmentsError } =
+          await this.supabase
+            .from("assessments")
+            .select("id, status")
+            .eq("program_phase_id", phaseId)
+            .neq("status", "completed")
+            .eq("is_deleted", false);
+
+        if (assessmentsError) throw assessmentsError;
+        console.log(`Fetched ${assessments.length} assessments`, assessments);
+
+        // Filter assessments that aren't already completed
+        // const assessmentsToComplete = assessments?.filter(
+        //   (assessment) => assessment.status !== "completed"
+        // ) || [];
+
+        if (assessments.length > 0) {
+          // Update all non-completed assessments to 'completed'
+          const assessmentIds = assessments.map((a) => a.id);
+
+          const { error: updateError } = await this.supabase
+            .from("assessments")
+            .update({
+              status: "completed",
+              updated_at: new Date().toISOString(),
+            })
+            .in("id", assessmentIds);
+
+          if (updateError) throw updateError;
+
+          // Trigger recommendation generation for each newly completed assessment
+          const recommendationsService = new RecommendationsService(
+            this.supabase
+          );
+
+          for (const assessment of assessments) {
+            // Trigger recommendation generation asynchronously
+            recommendationsService
+              .generateRecommendations(assessment.id)
+              .catch((err) => {
+                console.error(
+                  `Failed to generate recommendations for assessment ${assessment.id}:`,
+                  err
+                );
+              });
+          }
+        }
+      } catch (syncError) {
+        // Rollback the phase status to the old status if sync fails
+        try {
+          await this.supabase
+            .from("program_phases")
+            .update({
+              status: oldPhase.status,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", phaseId);
+        } catch (rollbackError) {
+          console.error("Failed to rollback phase status:", rollbackError);
+        }
+
+        throw syncError;
+      }
+    }
 
     return phase;
   }
@@ -891,7 +972,10 @@ export class ProgramService {
     }
 
     if (existingAssessment) {
-      console.log("Existing desktop assessment found with ID:", existingAssessment.id);
+      console.log(
+        "Existing desktop assessment found with ID:",
+        existingAssessment.id
+      );
       assessmentId = existingAssessment.id;
     } else {
       console.log("No existing desktop assessment found, creating new one.");

@@ -290,6 +290,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
                     updated_at: { type: "string", format: "date-time" },
                     content: { type: "string" },
                     context: { type: "string" },
+                    title: { type: "string" },
                     priority: { type: "string" },
                     status: { type: "string" },
                     assessment: {
@@ -307,6 +308,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
                     "program",
                     "created_at",
                     "updated_at",
+                    "title",
                     "content",
                     "context",
                     "priority",

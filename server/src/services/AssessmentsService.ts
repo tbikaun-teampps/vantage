@@ -17,7 +17,6 @@ import {
 } from "../types/entities/assessments";
 import { InterviewEvidence } from "../types/entities/interviews";
 import { RecommendationsService } from "./RecommendationsService";
-import { LLMService } from "./LLMService";
 
 export class AssessmentsService {
   private supabase: SupabaseClient<Database>;
@@ -323,8 +322,7 @@ export class AssessmentsService {
 
   async updateAssessment(
     id: number,
-    updates: UpdateAssessmentData,
-    llmService?: LLMService
+    updates: UpdateAssessmentData
   ): Promise<Assessment> {
     const { data, error } = await this.supabase
       .from("assessments")
@@ -337,11 +335,11 @@ export class AssessmentsService {
     if (error) throw error;
 
     // Detect whether the status has changed to 'completed'. This will trigger a recommendation generation service.
-    if (updates.status && updates.status === "completed" && llmService) {
+    if (updates.status && updates.status === "completed") {
       const recommendationsService = new RecommendationsService(
         this.supabase
       );
-      recommendationsService.generateRecommendations(id, llmService);
+      recommendationsService.generateRecommendations(id);
     }
 
     return data;

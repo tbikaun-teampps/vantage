@@ -1,6 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Database, Tables } from "../types/database";
-import { LLMService, LLMRecommendationResponse } from "./LLMService";
+
+import { b } from "./../../baml_client";
+// import type { Recommendation } from "./../../baml_client/types";
 
 export type Recommendation = Tables<"recommendations">;
 
@@ -613,7 +615,18 @@ function generateQuestionPromptForLLM(
       : "N/A";
 
   return `
-You are an expert asset management and maintenance consultant. Based on the following question data from an assessment questionnaire, provide insights.
+You are an expert asset management and maintenance consultant. Based on the following question data from an assessment questionnaire, provide insights. Output a JSON array format of recommendation objects with the keys: "title", "content", "context", and "priority" (low, medium, high), like so:
+[
+  {
+    "title": string, // A brief title summarizing the recommendation
+    "content": string, // A detailed description of the recommendation
+    "context": string, // The context or rationale for the recommendation
+    "priority": "low" | "medium" | "high"
+  },
+  ...
+]
+
+You may return 1-5 recommendations depending on the complexity and importance of the findings.
 
 # Question
 ## Overview
@@ -653,24 +666,6 @@ When analyzing conflicting responses within the same role:
 - Note if certain locations/departments show more alignment than others
 
 Recommendations should be actionable and tailored to the organization's structure as indicated by the roles provided.
-
-The format of your response should be a JSON array of recommendation objects as follows:
-[
-  {
-    "title": string,
-    "content": string,
-    "context": string,
-    "priority": "low" | "medium" | "high"
-  },
-  {
-    "title": string,
-    "content": string,
-    "context": string,
-    "priority": "low" | "medium" | "high"
-  }
-]
-
-You may return 1-5 recommendations depending on the complexity and importance of the findings.
 `;
 }
 
@@ -688,6 +683,7 @@ export class RecommendationsService {
         `id,
         created_at,
         updated_at,
+        title,
         content,
         context,
         priority,
@@ -771,21 +767,17 @@ export class RecommendationsService {
    * Generate recommendations for a given assessment.
    * TODO: extend to work with programs.
    * @param assessmentId
-   * @param llmService - LLM service instance for generating recommendations
    */
-  async generateRecommendations(
-    assessmentId: number,
-    llmService: LLMService
-  ): Promise<void> {
+  async generateRecommendations(assessmentId: number): Promise<void> {
     console.log("Generating recommendations...");
     // Fetch assessment data
     const { data: assessment, error: assessmentError } = await this.supabase
       .from("assessments")
       .select(
-        "id,name,description,type,company_id, assessment_objectives!inner(title, description)"
+        "id,name,description,type,company_id, assessment_objectives(title, description)"
       )
       .eq("id", assessmentId)
-      .single();
+      .maybeSingle();
 
     if (assessmentError || !assessment) {
       console.error(
@@ -851,10 +843,6 @@ export class RecommendationsService {
     // Transform to LLM-friendly format
     const llmData = transformQuestionnaireForLLM(structure);
     console.log(`Transformed ${llmData.length} questions for LLM consumption`);
-    console.log(
-      "Sample LLM data (first 2 questions):",
-      JSON.stringify(llmData.slice(0, 2), null, 2)
-    );
 
     // Generate recommendations for each question
     let successCount = 0;
@@ -870,22 +858,15 @@ export class RecommendationsService {
         // Generate prompt for this question
         const prompt = generateQuestionPromptForLLM(question);
 
-        // Call LLM to generate recommendations (returns array)
-        console.log(
-          `Generating recommendations for: ${question.section_title} > ${question.step_title} > ${question.question_title}`
-        );
-
-        const recommendationResponses: LLMRecommendationResponse[] =
-          await llmService.generateRecommendation(prompt);
+        // Use BAML to generate recommendations
+        const response = await b.ExtractRecommendations(prompt);
 
         console.log(
-          `Generated ${recommendationResponses.length} recommendation(s) for this question`
+          `Generated ${response.length} recommendation(s) for this question`
         );
 
         // Store each recommendation in database
-        for (const recommendationResponse of recommendationResponses) {
-          const questionContext = `Question: ${question.section_title} > ${question.step_title} > ${question.question_title}\n\n${recommendationResponse.context}`;
-
+        for (const recommendationResponse of response) {
           const { error: insertError } = await this.supabase
             .from("recommendations")
             .insert({
@@ -894,7 +875,7 @@ export class RecommendationsService {
               program_id: null, // TODO: extend to work with programs
               title: recommendationResponse.title,
               content: recommendationResponse.content,
-              context: questionContext,
+              context: recommendationResponse.context,
               priority: recommendationResponse.priority,
               status: "not_started",
             });

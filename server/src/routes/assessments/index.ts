@@ -261,8 +261,7 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
       const { assessmentId } = request.params as { assessmentId: string };
       const assessment = await request.assessmentsService!.updateAssessment(
         Number(assessmentId),
-        request.body as UpdateAssessmentData,
-        fastify.llmService
+        request.body as UpdateAssessmentData
       );
 
       return reply.status(200).send({
