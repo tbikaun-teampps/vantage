@@ -51,6 +51,7 @@ import { useQuestionnaireDetail } from "@/contexts/QuestionnaireDetailContext";
 import { AddSectionDialog } from "./add-section-dialog";
 import { QuestionnaireTemplateDialog } from "../questionnaire-template-dialog";
 import { QuestionEditor } from "./question-editor";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function Questions() {
   const userCanAdmin = useCanAdmin();
@@ -105,6 +106,10 @@ export function Questions() {
   if (!questionnaire) {
     return null;
   }
+
+  const hasRatingScales =
+    questionnaire.questionnaire_rating_scales &&
+    questionnaire.questionnaire_rating_scales.length > 0;
 
   const toggleExpanded = (nodeId: number) => {
     setExpandedNodes((prev) => {
@@ -289,7 +294,26 @@ export function Questions() {
 
   return (
     <>
-      <div className="space-y-6 h-full flex flex-col max-w-[2000px] mx-auto">
+      <div className="relative space-y-6 h-full flex flex-col max-w-[2000px] mx-auto">
+        {/* Overlay when no rating scales exist */}
+        {!hasRatingScales && (
+          <div className="absolute inset-0 z-50 backdrop-blur-xs flex items-center justify-center">
+            <Alert className="max-w-md">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="space-y-4">
+                <p className="font-medium">
+                  Rating scales must be added before creating questions
+                </p>
+                <p className="text-sm">
+                  Switch to the <span className="font-semibold">Rating Scales</span>{" "}
+                  tab to add rating scales first. Rating scales define how
+                  questions will be scored during interviews.
+                </p>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
         <ResizablePanelGroup
           className="flex h-full min-h-0 flex-1"
           direction="horizontal"
@@ -343,16 +367,27 @@ export function Questions() {
             </div>
             {userCanAdmin && (
               <div className="flex items-center justify-between mb-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAddSectionDialog(true)}
-                  disabled={isProcessing}
-                  className="w-full border-dashed h-8"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Section
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="w-full">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAddSectionDialog(true)}
+                        disabled={isProcessing || !hasRatingScales}
+                        className="w-full border-dashed h-8"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Section
+                      </Button>
+                    </div>
+                  </TooltipTrigger>
+                  {!hasRatingScales && (
+                    <TooltipContent>
+                      <p>Add rating scales first in the Rating Scales tab</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
               </div>
             )}
 
@@ -672,21 +707,35 @@ export function Questions() {
                                     style={{ paddingLeft: "44px" }}
                                     className="py-1"
                                   >
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="w-full border-dashed h-8"
-                                      onClick={() =>
-                                        setShowAddDialog({
-                                          type: "question",
-                                          parentId: step.id,
-                                        })
-                                      }
-                                      disabled={isProcessing}
-                                    >
-                                      <Plus className="h-3 w-3 mr-2" />
-                                      Add Question
-                                    </Button>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="w-full border-dashed h-8"
+                                            onClick={() =>
+                                              setShowAddDialog({
+                                                type: "question",
+                                                parentId: step.id,
+                                              })
+                                            }
+                                            disabled={isProcessing || !hasRatingScales}
+                                          >
+                                            <Plus className="h-3 w-3 mr-2" />
+                                            Add Question
+                                          </Button>
+                                        </div>
+                                      </TooltipTrigger>
+                                      {!hasRatingScales && (
+                                        <TooltipContent>
+                                          <p>
+                                            Add rating scales first in the Rating
+                                            Scales tab
+                                          </p>
+                                        </TooltipContent>
+                                      )}
+                                    </Tooltip>
                                   </div>
                                 )}
                               </div>
@@ -696,21 +745,35 @@ export function Questions() {
 
                         {userCanAdmin && (
                           <div style={{ paddingLeft: "28px" }} className="py-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full border-dashed h-8"
-                              onClick={() =>
-                                setShowAddDialog({
-                                  type: "step",
-                                  parentId: section.id,
-                                })
-                              }
-                              disabled={isProcessing}
-                            >
-                              <Plus className="h-3 w-3 mr-2" />
-                              Add Step
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full border-dashed h-8"
+                                    onClick={() =>
+                                      setShowAddDialog({
+                                        type: "step",
+                                        parentId: section.id,
+                                      })
+                                    }
+                                    disabled={isProcessing || !hasRatingScales}
+                                  >
+                                    <Plus className="h-3 w-3 mr-2" />
+                                    Add Step
+                                  </Button>
+                                </div>
+                              </TooltipTrigger>
+                              {!hasRatingScales && (
+                                <TooltipContent>
+                                  <p>
+                                    Add rating scales first in the Rating Scales
+                                    tab
+                                  </p>
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
                           </div>
                         )}
                       </div>
@@ -721,14 +784,25 @@ export function Questions() {
                 {sections.length === 0 && userCanAdmin && (
                   <div className="text-center py-12 text-muted-foreground">
                     <p className="mb-4">No sections created yet</p>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowAddDialog({ type: "section" })}
-                      disabled={isProcessing}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add First Section
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowAddDialog({ type: "section" })}
+                            disabled={isProcessing || !hasRatingScales}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add First Section
+                          </Button>
+                        </div>
+                      </TooltipTrigger>
+                      {!hasRatingScales && (
+                        <TooltipContent>
+                          <p>Add rating scales first in the Rating Scales tab</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
                   </div>
                 )}
               </div>

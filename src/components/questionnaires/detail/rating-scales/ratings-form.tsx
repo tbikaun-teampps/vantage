@@ -104,7 +104,7 @@ export default function RatingsForm({
     } else {
       const numValue = parseInt(formData.value);
       if (isNaN(numValue) || numValue < 0) {
-        newErrors.value = "Rating value must be greater than 0";
+        newErrors.value = "Rating value must be 0 or greater";
       } else {
         // Check for duplicate values (excluding current editing item)
         const existingRating = ratings.find(
@@ -365,6 +365,7 @@ export default function RatingsForm({
                     id="value"
                     type="number"
                     min="0"
+                    step="1"
                     value={formData.value}
                     onChange={(e) =>
                       setFormData((prev) => ({
@@ -372,7 +373,7 @@ export default function RatingsForm({
                         value: e.target.value,
                       }))
                     }
-                    placeholder="e.g., 1, 2, 3..."
+                    placeholder="e.g., 0, 1, 2, 3..."
                     className={errors.value ? "border-destructive" : ""}
                     disabled={isProcessing || disabled}
                   />
@@ -434,7 +435,8 @@ export default function RatingsForm({
                     <Input
                       id="value"
                       type="number"
-                      min="1"
+                      min="0"
+                      step="1"
                       value={formData.value}
                       onChange={(e) =>
                         setFormData((prev) => ({
@@ -442,7 +444,7 @@ export default function RatingsForm({
                           value: e.target.value,
                         }))
                       }
-                      placeholder="e.g., 1, 2, 3..."
+                      placeholder="e.g., 0, 1, 2, 3..."
                       className={errors.value ? "border-destructive" : ""}
                       disabled={isProcessing || disabled}
                     />
@@ -624,8 +626,12 @@ export default function RatingsForm({
             <AlertDialogTitle>Delete Rating Scale</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete the rating "{deleteRating?.name}"?
-              This action cannot be undone and may affect questions that use
-              this rating scale.
+              This action cannot be undone.{" "}
+              <strong>
+                If this rating scale is assigned to any questions, deletion will
+                fail.
+              </strong>{" "}
+              You must first remove it from all questions that use it.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
