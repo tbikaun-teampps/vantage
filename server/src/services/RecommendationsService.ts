@@ -676,7 +676,24 @@ export class RecommendationsService {
     this.supabase = supabaseClient;
   }
 
-  async getAllRecommendations(companyId: string): Promise<Recommendation[]> {
+  async getAllRecommendations(companyId: string): Promise<
+    {
+      id: number;
+      created_at: string;
+      updated_at: string;
+      title: string;
+      content: string;
+      context: string;
+      priority: Recommendation["priority"];
+      status: Recommendation["status"];
+      assessment: {
+        id: number;
+        name: string;
+        type: "onsite" | "desktop";
+      } | null;
+      program: { id: number; name: string } | null;
+    }[]
+  > {
     const { data, error } = await this.supabase
       .from("recommendations")
       .select(
