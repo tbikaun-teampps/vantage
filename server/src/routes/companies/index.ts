@@ -21,6 +21,7 @@ import type {
 import { AssessmentFilters } from "../../types/entities/assessments";
 import { questionnaireSchemas } from "../../schemas/questionnaire";
 import { QuestionnaireService } from "../../services/QuestionnaireService";
+import { RecommendationsService } from "../../services/RecommendationsService";
 
 export async function companiesRoutes(fastify: FastifyInstance) {
   // Add "Companies" tag to all routes in this router
@@ -273,7 +274,48 @@ export async function companiesRoutes(fastify: FastifyInstance) {
               success: { type: "boolean" },
               data: {
                 type: "array",
-                items: { type: "object" },
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    program: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string" },
+                        name: { type: "string" },
+                      },
+                      required: ["id", "name"],
+                    },
+                    created_at: { type: "string", format: "date-time" },
+                    updated_at: { type: "string", format: "date-time" },
+                    content: { type: "string" },
+                    context: { type: "string" },
+                    title: { type: "string" },
+                    priority: { type: "string" },
+                    status: { type: "string" },
+                    assessment: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string" },
+                        name: { type: "string" },
+                        type: { type: "string", enum: ["onsite", "desktop"] },
+                      },
+                      required: ["id", "name", "type"],
+                    },
+                  },
+                  required: [
+                    "id",
+                    "program",
+                    "created_at",
+                    "updated_at",
+                    "title",
+                    "content",
+                    "context",
+                    "priority",
+                    "status",
+                    "assessment",
+                  ],
+                },
               },
             },
           },
@@ -284,9 +326,6 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     },
     async (request) => {
       const { companyId } = request.params as { companyId: string };
-      const { RecommendationsService } = await import(
-        "../../services/RecommendationsService"
-      );
       const recommendationsService = new RecommendationsService(
         request.supabaseClient
       );

@@ -374,7 +374,10 @@ export async function programRoutes(fastify: FastifyInstance) {
       };
 
       const programService = new ProgramService(request.supabaseClient);
-      const phase = await programService.updateProgramPhase(phaseId, updates);
+      const phase = await programService.updateProgramPhase(
+        phaseId,
+        updates
+      );
       return {
         success: true,
         data: phase,

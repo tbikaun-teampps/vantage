@@ -16,6 +16,7 @@ import {
   UpdateAssessmentData,
 } from "../types/entities/assessments";
 import { InterviewEvidence } from "../types/entities/interviews";
+import { RecommendationsService } from "./RecommendationsService";
 
 export class AssessmentsService {
   private supabase: SupabaseClient<Database>;
@@ -239,7 +240,10 @@ export class AssessmentsService {
       );
 
       // Remove the original questionnaire_sections to avoid redundancy
-      const { questionnaire_sections: _questionnaire_sections, ...restQuestionnaire } = questionnaire;
+      const {
+        questionnaire_sections: _questionnaire_sections,
+        ...restQuestionnaire
+      } = questionnaire;
 
       const transformedQuestionnaire: TransformedQuestionnaire = {
         ...restQuestionnaire,
@@ -329,6 +333,15 @@ export class AssessmentsService {
       .single();
 
     if (error) throw error;
+
+    // Detect whether the status has changed to 'completed'. This will trigger a recommendation generation service.
+    if (updates.status && updates.status === "completed") {
+      const recommendationsService = new RecommendationsService(
+        this.supabase
+      );
+      recommendationsService.generateRecommendations(id);
+    }
+
     return data;
   }
 
@@ -460,7 +473,7 @@ export class AssessmentsService {
         .not("comments", "is", null)
         .neq("comments", "")
         .eq("interview.assessment_id", assessmentId)
-        .eq('interview.is_deleted', false)
+        .eq("interview.is_deleted", false)
         .order("updated_at", { ascending: false });
 
       if (error) {
@@ -520,7 +533,7 @@ export class AssessmentsService {
         `
         )
         .eq("interview_responses.interviews.assessment_id", assessmentId)
-        .eq('interview_responses.interviews.is_deleted', false)
+        .eq("interview_responses.interviews.is_deleted", false)
         .order("uploaded_at", { ascending: false });
 
       if (error) {

@@ -2472,6 +2472,7 @@ export type Database = {
       };
       recommendations: {
         Row: {
+          assessment_id: number | null;
           company_id: string;
           content: string;
           context: string;
@@ -2486,6 +2487,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          assessment_id?: number | null;
           company_id: string;
           content: string;
           context: string;
@@ -2500,6 +2502,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          assessment_id?: number | null;
           company_id?: string;
           content?: string;
           context?: string;
@@ -2515,10 +2518,24 @@ export type Database = {
         };
         Relationships: [
           {
+            foreignKeyName: "recommendations_assessment_id_fkey";
+            columns: ["assessment_id"];
+            isOneToOne: false;
+            referencedRelation: "assessments";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "recommendations_company_id_fkey";
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recommendations_program_id_fkey";
+            columns: ["program_id"];
+            isOneToOne: false;
+            referencedRelation: "programs";
             referencedColumns: ["id"];
           },
         ];
