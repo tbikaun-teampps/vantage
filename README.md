@@ -1,69 +1,55 @@
-# React + TypeScript + Vite
+# Vantage
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Development - Ways of Working
 
-## Expanding the ESLint configuration
+### Technology Stack
+- Supabase (PostgreSQL) database + auth.
+- Vite/React frontend using Shadcn+Tailwind (typescript)
+- Fastify nodejs server (typescript)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Working with supabase locally.
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npx supabase init
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Start local server (ensure Docker is installed and running):
+```bash
+npx supabase start
 ```
+
+Stop local server:
+```bash
+npx supabase stop
+```
+
+
+Apply migrations, seed database:
+- This must be run whenever you want to reseed from scratch
+```bash
+npx supabase db reset
+```
+
+```bash
+npx supabase status
+```
+
+Changes to the database are all done via migrations, including RLS policies, etc.
+
+
+
+
+### Branches
+There are three main branches
+- `main` (production)
+  - Has branch protection rules
+- `staging` (pre-production)
+  - Has branch protection rules
+- `dev` (active development integration, local)
+
+Other branches use semantic naming conventions e.g. `feature/*`, `chore/*`, `refactor/*`, etc., or auto-generated branch names from issues, e.g. `1-...`.
+
+Hygiene - after a branch is merged in via PR, it should be deleted from your local and the remote.

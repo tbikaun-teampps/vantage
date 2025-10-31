@@ -63,8 +63,13 @@ interface ContactWithPath extends Contact {
 }
 
 // Flattened node structure for easier searching and display
+// Note: We use composite IDs (e.g., "role-123", "site-456") because different database
+// tables (regions, sites, asset_groups, work_groups, roles) all use separate int8
+// sequences starting from 1. This causes ID collisions when flattened into a single array.
+// The dbId stores the original numeric database ID for API calls.
 interface FlatNode {
-  id: string;
+  id: string;          // Composite ID for UI uniqueness: "type-dbId" (e.g., "role-123")
+  dbId: number;        // Original database ID (e.g., 123)
   name: string;
   type: TreeNodeType;
   level: number;
@@ -114,9 +119,13 @@ function SimpleTreeNode({
     return iconMap[type];
   };
 
-  const handleNodeClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleNodeClick = () => {
     onNodeSelection(node.id);
+  };
+
+  const handleNodeClickEvent = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleNodeClick();
   };
 
   const handleExpandToggle = (e: React.MouseEvent) => {
@@ -151,14 +160,14 @@ function SimpleTreeNode({
         {/* Selection Checkbox */}
         <Checkbox
           checked={selectionState === "full"}
-          onCheckedChange={(checked) => handleNodeClick()}
+          onCheckedChange={() => handleNodeClick()}
           className="flex-shrink-0"
         />
 
         {/* Node Icon and Label */}
         <div
           className="flex items-center gap-2 flex-1 cursor-pointer"
-          onClick={handleNodeClick}
+          onClick={handleNodeClickEvent}
         >
           {getTypeIcon(node.type)}
           <span className="text-sm font-medium">{node.name}</span>
@@ -202,6 +211,19 @@ export function CompanyStructureSelectionModal({
   const [hasApplicableQuestions, setHasApplicableQuestions] =
     useState<boolean>(true);
 
+  /**
+   * Helper function to extract numeric database ID from composite ID
+   * @param compositeId - The composite ID string (e.g., "role-123", "site-456")
+   * @returns The numeric database ID (e.g., 123, 456)
+   *
+   * Note: This is needed because we use composite IDs in the UI to avoid collisions
+   * between different entity types that share the same numeric IDs in their respective tables.
+   */
+  const extractNumericId = (compositeId: string): number => {
+    const parts = compositeId.split('-');
+    return parseInt(parts[parts.length - 1], 10);
+  };
+
   // Flatten the tree structure for easier manipulation
   const flatNodes = useMemo(() => {
     if (!tree) return [];
@@ -215,7 +237,8 @@ export function CompanyStructureSelectionModal({
       path: string,
       parentId?: string
     ) => {
-      const nodeId = String(item.id);
+      // Create composite ID with type to avoid collisions between different entity types
+      const nodeId = `${type}-${item.id}`;
       const itemName = "name" in item ? item.name : `${type} ${item.id}`;
       const nodePath = path ? `${path} > ${itemName}` : itemName;
 
@@ -233,10 +256,14 @@ export function CompanyStructureSelectionModal({
         hasChildren = (item.work_groups?.length || 0) > 0;
       } else if (type === "work_group" && "roles" in item) {
         hasChildren = (item.roles?.length || 0) > 0;
+      } else if (type === "role" && "reporting_roles" in item) {
+        // Roles can have direct reports (1 level deep hierarchy)
+        hasChildren = (item.reporting_roles?.length || 0) > 0;
       }
 
       nodes.push({
         id: nodeId,
+        dbId: typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10),
         name: itemName,
         type,
         level,
@@ -283,13 +310,19 @@ export function CompanyStructureSelectionModal({
           flattenNode(child, "work_group", level + 1, nodePath, nodeId)
         );
       } else if (type === "work_group" && "roles" in item && item.roles) {
-        item.roles.forEach((child: any) =>
+        item.roles.forEach((child) =>
+          flattenNode(child, "role", level + 1, nodePath, nodeId)
+        );
+      } else if (type === "role" && "reporting_roles" in item && item.reporting_roles) {
+        // Handle direct reports (role → role hierarchy, 1 level deep)
+        item.reporting_roles.forEach((child) =>
           flattenNode(child, "role", level + 1, nodePath, nodeId)
         );
       }
     };
 
     flattenNode(tree, "company", 0, "");
+
     return nodes;
   }, [tree]);
 
@@ -319,7 +352,7 @@ export function CompanyStructureSelectionModal({
       return [nodeId];
     }
 
-    // Find all descendant nodes and collect role IDs
+    // Find all descendant nodes and collect role IDs by traversing down the tree
     const collectRoles = (currentNodeId: string) => {
       const children = flatNodes.filter((n) => n.parentId === currentNodeId);
       children.forEach((child) => {
@@ -407,7 +440,8 @@ export function CompanyStructureSelectionModal({
 
       setIsValidatingRoles(true);
       try {
-        const roleIds = Array.from(selectedRoleIds).map((id) => Number(id));
+        // Extract numeric database IDs from composite role IDs for API call
+        const roleIds = Array.from(selectedRoleIds).map((compositeId) => extractNumericId(compositeId));
 
         // Check if questionnaire has questions applicable to the selected roles
         const result = await validateProgramQuestionnaireRoles(
@@ -437,21 +471,22 @@ export function CompanyStructureSelectionModal({
           const allContacts: ContactWithPath[] = [];
           const contactSet = new Map<number, ContactWithPath>();
 
-          for (const roleId of Array.from(selectedRoleIds)) {
+          for (const compositeRoleId of Array.from(selectedRoleIds)) {
             const roleNode = flatNodes.find(
-              (n) => n.id === roleId && n.type === "role"
+              (n) => n.id === compositeRoleId && n.type === "role"
             );
             if (!roleNode) continue;
 
+            // Use the numeric database ID for the API call
             const roleContacts = await getContactsByRole(
               companyId,
-              Number(roleId)
+              roleNode.dbId
             );
             roleContacts.forEach((contact) => {
               if (!contactSet.has(contact.id)) {
                 const contactWithPath: ContactWithPath = {
                   ...contact,
-                  roleId: Number(roleId),
+                  roleId: roleNode.dbId,
                   roleName: roleNode.name,
                   organizationPath: roleNode.path,
                 };
@@ -481,13 +516,14 @@ export function CompanyStructureSelectionModal({
       }
     }
     loadContacts();
-  }, [isIndividualInterview, selectedRoleIds, flatNodes]);
+  }, [isIndividualInterview, selectedRoleIds, flatNodes, companyId]);
 
   // Auto-expand company node and reset state when modal opens
   useEffect(() => {
     if (open) {
       if (tree && expandedNodes.size === 0) {
-        setExpandedNodes(new Set([String(tree.id)]));
+        // Use composite ID for the company node
+        setExpandedNodes(new Set([`company-${tree.id}`]));
       }
       // Reset state when modal opens
       setInterviewType(defaultInterviewType);
@@ -600,11 +636,13 @@ export function CompanyStructureSelectionModal({
         }
       } else {
         // For non-public interviews, use all selected roles as before
+        // Extract numeric database IDs from composite role IDs
+        const roleIds = Array.from(selectedRoleIds).map((compositeId) => extractNumericId(compositeId));
         await createInterviews.mutateAsync({
           programId,
           phaseId: programPhaseId,
           isIndividualInterview,
-          roleIds: Array.from(selectedRoleIds).map((id) => parseInt(id)),
+          roleIds,
           contactIds: [],
           interviewType,
         });

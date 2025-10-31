@@ -1000,6 +1000,8 @@ export class CompaniesService {
       id: item.id,
       name: item.name || "",
       type: type,
+      description: item.description || "",
+      code: item.code || "",
       children: [],
     };
 
