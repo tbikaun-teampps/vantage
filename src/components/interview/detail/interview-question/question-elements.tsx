@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,11 @@ type QuestionPart = {
         max: number;
         min: number;
         step: number;
+      }
+    | {
+        max: number;
+        min: number;
+        decimal_places?: number;
       };
 };
 
@@ -115,82 +121,85 @@ export function InterviewQuestionElements({
           </Button>
         </div>
       );
-    } else if (["scale", "number"].includes(part.answer_type)) {
-      // Scale has the options {"max": number, "min": number, "step": number}
+    } else if (part.answer_type === "scale") {
+      // Scale allows numeric input with min/max/step constraints
       if (
         "max" in part.options &&
         "min" in part.options &&
         "step" in part.options
       ) {
-        const scaleOptions = part.options;
-        const scaleValues = [];
-        for (
-          let val = scaleOptions.min;
-          val <= scaleOptions.max;
-          val += scaleOptions.step
-        ) {
-          scaleValues.push(val);
-        }
+        const scaleOptions = part.options as { max: number; min: number; step: number };
         return (
-          <div
-            className={cn(
-              "mt-2 grid gap-4 text-sm",
-              isMobile ? "grid-cols-3" : "grid-cols-10"
-            )}
-          >
-            {scaleValues.map((value: number, index: number) => {
-              const isSelected = selectedValue === value.toString();
-              return (
-                <Button
-                  key={index}
-                  variant="outline"
-                  onClick={() => handleSelection(part.id, value.toString())}
-                  className={cn(
-                    "whitespace-normal text-wrap min-w-0 flex-1 break-words transition-all duration-200",
-                    isSelected &&
-                      "bg-green-500 dark:bg-green-400 hover:bg-green-600 dark:hover:bg-green-500 text-primary-foreground",
-                    isMobile ? "h-12" : "h-16"
-                  )}
-                >
-                  {value}
-                </Button>
-              );
-            })}
+          <div className="mt-2">
+            <Input
+              type="number"
+              min={scaleOptions.min}
+              max={scaleOptions.max}
+              step={scaleOptions.step}
+              value={selectedValue ?? ""}
+              onChange={(e) => {
+                const value = e.target.value;
+                form.setValue(`question_part_${part.id}`, value, { shouldDirty: true });
+              }}
+              placeholder={`Enter a value from ${scaleOptions.min} to ${scaleOptions.max}`}
+              className={cn(
+                "text-sm",
+                isMobile ? "h-12" : "h-16"
+              )}
+            />
+          </div>
+        );
+      }
+      return null;
+    } else if (part.answer_type === "number") {
+      // Number type allows free-form input with min/max bounds and decimal precision
+      if ("max" in part.options && "min" in part.options) {
+        const numberOptions = part.options as { max: number; min: number; decimal_places?: number };
+        const decimalPlaces = numberOptions.decimal_places ?? 0;
+        const step = decimalPlaces === 0 ? "1" : Math.pow(10, -decimalPlaces).toString();
+
+        return (
+          <div className="mt-2">
+            <Input
+              type="number"
+              min={numberOptions.min}
+              max={numberOptions.max}
+              step={step}
+              value={selectedValue ?? ""}
+              onChange={(e) => {
+                const value = e.target.value;
+                form.setValue(`question_part_${part.id}`, value, { shouldDirty: true });
+              }}
+              placeholder={`Enter a number between ${numberOptions.min} and ${numberOptions.max}`}
+              className={cn(
+                "text-sm",
+                isMobile ? "h-12" : "h-16"
+              )}
+            />
           </div>
         );
       }
       return null;
     } else if (part.answer_type === "percentage") {
-      // Percentage scale from 0 to 100
-      const percentageValues = [];
-      for (let val = 0; val <= 100; val += 10) {
-        percentageValues.push(val);
-      }
+      // Percentage allows free-form input from 0 to 100
       return (
-        <div
-          className={cn(
-            "mt-2 grid gap-4 text-sm",
-            isMobile ? "grid-cols-3" : "grid-cols-10"
-          )}
-        >
-          {percentageValues.map((value: number, index: number) => {
-            const isSelected = selectedValue === value.toString();
-            return (
-              <Button
-                key={index}
-                variant="outline"
-                onClick={() => handleSelection(part.id, value.toString())}
-                className={cn(
-                  "whitespace-normal text-wrap min-w-0 flex-1 break-words transition-all duration-200",
-                  isSelected &&
-                    "bg-green-500 dark:bg-green-400 hover:bg-green-600 dark:hover:bg-green-500 text-primary-foreground",
-                  isMobile ? "h-12" : "h-16"
-                )}
-              >
-                {value}%
-              </Button>
-            );
-          })}
+        <div className="mt-2">
+          <Input
+            type="number"
+            min={0}
+            max={100}
+            step="0.1"
+            value={selectedValue ?? ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              form.setValue(`question_part_${part.id}`, value, { shouldDirty: true });
+            }}
+            placeholder="Enter a percentage (0-100)"
+            className={cn(
+              "text-sm",
+              isMobile ? "h-12" : "h-16"
+            )}
+          />
         </div>
       );
     } else {
