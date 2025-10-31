@@ -16,7 +16,12 @@ function App() {
         storageKey="vantage-theme"
       >
         <AppRouter />
-        <Toaster richColors position="bottom-right" closeButton />
+        <Toaster
+          richColors
+          position="bottom-right"
+          closeButton
+          offset={{ bottom: 48, right: 32 }}
+        />
       </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
