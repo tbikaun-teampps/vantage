@@ -17,8 +17,7 @@ export async function teamRoutes(fastify: FastifyInstance) {
   const emailService = new EmailService(
     fastify.config.RESEND_API_KEY,
     fastify.config.SITE_URL,
-    fastify.config.VANTAGE_LOGO_FULL_URL,
-    fastify.config.VANTAGE_LOGO_ICON_URL
+    fastify.config.VANTAGE_PUBLIC_ASSETS_BUCKET_URL
   );
 
   // Get all team members for a company
