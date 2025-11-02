@@ -114,6 +114,8 @@ export function QuestionnaireTree({
       const hasTitle = question.title && question.title.trim() !== "";
       const hasQuestionText =
         question.question_text && question.question_text.trim() !== "";
+      const hasQuestionParts =
+        question.question_parts && question.question_parts.length > 0;
       const hasRatingScales =
         question.question_rating_scales &&
         question.question_rating_scales.length > 0;
@@ -124,13 +126,16 @@ export function QuestionnaireTree({
       const warnings: string[] = [];
 
       if (!hasTitle) missingFields.push("Title");
-      if (!hasQuestionText) missingFields.push("Question text");
+      // Question text is only required if there are no question parts
+      if (!hasQuestionText && !hasQuestionParts) {
+        missingFields.push("Question text or question parts");
+      }
       if (!hasRatingScales) missingFields.push("Rating scales");
       if (!hasApplicableRoles)
         warnings.push("No specific roles selected - will apply to all roles");
 
       return {
-        isValid: hasTitle && hasQuestionText && hasRatingScales,
+        isValid: hasTitle && (hasQuestionText || hasQuestionParts) && hasRatingScales,
         missingFields,
         warnings,
       };
