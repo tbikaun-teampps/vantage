@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Eye, AlertTriangle } from "lucide-react";
 import { useQuestionActions } from "@/hooks/questionnaire/useQuestions";
@@ -30,25 +30,23 @@ export function Questions() {
   const [editingQuestion, setEditingQuestion] =
     useState<QuestionWithRatingScales | null>(null);
 
-  if (!questionnaire) {
-    return null;
-  }
+  // Helper functions wrapped in useCallback to prevent recreation on every render
+  const getAllQuestionsFromSection = useCallback(
+    (section: SectionWithSteps): QuestionWithRatingScales[] => {
+      return section.steps.flatMap((step) => step.questions);
+    },
+    []
+  );
 
-  const hasRatingScales =
-    questionnaire.questionnaire_rating_scales &&
-    questionnaire.questionnaire_rating_scales.length > 0;
+  const getAllQuestionsFromStep = useCallback(
+    (step: any): QuestionWithRatingScales[] => {
+      return step.questions;
+    },
+    []
+  );
 
-  const getAllQuestionsFromSection = (
-    section: SectionWithSteps
-  ): QuestionWithRatingScales[] => {
-    return section.steps.flatMap((step) => step.questions);
-  };
-
-  const getAllQuestionsFromStep = (step: any): QuestionWithRatingScales[] => {
-    return step.questions;
-  };
-
-  const getSelectedQuestions = (): QuestionWithRatingScales[] => {
+  // Memoize selected questions to avoid repeated iterations through sections
+  const selectedQuestions = useMemo((): QuestionWithRatingScales[] => {
     if (!selectedItem) return [];
 
     if (selectedItem.type === "question") {
@@ -76,29 +74,39 @@ export function Questions() {
     }
 
     return [];
-  };
-  const selectedQuestions = getSelectedQuestions();
+  }, [selectedItem, sections, getAllQuestionsFromStep, getAllQuestionsFromSection]);
 
   // Helper function to get question numbering for display
-  const getQuestionDisplayNumber = (questionId: number): string => {
-    for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
-      const section = sections[sectionIndex];
-      for (let stepIndex = 0; stepIndex < section.steps.length; stepIndex++) {
-        const step = section.steps[stepIndex];
-        for (
-          let questionIndex = 0;
-          questionIndex < step.questions.length;
-          questionIndex++
-        ) {
-          const question = step.questions[questionIndex];
-          if (question.id === questionId) {
-            return `${sectionIndex + 1}.${stepIndex + 1}.${questionIndex + 1}`;
+  const getQuestionDisplayNumber = useCallback(
+    (questionId: number): string => {
+      for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+        const section = sections[sectionIndex];
+        for (let stepIndex = 0; stepIndex < section.steps.length; stepIndex++) {
+          const step = section.steps[stepIndex];
+          for (
+            let questionIndex = 0;
+            questionIndex < step.questions.length;
+            questionIndex++
+          ) {
+            const question = step.questions[questionIndex];
+            if (question.id === questionId) {
+              return `${sectionIndex + 1}.${stepIndex + 1}.${questionIndex + 1}`;
+            }
           }
         }
       }
-    }
-    return questionId.toString(); // fallback to ID if not found
-  };
+      return questionId.toString(); // fallback to ID if not found
+    },
+    [sections]
+  );
+
+  if (!questionnaire) {
+    return null;
+  }
+
+  const hasRatingScales =
+    questionnaire.questionnaire_rating_scales &&
+    questionnaire.questionnaire_rating_scales.length > 0;
 
   if (isLoading) {
     return <Loader />;

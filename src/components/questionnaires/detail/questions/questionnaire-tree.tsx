@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -80,7 +80,7 @@ export function QuestionnaireTree({
     questionCount,
   } = useQuestionnaireDetail();
 
-  const [expandedNodes, setExpandedNodes] = useState<Set<number>>(
+  const [expandedNodes, setExpandedNodes] = useState<Set<number>>(() =>
     new Set(
       sections.length > 0
         ? [sections[0].id, sections[0].steps[0]?.id].filter(Boolean)
@@ -107,6 +107,75 @@ export function QuestionnaireTree({
   const [duplicatingQuestionId, setDuplicatingQuestionId] = useState<
     number | null
   >(null);
+
+  // Pure validation function - moved before early return to allow memoization
+  const getQuestionValidation = useCallback(
+    (question: QuestionWithRatingScales) => {
+      const hasTitle = question.title && question.title.trim() !== "";
+      const hasQuestionText =
+        question.question_text && question.question_text.trim() !== "";
+      const hasRatingScales =
+        question.question_rating_scales &&
+        question.question_rating_scales.length > 0;
+      const hasApplicableRoles =
+        question.question_roles && question.question_roles.length > 0;
+
+      const missingFields: string[] = [];
+      const warnings: string[] = [];
+
+      if (!hasTitle) missingFields.push("Title");
+      if (!hasQuestionText) missingFields.push("Question text");
+      if (!hasRatingScales) missingFields.push("Rating scales");
+      if (!hasApplicableRoles)
+        warnings.push("No specific roles selected - will apply to all roles");
+
+      return {
+        isValid: hasTitle && hasQuestionText && hasRatingScales,
+        missingFields,
+        warnings,
+      };
+    },
+    []
+  );
+
+  // Memoize validation results for all questions to avoid repeated computations
+  const questionValidationMap = useMemo(() => {
+    const map = new Map<
+      number,
+      ReturnType<typeof getQuestionValidation>
+    >();
+    sections.forEach((section) => {
+      section.steps.forEach((step) => {
+        step.questions.forEach((question) => {
+          map.set(question.id, getQuestionValidation(question));
+        });
+      });
+    });
+    return map;
+  }, [sections, getQuestionValidation]);
+
+  // Helper to get cached validation results
+  const getQuestionValidationCached = useCallback(
+    (question: QuestionWithRatingScales) => {
+      return questionValidationMap.get(question.id) || getQuestionValidation(question);
+    },
+    [questionValidationMap, getQuestionValidation]
+  );
+
+  const isQuestionIncomplete = useCallback(
+    (question: QuestionWithRatingScales): boolean => {
+      const validation = questionValidationMap.get(question.id);
+      return validation ? !validation.isValid : true;
+    },
+    [questionValidationMap]
+  );
+
+  const getAllQuestionsFromSection = useCallback(
+    (section: SectionWithSteps): QuestionWithRatingScales[] => {
+      return section.steps.flatMap((step) => step.questions);
+    },
+    []
+  );
 
   if (!questionnaire) {
     return null;
@@ -186,44 +255,6 @@ export function QuestionnaireTree({
     } finally {
       setDuplicatingQuestionId(null);
     }
-  };
-
-  const getQuestionValidation = (question: QuestionWithRatingScales) => {
-    const hasTitle = question.title && question.title.trim() !== "";
-    const hasQuestionText =
-      question.question_text && question.question_text.trim() !== "";
-    const hasRatingScales =
-      question.question_rating_scales &&
-      question.question_rating_scales.length > 0;
-    const hasApplicableRoles =
-      question.question_roles && question.question_roles.length > 0;
-
-    const missingFields: string[] = [];
-    const warnings: string[] = [];
-
-    if (!hasTitle) missingFields.push("Title");
-    if (!hasQuestionText) missingFields.push("Question text");
-    if (!hasRatingScales) missingFields.push("Rating scales");
-    if (!hasApplicableRoles)
-      warnings.push("No specific roles selected - will apply to all roles");
-
-    return {
-      isValid: hasTitle && hasQuestionText && hasRatingScales,
-      missingFields,
-      warnings,
-    };
-  };
-
-  const isQuestionIncomplete = (
-    question: QuestionWithRatingScales
-  ): boolean => {
-    return !getQuestionValidation(question).isValid;
-  };
-
-  const getAllQuestionsFromSection = (
-    section: SectionWithSteps
-  ): QuestionWithRatingScales[] => {
-    return section.steps.flatMap((step) => step.questions);
   };
 
   const handleItemClick = (
@@ -505,14 +536,14 @@ export function QuestionnaireTree({
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       <div className="space-y-2">
-                                        {getQuestionValidation(question)
+                                        {getQuestionValidationCached(question)
                                           .missingFields.length > 0 && (
                                           <div>
                                             <p className="font-medium text-red-600 dark:text-black">
                                               Missing required fields:
                                             </p>
                                             <ul className="text-xs space-y-0.5 dark:text-black">
-                                              {getQuestionValidation(
+                                              {getQuestionValidationCached(
                                                 question
                                               ).missingFields.map((field) => (
                                                 <li key={field}>• {field}</li>
@@ -520,14 +551,14 @@ export function QuestionnaireTree({
                                             </ul>
                                           </div>
                                         )}
-                                        {getQuestionValidation(question)
+                                        {getQuestionValidationCached(question)
                                           .warnings.length > 0 && (
                                           <div>
                                             <p className="font-medium text-yellow-600 dark:text-black">
                                               Note:
                                             </p>
                                             <ul className="text-xs space-y-0.5 dark:text-black">
-                                              {getQuestionValidation(
+                                              {getQuestionValidationCached(
                                                 question
                                               ).warnings.map((warning) => (
                                                 <li key={warning}>

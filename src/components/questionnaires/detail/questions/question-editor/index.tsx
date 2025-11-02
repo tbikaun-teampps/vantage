@@ -106,7 +106,7 @@ export function QuestionEditor({
               updates: { question_text: newValue },
             });
           }}
-          required
+          // required
           helperText="Enter the complete text of the question to be presented to auditors when performing an interview. Auditors directly select a question rating, and do not answer question elements. If no question text is provided, the text of the question elements will be used instead (if available)."
         />
 
