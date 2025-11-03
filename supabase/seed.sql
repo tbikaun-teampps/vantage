@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict aZmQy3KEQ2c0j3N9s1bDunffc4utd5a7FxYzgYuwu7A5nV2JAGiYyYqhnakGcVN
+-- \restrict O5Qm1SxFwiJKMunmhlwf5VIuhBBgCpE9o7eegxmcoG0hrf5jS4PPfMo7qqdh3lJ
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -27,7 +27,8 @@ SET row_security = off;
 
 INSERT INTO "auth"."audit_log_entries" ("instance_id", "id", "payload", "created_at", "ip_address") VALUES
 	('00000000-0000-0000-0000-000000000000', '82508152-7ff2-4d73-a3ab-b2beb0c526c4', '{"action":"login","actor_id":"00000000-0000-0000-0000-000000000001","actor_username":"tbikaun+vantage_local@teampps.com.au","actor_via_sso":false,"log_type":"account","traits":{"provider":"email"}}', '2025-10-31 08:08:55.11832+00', ''),
-	('00000000-0000-0000-0000-000000000000', '36031675-0392-4762-8253-359cb3f19e12', '{"action":"user_signedup","actor_id":"00000000-0000-0000-0000-000000000000","actor_username":"service_role","actor_via_sso":false,"log_type":"team","traits":{"provider":"email","user_email":"tbikaun+jd@teampps.com.au","user_id":"d5f1252a-9d56-47f8-98cf-f6f34914bb6c","user_phone":""}}', '2025-10-31 08:11:45.234487+00', '');
+	('00000000-0000-0000-0000-000000000000', '36031675-0392-4762-8253-359cb3f19e12', '{"action":"user_signedup","actor_id":"00000000-0000-0000-0000-000000000000","actor_username":"service_role","actor_via_sso":false,"log_type":"team","traits":{"provider":"email","user_email":"tbikaun+jd@teampps.com.au","user_id":"d5f1252a-9d56-47f8-98cf-f6f34914bb6c","user_phone":""}}', '2025-10-31 08:11:45.234487+00', ''),
+	('00000000-0000-0000-0000-000000000000', '4018ea27-de57-4d66-932f-0eca144b8b11', '{"action":"login","actor_id":"00000000-0000-0000-0000-000000000001","actor_username":"tbikaun+vantage_local@teampps.com.au","actor_via_sso":false,"log_type":"account","traits":{"provider":"email"}}', '2025-11-03 00:33:13.382692+00', '');
 
 
 --
@@ -42,8 +43,8 @@ INSERT INTO "auth"."audit_log_entries" ("instance_id", "id", "payload", "created
 
 INSERT INTO "auth"."users" ("instance_id", "id", "aud", "role", "email", "encrypted_password", "email_confirmed_at", "invited_at", "confirmation_token", "confirmation_sent_at", "recovery_token", "recovery_sent_at", "email_change_token_new", "email_change", "email_change_sent_at", "last_sign_in_at", "raw_app_meta_data", "raw_user_meta_data", "is_super_admin", "created_at", "updated_at", "phone", "phone_confirmed_at", "phone_change", "phone_change_token", "phone_change_sent_at", "email_change_token_current", "email_change_confirm_status", "banned_until", "reauthentication_token", "reauthentication_sent_at", "is_sso_user", "deleted_at", "is_anonymous") VALUES
 	('00000000-0000-0000-0000-000000000000', 'd34835f8-a043-42f9-a376-6aac23cb76ce', 'authenticated', 'authenticated', 'tbikaun+planner@teampps.com.au', '$2a$10$qKAMVjOmXjWurTaTbNa5bOPCOhDm7tFLbSyBdcyf7d1GSv.FS1RzC', '2025-10-31 05:32:42.614454+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}', '{"account_type": "interviewee", "email_verified": true}', NULL, '2025-10-31 05:32:42.598491+00', '2025-10-31 05:32:42.616483+00', NULL, NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false),
-	('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'tbikaun+vantage_local@teampps.com.au', '$2a$10$UkCKciSi7RIOxC2fjk3psOMp0wgMGWsJHJOgZGZBGlWNe69rDSQui', '2025-10-31 02:21:44.433362+00', NULL, '', NULL, '', NULL, '', '', NULL, '2025-10-31 08:08:55.121541+00', '{"provider": "email", "providers": ["email"]}', '{"email_verified": true}', NULL, '2025-10-31 02:21:44.423295+00', '2025-10-31 08:08:55.128733+00', NULL, NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false),
-	('00000000-0000-0000-0000-000000000000', 'd5f1252a-9d56-47f8-98cf-f6f34914bb6c', 'authenticated', 'authenticated', 'tbikaun+jd@teampps.com.au', '$2a$10$kUkKev8JHqNQSCM4bLNYheDazSYTewYEO8BNbEwAkwypht0Fe4JOq', '2025-10-31 08:11:45.238948+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}', '{"account_type": "interviewee", "email_verified": true}', NULL, '2025-10-31 08:11:45.222337+00', '2025-10-31 08:11:45.240872+00', NULL, NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false);
+	('00000000-0000-0000-0000-000000000000', 'd5f1252a-9d56-47f8-98cf-f6f34914bb6c', 'authenticated', 'authenticated', 'tbikaun+jd@teampps.com.au', '$2a$10$kUkKev8JHqNQSCM4bLNYheDazSYTewYEO8BNbEwAkwypht0Fe4JOq', '2025-10-31 08:11:45.238948+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}', '{"account_type": "interviewee", "email_verified": true}', NULL, '2025-10-31 08:11:45.222337+00', '2025-10-31 08:11:45.240872+00', NULL, NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false),
+	('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'tbikaun+vantage_local@teampps.com.au', '$2a$10$UkCKciSi7RIOxC2fjk3psOMp0wgMGWsJHJOgZGZBGlWNe69rDSQui', '2025-10-31 02:21:44.433362+00', NULL, '', NULL, '', NULL, '', '', NULL, '2025-11-03 00:33:13.387177+00', '{"provider": "email", "providers": ["email"]}', '{"email_verified": true}', NULL, '2025-10-31 02:21:44.423295+00', '2025-11-03 00:33:13.394089+00', NULL, NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false);
 
 
 --
@@ -71,7 +72,8 @@ INSERT INTO "auth"."identities" ("provider_id", "user_id", "identity_data", "pro
 --
 
 INSERT INTO "auth"."sessions" ("id", "user_id", "created_at", "updated_at", "factor_id", "aal", "not_after", "refreshed_at", "user_agent", "ip", "tag", "oauth_client_id") VALUES
-	('ae8881f8-6118-4750-bb2a-2c5d2972a5d8', '00000000-0000-0000-0000-000000000001', '2025-10-31 08:08:55.12173+00', '2025-10-31 08:08:55.12173+00', NULL, 'aal1', NULL, NULL, 'node', '172.19.0.1', NULL, NULL);
+	('ae8881f8-6118-4750-bb2a-2c5d2972a5d8', '00000000-0000-0000-0000-000000000001', '2025-10-31 08:08:55.12173+00', '2025-10-31 08:08:55.12173+00', NULL, 'aal1', NULL, NULL, 'node', '172.19.0.1', NULL, NULL),
+	('d735c77e-8548-457b-9a0a-0a1727bc28d8', '00000000-0000-0000-0000-000000000001', '2025-11-03 00:33:13.387724+00', '2025-11-03 00:33:13.387724+00', NULL, 'aal1', NULL, NULL, 'node', '172.19.0.1', NULL, NULL);
 
 
 --
@@ -79,7 +81,8 @@ INSERT INTO "auth"."sessions" ("id", "user_id", "created_at", "updated_at", "fac
 --
 
 INSERT INTO "auth"."mfa_amr_claims" ("session_id", "created_at", "updated_at", "authentication_method", "id") VALUES
-	('ae8881f8-6118-4750-bb2a-2c5d2972a5d8', '2025-10-31 08:08:55.130392+00', '2025-10-31 08:08:55.130392+00', 'password', '0d9660cb-0845-4ecb-a3af-d56e0d871f44');
+	('ae8881f8-6118-4750-bb2a-2c5d2972a5d8', '2025-10-31 08:08:55.130392+00', '2025-10-31 08:08:55.130392+00', 'password', '0d9660cb-0845-4ecb-a3af-d56e0d871f44'),
+	('d735c77e-8548-457b-9a0a-0a1727bc28d8', '2025-11-03 00:33:13.395991+00', '2025-11-03 00:33:13.395991+00', 'password', '9047f446-c41b-461e-b169-861c6feb134b');
 
 
 --
@@ -117,7 +120,8 @@ INSERT INTO "auth"."mfa_amr_claims" ("session_id", "created_at", "updated_at", "
 --
 
 INSERT INTO "auth"."refresh_tokens" ("instance_id", "id", "token", "user_id", "revoked", "created_at", "updated_at", "parent", "session_id") VALUES
-	('00000000-0000-0000-0000-000000000000', 1, '35ich22mu26o', '00000000-0000-0000-0000-000000000001', false, '2025-10-31 08:08:55.125155+00', '2025-10-31 08:08:55.125155+00', NULL, 'ae8881f8-6118-4750-bb2a-2c5d2972a5d8');
+	('00000000-0000-0000-0000-000000000000', 1, '35ich22mu26o', '00000000-0000-0000-0000-000000000001', false, '2025-10-31 08:08:55.125155+00', '2025-10-31 08:08:55.125155+00', NULL, 'ae8881f8-6118-4750-bb2a-2c5d2972a5d8'),
+	('00000000-0000-0000-0000-000000000000', 2, 'aikn6pxayu45', '00000000-0000-0000-0000-000000000001', false, '2025-11-03 00:33:13.391189+00', '2025-11-03 00:33:13.391189+00', NULL, 'd735c77e-8548-457b-9a0a-0a1727bc28d8');
 
 
 --
@@ -245,7 +249,8 @@ INSERT INTO "public"."program_phases" ("id", "created_at", "program_id", "sequen
 
 INSERT INTO "public"."assessments" ("id", "created_at", "updated_at", "questionnaire_id", "name", "description", "status", "scheduled_at", "started_at", "created_by", "business_unit_id", "region_id", "site_id", "asset_group_id", "is_deleted", "deleted_at", "type", "completed_at", "company_id", "interview_overview", "program_phase_id") VALUES
 	(1, '2025-10-31 05:32:42.429842+00', '2025-10-31 05:32:42.429842+00', 1, 'onsite Assessment - Phase 1', NULL, 'draft', NULL, NULL, '00000000-0000-0000-0000-000000000001', NULL, NULL, NULL, NULL, false, NULL, 'onsite', NULL, 'b64d182f-0ee3-40a0-b367-281f31902620', NULL, 1),
-	(2, '2025-10-31 08:11:22.844288+00', '2025-10-31 08:11:22.844288+00', 2, 'Test: Question Elements Answer Types', NULL, 'draft', NULL, NULL, '00000000-0000-0000-0000-000000000001', NULL, NULL, NULL, NULL, false, NULL, 'onsite', NULL, 'b64d182f-0ee3-40a0-b367-281f31902620', NULL, NULL);
+	(2, '2025-10-31 08:11:22.844288+00', '2025-10-31 08:11:22.844288+00', 2, 'Test: Question Elements Answer Types', NULL, 'draft', NULL, NULL, '00000000-0000-0000-0000-000000000001', NULL, NULL, NULL, NULL, false, NULL, 'onsite', NULL, 'b64d182f-0ee3-40a0-b367-281f31902620', NULL, NULL),
+	(3, '2025-11-03 00:33:58.301456+00', '2025-11-03 00:33:58.301456+00', 1, 'Test: Weekly Planner Check-In', NULL, 'draft', NULL, NULL, '00000000-0000-0000-0000-000000000001', NULL, NULL, NULL, NULL, false, NULL, 'onsite', NULL, 'b64d182f-0ee3-40a0-b367-281f31902620', NULL, NULL);
 
 
 --
@@ -253,7 +258,8 @@ INSERT INTO "public"."assessments" ("id", "created_at", "updated_at", "questionn
 --
 
 INSERT INTO "public"."assessment_objectives" ("id", "created_at", "updated_at", "created_by", "assessment_id", "title", "description", "is_deleted", "deleted_at", "company_id") VALUES
-	(1, '2025-10-31 08:11:22.864787+00', '2025-10-31 08:11:22.864787+00', '00000000-0000-0000-0000-000000000001', 2, 'Functional Test', 'Test', false, NULL, 'b64d182f-0ee3-40a0-b367-281f31902620');
+	(1, '2025-10-31 08:11:22.864787+00', '2025-10-31 08:11:22.864787+00', '00000000-0000-0000-0000-000000000001', 2, 'Functional Test', 'Test', false, NULL, 'b64d182f-0ee3-40a0-b367-281f31902620'),
+	(2, '2025-11-03 00:33:58.361093+00', '2025-11-03 00:33:58.361093+00', '00000000-0000-0000-0000-000000000001', 3, 'Workflow Efficiency Review', 'Analyze current workflows to identify opportunities for improvement', false, NULL, 'b64d182f-0ee3-40a0-b367-281f31902620');
 
 
 --
@@ -394,7 +400,8 @@ INSERT INTO "public"."roles" ("id", "created_at", "updated_at", "created_by", "c
 INSERT INTO "public"."interviews" ("id", "created_at", "updated_at", "created_by", "interviewer_id", "assessment_id", "notes", "name", "is_individual", "access_code", "assigned_role_id", "enabled", "is_deleted", "deleted_at", "status", "program_id", "questionnaire_id", "company_id", "interview_contact_id", "program_phase_id", "interviewee_id", "due_at", "completed_at") VALUES
 	(1, '2025-10-31 05:32:42.685577+00', '2025-10-31 05:32:42.685577+00', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 1, NULL, 'onsite Interview - Phase 1', true, '8807a347', NULL, true, false, NULL, 'pending', 1, 1, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, 1, 'd34835f8-a043-42f9-a376-6aac23cb76ce', NULL, NULL),
 	(2, '2025-10-31 05:32:51.563903+00', '2025-10-31 05:32:51.563903+00', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 1, NULL, 'onsite Interview - Group', false, NULL, NULL, true, false, NULL, 'pending', 1, 1, 'b64d182f-0ee3-40a0-b367-281f31902620', NULL, 1, NULL, NULL, NULL),
-	(3, '2025-10-31 08:11:45.311254+00', '2025-10-31 08:11:45.311254+00', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 2, NULL, 'Individual Interview - 31/10/2025', true, 'cca39c29', NULL, true, false, NULL, 'pending', NULL, 2, 'b64d182f-0ee3-40a0-b367-281f31902620', 1, NULL, 'd5f1252a-9d56-47f8-98cf-f6f34914bb6c', NULL, NULL);
+	(3, '2025-10-31 08:11:45.311254+00', '2025-10-31 08:11:45.311254+00', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 2, NULL, 'Individual Interview - 31/10/2025', true, 'cca39c29', NULL, true, false, NULL, 'pending', NULL, 2, 'b64d182f-0ee3-40a0-b367-281f31902620', 1, NULL, 'd5f1252a-9d56-47f8-98cf-f6f34914bb6c', NULL, NULL),
+	(4, '2025-11-03 00:34:10.597941+00', '2025-11-03 00:34:10.597941+00', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 3, NULL, 'Individual Interview - 03/11/2025', true, '52217524', NULL, true, false, NULL, 'pending', NULL, 1, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, NULL, 'd34835f8-a043-42f9-a376-6aac23cb76ce', NULL, NULL);
 
 
 --
@@ -474,7 +481,18 @@ INSERT INTO "public"."interview_responses" ("id", "created_at", "updated_at", "r
 	(20, '2025-10-31 05:32:51.593749+00', '2025-10-31 05:32:51.593749+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 2, 9, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct'),
 	(21, '2025-10-31 05:32:51.593749+00', '2025-10-31 05:32:51.593749+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 2, 10, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct'),
 	(22, '2025-10-31 05:32:51.593749+00', '2025-10-31 05:32:51.593749+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 2, 11, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct'),
-	(23, '2025-10-31 08:11:45.338914+00', '2025-10-31 08:11:45.338914+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 3, 12, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct');
+	(23, '2025-10-31 08:11:45.338914+00', '2025-10-31 08:11:45.338914+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 3, 12, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct'),
+	(24, '2025-11-03 00:34:10.637543+00', '2025-11-03 00:34:10.637543+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 4, 1, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct'),
+	(25, '2025-11-03 00:34:10.637543+00', '2025-11-03 00:34:10.637543+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 4, 2, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct'),
+	(26, '2025-11-03 00:34:10.637543+00', '2025-11-03 00:34:10.637543+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 4, 3, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct'),
+	(27, '2025-11-03 00:34:10.637543+00', '2025-11-03 00:34:10.637543+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 4, 4, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct'),
+	(28, '2025-11-03 00:34:10.637543+00', '2025-11-03 00:34:10.637543+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 4, 5, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct'),
+	(29, '2025-11-03 00:34:10.637543+00', '2025-11-03 00:34:10.637543+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 4, 6, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct'),
+	(30, '2025-11-03 00:34:10.637543+00', '2025-11-03 00:34:10.637543+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 4, 7, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct'),
+	(31, '2025-11-03 00:34:10.637543+00', '2025-11-03 00:34:10.637543+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 4, 8, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct'),
+	(32, '2025-11-03 00:34:10.637543+00', '2025-11-03 00:34:10.637543+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 4, 9, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct'),
+	(33, '2025-11-03 00:34:10.637543+00', '2025-11-03 00:34:10.637543+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 4, 10, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct'),
+	(34, '2025-11-03 00:34:10.637543+00', '2025-11-03 00:34:10.637543+00', NULL, NULL, NULL, '00000000-0000-0000-0000-000000000001', 4, 11, false, NULL, true, 'b64d182f-0ee3-40a0-b367-281f31902620', false, 'direct');
 
 
 --
@@ -510,47 +528,58 @@ INSERT INTO "public"."interview_question_applicable_roles" ("id", "created_at", 
 	(20, '2025-10-31 05:32:51.608212+00', 2, 9, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, false),
 	(21, '2025-10-31 05:32:51.608212+00', 2, 10, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, false),
 	(22, '2025-10-31 05:32:51.608212+00', 2, 11, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, false),
-	(23, '2025-10-31 08:11:45.353003+00', 3, 12, 'b64d182f-0ee3-40a0-b367-281f31902620', NULL, true);
+	(23, '2025-10-31 08:11:45.353003+00', 3, 12, 'b64d182f-0ee3-40a0-b367-281f31902620', NULL, true),
+	(24, '2025-11-03 00:34:10.654785+00', 4, 1, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, false),
+	(25, '2025-11-03 00:34:10.654785+00', 4, 2, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, false),
+	(26, '2025-11-03 00:34:10.654785+00', 4, 3, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, false),
+	(27, '2025-11-03 00:34:10.654785+00', 4, 4, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, false),
+	(28, '2025-11-03 00:34:10.654785+00', 4, 5, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, false),
+	(29, '2025-11-03 00:34:10.654785+00', 4, 6, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, false),
+	(30, '2025-11-03 00:34:10.654785+00', 4, 7, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, false),
+	(31, '2025-11-03 00:34:10.654785+00', 4, 8, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, false),
+	(32, '2025-11-03 00:34:10.654785+00', 4, 9, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, false),
+	(33, '2025-11-03 00:34:10.654785+00', 4, 10, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, false),
+	(34, '2025-11-03 00:34:10.654785+00', 4, 11, 'b64d182f-0ee3-40a0-b367-281f31902620', 2, false);
 
 
 --
 -- Data for Name: questionnaire_question_parts; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO "public"."questionnaire_question_parts" ("id", "created_at", "updated_at", "created_by", "deleted_at", "is_deleted", "text", "order_index", "answer_type", "options", "company_id", "questionnaire_question_id") VALUES
-	(1, '2025-10-31 03:49:17.10868+00', '2025-10-31 03:49:17.10868+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Current backlog size (number of work orders)', 0, 'scale', '{"max": 250, "min": 0, "step": 25}', 'b64d182f-0ee3-40a0-b367-281f31902620', 1),
-	(2, '2025-10-31 03:49:54.20195+00', '2025-10-31 03:49:54.20195+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Percentage of planned vs reactive work this week', 1, 'percentage', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 1),
-	(3, '2025-10-31 03:50:03.462367+00', '2025-10-31 03:51:23.171+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Confidence level in meeting this week''s schedule', 2, 'scale', '{"max": 5, "min": 1, "step": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 1),
-	(4, '2025-10-31 04:02:03.562196+00', '2025-10-31 04:02:03.562196+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Primary bottleneck encountered', 0, 'labelled_scale', '{"labels": ["None", "Labor availability", "Parts/Materials", "Equipment access", "Permit/Documentation", "Weather", "Other"]}', 'b64d182f-0ee3-40a0-b367-281f31902620', 2),
-	(5, '2025-10-31 04:02:19.767275+00', '2025-10-31 04:02:19.767275+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Estimated hours lost to scheduling conflicts', 1, 'number', '{"max": 100, "min": 0, "decimal_places": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 2),
-	(6, '2025-10-31 04:02:37.010725+00', '2025-10-31 04:02:37.010725+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Percentage of jobs completed as planned', 0, 'percentage', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 3),
-	(7, '2025-10-31 04:02:46.293277+00', '2025-10-31 04:02:46.293277+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Number of jobs requiring re-planning', 1, 'number', '{"max": 999, "min": 0, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 3),
-	(8, '2025-10-31 04:02:55.213117+00', '2025-10-31 04:02:55.213117+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Average planning accuracy score (self-assessed)', 2, 'scale', '{"max": 5, "min": 1, "step": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 3),
-	(9, '2025-10-31 04:03:11.804415+00', '2025-10-31 04:03:11.804415+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Labor availability vs requirements (percentage match)', 0, 'percentage', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 4),
-	(10, '2025-10-31 04:03:23.404507+00', '2025-10-31 04:03:23.404507+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Materials/parts availability issues (count)', 1, 'number', '{"max": 99, "min": 0, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 4),
-	(11, '2025-10-31 04:03:35.888755+00', '2025-10-31 04:03:35.888755+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Equipment/tool conflicts experienced', 2, 'number', '{"max": 99, "min": 0, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 4),
-	(12, '2025-10-31 04:03:56.187268+00', '2025-10-31 04:03:56.187268+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Number of contractor delays', 0, 'number', '{"max": 99, "min": 0, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 5),
-	(13, '2025-10-31 04:04:02.00272+00', '2025-10-31 04:04:02.00272+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Communication effectiveness', 1, 'scale', '{"max": 5, "min": 1, "step": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 5),
-	(14, '2025-10-31 04:04:14.985658+00', '2025-10-31 04:04:14.985658+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Number of permits successfully coordinated', 0, 'number', '{"max": 999, "min": 0, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 6),
-	(15, '2025-10-31 04:04:21.354122+00', '2025-10-31 04:04:21.354122+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Any safety concerns raised but unresolved', 1, 'boolean', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 6),
-	(16, '2025-10-31 04:04:29.535367+00', '2025-10-31 04:04:29.535367+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Compliance documentation completeness', 2, 'percentage', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 6),
-	(17, '2025-10-31 04:04:39.466862+00', '2025-10-31 04:04:39.466862+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Percentage of time allocated to critical equipment', 0, 'percentage', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 7),
-	(18, '2025-10-31 04:04:44.384883+00', '2025-10-31 04:04:44.384883+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Any critical work deferred', 1, 'boolean', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 7),
-	(19, '2025-10-31 04:05:00.070861+00', '2025-10-31 04:05:00.070861+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Operations coordination satisfaction', 0, 'scale', '{"max": 5, "min": 1, "step": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 8),
-	(20, '2025-10-31 04:05:08.456607+00', '2025-10-31 04:05:08.456607+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Maintenance crew feedback quality', 1, 'scale', '{"max": 5, "min": 1, "step": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 8),
-	(21, '2025-10-31 04:05:17.102691+00', '2025-10-31 04:05:17.102691+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Number of escalations required', 2, 'number', '{"max": 99, "min": 0, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 8),
-	(22, '2025-10-31 04:05:27.806915+00', '2025-10-31 04:05:27.806915+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'CMMS/planning software performance', 0, 'scale', '{"max": 5, "min": 1, "step": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 9),
-	(23, '2025-10-31 04:05:39.548774+00', '2025-10-31 04:05:39.548774+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Data quality issues encountered', 1, 'number', '{"max": 99, "min": 0, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 9),
-	(24, '2025-10-31 04:06:27.04411+00', '2025-10-31 04:06:27.04411+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Top improvement area', 0, 'labelled_scale', '{"labels": ["None identified", "Process/Workflow", "Systems/Tools", "Communication", "Training/Skills", "Resources", "Documentation", "Other"]}', 'b64d182f-0ee3-40a0-b367-281f31902620', 10),
-	(25, '2025-10-31 04:06:42.160884+00', '2025-10-31 04:06:42.160884+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Estimated time savings if implemented (hours/week)', 1, 'number', '{"max": 40, "min": 0, "decimal_places": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 10),
-	(26, '2025-10-31 04:06:53.744761+00', '2025-10-31 04:06:53.744761+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Percentage of next week''s work already planned', 0, 'percentage', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 11),
-	(27, '2025-10-31 04:07:27.53831+00', '2025-10-31 04:07:27.53831+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Risk level for next week', 1, 'labelled_scale', '{"labels": ["Low - Well controlled", "Medium - Some concerns", "High - Significant challenges", "Critical - Major issues expected"]}', 'b64d182f-0ee3-40a0-b367-281f31902620', 11),
-	(28, '2025-10-31 04:08:07.273655+00', '2025-10-31 04:08:07.273655+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Management support needed', 2, 'labelled_scale', '{"labels": ["None needed", "Resource allocation", "Priority clarification", "System/tool issues", "Stakeholder alignment", "Training/guidance", "Other"]}', 'b64d182f-0ee3-40a0-b367-281f31902620', 11),
-	(29, '2025-10-31 08:03:02.3018+00', '2025-10-31 08:03:02.3018+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Does this work?', 0, 'boolean', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 12),
-	(30, '2025-10-31 08:03:10.237225+00', '2025-10-31 08:03:10.237225+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'How well does this work?', 1, 'scale', '{"max": 5, "min": 1, "step": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 12),
-	(31, '2025-10-31 08:03:27.314826+00', '2025-10-31 08:03:27.314826+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Is this working correctly?', 2, 'labelled_scale', '{"labels": ["No", "Partially", "Yes"]}', 'b64d182f-0ee3-40a0-b367-281f31902620', 12),
-	(32, '2025-10-31 08:03:48.747381+00', '2025-10-31 08:03:48.747381+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'How much of this is working?', 3, 'percentage', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 12),
-	(33, '2025-10-31 08:04:15.670946+00', '2025-10-31 08:04:15.670946+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'How many questions do you need to answer?', 4, 'number', '{"max": 10, "min": 1, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 12);
+INSERT INTO "public"."questionnaire_question_parts" ("id", "created_at", "updated_at", "created_by", "deleted_at", "is_deleted", "text", "order_index", "answer_type", "options", "company_id", "questionnaire_question_id", "questionnaire_id") VALUES
+	(1, '2025-10-31 03:49:17.10868+00', '2025-10-31 03:49:17.10868+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Current backlog size (number of work orders)', 0, 'scale', '{"max": 250, "min": 0, "step": 25}', 'b64d182f-0ee3-40a0-b367-281f31902620', 1, 1),
+	(2, '2025-10-31 03:49:54.20195+00', '2025-10-31 03:49:54.20195+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Percentage of planned vs reactive work this week', 1, 'percentage', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 1, 1),
+	(3, '2025-10-31 03:50:03.462367+00', '2025-10-31 03:51:23.171+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Confidence level in meeting this week''s schedule', 2, 'scale', '{"max": 5, "min": 1, "step": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 1, 1),
+	(4, '2025-10-31 04:02:03.562196+00', '2025-10-31 04:02:03.562196+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Primary bottleneck encountered', 0, 'labelled_scale', '{"labels": ["None", "Labor availability", "Parts/Materials", "Equipment access", "Permit/Documentation", "Weather", "Other"]}', 'b64d182f-0ee3-40a0-b367-281f31902620', 2, 1),
+	(5, '2025-10-31 04:02:19.767275+00', '2025-10-31 04:02:19.767275+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Estimated hours lost to scheduling conflicts', 1, 'number', '{"max": 100, "min": 0, "decimal_places": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 2, 1),
+	(6, '2025-10-31 04:02:37.010725+00', '2025-10-31 04:02:37.010725+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Percentage of jobs completed as planned', 0, 'percentage', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 3, 1),
+	(7, '2025-10-31 04:02:46.293277+00', '2025-10-31 04:02:46.293277+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Number of jobs requiring re-planning', 1, 'number', '{"max": 999, "min": 0, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 3, 1),
+	(8, '2025-10-31 04:02:55.213117+00', '2025-10-31 04:02:55.213117+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Average planning accuracy score (self-assessed)', 2, 'scale', '{"max": 5, "min": 1, "step": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 3, 1),
+	(9, '2025-10-31 04:03:11.804415+00', '2025-10-31 04:03:11.804415+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Labor availability vs requirements (percentage match)', 0, 'percentage', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 4, 1),
+	(10, '2025-10-31 04:03:23.404507+00', '2025-10-31 04:03:23.404507+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Materials/parts availability issues (count)', 1, 'number', '{"max": 99, "min": 0, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 4, 1),
+	(11, '2025-10-31 04:03:35.888755+00', '2025-10-31 04:03:35.888755+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Equipment/tool conflicts experienced', 2, 'number', '{"max": 99, "min": 0, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 4, 1),
+	(12, '2025-10-31 04:03:56.187268+00', '2025-10-31 04:03:56.187268+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Number of contractor delays', 0, 'number', '{"max": 99, "min": 0, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 5, 1),
+	(13, '2025-10-31 04:04:02.00272+00', '2025-10-31 04:04:02.00272+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Communication effectiveness', 1, 'scale', '{"max": 5, "min": 1, "step": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 5, 1),
+	(14, '2025-10-31 04:04:14.985658+00', '2025-10-31 04:04:14.985658+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Number of permits successfully coordinated', 0, 'number', '{"max": 999, "min": 0, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 6, 1),
+	(15, '2025-10-31 04:04:21.354122+00', '2025-10-31 04:04:21.354122+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Any safety concerns raised but unresolved', 1, 'boolean', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 6, 1),
+	(16, '2025-10-31 04:04:29.535367+00', '2025-10-31 04:04:29.535367+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Compliance documentation completeness', 2, 'percentage', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 6, 1),
+	(17, '2025-10-31 04:04:39.466862+00', '2025-10-31 04:04:39.466862+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Percentage of time allocated to critical equipment', 0, 'percentage', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 7, 1),
+	(18, '2025-10-31 04:04:44.384883+00', '2025-10-31 04:04:44.384883+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Any critical work deferred', 1, 'boolean', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 7, 1),
+	(19, '2025-10-31 04:05:00.070861+00', '2025-10-31 04:05:00.070861+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Operations coordination satisfaction', 0, 'scale', '{"max": 5, "min": 1, "step": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 8, 1),
+	(20, '2025-10-31 04:05:08.456607+00', '2025-10-31 04:05:08.456607+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Maintenance crew feedback quality', 1, 'scale', '{"max": 5, "min": 1, "step": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 8, 1),
+	(21, '2025-10-31 04:05:17.102691+00', '2025-10-31 04:05:17.102691+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Number of escalations required', 2, 'number', '{"max": 99, "min": 0, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 8, 1),
+	(22, '2025-10-31 04:05:27.806915+00', '2025-10-31 04:05:27.806915+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'CMMS/planning software performance', 0, 'scale', '{"max": 5, "min": 1, "step": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 9, 1),
+	(23, '2025-10-31 04:05:39.548774+00', '2025-10-31 04:05:39.548774+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Data quality issues encountered', 1, 'number', '{"max": 99, "min": 0, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 9, 1),
+	(24, '2025-10-31 04:06:27.04411+00', '2025-10-31 04:06:27.04411+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Top improvement area', 0, 'labelled_scale', '{"labels": ["None identified", "Process/Workflow", "Systems/Tools", "Communication", "Training/Skills", "Resources", "Documentation", "Other"]}', 'b64d182f-0ee3-40a0-b367-281f31902620', 10, 1),
+	(25, '2025-10-31 04:06:42.160884+00', '2025-10-31 04:06:42.160884+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Estimated time savings if implemented (hours/week)', 1, 'number', '{"max": 40, "min": 0, "decimal_places": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 10, 1),
+	(26, '2025-10-31 04:06:53.744761+00', '2025-10-31 04:06:53.744761+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Percentage of next week''s work already planned', 0, 'percentage', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 11, 1),
+	(27, '2025-10-31 04:07:27.53831+00', '2025-10-31 04:07:27.53831+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Risk level for next week', 1, 'labelled_scale', '{"labels": ["Low - Well controlled", "Medium - Some concerns", "High - Significant challenges", "Critical - Major issues expected"]}', 'b64d182f-0ee3-40a0-b367-281f31902620', 11, 1),
+	(28, '2025-10-31 04:08:07.273655+00', '2025-10-31 04:08:07.273655+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Management support needed', 2, 'labelled_scale', '{"labels": ["None needed", "Resource allocation", "Priority clarification", "System/tool issues", "Stakeholder alignment", "Training/guidance", "Other"]}', 'b64d182f-0ee3-40a0-b367-281f31902620', 11, 1),
+	(29, '2025-10-31 08:03:02.3018+00', '2025-10-31 08:03:02.3018+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Does this work?', 0, 'boolean', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 12, 2),
+	(30, '2025-10-31 08:03:10.237225+00', '2025-10-31 08:03:10.237225+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'How well does this work?', 1, 'scale', '{"max": 5, "min": 1, "step": 1}', 'b64d182f-0ee3-40a0-b367-281f31902620', 12, 2),
+	(31, '2025-10-31 08:03:27.314826+00', '2025-10-31 08:03:27.314826+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'Is this working correctly?', 2, 'labelled_scale', '{"labels": ["No", "Partially", "Yes"]}', 'b64d182f-0ee3-40a0-b367-281f31902620', 12, 2),
+	(32, '2025-10-31 08:03:48.747381+00', '2025-10-31 08:03:48.747381+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'How much of this is working?', 3, 'percentage', '{}', 'b64d182f-0ee3-40a0-b367-281f31902620', 12, 2),
+	(33, '2025-10-31 08:04:15.670946+00', '2025-10-31 08:04:15.670946+00', '00000000-0000-0000-0000-000000000001', NULL, false, 'How many questions do you need to answer?', 4, 'number', '{"max": 10, "min": 1, "decimal_places": 0}', 'b64d182f-0ee3-40a0-b367-281f31902620', 12, 2);
 
 
 --
@@ -581,7 +610,18 @@ INSERT INTO "public"."interview_response_roles" ("id", "created_at", "updated_at
 	(9, '2025-10-31 05:32:42.748974+00', '2025-10-31 05:32:42.748974+00', '00000000-0000-0000-0000-000000000001', 2, 9, 'b64d182f-0ee3-40a0-b367-281f31902620', 1),
 	(10, '2025-10-31 05:32:42.748974+00', '2025-10-31 05:32:42.748974+00', '00000000-0000-0000-0000-000000000001', 2, 10, 'b64d182f-0ee3-40a0-b367-281f31902620', 1),
 	(11, '2025-10-31 05:32:42.748974+00', '2025-10-31 05:32:42.748974+00', '00000000-0000-0000-0000-000000000001', 2, 11, 'b64d182f-0ee3-40a0-b367-281f31902620', 1),
-	(12, '2025-10-31 08:11:45.364958+00', '2025-10-31 08:11:45.364958+00', '00000000-0000-0000-0000-000000000001', 7, 23, 'b64d182f-0ee3-40a0-b367-281f31902620', 3);
+	(12, '2025-10-31 08:11:45.364958+00', '2025-10-31 08:11:45.364958+00', '00000000-0000-0000-0000-000000000001', 7, 23, 'b64d182f-0ee3-40a0-b367-281f31902620', 3),
+	(13, '2025-11-03 00:34:10.671949+00', '2025-11-03 00:34:10.671949+00', '00000000-0000-0000-0000-000000000001', 2, 24, 'b64d182f-0ee3-40a0-b367-281f31902620', 4),
+	(14, '2025-11-03 00:34:10.671949+00', '2025-11-03 00:34:10.671949+00', '00000000-0000-0000-0000-000000000001', 2, 25, 'b64d182f-0ee3-40a0-b367-281f31902620', 4),
+	(15, '2025-11-03 00:34:10.671949+00', '2025-11-03 00:34:10.671949+00', '00000000-0000-0000-0000-000000000001', 2, 26, 'b64d182f-0ee3-40a0-b367-281f31902620', 4),
+	(16, '2025-11-03 00:34:10.671949+00', '2025-11-03 00:34:10.671949+00', '00000000-0000-0000-0000-000000000001', 2, 27, 'b64d182f-0ee3-40a0-b367-281f31902620', 4),
+	(17, '2025-11-03 00:34:10.671949+00', '2025-11-03 00:34:10.671949+00', '00000000-0000-0000-0000-000000000001', 2, 28, 'b64d182f-0ee3-40a0-b367-281f31902620', 4),
+	(18, '2025-11-03 00:34:10.671949+00', '2025-11-03 00:34:10.671949+00', '00000000-0000-0000-0000-000000000001', 2, 29, 'b64d182f-0ee3-40a0-b367-281f31902620', 4),
+	(19, '2025-11-03 00:34:10.671949+00', '2025-11-03 00:34:10.671949+00', '00000000-0000-0000-0000-000000000001', 2, 30, 'b64d182f-0ee3-40a0-b367-281f31902620', 4),
+	(20, '2025-11-03 00:34:10.671949+00', '2025-11-03 00:34:10.671949+00', '00000000-0000-0000-0000-000000000001', 2, 31, 'b64d182f-0ee3-40a0-b367-281f31902620', 4),
+	(21, '2025-11-03 00:34:10.671949+00', '2025-11-03 00:34:10.671949+00', '00000000-0000-0000-0000-000000000001', 2, 32, 'b64d182f-0ee3-40a0-b367-281f31902620', 4),
+	(22, '2025-11-03 00:34:10.671949+00', '2025-11-03 00:34:10.671949+00', '00000000-0000-0000-0000-000000000001', 2, 33, 'b64d182f-0ee3-40a0-b367-281f31902620', 4),
+	(23, '2025-11-03 00:34:10.671949+00', '2025-11-03 00:34:10.671949+00', '00000000-0000-0000-0000-000000000001', 2, 34, 'b64d182f-0ee3-40a0-b367-281f31902620', 4);
 
 
 --
@@ -594,7 +634,8 @@ INSERT INTO "public"."interview_roles" ("id", "created_at", "created_by", "inter
 	(3, '2025-10-31 05:32:51.577914+00', '00000000-0000-0000-0000-000000000001', 2, 2, 'b64d182f-0ee3-40a0-b367-281f31902620'),
 	(4, '2025-10-31 05:32:51.577914+00', '00000000-0000-0000-0000-000000000001', 2, 3, 'b64d182f-0ee3-40a0-b367-281f31902620'),
 	(5, '2025-10-31 05:32:51.577914+00', '00000000-0000-0000-0000-000000000001', 2, 7, 'b64d182f-0ee3-40a0-b367-281f31902620'),
-	(6, '2025-10-31 08:11:45.326705+00', '00000000-0000-0000-0000-000000000001', 3, 7, 'b64d182f-0ee3-40a0-b367-281f31902620');
+	(6, '2025-10-31 08:11:45.326705+00', '00000000-0000-0000-0000-000000000001', 3, 7, 'b64d182f-0ee3-40a0-b367-281f31902620'),
+	(7, '2025-11-03 00:34:10.616437+00', '00000000-0000-0000-0000-000000000001', 4, 2, 'b64d182f-0ee3-40a0-b367-281f31902620');
 
 
 --
@@ -800,7 +841,8 @@ INSERT INTO "public"."role_contacts" ("role_id", "contact_id", "created_at", "cr
 
 INSERT INTO "public"."user_companies" ("id", "created_at", "updated_at", "user_id", "role", "created_by", "company_id") VALUES
 	(1, '2025-10-31 08:07:30.082155+00', '2025-10-31 08:07:30.082155+00', '00000000-0000-0000-0000-000000000001', 'owner', '00000000-0000-0000-0000-000000000001', 'b64d182f-0ee3-40a0-b367-281f31902620'),
-	(2, '2025-10-31 08:11:45.264523+00', '2025-10-31 08:11:45.264523+00', 'd5f1252a-9d56-47f8-98cf-f6f34914bb6c', 'interviewee', '00000000-0000-0000-0000-000000000001', 'b64d182f-0ee3-40a0-b367-281f31902620');
+	(2, '2025-10-31 08:11:45.264523+00', '2025-10-31 08:11:45.264523+00', 'd5f1252a-9d56-47f8-98cf-f6f34914bb6c', 'interviewee', '00000000-0000-0000-0000-000000000001', 'b64d182f-0ee3-40a0-b367-281f31902620'),
+	(3, '2025-11-03 00:28:02.589092+00', '2025-11-03 00:28:02.589092+00', 'd34835f8-a043-42f9-a376-6aac23cb76ce', 'interviewee', '00000000-0000-0000-0000-000000000001', 'b64d182f-0ee3-40a0-b367-281f31902620');
 
 
 --
@@ -869,14 +911,14 @@ INSERT INTO "storage"."buckets" ("id", "name", "owner", "created_at", "updated_a
 -- Name: refresh_tokens_id_seq; Type: SEQUENCE SET; Schema: auth; Owner: supabase_auth_admin
 --
 
-SELECT pg_catalog.setval('"auth"."refresh_tokens_id_seq"', 1, true);
+SELECT pg_catalog.setval('"auth"."refresh_tokens_id_seq"', 2, true);
 
 
 --
 -- Name: assessment_objectives_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."assessment_objectives_id_seq"', 1, true);
+SELECT pg_catalog.setval('"public"."assessment_objectives_id_seq"', 2, true);
 
 
 --
@@ -897,7 +939,7 @@ SELECT pg_catalog.setval('"public"."assessment_templates_id_seq"', 3, false);
 -- Name: assessments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."assessments_id_seq"', 2, true);
+SELECT pg_catalog.setval('"public"."assessments_id_seq"', 3, true);
 
 
 --
@@ -953,7 +995,7 @@ SELECT pg_catalog.setval('"public"."interview_evidence_id_seq"', 1, false);
 -- Name: interview_question_applicable_roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."interview_question_applicable_roles_id_seq"', 23, true);
+SELECT pg_catalog.setval('"public"."interview_question_applicable_roles_id_seq"', 34, true);
 
 
 --
@@ -974,28 +1016,28 @@ SELECT pg_catalog.setval('"public"."interview_response_actions_id_seq"', 1, fals
 -- Name: interview_response_roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."interview_response_roles_id_seq"', 12, true);
+SELECT pg_catalog.setval('"public"."interview_response_roles_id_seq"', 23, true);
 
 
 --
 -- Name: interview_responses_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."interview_responses_id_seq"', 23, true);
+SELECT pg_catalog.setval('"public"."interview_responses_id_seq"', 34, true);
 
 
 --
 -- Name: interview_roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."interview_roles_id_seq"', 6, true);
+SELECT pg_catalog.setval('"public"."interview_roles_id_seq"', 7, true);
 
 
 --
 -- Name: interviews_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."interviews_id_seq"', 3, true);
+SELECT pg_catalog.setval('"public"."interviews_id_seq"', 4, true);
 
 
 --
@@ -1142,6 +1184,6 @@ SELECT pg_catalog.setval('"supabase_functions"."hooks_id_seq"', 1, false);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict aZmQy3KEQ2c0j3N9s1bDunffc4utd5a7FxYzgYuwu7A5nV2JAGiYyYqhnakGcVN
+-- \unrestrict O5Qm1SxFwiJKMunmhlwf5VIuhBBgCpE9o7eegxmcoG0hrf5jS4PPfMo7qqdh3lJ
 
 RESET ALL;
