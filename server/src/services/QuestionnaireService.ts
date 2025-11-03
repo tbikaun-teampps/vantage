@@ -18,6 +18,7 @@ import {
   QuestionnaireSection,
   QuestionnaireStep,
   QuestionnaireStructureData,
+  QuestionnaireStructureQuestionPartData,
   QuestionnaireStructureQuestionRatingScaleData,
   QuestionnaireStructureQuestionsData,
   QuestionnaireStructureSectionsData,
@@ -125,7 +126,7 @@ export class QuestionnaireService {
     if (error) throw error;
     if (!data) return null;
 
-    const [sections, steps, questions, questionRatingScales] =
+    const [sections, steps, questions, questionRatingScales, questionParts] =
       await this.fetchQuestionnaireStructure(data.id);
 
     const questionnaireWithCounts = data as QuestionnaireWithCounts;
@@ -137,6 +138,7 @@ export class QuestionnaireService {
     const stepsData = steps || [];
     const questionsData = questions || [];
     const questionRatingScalesData = questionRatingScales || [];
+    const questionPartsData = questionParts || [];
 
     const questionRolesData = await this.fetchQuestionRoles(
       questions.map((q) => q.id)
@@ -147,7 +149,8 @@ export class QuestionnaireService {
       stepsData,
       questionsData,
       questionRatingScalesData,
-      questionRolesData
+      questionRolesData,
+      questionPartsData
     );
 
     // Return the questionnaire rating scales to use in the UI
@@ -1557,24 +1560,35 @@ export class QuestionnaireService {
         )
         .eq("questionnaire_id", questionnaireId)
         .eq("is_deleted", false),
+      this.supabase
+        .from("questionnaire_question_parts")
+        .select(
+          "id, questionnaire_question_id, text, answer_type, options, order_index"
+        )
+        .eq("questionnaire_id", questionnaireId)
+        .eq("is_deleted", false)
+        .order("order_index", { ascending: true }),
     ]).then(
       ([
         sectionsResult,
         stepsResult,
         questionsResult,
         questionRatingScalesResult,
+        questionPartsResult,
       ]) => {
         if (
           sectionsResult.error ||
           stepsResult.error ||
           questionsResult.error ||
-          questionRatingScalesResult.error
+          questionRatingScalesResult.error ||
+          questionPartsResult.error
         ) {
           throw (
             sectionsResult.error ||
             stepsResult.error ||
             questionsResult.error ||
-            questionRatingScalesResult.error
+            questionRatingScalesResult.error ||
+            questionPartsResult.error
           );
         }
         return [
@@ -1591,6 +1605,7 @@ export class QuestionnaireService {
             questionnaire_question_id: qrs.questionnaire_question_id,
             questionnaire_id: qrs.questionnaire_id,
           })),
+          questionPartsResult.data,
         ];
       }
     );
@@ -1621,7 +1636,8 @@ export class QuestionnaireService {
     stepsData: QuestionnaireStructureStepsData[],
     questionsData: QuestionnaireStructureQuestionsData[],
     questionRatingScalesData: QuestionnaireStructureQuestionRatingScaleData[],
-    questionRolesData: QuestionRole[]
+    questionRolesData: QuestionRole[],
+    questionPartsData: QuestionnaireStructureQuestionPartData[]
   ) {
     const stepsBySection: Map<number, QuestionnaireStructureStepsData[]> =
       new Map();
@@ -1632,6 +1648,7 @@ export class QuestionnaireService {
       QuestionnaireStructureQuestionRatingScaleData[]
     > = new Map();
     const rolesByQuestion: Map<number, QuestionRole[]> = new Map();
+    const partsByQuestion: Map<number, QuestionnaireStructureQuestionPartData[]> = new Map();
 
     for (const step of stepsData) {
       const stepSectionId = step.questionnaire_section_id;
@@ -1665,6 +1682,14 @@ export class QuestionnaireService {
       rolesByQuestion.get(questionId)!.push(qr);
     }
 
+    for (const qp of questionPartsData) {
+      const questionId = qp.questionnaire_question_id;
+      if (!partsByQuestion.has(questionId)) {
+        partsByQuestion.set(questionId, []);
+      }
+      partsByQuestion.get(questionId)!.push(qp);
+    }
+
     console.log("questionRatingScalesData:", questionRatingScalesData);
 
     return sectionsData
@@ -1684,6 +1709,8 @@ export class QuestionnaireService {
                     ratingScalesByQuestion.get(question.id) || [];
                   const questionRolesList =
                     rolesByQuestion.get(question.id) || [];
+                  const questionPartsList =
+                    partsByQuestion.get(question.id) || [];
 
                   return {
                     ...question,
@@ -1696,6 +1723,13 @@ export class QuestionnaireService {
                     //   })
                     // ),
                     question_roles: questionRolesList,
+                    question_parts: questionPartsList.map((qp) => ({
+                      id: qp.id,
+                      text: qp.text,
+                      answer_type: qp.answer_type,
+                      options: qp.options,
+                      order_index: qp.order_index,
+                    })),
                   };
                 }),
               };

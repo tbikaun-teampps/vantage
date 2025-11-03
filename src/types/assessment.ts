@@ -316,6 +316,12 @@ export interface QuestionWithRoles extends QuestionnaireQuestionRole {
 export interface QuestionWithRatingScales extends QuestionnaireQuestion {
   question_rating_scales: QuestionRatingScaleWithDetails[];
   question_roles?: QuestionWithRoles[];
+  question_parts?: Array<{
+    id: number;
+    text: string;
+    order_index: number;
+    answer_type: string;
+  }>;
 }
 
 export interface StepWithQuestions extends QuestionnaireStep {
