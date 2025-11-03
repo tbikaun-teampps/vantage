@@ -96,8 +96,8 @@ export function InterviewLayoutHeader({
 
   return (
     <FeedbackDialogProvider>
-      <header className="sticky top-[var(--demo-banner-height)] z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-[1600px] mx-auto w-full">
-        <div className="mx-auto px-6">
+      <header className="sticky top-[var(--demo-banner-height)] z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 w-full">
+        <div className="mx-auto px-6 max-w-[1600px]">
           <div className={`flex items-center justify-between h-16`}>
             {/* Left side - Logo */}
             {/* Square logo for very small screens (< 200px width) */}

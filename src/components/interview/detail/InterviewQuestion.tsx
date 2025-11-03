@@ -164,7 +164,7 @@ export function InterviewQuestion({
       />
 
       {/* Right Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden border-r border-border">
         {/* Content Header with Interview Metadata */}
         <div className="flex-shrink-0 border-b border-border">
           {/* Interview & Assessment Names + Action Buttons */}
