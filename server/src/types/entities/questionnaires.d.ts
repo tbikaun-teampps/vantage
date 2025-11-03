@@ -86,8 +86,10 @@ export interface QuestionRole {
   questionnaire_question_id: number;
 }
 
-export type CreateQuestionnaireSectionData =
-  Pick<Database["public"]["Tables"]["questionnaire_sections"]["Insert"], "title">
+export type CreateQuestionnaireSectionData = Pick<
+  Database["public"]["Tables"]["questionnaire_sections"]["Insert"],
+  "title"
+>;
 
 export type UpdateQuestionnaireSectionData = Partial<
   Pick<
@@ -155,7 +157,12 @@ export type FlattenedQuestionRatingScale = {
 // QuestionnaireQuestion with flattened rating scales included (for API responses)
 export type QuestionnaireQuestionWithRatingScales = Pick<
   Database["public"]["Tables"]["questionnaire_questions"]["Row"],
-  "id" | "title" | "order_index" | "context" | "question_text" | "questionnaire_step_id"
+  | "id"
+  | "title"
+  | "order_index"
+  | "context"
+  | "question_text"
+  | "questionnaire_step_id"
 > & {
   question_rating_scales: FlattenedQuestionRatingScale[];
 };
@@ -204,11 +211,21 @@ export type QuestionnaireStructureQuestionRatingScaleData = {
   questionnaire_question_id: number;
 };
 
+export type QuestionnaireStructureQuestionPartData = {
+  id: number;
+  questionnaire_question_id: number;
+  text: string;
+  answer_type: Database["public"]["Enums"]["question_part_answer_type"];
+  options: any;
+  order_index: number;
+};
+
 export type QuestionnaireStructureData = [
   sections: QuestionnaireStructureSectionsData[],
   steps: QuestionnaireStructureStepsData[],
   questions: QuestionnaireStructureQuestionsData[],
   question_rating_scales: QuestionnaireStructureQuestionRatingScaleData[],
+  question_parts: QuestionnaireStructureQuestionPartData[],
 ];
 
 export type QuestionnaireWithStructure = QuestionnaireWithCounts & {
@@ -224,6 +241,14 @@ export type QuestionnaireWithStructure = QuestionnaireWithCounts & {
                 description: string;
               }>;
               question_roles?: Array<QuestionRole>;
+              question_parts?: Array<Pick<
+                QuestionPart,
+                | "id"
+                | "text"
+                | "answer_type"
+                | "options"
+                | "order_index"
+              >>;
             }
           >;
         }
@@ -258,10 +283,7 @@ export type CreateQuestionPartData = Pick<
 export type UpdateQuestionPartData = Partial<
   Pick<
     Database["public"]["Tables"]["questionnaire_question_parts"]["Update"],
-    | "text"
-    | "answer_type"
-    | "options"
-    | "order_index"
+    "text" | "answer_type" | "options" | "order_index"
   >
 >;
 
