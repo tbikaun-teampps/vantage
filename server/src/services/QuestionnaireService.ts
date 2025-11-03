@@ -238,7 +238,7 @@ export class QuestionnaireService {
 
     const { error: deleteError } = await this.supabase
       .from("questionnaires")
-      .update({ is_deleted: true })
+      .update({ is_deleted: true, deleted_at: new Date().toISOString() })
       .eq("id", questionnaireId);
 
     if (deleteError) throw deleteError;
