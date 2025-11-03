@@ -29,7 +29,6 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
@@ -183,9 +182,12 @@ export function ManageTab({ program }: ManageTabProps) {
                                   {phaseName}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                  {formatDistanceToNow(new Date(phase.created_at), {
-                                    addSuffix: true,
-                                  })}
+                                  {formatDistanceToNow(
+                                    new Date(phase.created_at),
+                                    {
+                                      addSuffix: true,
+                                    }
+                                  )}
                                 </span>
                               </div>
                               <Badge
@@ -316,7 +318,8 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
               }
             />
             <Label htmlFor="activate-phase" className="text-sm font-normal">
-              Make this the active assessment (update program to this assessment)
+              Make this the active assessment (update program to this
+              assessment)
             </Label>
           </div>
         </div>
@@ -333,7 +336,9 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
             onClick={handleSubmit}
             disabled={createPhaseMutation.isPending}
           >
-            {createPhaseMutation.isPending ? "Creating..." : "Create Assessment"}
+            {createPhaseMutation.isPending
+              ? "Creating..."
+              : "Create Assessment"}
           </Button>
         </DialogFooter>
       </DialogContent>
