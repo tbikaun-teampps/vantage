@@ -28,13 +28,17 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarProvider,
 } from "@/components/ui/sidebar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { ProgramDetailResponseData } from "@/types/api/programs";
 
 interface ManageTabProps {
@@ -143,61 +147,71 @@ export function ManageTab({ program }: ManageTabProps) {
     <div className="relative h-full w-full">
       <SidebarProvider>
         <div className="absolute inset-0 flex">
-          <Sidebar className="border-r" collapsible="none">
-            <SidebarHeader className="border-b p-4">
-              <h2 className="text-lg font-semibold">Assessments</h2>
-            </SidebarHeader>
-
-            <SidebarContent>
-              {phases.length === 0 ? (
-                <div className="p-4">
-                  <p className="text-sm text-muted-foreground">
-                    No phases found for this program.
-                  </p>
-                </div>
-              ) : (
-                <SidebarMenu>
-                  {phases.map((phase) => (
-                    <SidebarMenuItem
-                      key={phase.id ?? `phase-${phase.sequence_number}`}
-                    >
-                      <SidebarMenuButton
-                        onClick={() => setActivePhaseId(phase.id)}
-                        isActive={phase.id === validActivePhaseId}
-                        className="flex items-center justify-between py-3"
-                      >
-                        <span className="font-medium">
-                          {phase.name ||
-                            `Phase ${phase.sequence_number ?? 0}`}
-                        </span>
-                        <Badge
-                          variant="outline"
-                          className={`p-1 ${statusColors[phase.status as keyof typeof statusColors]}`}
-                          title={statusLabels[phase.status as keyof typeof statusLabels]}
-                        >
-                          {(() => {
-                            const Icon = statusIcons[phase.status as keyof typeof statusIcons];
-                            return <Icon className="h-3 w-3" />;
-                          })()}
-                        </Badge>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              )}
-            </SidebarContent>
-
-            <SidebarFooter className="border-t p-4">
+          <Sidebar className="border-r bg-transparent" collapsible="none">
+            <SidebarContent className="p-2">
               {program && (
                 <AddPhaseDialog
                   program={program}
                   onPhaseAdded={(newPhaseId) => setActivePhaseId(newPhaseId)}
                 />
               )}
-            </SidebarFooter>
+              {phases.length === 0 ? (
+                <div className="p-2">
+                  <p className="text-sm text-muted-foreground">
+                    No phases found for this program.
+                  </p>
+                </div>
+              ) : (
+                <SidebarMenu>
+                  {phases.map((phase) => {
+                    const phaseName =
+                      phase.name || `Phase ${phase.sequence_number ?? 0}`;
+                    return (
+                      <SidebarMenuItem
+                        key={phase.id ?? `phase-${phase.sequence_number}`}
+                      >
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuButton
+                              onClick={() => setActivePhaseId(phase.id)}
+                              isActive={phase.id === validActivePhaseId}
+                              className="flex items-center justify-start py-3 cursor-pointer"
+                            >
+                              <Badge
+                                variant="outline"
+                                className={`p-1 ${statusColors[phase.status as keyof typeof statusColors]}`}
+                                title={
+                                  statusLabels[
+                                    phase.status as keyof typeof statusLabels
+                                  ]
+                                }
+                              >
+                                {(() => {
+                                  const Icon =
+                                    statusIcons[
+                                      phase.status as keyof typeof statusIcons
+                                    ];
+                                  return <Icon className="h-3 w-3" />;
+                                })()}
+                              </Badge>
+                              <span className="font-medium truncate">
+                                {phaseName}
+                              </span>
+                            </SidebarMenuButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" sideOffset={8}>
+                            {phaseName}
+                          </TooltipContent>
+                        </Tooltip>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              )}
+            </SidebarContent>
           </Sidebar>
 
-          <main className="flex-1 overflow-y-auto p-6">
+          <main className="flex-1 overflow-y-auto">
             {activePhase ? (
               <div className="space-y-4">
                 <PhaseTabContent
@@ -267,7 +281,7 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
           the active assessment.
         </DialogDescription>
 
-        <div className="flex-1 overflow-y-auto space-y-4 py-6">
+        <div className="flex-1 overflow-y-auto space-y-4">
           <div>
             <Label htmlFor="new-phase-name" className="mb-2">
               Assessment Name (Optional)
@@ -289,7 +303,7 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
               }
             />
             <Label htmlFor="activate-phase" className="text-sm font-normal">
-              Make this the active phase (update program to this phase)
+              Make this the active assessment (update program to this assessment)
             </Label>
           </div>
         </div>
@@ -306,7 +320,7 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
             onClick={handleSubmit}
             disabled={createPhaseMutation.isPending}
           >
-            {createPhaseMutation.isPending ? "Creating..." : "Create Phase"}
+            {createPhaseMutation.isPending ? "Creating..." : "Create Assessment"}
           </Button>
         </DialogFooter>
       </DialogContent>
