@@ -126,7 +126,7 @@ This error report was automatically generated from the public interview error bo
               <ArrowLeft className="h-4 w-4" />
               Go Back
             </Button>
-            <Button onClick={resetError} className="flex items-center gap-2">
+            <Button onClick={resetError} className="flex items-center gap-2 cursor-pointer">
               <RefreshCw className="h-4 w-4" />
               Try Again
             </Button>
@@ -140,7 +140,7 @@ This error report was automatically generated from the public interview error bo
               variant="outline"
               onClick={handleReportError}
               disabled={isSubmittingReport}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 cursor-pointer"
             >
               <Bug className="h-4 w-4" />
               {isSubmittingReport ? "Submitting..." : "Report Issue"}
