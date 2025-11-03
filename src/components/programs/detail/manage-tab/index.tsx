@@ -4,7 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { IconPlus } from "@tabler/icons-react";
+import {
+  IconPlus,
+  IconClock,
+  IconProgress,
+  IconCircleCheck,
+  IconArchive,
+} from "@tabler/icons-react";
 import { useCreatePhase } from "@/hooks/useProgram";
 import type { ProgramPhase } from "@/types/program";
 import { Interviews } from "./interviews";
@@ -47,6 +53,13 @@ const statusLabels = {
   in_progress: "In Progress",
   completed: "Completed",
   archived: "Archived",
+} as const;
+
+const statusIcons = {
+  scheduled: IconClock,
+  in_progress: IconProgress,
+  completed: IconCircleCheck,
+  archived: IconArchive,
 } as const;
 
 interface PhaseTabContentProps {
@@ -151,23 +164,21 @@ export function ManageTab({ program }: ManageTabProps) {
                       <SidebarMenuButton
                         onClick={() => setActivePhaseId(phase.id)}
                         isActive={phase.id === validActivePhaseId}
-                        className="flex flex-col items-start gap-1 py-3"
+                        className="flex items-center justify-between py-3"
                       >
-                        <div className="flex items-center justify-between w-full">
-                          <span className="font-medium">
-                            {phase.name ||
-                              `Phase ${phase.sequence_number ?? 0}`}
-                          </span>
-                        </div>
+                        <span className="font-medium">
+                          {phase.name ||
+                            `Phase ${phase.sequence_number ?? 0}`}
+                        </span>
                         <Badge
                           variant="outline"
-                          className={`text-xs ${statusColors[phase.status as keyof typeof statusColors]}`}
+                          className={`p-1 ${statusColors[phase.status as keyof typeof statusColors]}`}
+                          title={statusLabels[phase.status as keyof typeof statusLabels]}
                         >
-                          {
-                            statusLabels[
-                              phase.status as keyof typeof statusLabels
-                            ]
-                          }
+                          {(() => {
+                            const Icon = statusIcons[phase.status as keyof typeof statusIcons];
+                            return <Icon className="h-3 w-3" />;
+                          })()}
                         </Badge>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
