@@ -334,7 +334,7 @@ export interface SectionWithSteps extends QuestionnaireSection {
 
 export interface QuestionnaireWithStructure extends Questionnaire {
   sections: SectionWithSteps[];
-  rating_scales: QuestionnaireRatingScale[];
+  questionnaire_rating_scales: QuestionnaireRatingScale[];
 }
 
 export interface QuestionnaireWithCounts extends Questionnaire {
