@@ -157,7 +157,7 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
             variant="outline"
             onClick={() =>
               window.open(
-                `/${companyId}/assessments/onsite/interviews/${row.original.interview_id}?question=${row.original.question_id}`,
+                `/${companyId}/interviews/${row.original.interview_id}?question=${row.original.question_id}`,
                 "_blank"
               )
             }
