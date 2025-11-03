@@ -239,7 +239,9 @@ export class InterviewsService {
 
       if (!profile) {
         // No profile found - try to create user first
-        console.log("No existing profile found for contact, attempting to create user");
+        console.log(
+          "No existing profile found for contact, attempting to create user"
+        );
 
         try {
           const {
@@ -256,10 +258,14 @@ export class InterviewsService {
 
           if (userError) {
             // Check if error is due to existing email
-            if (userError.message?.includes("already been registered") ||
-                (userError as any).code === "email_exists") {
+            if (
+              userError.message?.includes("already been registered") ||
+              (userError as any).code === "email_exists"
+            ) {
               // User exists in auth.users but not in profiles - need to recover
-              console.log("Auth user exists but profile missing, fetching user from auth");
+              console.log(
+                "Auth user exists but profile missing, fetching user from auth"
+              );
 
               // Use listUsers to find the user by email
               const { data: listUsersData, error: listError } =
@@ -283,7 +289,8 @@ export class InterviewsService {
                 console.error("User exists but not found in user list");
                 failedContacts.push({
                   email: contactInfo.email,
-                  reason: "User exists but could not be located in authentication system",
+                  reason:
+                    "User exists but could not be located in authentication system",
                 });
                 continue;
               }
@@ -294,14 +301,12 @@ export class InterviewsService {
                 existingUser.id
               );
 
-              const { error: profileInsertError } = await this.supabaseAdmin.rpc(
-                "create_user_profile",
-                {
+              const { error: profileInsertError } =
+                await this.supabaseAdmin.rpc("create_user_profile", {
                   user_id: existingUser.id,
                   user_email: normalizedEmail,
                   user_metadata: existingUser.user_metadata || {},
-                }
-              );
+                });
 
               if (profileInsertError) {
                 console.error("Error creating profile: ", profileInsertError);
@@ -312,7 +317,9 @@ export class InterviewsService {
                 continue;
               }
 
-              console.log("Successfully created missing profile for existing auth user");
+              console.log(
+                "Successfully created missing profile for existing auth user"
+              );
               userId = existingUser.id;
             } else {
               // Different error - log and skip
@@ -450,7 +457,9 @@ export class InterviewsService {
       console.warn(
         `Created ${createdInterviews.length} interviews, but ${failedContacts.length} contacts failed:`
       );
-      failedContacts.forEach((f) => console.warn(`  - ${f.email}: ${f.reason}`));
+      failedContacts.forEach((f) =>
+        console.warn(`  - ${f.email}: ${f.reason}`)
+      );
     }
 
     return createdInterviews;
@@ -1459,7 +1468,7 @@ export class InterviewsService {
     const baseResponse = {
       id: questionId,
       title: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index}. ${interviewQuestion.title}`,
-      question_text: interviewQuestion.question_text,
+      // question_text: interviewQuestion.question_text === "" ? "No question text provided." : interviewQuestion.question_text,
       context: interviewQuestion.context,
       breadcrumbs: {
         section: `${interviewQuestion.step.section.order_index}. ${interviewQuestion.step.section.title}`,
@@ -1467,6 +1476,24 @@ export class InterviewsService {
         question: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index + 1}. ${interviewQuestion.title}`,
       },
     };
+
+    let finalQuestionText = interviewQuestion.question_text;
+    if (!interview.is_individual && interviewQuestion.question_text === "") {
+      // Join question_parts together if they exist
+      const { data: questionParts, error: questionPartsError } =
+        await this.supabase
+          .from("questionnaire_question_parts")
+          .select("text")
+          .eq("questionnaire_question_id", questionId)
+          .eq("is_deleted", false)
+          .order("order_index", { ascending: true });
+
+      if (questionPartsError) throw questionPartsError;
+
+      finalQuestionText = questionParts
+        ? questionParts.map((part) => part.text).join("\n")
+        : "No question text provided.";
+    }
 
     if (interview.is_individual) {
       // Get the response associated with the question (if any)
@@ -1495,6 +1522,7 @@ export class InterviewsService {
 
       return {
         ...baseResponse,
+        question_text: finalQuestionText,
         question_parts: questionParts,
         response: individualResponseData,
       };
@@ -1512,6 +1540,7 @@ export class InterviewsService {
       if (responseError) throw responseError;
       return {
         ...baseResponse,
+        question_text: finalQuestionText,
         options: {
           applicable_roles: groupedRoles,
           rating_scales: interviewQuestion.rating_scale.map((rs) => ({

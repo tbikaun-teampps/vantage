@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -37,15 +36,6 @@ export function InterviewQuestionContent({
     );
   }
 
-  // For non-individual interviews, generate question_text from question_parts if needed
-  const displayQuestionText =
-    question.question_text ||
-    question.question_parts
-      ?.sort((a, b) => a.order_index - b.order_index)
-      .map((part) => part.text)
-      .join("\n") ||
-    "";
-
   return (
     <div
       className={cn("space-y-4", isMobile ? "px-2" : "px-6")}
@@ -57,7 +47,7 @@ export function InterviewQuestionContent({
           {/* Question Text */}
           <div className="text-left">
             <h2 className="text-xl font-bold text-foreground leading-relaxed whitespace-pre-line">
-              {displayQuestionText}
+              {question.question_text}
             </h2>
           </div>
 
@@ -76,7 +66,7 @@ export function InterviewQuestionContent({
               <div className="text-center space-y-6">
                 <div className="space-y-4">
                   <h2 className="text-2xl font-bold text-foreground leading-relaxed">
-                    {displayQuestionText}
+                    {question.question_text}
                   </h2>
                   <p className="text-muted-foreground">
                     Please select your rating below
