@@ -1,4 +1,4 @@
-import { Outlet, useParams } from "react-router-dom";
+import { Outlet, useParams, useLocation } from "react-router-dom";
 import ErrorBoundary from "@/components/error-boundary";
 import { useInterview } from "@/hooks/interview/useInterview";
 import { InterviewExitDialog } from "@/components/interview/detail/InterviewExitDialog";
@@ -11,6 +11,7 @@ interface InterviewLayoutProps {
 }
 
 export function InterviewLayout({ children }: InterviewLayoutProps) {
+  const location = useLocation();
   const isMobile = useIsMobile();
   const { id: interviewId } = useParams<{ id: string }>();
   const { interview, actions, ui } = useInterview(parseInt(interviewId!));
@@ -27,7 +28,7 @@ export function InterviewLayout({ children }: InterviewLayoutProps) {
         />
 
         <main className="flex-1 pt-[var(--demo-banner-height)]">
-          <ErrorBoundary>{children || <Outlet />}</ErrorBoundary>
+          <ErrorBoundary key={location.pathname}>{children || <Outlet />}</ErrorBoundary>
         </main>
 
         {isMobile && <InterviewLayoutFooter />}
