@@ -119,7 +119,6 @@ export class AuditService {
       const userEmail = log.user_email || "";
       const action = log.action;
       const tableName = log.table_name;
-      const recordName = log.record_display_name || "";
       const changedFields = log.changed_fields?.join(", ") || "";
 
       return [
@@ -128,7 +127,6 @@ export class AuditService {
         userEmail,
         action,
         tableName,
-        recordName,
         changedFields,
       ]
         .map((field) => {
