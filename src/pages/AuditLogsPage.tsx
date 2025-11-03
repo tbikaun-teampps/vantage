@@ -10,7 +10,6 @@ import type { AuditLogListItem } from "@/types/api/audit";
 import { SimpleDataTable } from "@/components/simple-data-table";
 import { type ColumnDef } from "@tanstack/react-table";
 
-
 const columns: ColumnDef<AuditLogListItem>[] = [
   {
     accessorKey: "user",
@@ -40,8 +39,8 @@ const columns: ColumnDef<AuditLogListItem>[] = [
       }
       return (
         <div className="flex gap-1 flex-wrap max-w-xs">
-          {row.original.changed_fields.map((field: string, idx: number) => (
-            <Badge key={idx} variant="outline" className="text-xs">
+          {row.original.changed_fields.map((field: string) => (
+            <Badge key={field} variant="outline" className="text-xs">
               {field}
             </Badge>
           ))}

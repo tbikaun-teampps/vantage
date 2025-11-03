@@ -348,13 +348,16 @@ export type Database = {
         Row: {
           action: string;
           changed_fields: string[] | null;
-          company_id: string;
+          company_id: string | null;
           created_at: string | null;
           id: number;
+          is_soft_delete: boolean | null;
           metadata: Json | null;
           new_values: Json | null;
           old_values: Json | null;
-          record_display_name: string | null;
+          operation_group_id: string | null;
+          operation_type: string | null;
+          parent_audit_id: number | null;
           record_id: string;
           table_name: string;
           user_email: string | null;
@@ -364,13 +367,16 @@ export type Database = {
         Insert: {
           action: string;
           changed_fields?: string[] | null;
-          company_id: string;
+          company_id?: string | null;
           created_at?: string | null;
           id?: number;
+          is_soft_delete?: boolean | null;
           metadata?: Json | null;
           new_values?: Json | null;
           old_values?: Json | null;
-          record_display_name?: string | null;
+          operation_group_id?: string | null;
+          operation_type?: string | null;
+          parent_audit_id?: number | null;
           record_id: string;
           table_name: string;
           user_email?: string | null;
@@ -380,13 +386,16 @@ export type Database = {
         Update: {
           action?: string;
           changed_fields?: string[] | null;
-          company_id?: string;
+          company_id?: string | null;
           created_at?: string | null;
           id?: number;
+          is_soft_delete?: boolean | null;
           metadata?: Json | null;
           new_values?: Json | null;
           old_values?: Json | null;
-          record_display_name?: string | null;
+          operation_group_id?: string | null;
+          operation_type?: string | null;
+          parent_audit_id?: number | null;
           record_id?: string;
           table_name?: string;
           user_email?: string | null;
@@ -898,8 +907,10 @@ export type Database = {
           company_id: string;
           created_at: string;
           created_by: string;
+          deleted_at: string | null;
           id: number;
           interview_response_id: number;
+          is_deleted: boolean | null;
           question_part_id: number;
           updated_at: string;
         };
@@ -908,8 +919,10 @@ export type Database = {
           company_id: string;
           created_at?: string;
           created_by?: string;
+          deleted_at?: string | null;
           id?: number;
           interview_response_id: number;
+          is_deleted?: boolean | null;
           question_part_id: number;
           updated_at?: string;
         };
@@ -918,8 +931,10 @@ export type Database = {
           company_id?: string;
           created_at?: string;
           created_by?: string;
+          deleted_at?: string | null;
           id?: number;
           interview_response_id?: number;
+          is_deleted?: boolean | null;
           question_part_id?: number;
           updated_at?: string;
         };

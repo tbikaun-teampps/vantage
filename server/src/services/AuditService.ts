@@ -27,7 +27,9 @@ function formatAction(action: string): string {
  */
 function formatTableName(tableName: string): string {
   // Convert snake_case to space separated and remove trailing 's' or 'ies'
-  return tableName.replaceAll("_", " ").replace(/ies$/, "y").replace(/s$/, "");
+  return tableName
+    .replaceAll("_", " ")
+    .replace(/(ies|s)$/, (match) => (match === "ies" ? "y" : ""));
 }
 
 export class AuditService {
