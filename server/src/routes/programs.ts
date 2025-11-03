@@ -303,16 +303,20 @@ export async function programRoutes(fastify: FastifyInstance) {
           type: "object",
           properties: {
             name: { type: "string" },
+            planned_start_date: { type: "string", format: "date-time" },
+            planned_end_date: { type: "string", format: "date-time" },
             activate: { type: "boolean", default: false },
           },
-          required: ["name"],
+          required: ["name", "planned_start_date", "planned_end_date"],
         },
       },
     },
     async (request) => {
       const programId = (request.params as { programId: number }).programId;
-      const { name, activate } = request.body as {
+      const { name, planned_start_date, planned_end_date, activate } = request.body as {
         name: string;
+        planned_start_date: string;
+        planned_end_date: string;
         activate?: boolean;
       };
 
@@ -322,6 +326,8 @@ export async function programRoutes(fastify: FastifyInstance) {
         activate,
         {
           name,
+          planned_start_date,
+          planned_end_date,
         }
       );
 
@@ -374,10 +380,7 @@ export async function programRoutes(fastify: FastifyInstance) {
       };
 
       const programService = new ProgramService(request.supabaseClient);
-      const phase = await programService.updateProgramPhase(
-        phaseId,
-        updates
-      );
+      const phase = await programService.updateProgramPhase(phaseId, updates);
       return {
         success: true,
         data: phase,
@@ -488,7 +491,10 @@ export async function programRoutes(fastify: FastifyInstance) {
         );
 
         // Create ProgramService with InterviewsService dependency
-        const programService = new ProgramService(supabaseClient, interviewsService);
+        const programService = new ProgramService(
+          supabaseClient,
+          interviewsService
+        );
 
         // Call the complex interview creation method
         const result = await programService.createInterviews(

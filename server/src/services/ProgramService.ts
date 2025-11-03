@@ -175,6 +175,8 @@ export class ProgramService {
     activate: boolean = false,
     phaseData: {
       name: string;
+      planned_start_date?: string | null;
+      planned_end_date?: string | null;
     }
   ): Promise<any> {
     const { data: program, error: programError } = await this.supabase

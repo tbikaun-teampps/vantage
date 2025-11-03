@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   IconPlus,
   IconClock,
@@ -79,7 +80,7 @@ function PhaseTabContent({
 }: PhaseTabContentProps) {
   if (!phase) {
     return (
-      <p className="text-muted-foreground">No program phase data available.</p>
+      <p className="text-muted-foreground">No program assessment data available.</p>
     );
   }
 
@@ -148,7 +149,7 @@ export function ManageTab({ program }: ManageTabProps) {
       <SidebarProvider>
         <div className="absolute inset-0 flex">
           <Sidebar className="border-r bg-transparent" collapsible="none">
-            <SidebarContent className="p-2">
+            <SidebarContent className="px-2 py-4">
               {program && (
                 <AddPhaseDialog
                   program={program}
@@ -158,7 +159,7 @@ export function ManageTab({ program }: ManageTabProps) {
               {phases.length === 0 ? (
                 <div className="p-2">
                   <p className="text-sm text-muted-foreground">
-                    No phases found for this program.
+                    No assessments found for this program.
                   </p>
                 </div>
               ) : (
@@ -182,12 +183,13 @@ export function ManageTab({ program }: ManageTabProps) {
                                   {phaseName}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                  {formatDistanceToNow(
-                                    new Date(phase.created_at),
-                                    {
-                                      addSuffix: true,
-                                    }
-                                  )}
+                                  {phase.created_at &&
+                                    formatDistanceToNow(
+                                      new Date(phase.created_at),
+                                      {
+                                        addSuffix: true,
+                                      }
+                                    )}
                                 </span>
                               </div>
                               <Badge
@@ -212,9 +214,11 @@ export function ManageTab({ program }: ManageTabProps) {
                           <TooltipContent side="right" sideOffset={8}>
                             <div className="flex flex-col gap-1">
                               <span className="font-medium">{phaseName}</span>
-                              <span className="text-xs opacity-80">
-                                {format(new Date(phase.created_at), "PPP")}
-                              </span>
+                              {phase.created_at && (
+                                <span className="text-xs opacity-80">
+                                  {format(new Date(phase.created_at), "PPP")}
+                                </span>
+                              )}
                             </div>
                           </TooltipContent>
                         </Tooltip>
@@ -237,7 +241,7 @@ export function ManageTab({ program }: ManageTabProps) {
               </div>
             ) : (
               <p className="text-muted-foreground">
-                No program phase data available.
+                No program assessment data available.
               </p>
             )}
           </main>
@@ -256,11 +260,20 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
   const [open, setOpen] = useState(false);
   const [phaseName, setPhaseName] = useState("");
   const [activatePhase, setActivatePhase] = useState(false);
+  const [plannedStartDate, setPlannedStartDate] = useState<Date | undefined>();
+  const [plannedEndDate, setPlannedEndDate] = useState<Date | undefined>();
 
   const createPhaseMutation = useCreatePhase();
 
   const handleSubmit = () => {
-    if (!phaseName) return;
+    // Validate all required fields
+    if (!phaseName || !plannedStartDate || !plannedEndDate) return;
+
+    // Validate that end date is after start date
+    if (plannedEndDate <= plannedStartDate) {
+      alert("Planned end date must be after planned start date");
+      return;
+    }
 
     createPhaseMutation.mutate(
       {
@@ -268,6 +281,8 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
         phaseData: {
           name: phaseName,
           activate: activatePhase,
+          planned_start_date: plannedStartDate.toISOString(),
+          planned_end_date: plannedEndDate.toISOString(),
         },
       },
       {
@@ -276,6 +291,8 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
           setOpen(false);
           setPhaseName("");
           setActivatePhase(false);
+          setPlannedStartDate(undefined);
+          setPlannedEndDate(undefined);
         },
       }
     );
@@ -299,13 +316,38 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
         <div className="flex-1 overflow-y-auto space-y-4">
           <div>
             <Label htmlFor="new-phase-name" className="mb-2">
-              Assessment Name (Optional)
+              Assessment Name (Required)
             </Label>
             <Input
               id="new-phase-name"
               value={phaseName}
               placeholder="e.g., Initial Assessment, 60-Day Review"
               onChange={(e) => setPhaseName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="planned-start-date" className="mb-2">
+              Planned Start Date (Required)
+            </Label>
+            <DatePicker
+              date={plannedStartDate}
+              setDate={setPlannedStartDate}
+              placeholder="Select start date"
+              disablePastDates={true}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="planned-end-date" className="mb-2">
+              Planned End Date (Required)
+            </Label>
+            <DatePicker
+              date={plannedEndDate}
+              setDate={setPlannedEndDate}
+              placeholder="Select end date"
+              disablePastDates={true}
             />
           </div>
 
@@ -334,7 +376,12 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={createPhaseMutation.isPending}
+            disabled={
+              createPhaseMutation.isPending ||
+              !phaseName ||
+              !plannedStartDate ||
+              !plannedEndDate
+            }
           >
             {createPhaseMutation.isPending
               ? "Creating..."
