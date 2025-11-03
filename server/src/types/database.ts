@@ -7,10 +7,30 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.4";
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
   public: {
     Tables: {
@@ -1916,6 +1936,7 @@ export type Database = {
           is_deleted: boolean;
           options: Json;
           order_index: number;
+          questionnaire_id: number;
           questionnaire_question_id: number;
           text: string;
           updated_at: string;
@@ -1930,6 +1951,7 @@ export type Database = {
           is_deleted?: boolean;
           options: Json;
           order_index: number;
+          questionnaire_id: number;
           questionnaire_question_id: number;
           text: string;
           updated_at?: string;
@@ -1944,6 +1966,7 @@ export type Database = {
           is_deleted?: boolean;
           options?: Json;
           order_index?: number;
+          questionnaire_id?: number;
           questionnaire_question_id?: number;
           text?: string;
           updated_at?: string;
@@ -1961,6 +1984,13 @@ export type Database = {
             columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "questionnaire_question_parts_questionnaire_id_fkey";
+            columns: ["questionnaire_id"];
+            isOneToOne: false;
+            referencedRelation: "questionnaires";
             referencedColumns: ["id"];
           },
           {
@@ -3349,6 +3379,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       assessment_statuses: [
