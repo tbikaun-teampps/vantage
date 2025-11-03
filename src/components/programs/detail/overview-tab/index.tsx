@@ -166,7 +166,7 @@ export function DetailsTab({ program }: DetailsTabProps) {
           {chartPriority.map((chart) => chart.component)}
         </div>
 
-        <div className="mt-8">
+        <div className="px-4">
           <DangerZone
             onDeleteClick={handleDeleteClick}
             isDeleting={deleteProgramMutation.isPending}

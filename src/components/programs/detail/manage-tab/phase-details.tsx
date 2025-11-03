@@ -59,10 +59,6 @@ export function PhaseDetails({ phase }: PhaseDetailsProps) {
 
   return (
     <Card className="shadow-none border-none">
-      <CardHeader>
-        <h3 className="text-lg font-medium">Assessment Details</h3>
-      </CardHeader>
-
       <CardContent>
         <div className="grid grid-cols-4 gap-6">
           {/* Name Field */}
