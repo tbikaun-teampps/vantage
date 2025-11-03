@@ -7,11 +7,12 @@ import { ScreenSizeProvider } from "@/components/providers/screen-size-provider"
 import { useAuthStore } from "@/stores/auth-store";
 import { useProfile } from "@/hooks/useProfile";
 import { useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { FeedbackDialogProvider } from "@/contexts/FeedbackDialogContext";
 
 export function DashboardLayout() {
+  const location = useLocation();
   const navigate = useCompanyAwareNavigate();
   const { authenticated, loading: authLoading } = useAuthStore();
   const { data: profile, error: profileError } = useProfile();
@@ -49,7 +50,7 @@ export function DashboardLayout() {
   }
 
   return (
-    <ErrorBoundary>
+    <ErrorBoundary key={location.pathname}>
       <ScreenSizeProvider>
         <FeedbackDialogProvider>
           <div className="relative min-h-screen">
@@ -67,7 +68,7 @@ export function DashboardLayout() {
               <SidebarInset className="pt-[var(--demo-banner-height)] flex flex-col h-[calc(100vh-var(--demo-banner-height))]">
                 <SiteHeader />
                 <main className="flex flex-col flex-1 min-h-0">
-                  <ErrorBoundary>
+                  <ErrorBoundary key={location.pathname}>
                     <Outlet />
                   </ErrorBoundary>
                 </main>
