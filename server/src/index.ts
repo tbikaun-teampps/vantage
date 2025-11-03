@@ -24,6 +24,7 @@ import { dashboardSchemas } from "./schemas/dashboard";
 import { interviewsRoutes } from "./routes/interviews";
 import { authRoutes } from "./routes/auth";
 import { authWhitelist } from "./lib/whitelist";
+import { auditRoutes } from "./routes/audit";
 
 const fastify = Fastify({
   logger: true,
@@ -272,7 +273,10 @@ fastify.get(
 );
 
 const apiPrefix = ""; // No prefix. URL will be api.domain.com/endpoint
-// Register program routes
+// Register routes
+fastify.register(auditRoutes, {
+  prefix: `${apiPrefix}/audit`,
+});
 fastify.register(authRoutes, {
   prefix: `${apiPrefix}/auth`,
 });

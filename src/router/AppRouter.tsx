@@ -41,6 +41,7 @@ import { EnterpriseWelcomePage } from "@/pages/enterprise/EnterpriseWelcomePage"
 
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PublicInterviewAuthProvider } from "@/components/public-interview-auth-provider";
+import { AuditLogsPage } from "@/pages/AuditLogsPage";
 
 export function AppRouter() {
   return (
@@ -96,21 +97,29 @@ export function AppRouter() {
               <Route element={<InterviewLayout />}>
                 <Route
                   path="interviews/:id"
-                  element={<InterviewDetailPage isIndividualInterview={false} />}
+                  element={
+                    <InterviewDetailPage isIndividualInterview={false} />
+                  }
                 />
               </Route>
 
               {/* Company-scoped dashboard routes */}
               <Route element={<DashboardLayout />}>
+                {/* Main dashboard page */}
                 <Route path="dashboard" element={<DashboardPage />} />
 
+                {/* Audit Logs */}
+                <Route path="audit-logs" element={<AuditLogsPage />} />
                 {/* Programs */}
                 <Route path="programs" element={<ProgramListPage />} />
                 <Route path="programs/new" element={<ProgramNewPage />} />
                 <Route path="programs/:id" element={<ProgramDetailPage />} />
 
                 {/* Questionnaires */}
-                <Route path="questionnaires" element={<QuestionnaireListPage />} />
+                <Route
+                  path="questionnaires"
+                  element={<QuestionnaireListPage />}
+                />
                 <Route
                   path="questionnaires/new"
                   element={<QuestionnaireNewPage />}
@@ -149,10 +158,7 @@ export function AppRouter() {
                 />
 
                 {/* Interviews */}
-                <Route
-                  path="interviews"
-                  element={<InterviewsListPage />}
-                />
+                <Route path="interviews" element={<InterviewsListPage />} />
 
                 {/* Analytics */}
                 <Route path="analytics" element={<AnalyticsPage />} />

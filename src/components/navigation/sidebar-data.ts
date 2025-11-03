@@ -1,10 +1,8 @@
-// components/sidebar-data.ts
 import {
   IconBlocks,
   IconBuildingFactory2,
   IconChartBar,
   IconClipboardList,
-  // IconCloud,
   IconDashboard,
   IconDatabase,
   IconDeviceDesktop,
@@ -17,6 +15,7 @@ import {
   IconUpload,
   IconUserPlus,
   IconUsers,
+  IconUserShield,
 } from "@tabler/icons-react";
 
 /**
@@ -176,6 +175,11 @@ export function getSidebarData(companyId: string) {
         title: "Team Members",
         url: `${companyPrefix}/team`,
         icon: IconUserPlus,
+      },
+      {
+        title: "Audit Logs",
+        url: `${companyPrefix}/audit-logs`,
+        icon: IconUserShield,
       },
       {
         title: "Help & Support",
