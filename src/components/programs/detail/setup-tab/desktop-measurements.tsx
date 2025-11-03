@@ -110,7 +110,7 @@ export function Measurements({ programId }: MeasurementsProps) {
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button size="sm">
                 <IconPlus className="h-4 w-4 mr-2" />
                 Add Measurements
               </Button>
