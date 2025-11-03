@@ -107,7 +107,6 @@ export function OnsiteQuestionnaireSelection({
           </div>
           {!isEditing && (
             <Button
-              variant="outline"
               size="sm"
               onClick={() => setIsEditing(true)}
               disabled={isUpdating}
