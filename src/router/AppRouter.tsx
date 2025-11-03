@@ -95,7 +95,7 @@ export function AppRouter() {
               {/* Interview pages with dedicated layout */}
               <Route element={<InterviewLayout />}>
                 <Route
-                  path="assessments/onsite/interviews/:id"
+                  path="interviews/:id"
                   element={<InterviewDetailPage isIndividualInterview={false} />}
                 />
               </Route>
@@ -150,7 +150,7 @@ export function AppRouter() {
 
                 {/* Interviews */}
                 <Route
-                  path="assessments/onsite/interviews"
+                  path="interviews"
                   element={<InterviewsListPage />}
                 />
 

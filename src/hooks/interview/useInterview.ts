@@ -163,7 +163,7 @@ export function useInterview(
       // Using replace to not add an extra history entry
       const basePath = isIndividualInterview
         ? `/external/interview/${interviewId}`
-        : `/assessments/onsite/interviews/${interviewId}`;
+        : `/interviews/${interviewId}`;
 
       // Preserve existing search parameters (especially code and email for individual interviews)
       const searchString = searchParams.toString();
@@ -226,7 +226,7 @@ export function useInterview(
       await deleteInterview(interviewData.id);
       toast.success("Interview deleted successfully");
       toggleDialog("showSettings", false);
-      navigate("/assessments/onsite/interviews");
+      navigate("/interviews");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete interview"
@@ -279,7 +279,7 @@ export function useInterview(
       navigate("/");
     } else {
       // For internal interviews, go to interviews list
-      navigate("/assessments/onsite/interviews");
+      navigate("/interviews");
     }
   }, [navigate, isIndividualInterview]);
 

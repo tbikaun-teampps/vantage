@@ -16,6 +16,7 @@ import {
   IconListDetails,
   IconUpload,
   IconUserPlus,
+  IconUsers,
 } from "@tabler/icons-react";
 
 /**
@@ -58,26 +59,27 @@ export function getSidebarData(companyId: string) {
             title: "Desktop",
             url: `${companyPrefix}/assessments/desktop`,
             icon: IconDeviceDesktop,
-            items: [
-              {
-                title: "Data Requests",
-                url: `${companyPrefix}/assessments/desktop/data-requests`,
-                disabled: true,
-              },
-            ],
+            // items: [
+            //   {
+            //     title: "Data Requests",
+            //     url: `${companyPrefix}/assessments/desktop/data-requests`,
+            //     disabled: true,
+            //   },
+            // ],
           },
           {
             title: "Onsite",
             url: `${companyPrefix}/assessments/onsite`,
             icon: IconEngine,
-            items: [
-              {
-                title: "Interviews",
-                url: `${companyPrefix}/assessments/onsite/interviews`,
-              },
-            ],
+            // items: [
+            // ],
           },
         ],
+      },
+      {
+        icon: IconUsers,
+        title: "Interviews",
+        url: `${companyPrefix}/interviews`,
       },
       {
         icon: IconEdit,
