@@ -11,8 +11,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT_DIR = join(__dirname, '..');
 
-const SUPABASE_PROJECT_ID = 'elkckropppmtzxqiwaem';
-
 interface TypeGenConfig {
   name: string;
   outputPath: string;
@@ -36,7 +34,7 @@ async function generateTypes(config: TypeGenConfig): Promise<void> {
   console.log(`\n📝 Generating ${config.name} types...`);
 
   try {
-    const command = `npx supabase gen types typescript --project-id ${SUPABASE_PROJECT_ID} > ${config.absolutePath}`;
+    const command = `npx supabase gen types typescript --local > ${config.absolutePath}`;
     await execAsync(command, { cwd: ROOT_DIR });
     console.log(`✅ ${config.name} types generated at ${config.outputPath}`);
   } catch (error) {
@@ -60,7 +58,7 @@ async function formatFile(config: TypeGenConfig): Promise<void> {
 
 async function main(): Promise<void> {
   console.log('🚀 Starting database type generation...');
-  console.log(`📦 Project ID: ${SUPABASE_PROJECT_ID}\n`);
+  console.log('📦 Using local Supabase database\n');
 
   try {
     // Generate types for both client and server
