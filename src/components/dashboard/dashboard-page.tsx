@@ -53,7 +53,7 @@ export function DashboardPage({
         </div>
         <Separator />
       </div>
-      <div className="flex-1 min-h-0 overflow-hidden pb-6">{children}</div>
+      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
     </div>
   );
 }

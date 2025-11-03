@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +19,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarProvider,
+} from "@/components/ui/sidebar";
 import type { ProgramDetailResponseData } from "@/types/api/programs";
 
 interface ManageTabProps {
@@ -118,63 +127,82 @@ export function ManageTab({ program }: ManageTabProps) {
   const programValidation = useProgramValidation(program);
 
   return (
-    <div className="space-y-6 mb-6">
-      <div>
-        {phases.length === 0 ? (
-          <p className="text-muted-foreground">
-            No phases found for this program.
-          </p>
-        ) : (
-          <Tabs
-            value={validActivePhaseId?.toString() || ""}
-            onValueChange={(value) => setActivePhaseId(parseInt(value, 10))}
-          >
-            <div className="flex items-center justify-between gap-4">
-              <TabsList className="flex w-full justify-start overflow-x-auto">
-                {phases.map((phase) => (
-                  <TabsTrigger
-                    key={phase.id ?? `phase-${phase.sequence_number}`}
-                    value={(phase.id ?? 0).toString()}
-                    className="flex items-center gap-2"
-                  >
-                    <span>
-                      {phase.name || `Phase ${phase.sequence_number ?? 0}`}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className={`text-xs ${statusColors[phase.status as keyof typeof statusColors]}`}
-                    >
-                      {statusLabels[phase.status as keyof typeof statusLabels]}
-                    </Badge>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              <div className="flex gap-4">
-                {program && (
-                  <AddPhaseDialog
-                    program={program}
-                    onPhaseAdded={(newPhaseId) => setActivePhaseId(newPhaseId)}
-                  />
-                )}
-              </div>
-            </div>
+    <div className="relative h-full w-full">
+      <SidebarProvider>
+        <div className="absolute inset-0 flex">
+          <Sidebar className="border-r" collapsible="none">
+            <SidebarHeader className="border-b p-4">
+              <h2 className="text-lg font-semibold">Assessments</h2>
+            </SidebarHeader>
 
-            {activePhase && (
-              <TabsContent
-                key={activePhase.id ?? 0}
-                value={(activePhase.id ?? 0).toString()}
-                className="space-y-4"
-              >
+            <SidebarContent>
+              {phases.length === 0 ? (
+                <div className="p-4">
+                  <p className="text-sm text-muted-foreground">
+                    No phases found for this program.
+                  </p>
+                </div>
+              ) : (
+                <SidebarMenu>
+                  {phases.map((phase) => (
+                    <SidebarMenuItem
+                      key={phase.id ?? `phase-${phase.sequence_number}`}
+                    >
+                      <SidebarMenuButton
+                        onClick={() => setActivePhaseId(phase.id)}
+                        isActive={phase.id === validActivePhaseId}
+                        className="flex flex-col items-start gap-1 py-3"
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="font-medium">
+                            {phase.name ||
+                              `Phase ${phase.sequence_number ?? 0}`}
+                          </span>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${statusColors[phase.status as keyof typeof statusColors]}`}
+                        >
+                          {
+                            statusLabels[
+                              phase.status as keyof typeof statusLabels
+                            ]
+                          }
+                        </Badge>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              )}
+            </SidebarContent>
+
+            <SidebarFooter className="border-t p-4">
+              {program && (
+                <AddPhaseDialog
+                  program={program}
+                  onPhaseAdded={(newPhaseId) => setActivePhaseId(newPhaseId)}
+                />
+              )}
+            </SidebarFooter>
+          </Sidebar>
+
+          <main className="flex-1 overflow-y-auto p-6">
+            {activePhase ? (
+              <div className="space-y-4">
                 <PhaseTabContent
                   phase={activePhase as ProgramPhase}
                   program={program}
                   programValidation={programValidation}
                 />
-              </TabsContent>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">
+                No program phase data available.
+              </p>
             )}
-          </Tabs>
-        )}
-      </div>
+          </main>
+        </div>
+      </SidebarProvider>
     </div>
   );
 }
@@ -216,7 +244,7 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="w-full">
           <IconPlus className="h-4 w-4 mr-2" />
           Add Assessment
         </Button>

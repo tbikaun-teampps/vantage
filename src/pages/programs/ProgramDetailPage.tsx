@@ -101,10 +101,7 @@ export function ProgramDetailPage() {
         <TabSwitcher activeTab={activeTab} onTabChange={handleTabChange} />
       }
     >
-      <div
-        className="mx-auto h-full overflow-auto px-6 pt-4"
-        data-tour="program-detail-main"
-      >
+      <div className="mx-auto h-full" data-tour="program-detail-main">
         {activeTab === "overview" ? (
           <DetailsTab program={program} />
         ) : activeTab === "setup" ? (
