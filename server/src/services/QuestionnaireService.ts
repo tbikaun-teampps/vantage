@@ -417,6 +417,7 @@ export class QuestionnaireService {
               order_index: part.order_index,
               company_id: newQuestionnaire.company_id,
               created_by: this.userId,
+              questionnaire_id: newQuestionnaire.id,
             }));
 
             const { data: insertedParts, error: insertPartsError } =
@@ -2035,6 +2036,7 @@ export class QuestionnaireService {
       ...data,
       company_id: question.company_id,
       created_by: this.userId,
+      questionnaire_id: question.questionnaire_id,
     };
 
     const { data: insertedData, error } = await this.supabase
@@ -2209,6 +2211,7 @@ export class QuestionnaireService {
       options: originalPart.options,
       order_index: originalPart.order_index + 1, // Insert after the original
       company_id: originalPart.company_id,
+      questionnaire_id: originalPart.questionnaire_id,
     };
 
     const { data: newPart, error: createError } = await this.supabase
