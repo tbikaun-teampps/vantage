@@ -11,6 +11,7 @@ import {
   IconCircleCheck,
   IconArchive,
 } from "@tabler/icons-react";
+import { formatDistanceToNow, format } from "date-fns";
 import { useCreatePhase } from "@/hooks/useProgram";
 import type { ProgramPhase } from "@/types/program";
 import { Interviews } from "./interviews";
@@ -175,11 +176,21 @@ export function ManageTab({ program }: ManageTabProps) {
                             <SidebarMenuButton
                               onClick={() => setActivePhaseId(phase.id)}
                               isActive={phase.id === validActivePhaseId}
-                              className="flex items-center justify-start py-3 cursor-pointer"
+                              className="flex items-start justify-between py-3 cursor-pointer h-auto"
                             >
+                              <div className="flex flex-col gap-1 min-w-0 flex-1">
+                                <span className="font-medium truncate">
+                                  {phaseName}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatDistanceToNow(new Date(phase.created_at), {
+                                    addSuffix: true,
+                                  })}
+                                </span>
+                              </div>
                               <Badge
                                 variant="outline"
-                                className={`p-1 ${statusColors[phase.status as keyof typeof statusColors]}`}
+                                className={`p-1 flex-shrink-0 ml-2 ${statusColors[phase.status as keyof typeof statusColors]}`}
                                 title={
                                   statusLabels[
                                     phase.status as keyof typeof statusLabels
@@ -194,13 +205,15 @@ export function ManageTab({ program }: ManageTabProps) {
                                   return <Icon className="h-3 w-3" />;
                                 })()}
                               </Badge>
-                              <span className="font-medium truncate">
-                                {phaseName}
-                              </span>
                             </SidebarMenuButton>
                           </TooltipTrigger>
                           <TooltipContent side="right" sideOffset={8}>
-                            {phaseName}
+                            <div className="flex flex-col gap-1">
+                              <span className="font-medium">{phaseName}</span>
+                              <span className="text-xs opacity-80">
+                                {format(new Date(phase.created_at), "PPP")}
+                              </span>
+                            </div>
                           </TooltipContent>
                         </Tooltip>
                       </SidebarMenuItem>
