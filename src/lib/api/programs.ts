@@ -227,6 +227,8 @@ export interface UpdatePhaseData {
 export interface CreatePhaseData {
   name: string;
   activate: boolean;
+  planned_start_date?: string | null;
+  planned_end_date?: string | null;
 }
 
 export async function updatePhase(
