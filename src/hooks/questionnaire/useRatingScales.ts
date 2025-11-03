@@ -67,10 +67,15 @@ export function useRatingScaleActions(questionnaireId: number) {
           if (!old || old.id !== questionnaireId) return old;
           return {
             ...old,
-            rating_scales: [...(old.rating_scales || []), newRatingScale],
+            questionnaire_rating_scales: [...(old.questionnaire_rating_scales || []), newRatingScale],
           };
         }
       );
+
+      // Invalidate questions cache to ensure questions tab reflects rating scale addition
+      queryClient.invalidateQueries({
+        queryKey: questionsKeys.all,
+      });
     },
   });
 
@@ -97,12 +102,17 @@ export function useRatingScaleActions(questionnaireId: number) {
           if (!old || old.id !== questionnaireId) return null;
           return {
             ...old,
-            rating_scales: (old.rating_scales || []).map((scale) =>
+            questionnaire_rating_scales: (old.questionnaire_rating_scales || []).map((scale) =>
               scale.id === id ? updatedRatingScale : scale
             ),
           };
         }
       );
+
+      // Invalidate questions cache to ensure questions tab reflects rating scale update
+      queryClient.invalidateQueries({
+        queryKey: questionsKeys.all,
+      });
     },
   });
 
@@ -123,7 +133,7 @@ export function useRatingScaleActions(questionnaireId: number) {
           if (!old || old.id !== questionnaireId) return null;
           return {
             ...old,
-            rating_scales: (old.rating_scales || []).filter(
+            questionnaire_rating_scales: (old.questionnaire_rating_scales || []).filter(
               (scale) => scale.id !== id
             ),
           };
@@ -154,10 +164,15 @@ export function useRatingScaleActions(questionnaireId: number) {
           if (!old || old.id !== questionnaireId) return old;
           return {
             ...old,
-            rating_scales: [...(old.rating_scales || []), ...newRatingScales],
+            questionnaire_rating_scales: [...(old.questionnaire_rating_scales || []), ...newRatingScales],
           };
         }
       );
+
+      // Invalidate questions cache to ensure questions tab reflects rating scale addition
+      queryClient.invalidateQueries({
+        queryKey: questionsKeys.all,
+      });
     },
   });
 
