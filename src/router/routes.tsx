@@ -63,6 +63,9 @@ export const routes = {
   // Legal routes
   privacyPolicy: "/privacy-policy",
   termsOfService: "/terms-of-service",
+
+  // Audit
+  auditLogs: "/:companyId/audit-logs",
 } as const;
 
 // Company-scoped route patterns (used by useCompanyAwareNavigate)
@@ -75,6 +78,7 @@ export const COMPANY_SCOPED_PATTERNS = [
   "/questionnaires",
   "/recommendations",
   "/interviews",
+  "/audit-logs",
   "/settings", // Only company-scoped /settings, not global /account
 ] as const;
 
@@ -113,4 +117,5 @@ export const companyRoutes = {
   settingsCompany: (companyId: string) => `/${companyId}/settings`,
   recommendations: (companyId: string) => `/${companyId}/recommendations`,
   team: (companyId: string) => `/${companyId}/team`,
+  auditLogs: (companyId: string) => `/${companyId}/audit-logs`,
 } as const;

@@ -344,6 +344,72 @@ export type Database = {
           },
         ];
       };
+      audit_logs: {
+        Row: {
+          action: string;
+          changed_fields: string[] | null;
+          company_id: string;
+          created_at: string | null;
+          id: number;
+          metadata: Json | null;
+          new_values: Json | null;
+          old_values: Json | null;
+          record_display_name: string | null;
+          record_id: string;
+          table_name: string;
+          user_email: string | null;
+          user_id: string | null;
+          user_name: string | null;
+        };
+        Insert: {
+          action: string;
+          changed_fields?: string[] | null;
+          company_id: string;
+          created_at?: string | null;
+          id?: number;
+          metadata?: Json | null;
+          new_values?: Json | null;
+          old_values?: Json | null;
+          record_display_name?: string | null;
+          record_id: string;
+          table_name: string;
+          user_email?: string | null;
+          user_id?: string | null;
+          user_name?: string | null;
+        };
+        Update: {
+          action?: string;
+          changed_fields?: string[] | null;
+          company_id?: string;
+          created_at?: string | null;
+          id?: number;
+          metadata?: Json | null;
+          new_values?: Json | null;
+          old_values?: Json | null;
+          record_display_name?: string | null;
+          record_id?: string;
+          table_name?: string;
+          user_email?: string | null;
+          user_id?: string | null;
+          user_name?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "audit_logs_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       business_unit_contacts: {
         Row: {
           business_unit_id: number;
@@ -3171,6 +3237,10 @@ export type Database = {
     Functions: {
       create_user_profile: {
         Args: { user_email: string; user_id: string; user_metadata?: Json };
+        Returns: undefined;
+      };
+      enable_audit_for_table: {
+        Args: { target_table: string };
         Returns: undefined;
       };
       get_demo_company: { Args: never; Returns: string };

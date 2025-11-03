@@ -103,6 +103,91 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/audit/logs/{companyId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          companyId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                user: {
+                  full_name: string;
+                  email: string;
+                };
+                /** Format: date-time */
+                created_at: string;
+                changed_fields: string[];
+                message: string;
+              }[];
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/audit/logs/{companyId}/download": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          companyId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/auth/signin": {
     parameters: {
       query?: never;
@@ -3027,11 +3112,14 @@ export interface paths {
                 updated_at: string;
                 content: string;
                 context: string;
+                title: string;
                 priority: string;
                 status: string;
                 assessment: {
                   id: string;
                   name: string;
+                  /** @enum {string} */
+                  type: "onsite" | "desktop";
                 };
               }[];
             };
