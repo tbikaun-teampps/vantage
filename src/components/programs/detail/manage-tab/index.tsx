@@ -13,12 +13,20 @@ import {
   IconArchive,
 } from "@tabler/icons-react";
 import { formatDistanceToNow, format } from "date-fns";
-import { useCreatePhase } from "@/hooks/useProgram";
+import { useCreatePhase, useDeletePhase } from "@/hooks/useProgram";
 import type { ProgramPhase } from "@/types/program";
 import { Interviews } from "./interviews";
 import { useProgramValidation } from "@/hooks/useProgramValidation";
 import { CalculatedMeasurements } from "@/components/measurements/calculated-measurements";
 import { PhaseDetails } from "./phase-details";
+import { DeletePhaseConfirmationDialog } from "./delete-phase-confirmation-dialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -80,7 +88,9 @@ function PhaseTabContent({
 }: PhaseTabContentProps) {
   if (!phase) {
     return (
-      <p className="text-muted-foreground">No program assessment data available.</p>
+      <p className="text-muted-foreground">
+        No program assessment data available.
+      </p>
     );
   }
 
@@ -143,6 +153,24 @@ export function ManageTab({ program }: ManageTabProps) {
   }, [phases, validActivePhaseId]);
 
   const programValidation = useProgramValidation(program);
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const deletePhaseMutation = useDeletePhase();
+
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (activePhase) {
+      deletePhaseMutation.mutate(activePhase.id, {
+        onSuccess: () => {
+          setShowDeleteDialog(false);
+          // activePhaseId will auto-update via validActivePhaseId useMemo
+        },
+      });
+    }
+  };
 
   return (
     <div className="relative h-full w-full">
@@ -238,6 +266,44 @@ export function ManageTab({ program }: ManageTabProps) {
                   program={program}
                   programValidation={programValidation}
                 />
+
+                {/* Danger Zone */}
+                <div className="p-4">
+                  <Card className="border-destructive/50">
+                    <CardHeader>
+                      <CardTitle className="text-destructive">
+                        Danger Zone
+                      </CardTitle>
+                      <CardDescription>
+                        Irreversible actions that will permanently delete this
+                        assessment.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-medium">
+                            Delete Assessment
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            {phases.length === 1
+                              ? "Cannot delete the only remaining assessment. Programs must have at least one assessment."
+                              : "Permanently delete this assessment and all associated interviews and calculated metrics. This action cannot be undone."}
+                          </p>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          onClick={handleDeleteClick}
+                          disabled={
+                            phases.length === 1 || deletePhaseMutation.isPending
+                          }
+                        >
+                          Delete Assessment
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             ) : (
               <p className="text-muted-foreground">
@@ -247,6 +313,16 @@ export function ManageTab({ program }: ManageTabProps) {
           </main>
         </div>
       </SidebarProvider>
+
+      {activePhase && (
+        <DeletePhaseConfirmationDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          phase={activePhase}
+          onConfirm={handleDeleteConfirm}
+          isDeleting={deletePhaseMutation.isPending}
+        />
+      )}
     </div>
   );
 }
