@@ -8,6 +8,13 @@ type ProgramStatus = Database["public"]["Enums"]["program_statuses"];
 export interface ActivityData {
   total: number;
   breakdown: Record<string, number>;
+  items: Array<{
+    id: number;
+    status: string;
+    created_at: string;
+    updated_at: string;
+    name: string;
+  }>;
 }
 
 export interface MetricData {
@@ -86,6 +93,9 @@ export class WidgetService {
     this.supabase = supabaseClient;
   }
 
+  /**
+   * Get activity data for a given entity type (interviews, assessments, programs)
+   */
   async getActivityData(
     entityType: "interviews" | "assessments" | "programs"
   ): Promise<ActivityData> {
@@ -98,14 +108,14 @@ export class WidgetService {
 
     const { data, error } = await this.supabase
       .from(entityType)
-      .select("id, status, company_id, is_deleted")
+      .select("id, status, created_at, updated_at, name")
       .eq("company_id", this.companyId)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
 
-    // Initialize breakdown with all statuses set to 0
+    // Initialise breakdown with all statuses set to 0
     const breakdown = allStatuses.reduce(
       (acc, status) => {
         acc[status] = 0;
@@ -114,8 +124,12 @@ export class WidgetService {
       {} as Record<string, number>
     );
 
+    if (!data || data.length === 0) {
+      return { total: 0, breakdown, items: [] };
+    }
+
     // Count actual data
-    data?.forEach((item) => {
+    data.forEach((item) => {
       if (
         item.status &&
         Object.prototype.hasOwnProperty.call(breakdown, item.status)
@@ -124,7 +138,7 @@ export class WidgetService {
       }
     });
 
-    return { total: data?.length || 0, breakdown };
+    return { total: data?.length || 0, breakdown, items: data || [] };
   }
 
   async getMetricData(
@@ -140,7 +154,7 @@ export class WidgetService {
       case "generated-actions": {
         const { data, error } = await this.supabase
           .from("interview_response_actions")
-          .select("id, company_id, is_deleted", { count: "exact" })
+          .select("id", { count: "exact" })
           .eq("company_id", this.companyId)
           .eq("is_deleted", false);
 
@@ -234,7 +248,7 @@ export class WidgetService {
       .eq("company_id", this.companyId)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false });
-      // .in("status", ["active", "under_review", "completed"])
+    // .in("status", ["active", "under_review", "completed"])
 
     if (assessmentsError) throw assessmentsError;
 
@@ -245,7 +259,7 @@ export class WidgetService {
       .eq("company_id", this.companyId)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false });
-      // .in("status", ["active", "under_review", "completed"])
+    // .in("status", ["active", "under_review", "completed"])
 
     if (programsError) throw programsError;
 
@@ -257,7 +271,7 @@ export class WidgetService {
       .eq("is_deleted", false)
       .order("created_at", { ascending: false })
       .limit(50); // Limit to recent interviews to avoid overwhelming the UI
-      // .in("status", ["pending", "in_progress", "completed"])
+    // .in("status", ["pending", "in_progress", "completed"])
 
     if (interviewsError) throw interviewsError;
 

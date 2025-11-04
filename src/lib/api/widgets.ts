@@ -1,3 +1,4 @@
+import type { ActivityWidgetResponseData } from "@/types/api/dashboard";
 import { apiClient } from "./client";
 import type { MetricConfig } from "@/hooks/useDashboardLayouts";
 
@@ -5,11 +6,6 @@ export interface ApiResponse<T> {
   success: boolean;
   data: T;
   error?: string;
-}
-
-export interface ActivityData {
-  total: number;
-  breakdown: Record<string, number>;
 }
 
 export interface MetricData {
@@ -50,8 +46,8 @@ export interface TableData {
 export async function getActivityData(
   companyId: string,
   entityType: "interviews" | "assessments" | "programs"
-): Promise<ActivityData> {
-  const response = await apiClient.get<ApiResponse<ActivityData>>(
+): Promise<ActivityWidgetResponseData> {
+  const response = await apiClient.get<ApiResponse<ActivityWidgetResponseData>>(
     `/dashboards/widgets/${companyId}/activity`,
     {
       params: { entityType },
