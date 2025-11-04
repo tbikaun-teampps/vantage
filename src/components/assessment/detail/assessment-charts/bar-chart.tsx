@@ -21,6 +21,16 @@ import {
 } from "@/components/ui/chart";
 import { BRAND_COLORS } from "@/lib/brand";
 
+/**
+ * Splits label on '>' and truncates if too long
+ * @param value 
+ * @returns 
+ */
+function yAxisTickFormatter(value: string) {
+  const parts = value.split(">");
+  return (parts.length > 3 ? "..." : "") + parts.slice(-2).join(" > ");
+}
+
 const chartConfig = {
   value: {
     label: "Value",
@@ -51,15 +61,10 @@ export function ChartBar({
         </CardHeader>
       )}
       <CardContent>
-        <ChartContainer config={chartConfig} className='max-h-[150px]'>
-          <BarChart
-            accessibilityLayer
-            data={data}
-            layout="vertical"
-            margin={{
-              right: 48,
-            }}
-          >
+        <ChartContainer config={chartConfig} className="min-h-[100px]">
+          <BarChart accessibilityLayer data={data} layout="vertical" margin={{
+            top: 16, bottom: 16
+          }}>
             <CartesianGrid horizontal={false} />
             <YAxis
               dataKey="label"
@@ -67,31 +72,21 @@ export function ChartBar({
               tickLine={false}
               tickMargin={10}
               axisLine={false}
-              tickFormatter={(value) => value.slice(0, 3)}
-              hide
+              width={120}
+              fontSize={10}
+              tickFormatter={yAxisTickFormatter}
             />
             <XAxis dataKey="value" type="number" hide />
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent indicator="line" />}
             />
-            <Bar
-              dataKey="value"
-              fill="var(--color-value)"
-              radius={4}
-            >
-              <LabelList
-                dataKey="label"
-                position="insideLeft"
-                offset={8}
-                className="fill-(--color-label)"
-                fontSize={12}
-              />
+            <Bar dataKey="value" fill="var(--color-value)" radius={4}>
               <LabelList
                 dataKey="value"
-                position="right"
+                position="inside"
                 offset={8}
-                className="fill-foreground"
+                className="fill-(--color-label)"
                 fontSize={12}
               />
             </Bar>

@@ -116,4 +116,88 @@ export const ratingScaleSets: RatingScaleSet[] = [
       },
     ],
   },
+  {
+    id: 4,
+    name: "Binary Scale",
+    description: "Simple yes/no or true/false scale",
+    category: "Binary",
+    scales: [
+      {
+        value: 1,
+        name: "No",
+        description: "Negative response",
+      },
+      {
+        value: 2,
+        name: "Yes",
+        description: "Affirmative response",
+      },
+    ],
+  },
+  {
+    id: 5,
+    name: "Frequency Scale",
+    description: "Scale measuring frequency of occurrence",
+    category: "Frequency",
+    scales: [
+      {
+        value: 1,
+        name: "Never",
+        description: "Does not occur",
+      },
+      {
+        value: 2,
+        name: "Rarely",
+        description: "Occurs infrequently",
+      },
+      {
+        value: 3,
+        name: "Sometimes",
+        description: "Occurs occasionally",
+      },
+      {
+        value: 4,
+        name: "Often",
+        description: "Occurs frequently",
+      },
+      {
+        value: 5,
+        name: "Always",
+        description: "Occurs all the time",
+      },
+    ],
+  },
+  {
+    id: 6,
+    name: "Performance Scale",
+    description: "Scale measuring performance levels",
+    category: "Performance",
+    scales: [
+      {
+        value: 1,
+        name: "Unsatisfactory",
+        description: "Does not meet performance standards",
+      },
+      {
+        value: 2,
+        name: "Needs Improvement",
+        description: "Below expectations, requires improvement",
+      },
+      {
+        value: 3,
+        name: "Meets Expectations",
+        description: "Satisfactorily meets performance standards",
+      },
+      {
+        value: 4,
+        name: "Exceeds Expectations",
+        description: "Surpasses performance standards",
+      },
+      {
+        value: 5,
+        name: "Outstanding",
+        description: "Exceptional performance far beyond standards",
+      },
+    ],
+  }
 ];

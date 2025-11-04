@@ -11,6 +11,7 @@ import {
   IconProgress,
   IconCircleCheck,
   IconArchive,
+  IconSettings,
 } from "@tabler/icons-react";
 import { formatDistanceToNow, format, addWeeks, addMonths } from "date-fns";
 import { useCreatePhase, useDeletePhase } from "@/hooks/useProgram";
@@ -121,6 +122,17 @@ function PhaseTabContent({
         title="Desktop Analysis Measurements"
         description="Calculated values for this assessment in the program"
       />
+      {/* <div className="shadow-none text-center border-dashed border-2 border-border m-4 rounded-lg bg-background">
+        <div className="p-8">
+          <div className="text-center py-8">
+            <IconSettings className="mx-auto mb-4 h-8 w-8 text-muted-foreground" />
+            <div className="text-muted-foreground text-sm">
+              Interview and measurement management features will be available once the program has
+              been set up. Navigate to the <strong>Setup</strong> tab to configure the program.
+            </div>
+          </div>
+        </div>
+      </div> */}
     </>
   );
 }

@@ -273,6 +273,7 @@ export function InterviewSidebar({
                 node.type === "step" && "font-medium",
                 node.type === "question" && "font-normal"
               )}
+              title={node.title}
             >
               {node.type === "section" && `${node.orderIndex}. `}
               {node.type === "step" && `${node.orderIndex}. `}
@@ -315,25 +316,6 @@ export function InterviewSidebar({
   };
 
   const hasFilters = searchTerm.trim();
-
-  // Status indicator configuration
-  const statusConfig = {
-    completed: {
-      icon: IconCircleCheck,
-      label: "Completed",
-      className: "bg-green-500 text-white dark:bg-green-600 dark:text-black",
-    },
-    in_progress: {
-      icon: IconPlayerPlay,
-      label: "In Progress",
-      className: "bg-blue-500 text-white dark:bg-blue-600",
-    },
-    pending: {
-      icon: IconClock,
-      label: "Pending",
-      className: "bg-gray-500 text-white dark:bg-gray-800",
-    },
-  };
 
   if (
     isLoadingStructure ||
