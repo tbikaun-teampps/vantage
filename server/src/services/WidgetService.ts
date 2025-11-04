@@ -16,6 +16,18 @@ export interface ActivityData {
     name: string;
     type?: string;
     is_individual?: boolean;
+    assessment?: {
+      id: number;
+      name: string;
+    };
+    program_phase?: {
+      id: number;
+      name: string;
+      program: {
+        id: number;
+        name: string;
+      };
+    };
   }>;
 }
 
@@ -111,10 +123,12 @@ export class WidgetService {
     let query;
     switch (entityType) {
       case "interviews":
-        query = "id, status, created_at, updated_at, name, is_individual";
+        query =
+          "id, status, created_at, updated_at, name, is_individual, assessment:assessment_id(id, name)";
         break;
       case "assessments":
-        query = "id, status, created_at, updated_at, name, type";
+        query =
+          "id, status, created_at, updated_at, name, type, program_phase:program_phase_id(id, name, program:program_id(id, name))";
         break;
       case "programs":
         query = "id, status, created_at, updated_at, name";

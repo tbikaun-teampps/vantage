@@ -93,6 +93,8 @@ export const companyRoutes = {
   assessmentsDesktop: (companyId: string) =>
     `/${companyId}/assessments/desktop`,
   assessmentsOnsite: (companyId: string) => `/${companyId}/assessments/onsite`,
+  assessmentDetail: (companyId: string, id: number | string, type: "onsite" | "desktop") =>
+    `/${companyId}/assessments/${type}/${id}`,
   assessmentOnsiteDetail: (companyId: string, id: number | string) =>
     `/${companyId}/assessments/onsite/${id}`,
   assessmentDesktopDetail: (companyId: string, id: number | string) =>
