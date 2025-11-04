@@ -75,6 +75,8 @@ export function DetailsTab({ program }: DetailsTabProps) {
     const hasOnsiteData =
       hasMultiplePhases && program.onsite_questionnaire_id !== null;
 
+    const hasAnyData = hasMeasurementsData || hasPresiteData || hasOnsiteData;
+
     // Sort by data likelihood - charts with data first
     if (hasMeasurementsData) {
       charts.push({
@@ -104,17 +106,20 @@ export function DetailsTab({ program }: DetailsTabProps) {
       });
     }
 
-    if (!hasMultiplePhases) {
+    if (!hasAnyData) {
       charts.push({
         type: "no-data",
         component: (
-          <div className="shadow-none text-center border-dashed border-1 border-border m-4 rounded-lg bg-background">
+          <div className="shadow-none text-center border-dashed border-2 border-border m-4 rounded-lg bg-background">
             <div className="p-8">
               <div className="text-center py-8">
                 <IconChartBar className="mx-auto mb-4 h-8 w-8 text-muted-foreground" />
                 <div className="text-muted-foreground text-sm">
-                  Analytics charts will be available once the program has
-                  captured data
+                  Interview and measurement analytics charts will be available
+                  once the program has captured data. Navigate to the{" "}
+                  <strong>Setup</strong> tab to configure questionnaires and
+                  measurements for the program phases or the{" "}
+                  <strong>Manage</strong> tab to start capturing data.
                 </div>
               </div>
             </div>
@@ -153,6 +158,8 @@ export function DetailsTab({ program }: DetailsTabProps) {
 
     return charts;
   }, [program, programMeasurements]);
+
+  console.log("chartPriority: ", chartPriority);
 
   return (
     <>

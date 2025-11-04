@@ -3775,7 +3775,29 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                active: boolean;
+                calculation: string;
+                calculation_type: string;
+                description: string;
+                max_value: number;
+                min_value: number;
+                unit: string;
+                objective: string;
+                provider: string;
+                required_csv_columns: {
+                  name: string;
+                  data_type: string;
+                  description: string;
+                }[];
+              }[];
+            };
+          };
         };
       };
     };
@@ -7120,12 +7142,15 @@ export interface paths {
             measurement_definition_id: number;
             calculated_value: number;
             location?: {
-              business_unit_id?: number;
-              region_id?: number;
-              site_id?: number;
-              asset_group_id?: number;
-              work_group_id?: number;
-              role_id?: number;
+              id: number;
+              /** @enum {string} */
+              type:
+                | "business_unit"
+                | "region"
+                | "site"
+                | "asset_group"
+                | "work_group"
+                | "role";
             };
           };
         };
@@ -7233,12 +7258,12 @@ export interface paths {
           };
           content: {
             "application/json": {
-              success?: boolean;
-              data?: {
-                name?: string;
-                data?: {
-                  label?: string;
-                  value?: number;
+              success: boolean;
+              data: {
+                name: string;
+                data: {
+                  label: string;
+                  value: number;
                 }[];
               }[];
             };

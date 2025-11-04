@@ -1,3 +1,4 @@
+import type { MeasurementDefinitionsResponseData } from "@/types/api/shared";
 import { apiClient } from "./client";
 import type { SharedRole } from "@/types/assessment";
 
@@ -97,33 +98,9 @@ export async function deleteSharedRole(id: number): Promise<void> {
 
 // ===== SHARED MEASUREMENT DEFINITIONS =====
 
-export async function getMeasurementDefinitions(): Promise<
-  Array<{
-    id: number;
-    name: string;
-    description: string;
-    calculation_type: string;
-    provider: string;
-    objective: string;
-    calculation: string;
-    required_csv_columns: Record<string, string>;
-    active: boolean;
-  }>
-> {
+export async function getMeasurementDefinitions(): Promise<MeasurementDefinitionsResponseData> {
   const response = await apiClient.get<
-    ApiResponse<
-      Array<{
-        id: number;
-        name: string;
-        description: string;
-        calculation_type: string;
-        provider: string;
-        objective: string;
-        calculation: string;
-        required_csv_columns: Record<string, string>;
-        active: boolean;
-      }>
-    >
+    ApiResponse<MeasurementDefinitionsResponseData>
   >("/shared/measurement-definitions");
 
   if (!response.data.success) {

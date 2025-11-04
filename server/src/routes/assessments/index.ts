@@ -509,15 +509,36 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
     }
   );
   // Method for getting measurements associated with an assessment
-  fastify.get("/:assessmentId/measurements", async (request) => {
-    const { assessmentId } = request.params as { assessmentId: number };
-    const data =
-      await request.assessmentsService!.getMeasurementsByAssessmentId(
-        assessmentId
-      );
+  fastify.get(
+    "/:assessmentId/measurements",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            assessmentId: { type: "number" },
+          },
+          required: ["assessmentId"],
+        },
+        queryString: {
+          includeDefinitions: { type: "boolean", default: false },
+        },
+        response: {
+          // 200: {
+          // }
+        },
+      },
+    },
+    async (request) => {
+      const { assessmentId } = request.params as { assessmentId: number };
+      const data =
+        await request.assessmentsService!.getMeasurementsByAssessmentId(
+          assessmentId
+        );
 
-    return { success: true, data };
-  });
+      return { success: true, data };
+    }
+  );
   // Method for manually adding a measurement to an assessment
   fastify.post(
     "/:assessmentId/measurements",
@@ -531,13 +552,20 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
             calculated_value: { type: "number" },
             location: {
               type: "object",
+              required: ["id", "type"],
               properties: {
-                business_unit_id: { type: "number" },
-                region_id: { type: "number" },
-                site_id: { type: "number" },
-                asset_group_id: { type: "number" },
-                work_group_id: { type: "number" },
-                role_id: { type: "number" },
+                id: { type: "number" },
+                type: {
+                  type: "string",
+                  enum: [
+                    "business_unit",
+                    "region",
+                    "site",
+                    "asset_group",
+                    "work_group",
+                    "role",
+                  ],
+                },
               },
             },
           },
@@ -551,12 +579,14 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
           measurement_definition_id: number;
           calculated_value: number;
           location: {
-            business_unit_id?: number;
-            region_id?: number;
-            site_id?: number;
-            asset_group_id?: number;
-            work_group_id?: number;
-            role_id?: number;
+            id: number;
+            type:
+              | "business_unit"
+              | "region"
+              | "site"
+              | "asset_group"
+              | "work_group"
+              | "role";
           };
         };
 
@@ -659,12 +689,15 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
                           label: { type: "string" },
                           value: { type: "number" },
                         },
+                        required: ["label", "value"],
                       },
                     },
                   },
+                  required: ["name", "data"],
                 },
               },
             },
+            required: ["success", "data"],
           },
         },
       },
