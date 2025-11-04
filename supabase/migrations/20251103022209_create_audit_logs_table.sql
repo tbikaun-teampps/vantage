@@ -73,6 +73,11 @@ DECLARE
   last_audit_id BIGINT;
   soft_delete_timestamp TIMESTAMPTZ;
 BEGIN
+  -- Skip junction tables ending with _contacts
+  IF TG_TABLE_NAME LIKE '%_contacts' THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+
   -- Get user info from profiles table
   SELECT email, full_name INTO user_email, user_name
   FROM profiles WHERE id = auth.uid();
