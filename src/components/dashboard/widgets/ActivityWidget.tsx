@@ -155,9 +155,14 @@ const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
     <CardContent className="pt-0 flex-1 min-h-0">
       <div className="flex flex-col h-full min-h-0">
         <div className="flex items-center pb-3 gap-2 justify-between">
-          <Badge variant="default" className="text-xs capitalize">
-            {currentEntityType}
-          </Badge>
+          <div className="gap-2 flex">
+            <Badge variant="outline" className="text-xs capitalize">
+              Activity
+            </Badge>
+            <Badge variant="default" className="text-xs capitalize">
+              {currentEntityType}
+            </Badge>
+          </div>
           <Badge variant="secondary">{data?.total} total</Badge>
           {data?.scope?.assessmentName && (
             <Badge variant="secondary" className="text-xs">
