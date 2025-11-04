@@ -98,6 +98,22 @@ export const widgetSchemas = {
               Type.Union([Type.Literal("onsite"), Type.Literal("desktop")])
             ),
             is_individual: Type.Optional(Type.Boolean()),
+            assessment: Type.Optional(
+              Type.Object({
+                id: Type.Number(),
+                name: Type.String(),
+              })
+            ),
+            program_phase: Type.Optional(
+              Type.Object({
+                id: Type.Number(),
+                name: Type.String(),
+                program: Type.Object({
+                  id: Type.Number(),
+                  name: Type.String(),
+                }),
+              })
+            ),
           })
         ),
       }),

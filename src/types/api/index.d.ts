@@ -7795,6 +7795,18 @@ export interface paths {
                   name: string;
                   type?: "onsite" | "desktop";
                   is_individual?: boolean;
+                  assessment?: {
+                    id: number;
+                    name: string;
+                  };
+                  program_phase?: {
+                    id: number;
+                    name: string;
+                    program: {
+                      id: number;
+                      name: string;
+                    };
+                  };
                 }[];
               };
             };
