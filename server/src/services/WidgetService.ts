@@ -14,6 +14,8 @@ export interface ActivityData {
     created_at: string;
     updated_at: string;
     name: string;
+    type?: string;
+    is_individual?: boolean;
   }>;
 }
 
@@ -106,9 +108,22 @@ export class WidgetService {
 
     const allStatuses = STATUS_MAPS[entityType];
 
+    let query;
+    switch (entityType) {
+      case "interviews":
+        query = "id, status, created_at, updated_at, name, is_individual";
+        break;
+      case "assessments":
+        query = "id, status, created_at, updated_at, name, type";
+        break;
+      case "programs":
+        query = "id, status, created_at, updated_at, name";
+        break;
+    }
+
     const { data, error } = await this.supabase
       .from(entityType)
-      .select("id, status, created_at, updated_at, name")
+      .select(query)
       .eq("company_id", this.companyId)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false });

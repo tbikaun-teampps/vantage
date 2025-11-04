@@ -7793,6 +7793,8 @@ export interface paths {
                   created_at: string;
                   updated_at: string;
                   name: string;
+                  type?: "onsite" | "desktop";
+                  is_individual?: boolean;
                 }[];
               };
             };
