@@ -19,6 +19,11 @@ import {
   IconPencil,
   IconPlayerPause,
 } from "@tabler/icons-react";
+import { formatDistanceToNow } from "date-fns";
+import { companyRoutes } from "@/router/routes";
+import { useNavigate } from "react-router-dom";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import type { ActivityWidgetListItem } from "@/types/api/dashboard";
 
 /**
  * Get color classes for a given status
@@ -50,8 +55,8 @@ const getStatusColor = (status: string) => {
 
 /**
  * Get icon component for a given status
- * @param status 
- * @returns 
+ * @param status
+ * @returns
  */
 const getStatusIcon = (status: string) => {
   switch (status) {
@@ -79,8 +84,29 @@ const getStatusIcon = (status: string) => {
 const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
   const currentEntityType = config?.entity?.entityType;
   const { data, isLoading, isFetching, error } = useActivityData(config);
+  const navigate = useNavigate();
+  const companyId = useCompanyFromUrl();
 
   const isConfigured = Boolean(currentEntityType);
+
+  // Handle navigation to item detail pages
+  const handleItemClick = (item: ActivityWidgetListItem) => {
+    if (!currentEntityType) return;
+
+    switch (currentEntityType) {
+      case "interviews":
+        // if (!item.is_individual) return;
+        navigate(companyRoutes.interviewDetail(companyId, item.id));
+        break;
+      case "assessments":
+        if (!item.type) return;
+        navigate(companyRoutes.assessmentDetail(companyId, item.id, item.type));
+        break;
+      case "programs":
+        navigate(companyRoutes.programDetail(companyId, item.id));
+        break;
+    }
+  };
 
   // If no entity type is configured, show a placeholder message
   if (!isConfigured) {
@@ -135,8 +161,8 @@ const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
         <CardContent className="pt-0 flex-1 min-h-0">
           <div className="h-full flex items-center justify-center p-4">
             <Alert className="bg-destructive/10 border-destructive max-w-md">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+              <AlertDescription className="text-sm text-destructive">
                 Failed to load activity data
               </AlertDescription>
             </Alert>
@@ -193,6 +219,69 @@ const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
                   </Tooltip>
                 </TooltipProvider>
               ))}
+          </div>
+          <div className="space-y-2 mt-4 flex-1 overflow-y-auto border-t border-border pt-4">
+            {data?.items.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => handleItemClick(item)}
+                className="cursor-pointer w-full flex items-center gap-3 p-2 rounded-lg bg-accent/25 hover:bg-accent/75 border border-border transition-colors dark:bg-secondary/25 dark:hover:bg-secondary/75"
+              >
+                <div className="text-xs flex flex-col gap-1 w-full text-left">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate flex-1">{item.name}</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            className={`flex-shrink-0 ${getStatusColor(item.status)}`}
+                          >
+                            {getStatusIcon(item.status)}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <p className="text-xs capitalize">
+                            {item.status.replace(/_/g, " ")}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-normal overflow-hidden">
+                    <span className="text-muted-foreground flex-shrink-0">
+                      Updated:{" "}
+                      {formatDistanceToNow(new Date(item.updated_at), {
+                        addSuffix: true,
+                      })}
+                    </span>
+                    {item?.assessment?.name && (
+                      <>
+                        <span className="text-muted-foreground flex-shrink-0">•</span>
+                        <span className="text-muted-foreground truncate min-w-0">
+                          {item?.assessment?.name}
+                        </span>
+                      </>
+                    )}
+                    {item?.program_phase?.name && (
+                      <>
+                        <span className="text-muted-foreground flex-shrink-0">•</span>
+                        <span className="text-muted-foreground truncate min-w-0">
+                          {item?.program_phase?.name}
+                        </span>
+                        {item.program_phase?.program?.name && (
+                          <>
+                            <span className="text-muted-foreground flex-shrink-0">•</span>
+                            <span className="text-muted-foreground truncate min-w-0">
+                              {item.program_phase?.program?.name}
+                            </span>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </CardContent>
