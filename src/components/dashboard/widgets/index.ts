@@ -40,7 +40,7 @@ export const availableWidgets: Widget[] = [
     title: "Activity",
     category: "Monitoring",
     component: ActivityWidget,
-    defaultSize: { w: 3, h: 4, maxW: 4, maxH: 5, minW: 2, minH: 3 },
+    defaultSize: { w: 3, h: 4, maxW: 4, maxH: 5, minW: 3, minH: 4 },
     description: "Show recent system activity",
     icon: Clock,
   },
