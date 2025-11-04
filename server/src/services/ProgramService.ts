@@ -337,6 +337,23 @@ export class ProgramService {
 
     return phase;
   }
+  
+  /**
+   * Soft deletes a program phase
+   * @param phaseId
+   */
+  async deleteProgramPhase(phaseId: number): Promise<void> {
+    const { error } = await this.supabase
+      .from("program_phases")
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", phaseId);
+
+    if (error) throw error;
+  }
 
   /**
    * Creates interviews for a program phase

@@ -1,10 +1,10 @@
 import { FastifyInstance } from "fastify";
-import { ProgramService } from "../services/ProgramService.js";
-import { InterviewsService } from "../services/InterviewsService.js";
+import { ProgramService } from "../../services/ProgramService.js";
+import { InterviewsService } from "../../services/InterviewsService.js";
 import {
   ProgramPhaseStatus,
   ProgramStatus,
-} from "../types/entities/programs.js";
+} from "../../types/entities/programs.js";
 
 export async function programRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -313,12 +313,13 @@ export async function programRoutes(fastify: FastifyInstance) {
     },
     async (request) => {
       const programId = (request.params as { programId: number }).programId;
-      const { name, planned_start_date, planned_end_date, activate } = request.body as {
-        name: string;
-        planned_start_date: string;
-        planned_end_date: string;
-        activate?: boolean;
-      };
+      const { name, planned_start_date, planned_end_date, activate } =
+        request.body as {
+          name: string;
+          planned_start_date: string;
+          planned_end_date: string;
+          activate?: boolean;
+        };
 
       const programService = new ProgramService(request.supabaseClient);
       const createdPhases = await programService.addPhaseToProgram(
@@ -384,6 +385,35 @@ export async function programRoutes(fastify: FastifyInstance) {
       return {
         success: true,
         data: phase,
+      };
+    }
+  );
+
+  // Method to delete a program phase
+  fastify.delete(
+    "/:programId/phases/:phaseId",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            programId: { type: "number" },
+            phaseId: { type: "number" },
+          },
+          required: ["programId", "phaseId"],
+        },
+      },
+    },
+    async (request) => {
+      const { phaseId } = request.params as {
+        phaseId: number;
+      };
+
+      const programService = new ProgramService(request.supabaseClient);
+      await programService.deleteProgramPhase(phaseId);
+
+      return {
+        success: true,
       };
     }
   );

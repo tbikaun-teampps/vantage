@@ -264,9 +264,9 @@ export async function createPhase(
   return response.data.data;
 }
 
-export async function deletePhase(phaseId: number): Promise<void> {
+export async function deletePhase(programId: number, phaseId: number): Promise<void> {
   const response = await apiClient.delete<ApiResponse<void>>(
-    `/programs/phases/${phaseId}`
+    `/programs/${programId}/phases/${phaseId}`
   );
 
   if (!response.data.success) {

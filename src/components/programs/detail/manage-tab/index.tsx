@@ -162,13 +162,16 @@ export function ManageTab({ program }: ManageTabProps) {
   };
 
   const handleDeleteConfirm = () => {
-    if (activePhase) {
-      deletePhaseMutation.mutate(activePhase.id, {
-        onSuccess: () => {
-          setShowDeleteDialog(false);
-          // activePhaseId will auto-update via validActivePhaseId useMemo
-        },
-      });
+    if (activePhase && program && activePhase.id) {
+      deletePhaseMutation.mutate(
+        { programId: program.id, phaseId: activePhase.id },
+        {
+          onSuccess: () => {
+            setShowDeleteDialog(false);
+            // activePhaseId will auto-update via validActivePhaseId useMemo
+          },
+        }
+      );
     }
   };
 
