@@ -49,7 +49,7 @@ export const availableWidgets: Widget[] = [
     title: "Quick Actions",
     category: "Actions",
     component: ActionsWidget,
-    defaultSize: { w: 4, h: 3, maxW: 4, maxH: 3, minW: 2, minH: 3 },
+    defaultSize: { w: 4, h: 3, maxW: 4, maxH: 3, minW: 2, minH: 2 },
     description: "Common action shortcuts",
     icon: Zap,
   },
