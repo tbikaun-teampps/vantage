@@ -1,7 +1,7 @@
 import { useActivityData } from "@/hooks/widgets/useActivityData";
 import type { WidgetComponentProps } from "./types";
 import { Badge } from "@/components/ui/badge";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -84,10 +84,10 @@ const getStatusIcon = (status: string) => {
 const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
   const currentEntityType = config?.entity?.entityType;
   const { data, isLoading, isFetching, error } = useActivityData(config);
+  const isConfigured = Boolean(currentEntityType);
   const navigate = useNavigate();
   const companyId = useCompanyFromUrl();
-
-  const isConfigured = Boolean(currentEntityType);
+  const isLoadingData = isLoading || isFetching;
 
   // Handle navigation to item detail pages
   const handleItemClick = (item: ActivityWidgetListItem) => {
@@ -111,181 +111,157 @@ const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
   // If no entity type is configured, show a placeholder message
   if (!isConfigured) {
     return (
-      <>
-        <CardHeader>
-          <CardTitle className="font-semibold">Activity Widget</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 flex-1 min-h-0">
-          <div className="h-full bg-muted/30 rounded flex items-center justify-center">
-            <span className="text-muted-foreground p-2 text-center">
-              Configure this activity widget to see data
+      <CardContent className="pt-0 flex-1 min-h-0">
+        <div className="h-full bg-muted/30 rounded flex items-center justify-center">
+          <span className="text-muted-foreground p-2 text-center">
+            Configure this activity widget to see data
+          </span>
+        </div>
+      </CardContent>
+    );
+  }
+
+  if (isLoadingData) {
+    return (
+      <CardContent className="pt-0 flex-1 min-h-0">
+        <div className="h-full flex items-center justify-center">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-muted-foreground">
+              Loading activity data for {currentEntityType}...
             </span>
           </div>
-        </CardContent>
-      </>
+        </div>
+      </CardContent>
     );
   }
 
-  // Loading state (initial load or refresh)
-  if (isLoading || (isFetching && !data)) {
-    return (
-      <>
-        <CardHeader>
-          <CardTitle className="text-2xl font-semibold capitalize">
-            {currentEntityType}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 flex-1 min-h-0">
-          <div className="h-full flex items-center justify-center">
-            <div className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-muted-foreground">
-                Loading activity data...
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </>
-    );
-  }
-
-  // Error state
   if (error) {
     return (
-      <>
-        <CardHeader>
-          <CardTitle className="text-2xl font-semibold capitalize">
-            {currentEntityType}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 flex-1 min-h-0">
-          <div className="h-full flex items-center justify-center p-4">
-            <Alert className="bg-destructive/10 border-destructive max-w-md">
-              <AlertCircle className="h-4 w-4 text-destructive" />
-              <AlertDescription className="text-sm text-destructive">
-                Failed to load activity data
-              </AlertDescription>
-            </Alert>
-          </div>
-        </CardContent>
-      </>
+      <CardContent className="pt-0 flex-1 min-h-0">
+        <div className="h-full flex items-center justify-center p-4">
+          <Alert className="bg-destructive/10 border-destructive max-w-md">
+            <AlertCircle className="h-4 w-4 !text-destructive" />
+            <AlertDescription className="text-sm text-destructive">
+              Failed to load activity data for {currentEntityType}
+            </AlertDescription>
+          </Alert>
+        </div>
+      </CardContent>
     );
   }
 
   return (
-    <>
-      {/* <CardHeader>
-        <CardTitle className="font-semibold capitalize">
-          {currentEntityType}
-        </CardTitle>
-      </CardHeader> */}
-      <CardContent className="pt-0 flex-1 min-h-0">
-        <div className="flex flex-col h-full min-h-0">
-          <div className="flex items-center pb-3 gap-2">
-            <Badge variant="default" className="text-xs capitalize">
-              {currentEntityType}
+    <CardContent className="pt-0 flex-1 min-h-0">
+      <div className="flex flex-col h-full min-h-0">
+        <div className="flex items-center pb-3 gap-2 justify-between">
+          <Badge variant="default" className="text-xs capitalize">
+            {currentEntityType}
+          </Badge>
+          <Badge variant="secondary">{data?.total} total</Badge>
+          {data?.scope?.assessmentName && (
+            <Badge variant="secondary" className="text-xs">
+              Assessment: {data.scope.assessmentName}
             </Badge>
-            <Badge variant="secondary">{data?.total} total</Badge>
-            {data?.scope?.assessmentName && (
-              <Badge variant="secondary" className="text-xs">
-                Assessment: {data.scope.assessmentName}
-              </Badge>
-            )}
-            {data?.scope?.programName && (
-              <Badge variant="secondary">
-                Program: {data.scope.programName}
-              </Badge>
-            )}
-          </div>
+          )}
+          {data?.scope?.programName && (
+            <Badge variant="secondary">Program: {data.scope.programName}</Badge>
+          )}
+        </div>
 
-          <div className="flex min-h-0 gap-2">
-            {data?.breakdown &&
-              Object.entries(data.breakdown).map(([status, count], index) => (
-                <TooltipProvider key={index}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge className={`flex-1 ${getStatusColor(status)}`}>
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(status)}
-                          <span className="font-medium">{count}</span>
-                        </div>
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <p className="text-xs capitalize">
-                        {status.replace(/_/g, " ")} {currentEntityType}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ))}
-          </div>
-          <div className="space-y-2 mt-4 flex-1 overflow-y-auto border-t border-border pt-4">
-            {data?.items.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => handleItemClick(item)}
-                className="cursor-pointer w-full flex items-center gap-3 p-2 rounded-lg bg-accent/25 hover:bg-accent/75 border border-border transition-colors dark:bg-secondary/25 dark:hover:bg-secondary/75"
-              >
-                <div className="text-xs flex flex-col gap-1 w-full text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate flex-1">{item.name}</span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge
-                            className={`flex-shrink-0 ${getStatusColor(item.status)}`}
-                          >
-                            {getStatusIcon(item.status)}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">
-                          <p className="text-xs capitalize">
-                            {item.status.replace(/_/g, " ")}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-normal overflow-hidden">
-                    <span className="text-muted-foreground flex-shrink-0">
-                      Updated:{" "}
-                      {formatDistanceToNow(new Date(item.updated_at), {
-                        addSuffix: true,
-                      })}
-                    </span>
-                    {item?.assessment?.name && (
-                      <>
-                        <span className="text-muted-foreground flex-shrink-0">•</span>
-                        <span className="text-muted-foreground truncate min-w-0">
-                          {item?.assessment?.name}
-                        </span>
-                      </>
-                    )}
-                    {item?.program_phase?.name && (
-                      <>
-                        <span className="text-muted-foreground flex-shrink-0">•</span>
-                        <span className="text-muted-foreground truncate min-w-0">
-                          {item?.program_phase?.name}
-                        </span>
-                        {item.program_phase?.program?.name && (
-                          <>
-                            <span className="text-muted-foreground flex-shrink-0">•</span>
-                            <span className="text-muted-foreground truncate min-w-0">
-                              {item.program_phase?.program?.name}
-                            </span>
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
+        <div className="flex min-h-0 gap-2">
+          {data?.breakdown &&
+            Object.entries(data.breakdown).map(([status, count], index) => (
+              <TooltipProvider key={index}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge className={`flex-1 ${getStatusColor(status)}`}>
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(status)}
+                        <span className="font-medium">{count}</span>
+                      </div>
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p className="text-xs capitalize">
+                      {status.replace(/_/g, " ")} {currentEntityType}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ))}
+        </div>
+        <div className="space-y-2 mt-4 flex-1 overflow-y-auto border-t border-border pt-4">
+          {data?.items.map((item) => (
+            <div
+              key={item.id}
+              onClick={() => handleItemClick(item)}
+              className="cursor-pointer w-full flex items-center gap-3 p-2 rounded-lg bg-accent/25 hover:bg-accent/75 border border-border transition-colors dark:bg-secondary/25 dark:hover:bg-secondary/75"
+            >
+              <div className="text-xs flex flex-col gap-1 w-full text-left">
+                <div className="flex items-center gap-2">
+                  <span className="truncate flex-1">{item.name}</span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          className={`flex-shrink-0 ${getStatusColor(item.status)}`}
+                        >
+                          {getStatusIcon(item.status)}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p className="text-xs capitalize">
+                          {item.status.replace(/_/g, " ")}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] font-normal overflow-hidden">
+                  <span className="text-muted-foreground flex-shrink-0">
+                    Updated:{" "}
+                    {formatDistanceToNow(new Date(item.updated_at), {
+                      addSuffix: true,
+                    })}
+                  </span>
+                  {item?.assessment?.name && (
+                    <>
+                      <span className="text-muted-foreground flex-shrink-0">
+                        •
+                      </span>
+                      <span className="text-muted-foreground truncate min-w-0">
+                        {item?.assessment?.name}
+                      </span>
+                    </>
+                  )}
+                  {item?.program_phase?.name && (
+                    <>
+                      <span className="text-muted-foreground flex-shrink-0">
+                        •
+                      </span>
+                      <span className="text-muted-foreground truncate min-w-0">
+                        {item?.program_phase?.name}
+                      </span>
+                      {item.program_phase?.program?.name && (
+                        <>
+                          <span className="text-muted-foreground flex-shrink-0">
+                            •
+                          </span>
+                          <span className="text-muted-foreground truncate min-w-0">
+                            {item.program_phase?.program?.name}
+                          </span>
+                        </>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      </CardContent>
-    </>
+      </div>
+    </CardContent>
   );
 };
 
