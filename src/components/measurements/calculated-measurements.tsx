@@ -48,7 +48,7 @@ export function CalculatedMeasurements({
   programPhaseId,
   title = "Calculated Metrics",
   description = "Current metric values for this phase",
-  showEmpty = true,
+  showEmpty = false,
 }: CalculatedMeasurementsProps) {
   const { data: calculatedMeasurements, isLoading } =
     useProgramPhaseCalculatedMeasurements(programId, programPhaseId);
@@ -56,6 +56,14 @@ export function CalculatedMeasurements({
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [measurementToDelete, setMeasurementToDelete] = useState(null);
+
+  if (!programId || !programPhaseId) {
+    return null;
+  }
+
+  if (!calculatedMeasurements || calculatedMeasurements.length === 0) {
+    if (!showEmpty) return null;
+  }
 
   const handleDeleteClick = (measurement) => {
     setMeasurementToDelete(measurement);

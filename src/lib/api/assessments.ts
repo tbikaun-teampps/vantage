@@ -8,6 +8,7 @@ import type {
   InterviewWithDetails,
 } from "@/types/assessment";
 import type { UpdateInput } from "@/types";
+import type { MeasurementBarChartsResponseData } from "@/types/api/assessments";
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -181,12 +182,14 @@ export async function addAssessmentMeasurement(
   measurementDefinitionId: number,
   value: number,
   location?: {
-    business_unit_id?: number;
-    region_id?: number;
-    site_id?: number;
-    asset_group_id?: number;
-    work_group_id?: number;
-    role_id?: number;
+    id: number;
+    type:
+      | "business_unit"
+      | "region"
+      | "site"
+      | "asset_group"
+      | "work_group"
+      | "role";
   }
 ): Promise<any> {
   const response = await apiClient.post<ApiResponse<any>>(
@@ -238,20 +241,9 @@ export async function deleteAssessmentMeasurement(
 
 export async function getAssessmentMeasurementsBarChartData(
   assessmentId: number
-): Promise<
-  Array<{
-    name: string;
-    data: Array<{ label: string; value: number }>;
-  }>
-> {
+): Promise<MeasurementBarChartsResponseData> {
   const response = await apiClient.get<
-    ApiResponse<{
-      success: boolean;
-      data: Array<{
-        name: string;
-        data: Array<{ label: string; value: number }>;
-      }>;
-    }>
+    ApiResponse<MeasurementBarChartsResponseData>
   >(`/assessments/${assessmentId}/measurements/bar-charts`);
 
   if (!response.data.success) {

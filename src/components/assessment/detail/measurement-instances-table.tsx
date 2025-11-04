@@ -28,25 +28,31 @@ export function MeasurementInstancesTable({
     );
   }
 
-  const columns = createMeasurementInstancesColumns(onEdit, onDelete, userCanAdmin);
+  const columns = createMeasurementInstancesColumns(
+    onEdit,
+    onDelete,
+    userCanAdmin
+  );
 
   return (
-    <DataTable
-      data={instances || []}
-      columns={columns}
-      getRowId={(instance) => instance.id.toString()}
-      enableRowSelection={false}
-      tabs={[{ value: "all", label: "All Measurements" }]}
-      defaultTab="all"
-      enableSorting={true}
-      defaultPageSize={10}
-      showFiltersButton={false}
-      onRowClick={onRowClick}
-      getEmptyStateContent={() => ({
-        title: "No Measurements Configured",
-        description:
-          "Add measurements from the 'Browse Available' tab to start tracking data for this assessment",
-      })}
-    />
+    <div className="w-full">
+      <DataTable
+        data={instances || []}
+        columns={columns}
+        getRowId={(instance) => instance.id.toString()}
+        enableRowSelection={false}
+        tabs={[{ value: "all", label: "All Measurements" }]}
+        defaultTab="all"
+        enableSorting={true}
+        defaultPageSize={10}
+        showFiltersButton={false}
+        onRowClick={onRowClick}
+        getEmptyStateContent={() => ({
+          title: "No Measurements Configured",
+          description:
+            "Add measurements from the 'Browse Available' tab to start tracking data for this assessment",
+        })}
+      />
+    </div>
   );
 }

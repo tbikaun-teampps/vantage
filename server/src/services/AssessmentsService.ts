@@ -17,6 +17,10 @@ import {
 } from "../types/entities/assessments";
 import { InterviewEvidence } from "../types/entities/interviews";
 import { RecommendationsService } from "./RecommendationsService";
+import {
+  resolveLocationFromNode,
+  type LocationNodeType,
+} from "../lib/location-resolver";
 
 export class AssessmentsService {
   private supabase: SupabaseClient<Database>;
@@ -336,9 +340,7 @@ export class AssessmentsService {
 
     // Detect whether the status has changed to 'completed'. This will trigger a recommendation generation service.
     if (updates.status && updates.status === "completed") {
-      const recommendationsService = new RecommendationsService(
-        this.supabase
-      );
+      const recommendationsService = new RecommendationsService(this.supabase);
       recommendationsService.generateRecommendations(id);
     }
 
@@ -618,14 +620,15 @@ export class AssessmentsService {
   }
 
   async getMeasurementsByAssessmentId(
-    assessmentId: number
+    assessmentId: number,
   ): Promise<CalculatedMeasurementWithLocation[]> {
-    // Fetch measurements associated with the assessment
+    // Fetch measurements associated with the assessment, enriched with definition data
     const { data: measurements, error: measurementsError } = await this.supabase
       .from("measurements_calculated")
       .select(
         `
           *,
+          definition:measurement_definition_id(name, description),
           business_unit:business_unit_id(name),
           region:region_id(name),
           site:site_id(name),
@@ -645,9 +648,11 @@ export class AssessmentsService {
 
     // Hoist up shared_role_id.name to role.name for easier access
     return measurements.map((m) => {
-      const { role, ...rest } = m;
+      const { role, definition, ...rest } = m;
       return {
         ...rest,
+        measurement_name: definition.name,
+        measurement_description: definition.description,
         role: role?.shared_role_id ? { name: role.shared_role_id.name } : null,
       };
     });
@@ -658,12 +663,8 @@ export class AssessmentsService {
     measurement_definition_id: number,
     calculated_value: number,
     location?: {
-      business_unit_id?: number | null;
-      region_id?: number | null;
-      site_id?: number | null;
-      asset_group_id?: number | null;
-      work_group_id?: number | null;
-      role_id?: number | null;
+      id: number;
+      type: LocationNodeType;
     }
   ) {
     // Check assessment is 'desktop' type
@@ -695,43 +696,65 @@ export class AssessmentsService {
       throw new Error("Measurement definition not found");
     }
 
-    // Check measurement isn't already associated with the assessment
+    // Resolve the location hierarchy from the selected node
+    let resolvedLocation: {
+      business_unit_id?: number;
+      region_id?: number;
+      site_id?: number;
+      asset_group_id?: number;
+      work_group_id?: number;
+      role_id?: number;
+    } | null = null;
+
+    if (location) {
+      resolvedLocation = await resolveLocationFromNode(
+        this.supabase,
+        location.id,
+        location.type,
+        assessment.company_id
+      );
+    }
+
+    console.log('resolvedLocation: ', resolvedLocation)
+
+    // Check measurement isn't already associated with the assessment at this location
     let existenceCheckQuery = this.supabase
       .from("measurements_calculated")
       .select("*")
       .eq("assessment_id", assessmentId)
       .eq("measurement_definition_id", measurement_definition_id);
 
-    if (location) {
-      if (location.business_unit_id) {
+    if (resolvedLocation) {
+      const loc = resolvedLocation;
+      if (loc.business_unit_id) {
         existenceCheckQuery = existenceCheckQuery.eq(
           "business_unit_id",
-          location.business_unit_id
+          loc.business_unit_id
         );
-        if (location.region_id) {
+        if (loc.region_id) {
           existenceCheckQuery = existenceCheckQuery.eq(
             "region_id",
-            location.region_id
+            loc.region_id
           );
-          if (location.site_id) {
+          if (loc.site_id) {
             existenceCheckQuery = existenceCheckQuery.eq(
               "site_id",
-              location.site_id
+              loc.site_id
             );
-            if (location.asset_group_id) {
+            if (loc.asset_group_id) {
               existenceCheckQuery = existenceCheckQuery.eq(
                 "asset_group_id",
-                location.asset_group_id
+                loc.asset_group_id
               );
-              if (location.work_group_id) {
+              if (loc.work_group_id) {
                 existenceCheckQuery = existenceCheckQuery.eq(
                   "work_group_id",
-                  location.work_group_id
+                  loc.work_group_id
                 );
-                if (location.role_id) {
+                if (loc.role_id) {
                   existenceCheckQuery = existenceCheckQuery.eq(
                     "role_id",
-                    location.role_id
+                    loc.role_id
                   );
                 }
               }
@@ -759,7 +782,7 @@ export class AssessmentsService {
           assessment_id: assessmentId,
           measurement_definition_id,
           calculated_value,
-          ...location,
+          ...resolvedLocation,
         })
         .select()
         .single();

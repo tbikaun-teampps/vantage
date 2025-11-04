@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/data-table";
 import { createMeasurementColumns } from "./measurement-table-columns";
 import { MeasurementDetailsDialog } from "./measurement-details-dialog";
+import { EditMeasurementDialog } from "./edit-measurement-dialog";
 import { MeasurementInstancesTable } from "./measurement-instances-table";
 import type {
   AssessmentMeasurement,
@@ -32,18 +33,18 @@ export function MeasurementManagement({
   const [selectedMeasurementId, setSelectedMeasurementId] = useState<
     number | null
   >(null);
-  const [selectedInstanceId, setSelectedInstanceId] = useState<number | null>(
-    null
-  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
   const [activeTab, setActiveTab] = useState("browse");
+
+  // State for simple edit dialog
+  const [editInstance, setEditInstance] = useState<EnrichedMeasurementInstance | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const { allMeasurements, isLoading, error } =
     useAssessmentMeasurements(assessmentId);
   const { instances, isLoading: isLoadingInstances } =
     useAssessmentMeasurementInstances(assessmentId);
-  const { addMeasurement, deleteMeasurement, isDeleting } =
+  const { deleteMeasurement, isDeleting } =
     useAssessmentMeasurementActions();
 
   // Sort measurements: isInUse first, then available, then unavailable. Each group alphabetically.
@@ -65,11 +66,6 @@ export function MeasurementManagement({
   // Derive the current measurement from allMeasurements to always have fresh data
   const selectedMeasurement = selectedMeasurementId
     ? (allMeasurements.find((m) => m.id === selectedMeasurementId) ?? null)
-    : null;
-
-  // Find the selected instance for editing
-  const selectedInstance = selectedInstanceId
-    ? (instances.find((i) => i.id === selectedInstanceId) ?? null)
     : null;
 
   if (!assessmentId) {
@@ -108,18 +104,14 @@ export function MeasurementManagement({
       return;
     }
 
-    setDialogMode("add");
     setSelectedMeasurementId(measurement.id);
-    setSelectedInstanceId(null);
     setIsDialogOpen(true);
   };
 
   // Handler for editing an existing measurement instance
   const handleEditInstance = (instance: EnrichedMeasurementInstance) => {
-    setDialogMode("edit");
-    setSelectedMeasurementId(instance.measurement_id);
-    setSelectedInstanceId(instance.id);
-    setIsDialogOpen(true);
+    setEditInstance(instance);
+    setIsEditDialogOpen(true);
   };
 
   // Handler for deleting a measurement instance
@@ -134,27 +126,6 @@ export function MeasurementManagement({
     } catch (error) {
       toast.error("Failed to delete measurement");
       console.error("Error deleting measurement:", error);
-    }
-  };
-
-  const handleToggleSelection = async (measurement: AssessmentMeasurement) => {
-    if (!assessmentId) return;
-
-    try {
-      if (measurement.isInUse && measurement.measurementRecordId) {
-        // Remove from assessment
-        await deleteMeasurement(assessmentId, measurement.measurementRecordId);
-        toast.success(`Removed "${measurement.name}" from assessment`);
-      } else {
-        // Add to assessment with initial value of 0
-        await addMeasurement(assessmentId, measurement.id, 0);
-        toast.success(`Added "${measurement.name}" to assessment`);
-      }
-    } catch (error) {
-      toast.error(
-        `Failed to ${measurement.isInUse ? "remove" : "add"} measurement`
-      );
-      console.error("Error toggling measurement:", error);
     }
   };
 
@@ -251,15 +222,17 @@ export function MeasurementManagement({
         measurement={selectedMeasurement}
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        onToggleSelection={handleToggleSelection}
         onUploadData={handleUploadData}
         assessmentId={assessmentId}
         isDeleting={isDeleting}
-        mode={dialogMode}
-        instanceId={selectedInstanceId}
-        instance={selectedInstance}
         onEditInstance={handleEditInstance}
         onDeleteInstance={handleDeleteInstance}
+      />
+      <EditMeasurementDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        instance={editInstance}
+        assessmentId={assessmentId!}
       />
     </>
   );
