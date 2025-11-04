@@ -7,7 +7,12 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { IconCheck, IconCopy, IconTrash } from "@tabler/icons-react";
+import {
+  IconCheck,
+  IconCopy,
+  IconDownload,
+  IconTrash,
+} from "@tabler/icons-react";
 import { AlertTriangle } from "lucide-react";
 import SettingsForm from "./settings-form";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
@@ -106,6 +111,24 @@ export function Settings() {
     }
   };
 
+  const handleExportQuestionnaire = () => {
+    if (!questionnaire) return;
+
+    const dataStr = JSON.stringify(questionnaire, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${questionnaire.name.replace(/\s+/g, "_")}_export.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success("Questionnaire exported successfully");
+  };
+
   if (!questionnaire) {
     return null;
   }
@@ -144,7 +167,30 @@ export function Settings() {
           <SettingsForm />
 
           {userCanAdmin && (
-            <div className="border-t pt-6 space-y-4">
+            <div className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                      Export Questionnaire
+                    </h3>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      Export the questionnaire structure and settings as a JSON
+                      file.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportQuestionnaire}
+                    disabled={isProcessing}
+                    className="border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  >
+                    <IconDownload className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
+              </div>
               <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
