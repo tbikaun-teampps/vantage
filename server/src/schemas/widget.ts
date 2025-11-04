@@ -83,14 +83,10 @@ export const widgetSchemas = {
       success: Type.Boolean(),
       data: Type.Object({
         total: Type.Number({ description: "Total count of entities" }),
-        breakdown: Type.Record(
-          Type.String(),
-          Type.Number(),
-          {
-            description:
-              "Status breakdown with status names as keys and counts as values",
-          }
-        ),
+        breakdown: Type.Record(Type.String(), Type.Number(), {
+          description:
+            "Status breakdown with status names as keys and counts as values",
+        }),
         items: Type.Array(
           Type.Object({
             id: Type.Number(),
@@ -98,6 +94,10 @@ export const widgetSchemas = {
             created_at: Type.String(),
             updated_at: Type.String(),
             name: Type.String(),
+            type: Type.Optional(
+              Type.Union([Type.Literal("onsite"), Type.Literal("desktop")])
+            ),
+            is_individual: Type.Optional(Type.Boolean()),
           })
         ),
       }),
