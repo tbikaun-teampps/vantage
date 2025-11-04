@@ -4,29 +4,75 @@ import { Badge } from "@/components/ui/badge";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  IconArchive,
+  IconCancel,
+  IconCircleCheckFilled,
+  IconClock,
+  IconEye,
+  IconPencil,
+  IconPlayerPause,
+} from "@tabler/icons-react";
 
+/**
+ * Get color classes for a given status
+ * @param status
+ * @returns
+ */
 const getStatusColor = (status: string) => {
   switch (status) {
-    // Interview statuses
     case "pending":
-      return "bg-amber-300 text-amber-800";
+      return "bg-amber-100 text-amber-500 border border-amber-500 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-200";
     case "in_progress":
-      return "bg-blue-300 text-blue-800";
+      return "bg-blue-100 text-blue-500 border border-blue-500 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-200";
     case "completed":
-      return "bg-green-300 text-green-800";
+      return "bg-green-100 text-green-500 border border-green-500 dark:bg-green-950 dark:text-green-200 dark:border-green-200";
     case "cancelled":
-      return "bg-red-300 text-red-800";
-    // Assessment statuses
+      return "bg-red-100 text-red-500 border border-red-500 dark:bg-red-950 dark:text-red-200 dark:border-red-200";
     case "draft":
-      return "bg-gray-300 text-gray-800";
+      return "bg-gray-100 text-gray-500 border border-gray-500 dark:bg-gray-950 dark:text-gray-200 dark:border-gray-200";
     case "active":
-      return "bg-blue-300 text-blue-800";
+      return "bg-blue-100 text-blue-500 border border-blue-500 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-200";
     case "under_review":
-      return "bg-orange-300 text-orange-800";
+      return "bg-orange-100 text-orange-500 border border-orange-500 dark:bg-orange-950 dark:text-orange-200 dark:border-orange-200";
     case "archived":
-      return "bg-slate-300 text-slate-800";
+      return "bg-slate-100 text-slate-500 border border-slate-500 dark:bg-slate-950 dark:text-slate-200 dark:border-slate-200";
     default:
-      return "bg-gray-300 text-gray-800";
+      return "bg-gray-100 text-gray-500 border border-gray-500 dark:bg-gray-950 dark:text-gray-200 dark:border-gray-200";
+  }
+};
+
+/**
+ * Get icon component for a given status
+ * @param status 
+ * @returns 
+ */
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case "completed":
+      return <IconCircleCheckFilled className="h-3 w-3" />;
+    case "active":
+      return <IconClock className="h-3 w-3" />;
+    case "in_progress":
+      return <IconClock className="h-3 w-3" />;
+    case "draft":
+      return <IconPencil className="h-3 w-3" />;
+    case "under_review":
+      return <IconEye className="h-3 w-3" />;
+    case "archived":
+      return <IconArchive className="h-3 w-3" />;
+    case "cancelled":
+      return <IconCancel className="h-3 w-3" />;
+    case "pending":
+      return <IconPlayerPause className="h-3 w-3" />;
+    default:
+      return null;
   }
 };
 
@@ -34,19 +80,19 @@ const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
   const currentEntityType = config?.entity?.entityType;
   const { data, isLoading, isFetching, error } = useActivityData(config);
 
+  const isConfigured = Boolean(currentEntityType);
+
   // If no entity type is configured, show a placeholder message
-  if (!currentEntityType) {
+  if (!isConfigured) {
     return (
       <>
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold">
-            Activity Overview
-          </CardTitle>
+          <CardTitle className="font-semibold">Activity Widget</CardTitle>
         </CardHeader>
         <CardContent className="pt-0 flex-1 min-h-0">
           <div className="h-full bg-muted/30 rounded flex items-center justify-center">
-            <span className="text-muted-foreground">
-              Configure this widget to see data
+            <span className="text-muted-foreground p-2 text-center">
+              Configure this activity widget to see data
             </span>
           </div>
         </CardContent>
@@ -103,7 +149,7 @@ const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
   return (
     <>
       {/* <CardHeader>
-        <CardTitle className="text-2xl font-semibold capitalize">
+        <CardTitle className="font-semibold capitalize">
           {currentEntityType}
         </CardTitle>
       </CardHeader> */}
@@ -126,25 +172,26 @@ const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+          <div className="flex min-h-0 gap-2">
             {data?.breakdown &&
               Object.entries(data.breakdown).map(([status, count], index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between text-sm flex-shrink-0"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="capitalize">
-                      {status.replace(/_/g, " ")}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{count}</span>
-                    <div
-                      className={`w-2 h-2 rounded-full ${getStatusColor(status).split(" ")[0]}`}
-                    />
-                  </div>
-                </div>
+                <TooltipProvider key={index}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge className={`flex-1 ${getStatusColor(status)}`}>
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(status)}
+                          <span className="font-medium">{count}</span>
+                        </div>
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p className="text-xs capitalize">
+                        {status.replace(/_/g, " ")} {currentEntityType}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               ))}
           </div>
         </div>
