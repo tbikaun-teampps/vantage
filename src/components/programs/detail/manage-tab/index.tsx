@@ -12,7 +12,7 @@ import {
   IconCircleCheck,
   IconArchive,
 } from "@tabler/icons-react";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow, format, addWeeks, addMonths } from "date-fns";
 import { useCreatePhase, useDeletePhase } from "@/hooks/useProgram";
 import type { ProgramPhase } from "@/types/program";
 import { Interviews } from "./interviews";
@@ -344,6 +344,44 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
 
   const createPhaseMutation = useCreatePhase();
 
+  // Find the previous phase (highest sequence_number) to anchor date helpers
+  const previousPhase = useMemo(() => {
+    if (!program.phases || program.phases.length === 0) return null;
+    return [...program.phases].sort(
+      (a, b) => (b.sequence_number ?? 0) - (a.sequence_number ?? 0)
+    )[0];
+  }, [program.phases]);
+
+  // Get anchor date for helpers (previous phase end date or today)
+  const anchorDate = useMemo(() => {
+    if (previousPhase?.planned_end_date) {
+      return new Date(previousPhase.planned_end_date);
+    }
+    return new Date();
+  }, [previousPhase]);
+
+  // Helper function to set dates based on interval
+  const handleDateHelper = (weeksToAdd?: number, monthsToAdd?: number) => {
+    let newStartDate = anchorDate;
+
+    if (weeksToAdd) {
+      newStartDate = addWeeks(anchorDate, weeksToAdd);
+    } else if (monthsToAdd) {
+      newStartDate = addMonths(anchorDate, monthsToAdd);
+    }
+
+    // Also suggest end date with the same interval
+    let newEndDate = newStartDate;
+    if (weeksToAdd) {
+      newEndDate = addWeeks(newStartDate, weeksToAdd);
+    } else if (monthsToAdd) {
+      newEndDate = addMonths(newStartDate, monthsToAdd);
+    }
+
+    setPlannedStartDate(newStartDate);
+    setPlannedEndDate(newEndDate);
+  };
+
   const handleSubmit = () => {
     // Validate all required fields
     if (!phaseName || !plannedStartDate || !plannedEndDate) return;
@@ -407,9 +445,47 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
           </div>
 
           <div>
-            <Label htmlFor="planned-start-date" className="mb-2">
-              Planned Start Date (Required)
-            </Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="planned-start-date">
+                Planned Start Date (Required)
+              </Label>
+              <div className="flex gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDateHelper(1)}
+                  className="h-7 text-xs"
+                >
+                  +1 Week
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDateHelper(undefined, 1)}
+                  className="h-7 text-xs"
+                >
+                  +1 Month
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDateHelper(undefined, 6)}
+                  className="h-7 text-xs"
+                >
+                  +6 Months
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mb-2">
+              Quick dates based on{" "}
+              {previousPhase
+                ? "the previous assessment's end date"
+                : "today's date"}
+              . Both start and end dates will be set with the selected interval.
+            </p>
             <DatePicker
               date={plannedStartDate}
               setDate={setPlannedStartDate}
