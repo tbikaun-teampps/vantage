@@ -91,6 +91,15 @@ export const widgetSchemas = {
               "Status breakdown with status names as keys and counts as values",
           }
         ),
+        items: Type.Array(
+          Type.Object({
+            id: Type.Number(),
+            status: Type.String(),
+            created_at: Type.String(),
+            updated_at: Type.String(),
+            name: Type.String(),
+          })
+        ),
       }),
     }),
 

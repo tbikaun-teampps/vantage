@@ -176,7 +176,21 @@ export interface paths {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              error: string;
+            };
+          };
         };
       };
     };
@@ -602,6 +616,10 @@ export interface paths {
         content: {
           "application/json": {
             name: string;
+            /** Format: date-time */
+            planned_start_date: string;
+            /** Format: date-time */
+            planned_end_date: string;
             /** @default false */
             activate?: boolean;
           };
@@ -669,7 +687,27 @@ export interface paths {
       };
     };
     post?: never;
-    delete?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          programId: number;
+          phaseId: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
     options?: never;
     head?: never;
     patch?: never;
@@ -7749,6 +7787,13 @@ export interface paths {
                 breakdown: {
                   [key: string]: number;
                 };
+                items: {
+                  id: number;
+                  status: string;
+                  created_at: string;
+                  updated_at: string;
+                  name: string;
+                }[];
               };
             };
           };

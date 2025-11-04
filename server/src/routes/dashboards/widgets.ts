@@ -64,7 +64,7 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { companyId } = request.params as { companyId: string };
       const { entityType } = request.query as {
         entityType: "interviews" | "assessments" | "programs";
@@ -76,10 +76,10 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
       );
       const data = await widgetService.getActivityData(entityType);
 
-      return reply.send({
+      return {
         success: true,
         data,
-      });
+      };
     }
   );
 
