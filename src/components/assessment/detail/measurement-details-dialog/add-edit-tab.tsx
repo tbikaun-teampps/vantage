@@ -1,19 +1,23 @@
-import { CompanyStructureSelectionTree } from "@/components/company-structure-selection-tree";
+import {
+  LocationTreeSelect,
+  type FlatNode,
+} from "@/components/location-tree-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAssessmentMeasurementActions } from "@/hooks/use-assessment-measurements";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import {
   IconDeviceFloppy,
   IconFileUpload,
   IconCheck,
 } from "@tabler/icons-react";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import type {
   AssessmentMeasurement,
   EnrichedMeasurementInstance,
-} from "../../../../types/assessment-measurements";
+} from "@/types/assessment-measurements";
 import type { TreeNodeType } from "@/types/company";
 
 interface ConfigTabProps {
@@ -21,10 +25,8 @@ interface ConfigTabProps {
   measurement: AssessmentMeasurement;
   onUploadData: (measurement: AssessmentMeasurement) => void;
   isDeleting: boolean;
-  onToggleSelection: (measurement: AssessmentMeasurement) => void;
-  mode?: "add" | "edit";
-  instanceId?: number | null;
-  instance?: EnrichedMeasurementInstance | null;
+  onDeleteInstance?: (instance: EnrichedMeasurementInstance) => void;
+  instances: EnrichedMeasurementInstance[];
 }
 
 export function AddEditTab({
@@ -32,63 +34,84 @@ export function AddEditTab({
   measurement,
   onUploadData,
   isDeleting,
-  onToggleSelection,
-  mode = "add",
-  instanceId = null,
-  instance = null,
+  onDeleteInstance,
+  instances,
 }: ConfigTabProps) {
+  const companyId = useCompanyFromUrl();
   const [manualValue, setManualValue] = useState<string>("");
-  const [selectedNodes, setSelectedNodes] = useState<Map<string, TreeNodeType>>(
-    new Map()
-  );
+  const [selectedLocation, setSelectedLocation] = useState<{
+    id: string;
+    type: TreeNodeType;
+    name: string;
+  } | null>(null);
   const {
     addMeasurement,
     updateMeasurement,
     isUpdating,
     isAdding: isAddingMeasurement,
   } = useAssessmentMeasurementActions();
+  const [mode, setMode] = useState<"add" | "edit">("add");
 
-  // Initialize form based on mode (add vs edit)
+  // Get mapping between instances and their lowest level node for marker display
+  // Use Set for O(1) lookup performance instead of O(n) with array.find()
+  const instanceMap = useMemo(() => {
+    const map = new Set<string>();
+    instances.forEach((i) => {
+      if (i.role_id) {
+        map.add(`role:${i.role_id}`);
+      } else if (i.work_group_id) {
+        map.add(`work_group:${i.work_group_id}`);
+      } else if (i.asset_group_id) {
+        map.add(`asset_group:${i.asset_group_id}`);
+      } else if (i.site_id) {
+        map.add(`site:${i.site_id}`);
+      } else if (i.region_id) {
+        map.add(`region:${i.region_id}`);
+      } else if (i.business_unit_id) {
+        map.add(`business_unit:${i.business_unit_id}`);
+      }
+    });
+    return map;
+  }, [instances]);
+
+  // Find the current instance based on selectedLocation
+  const currentInstance = useMemo(() => {
+    if (!selectedLocation) return null;
+
+    return instances.find((i) => {
+      const typeIdMatch =
+        i[`${selectedLocation.type}_id`] === parseInt(selectedLocation.id);
+      return typeIdMatch;
+    });
+  }, [selectedLocation, instances]);
+
+  // Auto-switch between add and edit modes based on selected location
   useEffect(() => {
-    if (mode === "edit" && instance) {
-      // Pre-populate value from instance
-      setManualValue(instance.calculated_value.toString());
-
-      // Pre-populate location selection from instance
-      const initialNodes = new Map<string, TreeNodeType>();
-      if (instance.business_unit_id) {
-        initialNodes.set(instance.business_unit_id.toString(), "business_unit");
+    if (selectedLocation) {
+      if (currentInstance) {
+        setMode("edit");
+        // Populate form with the current instance data
+        setManualValue(currentInstance.calculated_value.toString());
+      } else {
+        setMode("add");
+        // Clear form for add mode
+        setManualValue("");
       }
-      if (instance.region_id) {
-        initialNodes.set(instance.region_id.toString(), "region");
-      }
-      if (instance.site_id) {
-        initialNodes.set(instance.site_id.toString(), "site");
-      }
-      if (instance.asset_group_id) {
-        initialNodes.set(instance.asset_group_id.toString(), "asset_group");
-      }
-      if (instance.work_group_id) {
-        initialNodes.set(instance.work_group_id.toString(), "work_group");
-      }
-      if (instance.role_id) {
-        initialNodes.set(instance.role_id.toString(), "role");
-      }
-      setSelectedNodes(initialNodes);
-    } else {
-      // Reset for add mode
-      setManualValue("");
-      setSelectedNodes(new Map());
     }
-  }, [mode, instance]);
+  }, [selectedLocation, currentInstance]);
 
   if (!measurement) {
     return null;
   }
 
   const handleSaveManualValue = async () => {
-    if (!assessmentId || !instanceId) {
-      toast.error("Cannot save: missing assessment or instance ID");
+    if (!assessmentId) {
+      toast.error("Cannot save: missing assessment ID");
+      return;
+    }
+
+    if (!currentInstance) {
+      toast.error("Cannot save: no instance found for selected location");
       return;
     }
 
@@ -99,7 +122,7 @@ export function AddEditTab({
     }
 
     try {
-      await updateMeasurement(assessmentId, instanceId, {
+      await updateMeasurement(assessmentId, currentInstance.id, {
         calculated_value: value,
       });
       toast.success(`Updated "${measurement.name}" value to ${value}`);
@@ -109,7 +132,7 @@ export function AddEditTab({
     }
   };
 
-  const hasSelection = selectedNodes.size > 0;
+  const hasSelection = selectedLocation !== null;
   const canAddToAssessment = hasSelection && manualValue.trim() !== "";
 
   const handleAddToAssessment = async () => {
@@ -124,63 +147,50 @@ export function AddEditTab({
       return;
     }
 
-    // Build location object from selectedNodes Map
-    const location: {
-      business_unit_id?: number;
-      region_id?: number;
-      site_id?: number;
-      asset_group_id?: number;
-      work_group_id?: number;
-      role_id?: number;
-    } = {};
+    // Type guard: ensure we're not adding at company level
+    if (selectedLocation.type === "company") {
+      toast.error("Cannot add measurement at company level");
+      return;
+    }
 
-    selectedNodes.forEach((type, id) => {
-      const numericId = parseInt(id);
-      switch (type) {
-        case "business_unit":
-          location.business_unit_id = numericId;
-          break;
-        case "region":
-          location.region_id = numericId;
-          break;
-        case "site":
-          location.site_id = numericId;
-          break;
-        case "asset_group":
-          location.asset_group_id = numericId;
-          break;
-        case "work_group":
-          location.work_group_id = numericId;
-          break;
-        case "role":
-          location.role_id = numericId;
-          break;
-        // company type is not included in location
-      }
-    });
+    // Send only the selected node's id and type to the server
+    // Server will resolve the full location hierarchy
+    const location = {
+      id: parseInt(selectedLocation.id),
+      type: selectedLocation.type,
+    };
 
     try {
       await addMeasurement(assessmentId, measurement.id, value, location);
       toast.success(`Added "${measurement.name}" to assessment`);
       // Clear form after successful add
       setManualValue("");
-      setSelectedNodes(new Map());
+      setSelectedLocation(null);
     } catch (error) {
       toast.error("Failed to add measurement");
       console.error("Error adding measurement:", error);
     }
   };
 
+  const handleNodeMarkers = (node: FlatNode) => {
+    const key = `${node.type}:${node.id}`;
+    return instanceMap.has(key) ? (
+      <IconCheck className="h-4 w-4 text-green-500" />
+    ) : null;
+  };
+
+  console.log("selectedLocation: ", selectedLocation);
+
   return (
     <div className="grid grid-cols-2 gap-6">
       {/* Left Column: Company Structure */}
       <div>
-        <CompanyStructureSelectionTree
-          selectionMode="branches"
+        <LocationTreeSelect
+          companyId={companyId}
+          value={selectedLocation}
+          onChange={setSelectedLocation}
           enableCollapse={false}
-          onSelectionChange={setSelectedNodes}
-          initialSelection={selectedNodes}
-          // maxHeight="300px"
+          renderNodeMarkers={handleNodeMarkers}
         />
       </div>
 
@@ -191,8 +201,9 @@ export function AddEditTab({
           <div>
             <h4 className="font-medium mb-3">Add to Assessment</h4>
             <p className="text-sm text-muted-foreground mb-4">
-              Select a location from the tree and enter a value to add this
-              measurement to your assessment.
+              {selectedLocation
+                ? `You've selected ${selectedLocation.name} (${selectedLocation.type.replaceAll("_", " ")})`
+                : "Select a location from the tree and enter a value to add this measurement to your assessment."}
             </p>
             <div className="space-y-3">
               <div className="flex gap-2">
@@ -228,6 +239,37 @@ export function AddEditTab({
                   </>
                 )}
               </Button>
+            </div>
+          </div>
+        )}
+        {/* Manual Value Entry - only for edit mode */}
+        {mode === "edit" && (
+          <div>
+            <h4 className="font-medium mb-2">Update Measurement Value</h4>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    id="manual-value"
+                    type="number"
+                    step="any"
+                    placeholder="Enter value"
+                    value={manualValue}
+                    onChange={(e) => setManualValue(e.target.value)}
+                    disabled={isUpdating}
+                  />
+                  <Button
+                    onClick={handleSaveManualValue}
+                    disabled={!manualValue || isUpdating}
+                  >
+                    <IconDeviceFloppy className="h-4 w-4 mr-2" />
+                    {isUpdating ? "Saving..." : "Save"}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Update the value for this measurement at the selected location
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -267,40 +309,8 @@ export function AddEditTab({
           </div>
         </div>
 
-        {/* Manual Value Entry - only for edit mode */}
-        {mode === "edit" && (
-          <div>
-            <h4 className="font-medium mb-2">Update Measurement Value</h4>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <Input
-                    id="manual-value"
-                    type="number"
-                    step="any"
-                    placeholder="Enter value"
-                    value={manualValue}
-                    onChange={(e) => setManualValue(e.target.value)}
-                    disabled={isUpdating}
-                  />
-                  <Button
-                    onClick={handleSaveManualValue}
-                    disabled={!manualValue || isUpdating}
-                  >
-                    <IconDeviceFloppy className="h-4 w-4 mr-2" />
-                    {isUpdating ? "Saving..." : "Save"}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Update the value for this measurement at the selected location
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Remove from Assessment option - only for edit mode */}
-        {mode === "edit" && instance && (
+        {mode === "edit" && currentInstance && (
           <div>
             <h4 className="font-medium mb-2 text-red-600">Danger Zone</h4>
             <div className="border border-red-200 rounded-lg p-4">
@@ -311,9 +321,9 @@ export function AddEditTab({
               </p>
               <Button
                 variant="destructive"
-                onClick={() => onToggleSelection(measurement)}
+                onClick={() => onDeleteInstance?.(currentInstance)}
                 className="w-full sm:w-auto"
-                disabled={isDeleting}
+                disabled={isDeleting || !onDeleteInstance}
               >
                 {isDeleting ? (
                   <>

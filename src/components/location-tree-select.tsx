@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   IconBuilding,
   IconMapPin,
@@ -16,7 +15,7 @@ import {
   IconSearch,
 } from "@tabler/icons-react";
 import { useCompanyTree } from "@/hooks/useCompany";
-import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import { cn } from "@/lib/utils";
 import type {
   AnyTreeNode,
   TreeNodeType,
@@ -25,10 +24,11 @@ import type {
   SiteTreeNode,
   AssetGroupTreeNode,
   WorkGroupTreeNode,
+  RoleTreeNode,
 } from "@/types/company";
 
 // Flattened node structure for easier searching and display
-interface FlatNode {
+export interface FlatNode {
   id: string;
   name: string;
   type: TreeNodeType;
@@ -44,9 +44,10 @@ interface SimpleTreeNodeProps {
   isExpanded: boolean;
   onToggleExpanded: (nodeId: string) => void;
   isVisible: boolean;
-  selectionState: "full" | "partial" | "none";
-  onNodeSelection: (nodeId: string) => void;
+  isSelected: boolean;
+  onNodeClick: (nodeId: string, nodeType: TreeNodeType, name: string) => void;
   enableCollapse: boolean;
+  renderNodeMarkers?: (node: FlatNode) => React.ReactNode;
 }
 
 function SimpleTreeNode({
@@ -54,9 +55,10 @@ function SimpleTreeNode({
   isExpanded,
   onToggleExpanded,
   isVisible,
-  selectionState,
-  onNodeSelection,
+  isSelected,
+  onNodeClick,
   enableCollapse,
+  renderNodeMarkers,
 }: SimpleTreeNodeProps) {
   if (!isVisible) return null;
 
@@ -73,9 +75,9 @@ function SimpleTreeNode({
     return iconMap[type];
   };
 
-  const handleNodeClick = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    onNodeSelection(node.id);
+  const handleNodeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onNodeClick(node.id, node.type, node.name);
   };
 
   const handleExpandToggle = (e: React.MouseEvent) => {
@@ -84,7 +86,13 @@ function SimpleTreeNode({
   };
 
   return (
-    <div className="flex items-center py-1 hover:bg-muted/50 rounded-sm">
+    <div
+      className={cn(
+        "flex items-center py-1 px-2 hover:bg-muted/50 rounded-sm cursor-pointer",
+        isSelected && "bg-primary/10"
+      )}
+      onClick={handleNodeClick}
+    >
       <div
         style={{ paddingLeft: `${node.level * 20}px` }}
         className="flex items-center gap-2 flex-1"
@@ -107,61 +115,49 @@ function SimpleTreeNode({
           <div className="h-6 w-6 flex-shrink-0" />
         ) : null}
 
-        {/* Selection Checkbox */}
-        <Checkbox
-          checked={
-            selectionState === "full"
-              ? true
-              : selectionState === "partial"
-                ? "indeterminate"
-                : false
-          }
-          onCheckedChange={() => handleNodeClick()}
-          className="flex-shrink-0"
-        />
-
         {/* Node Icon and Label */}
-        <div
-          className="flex items-center gap-2 flex-1 cursor-pointer"
-          onClick={handleNodeClick}
-        >
+        <div className="flex items-center gap-2 flex-1">
           {getTypeIcon(node.type)}
           <span className="text-sm font-medium">{node.name}</span>
           <span className="text-xs text-muted-foreground capitalize ml-2">
             ({node.type.replace("_", " ")})
           </span>
+          {renderNodeMarkers && (
+            <div className="flex items-center gap-1 ml-2">
+              {renderNodeMarkers(node)}
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-interface CompanyStructureSelectionTreeProps {
-  selectionMode?: "roles" | "branches";
-  enableCollapse?: boolean;
+interface LocationTreeSelectProps {
+  companyId: string;
+  value?: { id: string; type: TreeNodeType; name: string } | null;
+  onChange: (
+    selection: { id: string; type: TreeNodeType; name: string } | null
+  ) => void;
+  disabled?: boolean;
   maxHeight?: string;
-  onSelectionChange?: (selectedNodes: Map<string, TreeNodeType>) => void;
-  initialSelection?: Map<string, TreeNodeType>;
+  enableCollapse?: boolean;
+  renderNodeMarkers?: (node: FlatNode) => React.ReactNode;
 }
 
-export function CompanyStructureSelectionTree({
-  selectionMode = "roles",
+export function LocationTreeSelect({
+  companyId,
+  value,
+  onChange,
+  disabled = false,
+  maxHeight = "500px",
   enableCollapse = true,
-  maxHeight,
-  onSelectionChange,
-  initialSelection,
-}: CompanyStructureSelectionTreeProps = {}) {
-  const companyId = useCompanyFromUrl();
+  renderNodeMarkers,
+}: LocationTreeSelectProps) {
   const { data: tree, isLoading } = useCompanyTree(companyId);
 
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRoleIds, setSelectedRoleIds] = useState<
-    Map<string, TreeNodeType>
-  >(new Map());
-  const [selectedNodeIds, setSelectedNodeIds] = useState<
-    Map<string, TreeNodeType>
-  >(initialSelection ?? new Map());
 
   // Flatten the tree structure for easier manipulation
   const flatNodes = useMemo(() => {
@@ -194,6 +190,8 @@ export function CompanyStructureSelectionTree({
         hasChildren = (item.work_groups?.length || 0) > 0;
       } else if (type === "work_group" && "roles" in item) {
         hasChildren = (item.roles?.length || 0) > 0;
+      } else if (type === "role" && "reporting_roles" in item) {
+        hasChildren = (item.reporting_roles?.length || 0) > 0;
       }
 
       nodes.push({
@@ -244,9 +242,31 @@ export function CompanyStructureSelectionTree({
           flattenNode(child, "work_group", level + 1, nodePath, nodeId)
         );
       } else if (type === "work_group" && "roles" in item && item.roles) {
-        item.roles.forEach((child: any) =>
+        item.roles.forEach((child: RoleTreeNode) =>
           flattenNode(child, "role", level + 1, nodePath, nodeId)
         );
+      } else if (
+        type === "role" &&
+        "reporting_roles" in item &&
+        item.reporting_roles
+      ) {
+        // Process direct reports (reporting_roles) - only one level deep
+        item.reporting_roles.forEach((child: RoleTreeNode) => {
+          const childId = String(child.id);
+          const childName = "name" in child ? child.name : `role ${child.id}`;
+          const childPath = nodePath ? `${nodePath} > ${childName}` : childName;
+
+          // Add direct report node with hasChildren forced to false (one level only)
+          nodes.push({
+            id: childId,
+            name: childName,
+            type: "role",
+            level: level + 1,
+            path: childPath,
+            parentId: nodeId,
+            hasChildren: false, // Enforce one-level depth limit
+          });
+        });
       }
     };
 
@@ -269,122 +289,17 @@ export function CompanyStructureSelectionTree({
     );
   }, [flatNodes, searchQuery]);
 
-  // Helper function to get all ancestor node IDs for a given node (Mode 2)
-  const getAncestorIds = (nodeId: string): string[] => {
-    const ancestorIds: string[] = [];
-    let currentNode = flatNodes.find((n) => n.id === nodeId);
-
-    while (currentNode?.parentId) {
-      ancestorIds.push(currentNode.parentId);
-      currentNode = flatNodes.find((n) => n.id === currentNode!.parentId);
+  const handleNodeClick = (
+    nodeId: string,
+    nodeType: TreeNodeType,
+    name: string
+  ) => {
+    if (disabled) return;
+    if (value && value.id === nodeId && value.type === nodeType) {
+      onChange(null); // Deselect if already selected
+      return;
     }
-
-    return ancestorIds;
-  };
-
-  // Helper function to get all descendant role IDs for a given node (Mode 1)
-  const getDescendantRoleIds = (nodeId: string): Map<string, TreeNodeType> => {
-    const roleMap = new Map<string, TreeNodeType>();
-    const node = flatNodes.find((n) => n.id === nodeId);
-    if (!node) return roleMap;
-
-    // If this is already a role, return it
-    if (node.type === "role") {
-      roleMap.set(nodeId, node.type);
-      return roleMap;
-    }
-
-    // Find all descendant nodes and collect role IDs
-    const collectRoles = (currentNodeId: string) => {
-      const children = flatNodes.filter((n) => n.parentId === currentNodeId);
-      children.forEach((child) => {
-        if (child.type === "role") {
-          roleMap.set(child.id, child.type);
-        } else {
-          collectRoles(child.id);
-        }
-      });
-    };
-
-    collectRoles(nodeId);
-    return roleMap;
-  };
-
-  // Get selection state for a node (full, partial, or none)
-  const getNodeSelectionState = (
-    nodeId: string
-  ): "full" | "partial" | "none" => {
-    if (selectionMode === "branches") {
-      // Mode 2: Check if this node is selected
-      return selectedNodeIds.has(nodeId) ? "full" : "none";
-    }
-
-    // Mode 1: Check descendant roles
-    const descendantRoleIds = getDescendantRoleIds(nodeId);
-    if (descendantRoleIds.size === 0) return "none";
-
-    const selectedCount = Array.from(descendantRoleIds.keys()).filter((roleId) =>
-      selectedRoleIds.has(roleId)
-    ).length;
-
-    if (selectedCount === descendantRoleIds.size) return "full";
-    if (selectedCount > 0) return "partial";
-    return "none";
-  };
-
-  // Handle node selection (cascade down to roles in Mode 1, cascade up to ancestors in Mode 2)
-  const handleNodeSelection = (nodeId: string) => {
-    if (selectionMode === "branches") {
-      // Mode 2: Select node and all ancestors, or deselect node and all descendants
-      const isCurrentlySelected = selectedNodeIds.has(nodeId);
-      const currentNode = flatNodes.find((n) => n.id === nodeId);
-      if (!currentNode) return;
-
-      // Single path enforcement: clear all when selecting new, keep when deselecting
-      const newSelectedNodeIds = isCurrentlySelected
-        ? new Map(selectedNodeIds)
-        : new Map();
-
-      if (isCurrentlySelected) {
-        // Clear entire selection path (node + ancestors + descendants)
-        newSelectedNodeIds.clear();
-      } else {
-        // Select this node and all ancestors (map already cleared above)
-        newSelectedNodeIds.set(nodeId, currentNode.type);
-        const ancestorIds = getAncestorIds(nodeId);
-        ancestorIds.forEach((ancestorId) => {
-          const ancestorNode = flatNodes.find((n) => n.id === ancestorId);
-          if (ancestorNode) {
-            newSelectedNodeIds.set(ancestorId, ancestorNode.type);
-          }
-        });
-      }
-
-      setSelectedNodeIds(newSelectedNodeIds);
-      onSelectionChange?.(newSelectedNodeIds);
-    } else {
-      // Mode 1: Cascade down to roles
-      const descendantRoleIds = getDescendantRoleIds(nodeId);
-      if (descendantRoleIds.size === 0) return;
-
-      const selectionState = getNodeSelectionState(nodeId);
-      const newSelectedRoleIds = new Map(selectedRoleIds);
-
-      if (selectionState === "full") {
-        // Deselect all descendant roles
-        descendantRoleIds.forEach((_, roleId) => {
-          newSelectedRoleIds.delete(roleId);
-        });
-      } else {
-        // Select all descendant roles
-        descendantRoleIds.forEach((type, roleId) => {
-          newSelectedRoleIds.set(roleId, type);
-        });
-      }
-
-      setSelectedRoleIds(newSelectedRoleIds);
-      onSelectionChange?.(newSelectedRoleIds);
-    }
+    onChange({ id: nodeId, type: nodeType, name });
   };
 
   const toggleExpanded = (nodeId: string) => {
@@ -423,6 +338,10 @@ export function CompanyStructureSelectionTree({
     return true;
   };
 
+  const isNodeSelected = (node: FlatNode): boolean => {
+    return value?.id === node.id && value?.type === node.type;
+  };
+
   return (
     <div className="space-y-4">
       {/* Search Field */}
@@ -433,6 +352,7 @@ export function CompanyStructureSelectionTree({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9"
+          disabled={disabled}
         />
       </div>
 
@@ -453,14 +373,15 @@ export function CompanyStructureSelectionTree({
                 {(searchQuery.trim() ? filteredNodes : flatNodes).map(
                   (node) => (
                     <SimpleTreeNode
-                      key={node.id}
+                      key={`${node.type}-${node.id}`}
                       node={node}
                       isExpanded={expandedNodes.has(node.id)}
                       onToggleExpanded={toggleExpanded}
                       isVisible={isNodeVisible(node)}
-                      selectionState={getNodeSelectionState(node.id)}
-                      onNodeSelection={handleNodeSelection}
+                      isSelected={isNodeSelected(node)}
+                      onNodeClick={handleNodeClick}
                       enableCollapse={enableCollapse}
+                      renderNodeMarkers={renderNodeMarkers}
                     />
                   )
                 )}

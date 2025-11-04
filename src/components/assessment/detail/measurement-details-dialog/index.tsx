@@ -19,7 +19,7 @@ import {
 import type {
   AssessmentMeasurement,
   EnrichedMeasurementInstance,
-} from "../../../../types/assessment-measurements";
+} from "@/types/assessment-measurements";
 import { AddEditTab } from "./add-edit-tab";
 import { MeasurementInstancesTable } from "../measurement-instances-table";
 import { useAssessmentMeasurementInstances } from "@/hooks/use-assessment-measurements";
@@ -30,36 +30,26 @@ interface MeasurementDetailsDialogProps {
   measurement: AssessmentMeasurement | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onToggleSelection: (measurement: AssessmentMeasurement) => void;
   onUploadData: (measurement: AssessmentMeasurement) => void;
   assessmentId?: number;
   isDeleting?: boolean;
-  mode?: "add" | "edit";
-  instanceId?: number | null;
-  instance?: EnrichedMeasurementInstance | null;
   onEditInstance?: (instance: EnrichedMeasurementInstance) => void;
   onDeleteInstance?: (instance: EnrichedMeasurementInstance) => void;
 }
 
 function StatusBadge({ status }: { status: string }) {
   const configs = {
-    configured: {
-      variant: "default" as const,
-      label: "Configured",
+    available: {
+      variant: "secondary" as const,
+      label: "Available",
       icon: IconCheck,
       color: "text-green-600",
     },
-    pending: {
+    unavailable: {
       variant: "secondary" as const,
-      label: "Pending",
+      label: "Unavailable",
       icon: IconAlertCircle,
-      color: "text-yellow-600",
-    },
-    error: {
-      variant: "destructive" as const,
-      label: "Error",
-      icon: IconAlertCircle,
-      color: "text-red-600",
+      color: "text-orange-600",
     },
     in_use: {
       variant: "secondary" as const,
@@ -69,7 +59,7 @@ function StatusBadge({ status }: { status: string }) {
     },
   };
 
-  const config = configs[status as keyof typeof configs] || configs.pending;
+  const config = configs[status as keyof typeof configs];
 
   return (
     <Badge variant={config.variant} className="flex items-center gap-1">
@@ -83,13 +73,9 @@ export function MeasurementDetailsDialog({
   measurement,
   open,
   onOpenChange,
-  onToggleSelection,
   onUploadData,
   assessmentId,
   isDeleting = false,
-  mode = "add",
-  instanceId = null,
-  instance = null,
   onEditInstance,
   onDeleteInstance,
 }: MeasurementDetailsDialogProps) {
@@ -101,8 +87,8 @@ export function MeasurementDetailsDialog({
     useAssessmentMeasurementInstances(assessmentId);
 
   // Filter instances to only show those for this measurement definition
-  const measurementInstances = instances.filter(
-    (inst) => inst.measurement_id === measurement?.id
+  const measurementInstances = (instances ?? []).filter(
+    (inst) => inst.measurement_definition_id === measurement?.id
   );
 
   if (!measurement) {
@@ -124,9 +110,13 @@ export function MeasurementDetailsDialog({
                   .join(" ")}
               </span>
               <div className="flex items-center gap-2 flex-wrap">
+                <StatusBadge status={measurement.status} />
                 {measurement.isInUse && (
                   <>
-                    <StatusBadge status={measurement.status} />
+                    <Badge variant="secondary">
+                      <IconCheck className="h-3 w-3 text-green-600 mr-1" />
+                      In Use
+                    </Badge>
                     {/* <DataStatusBadge status={measurement.data_status} /> */}
                   </>
                 )}
@@ -143,7 +133,7 @@ export function MeasurementDetailsDialog({
               <div className="bg-muted/50 rounded-lg p-4 border flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
                   This measurement is not part of your assessment. Navigate to
-                  the <strong>Add</strong> tab to select a location and enter a
+                  the <strong>Manage</strong> tab to select a location and enter a
                   value.
                 </p>
                 <Button
@@ -158,7 +148,12 @@ export function MeasurementDetailsDialog({
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className={cn("grid w-full grid-cols-2 sm:grid-cols-3", userCanAdmin ? "sm:grid-cols-4" : "")}>
+            <TabsList
+              className={cn(
+                "grid w-full grid-cols-2 sm:grid-cols-3",
+                userCanAdmin ? "sm:grid-cols-4" : ""
+              )}
+            >
               <TabsTrigger value="overview" className="text-xs sm:text-sm">
                 Overview
               </TabsTrigger>
@@ -170,7 +165,7 @@ export function MeasurementDetailsDialog({
               </TabsTrigger>
               {userCanAdmin && (
                 <TabsTrigger value="manage" className="text-xs sm:text-sm">
-                  {mode === "edit" ? "Edit" : "Add"}
+                  Manage
                 </TabsTrigger>
               )}
             </TabsList>
@@ -264,7 +259,7 @@ export function MeasurementDetailsDialog({
               </div>
             </TabsContent>
 
-            {/* Schema Tab (renamed from Data) */}
+            {/* Schema Tab */}
             <TabsContent value="schema" className="space-y-4">
               <div>
                 <h4 className="font-medium mb-3 flex items-center gap-2">
@@ -323,20 +318,22 @@ export function MeasurementDetailsDialog({
             </TabsContent>
 
             {/* Instances Tab - shows all measurement instances for this definition */}
-            <TabsContent value="instances" className="space-y-4">
-              <MeasurementInstancesTable
-                instances={measurementInstances}
-                isLoading={isLoadingInstances}
-                onEdit={(inst) => {
-                  if (onEditInstance) onEditInstance(inst);
-                }}
-                onDelete={(inst) => {
-                  if (onDeleteInstance) onDeleteInstance(inst);
-                }}
-                onRowClick={(inst) => {
-                  if (onEditInstance) onEditInstance(inst);
-                }}
-              />
+            <TabsContent value="instances">
+              <div className="overflow-x-auto">
+                <MeasurementInstancesTable
+                  instances={measurementInstances}
+                  isLoading={isLoadingInstances}
+                  onEdit={(inst) => {
+                    if (onEditInstance) onEditInstance(inst);
+                  }}
+                  onDelete={(inst) => {
+                    if (onDeleteInstance) onDeleteInstance(inst);
+                  }}
+                  onRowClick={(inst) => {
+                    if (onEditInstance) onEditInstance(inst);
+                  }}
+                />
+              </div>
             </TabsContent>
 
             {/* Manage Tab */}
@@ -347,10 +344,8 @@ export function MeasurementDetailsDialog({
                   assessmentId={assessmentId}
                   onUploadData={onUploadData}
                   isDeleting={isDeleting}
-                  onToggleSelection={onToggleSelection}
-                  mode={mode}
-                  instanceId={instanceId}
-                  instance={instance}
+                  onDeleteInstance={onDeleteInstance}
+                  instances={measurementInstances}
                 />
               </TabsContent>
             )}

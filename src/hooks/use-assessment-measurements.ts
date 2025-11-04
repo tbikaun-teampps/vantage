@@ -8,10 +8,6 @@ import {
   deleteAssessmentMeasurement,
   getAssessmentMeasurementsBarChartData,
 } from "@/lib/api/assessments";
-import type {
-  MeasurementInstance,
-  EnrichedMeasurementInstance,
-} from "@/types/assessment-measurements";
 // import type { AssessmentMeasurement } from "@/pages/assessments/desktop/detail/types";
 
 // Query key factory for assessment measurements
@@ -109,12 +105,14 @@ export function useAssessmentMeasurementActions() {
       measurementDefinitionId: number;
       value: number;
       location?: {
-        business_unit_id?: number;
-        region_id?: number;
-        site_id?: number;
-        asset_group_id?: number;
-        work_group_id?: number;
-        role_id?: number;
+        id: number;
+        type:
+          | "business_unit"
+          | "region"
+          | "site"
+          | "asset_group"
+          | "work_group"
+          | "role";
       };
     }) =>
       addAssessmentMeasurement(
@@ -281,12 +279,14 @@ export function useAssessmentMeasurementActions() {
       measurementDefinitionId: number,
       value: number,
       location?: {
-        business_unit_id?: number;
-        region_id?: number;
-        site_id?: number;
-        asset_group_id?: number;
-        work_group_id?: number;
-        role_id?: number;
+        id: number;
+        type:
+          | "business_unit"
+          | "region"
+          | "site"
+          | "asset_group"
+          | "work_group"
+          | "role";
       }
     ) =>
       addMutation.mutateAsync({
@@ -300,14 +300,6 @@ export function useAssessmentMeasurementActions() {
       measurementId: number,
       updates: {
         calculated_value?: number;
-        location?: {
-          business_unit_id?: number;
-          region_id?: number;
-          site_id?: number;
-          asset_group_id?: number;
-          work_group_id?: number;
-          role_id?: number;
-        };
       }
     ) => updateMutation.mutateAsync({ assessmentId, measurementId, updates }),
     deleteMeasurement: (assessmentId: number, measurementId: number) =>
@@ -363,53 +355,20 @@ export function useAssessmentMeasurementsBarChart(assessmentId?: number) {
 
 /**
  * Hook to fetch measurement instances for an assessment with enriched definition data
- *
- * This hook:
- * - Fetches raw measurement instances from the API
- * - Enriches them with measurement definition names and descriptions
- * - Returns instances with denormalized measurement metadata
  */
 export function useAssessmentMeasurementInstances(assessmentId?: number) {
-  // Fetch all measurement definitions (for enrichment)
-  const definitionsQuery = useQuery({
-    queryKey: assessmentMeasurementKeys.definitions(),
-    queryFn: getMeasurementDefinitions,
-    staleTime: 15 * 60 * 1000, // 15 minutes
-  });
-
-  // Fetch measurement instances for this assessment
-  const instancesQuery = useQuery({
+  const query = useQuery({
     queryKey: assessmentMeasurementKeys.measurement(assessmentId!),
     queryFn: () => getAssessmentMeasurements(assessmentId!),
     enabled: !!assessmentId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Enrich instances with measurement definition metadata
-  const enrichedInstances = useMemo<EnrichedMeasurementInstance[]>(() => {
-    if (!instancesQuery.data || !definitionsQuery.data) return [];
-
-    return instancesQuery.data.map((instance: MeasurementInstance) => {
-      const definition = definitionsQuery.data.find(
-        (def) => def.id === instance.measurement_id
-      );
-
-      return {
-        ...instance,
-        measurement_name: definition?.name || "Unknown Measurement",
-        measurement_description: definition?.description,
-      };
-    });
-  }, [instancesQuery.data, definitionsQuery.data]);
-
-  const isLoading = definitionsQuery.isLoading || instancesQuery.isLoading;
-  const error = definitionsQuery.error || instancesQuery.error;
-
   return {
-    instances: enrichedInstances,
-    isLoading,
-    error,
-    refetch: instancesQuery.refetch,
-    isRefetching: instancesQuery.isRefetching,
+    instances: query.data,
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+    isRefetching: query.isRefetching,
   };
 }
