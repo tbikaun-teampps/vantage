@@ -270,7 +270,7 @@ export function useDeletePhase() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (phaseId: number) => deletePhase(phaseId),
+    mutationFn: ({ programId, phaseId }: { programId: number; phaseId: number }) => deletePhase(programId, phaseId),
     onSuccess: () => {
       // Invalidate program queries to refresh phase data
       queryClient.invalidateQueries({ queryKey: programKeys.all });
