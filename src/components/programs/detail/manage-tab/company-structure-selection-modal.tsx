@@ -1,10 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
   IconBuilding,
@@ -14,9 +12,9 @@ import {
   IconCube,
   IconUsersGroup,
   IconUser,
-  IconChevronRight,
-  IconChevronDown,
-  IconSearch,
+  IconPlus,
+  IconLoader2,
+  IconUsers,
 } from "@tabler/icons-react";
 import { useCompanyTree } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
@@ -24,13 +22,6 @@ import { useCreateProgramInterviews, useProgramById } from "@/hooks/useProgram";
 import { getContactsByRole } from "@/lib/api/contacts";
 import { validateProgramQuestionnaireRoles } from "@/lib/api/interviews";
 import { toast } from "sonner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type {
   AnyTreeNode,
   TreeNodeType,
@@ -68,8 +59,8 @@ interface ContactWithPath extends Contact {
 // sequences starting from 1. This causes ID collisions when flattened into a single array.
 // The dbId stores the original numeric database ID for API calls.
 interface FlatNode {
-  id: string;          // Composite ID for UI uniqueness: "type-dbId" (e.g., "role-123")
-  dbId: number;        // Original database ID (e.g., 123)
+  id: string; // Composite ID for UI uniqueness: "type-dbId" (e.g., "role-123")
+  dbId: number; // Original database ID (e.g., 123)
   name: string;
   type: TreeNodeType;
   level: number;
@@ -83,14 +74,14 @@ interface CompanyStructureSelectionModalProps {
   onOpenChange: (open: boolean) => void;
   programId: number;
   programPhaseId: number;
-  defaultInterviewType?: "onsite" | "presite";
+  questionnaireType: "onsite" | "presite";
+  maxHeight?: string;
+  questionnaireId: number;
 }
 
 // Simple tree node component
 interface SimpleTreeNodeProps {
   node: FlatNode;
-  isExpanded: boolean;
-  onToggleExpanded: (nodeId: string) => void;
   isVisible: boolean;
   selectionState: "full" | "partial" | "none";
   onNodeSelection: (nodeId: string) => void;
@@ -98,8 +89,6 @@ interface SimpleTreeNodeProps {
 
 function SimpleTreeNode({
   node,
-  isExpanded,
-  onToggleExpanded,
   isVisible,
   selectionState,
   onNodeSelection,
@@ -128,35 +117,12 @@ function SimpleTreeNode({
     handleNodeClick();
   };
 
-  const handleExpandToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggleExpanded(node.id);
-  };
-
   return (
     <div className="flex items-center py-1 hover:bg-muted/50 rounded-sm">
       <div
         style={{ paddingLeft: `${node.level * 20}px` }}
         className="flex items-center gap-2 flex-1"
       >
-        {/* Expand/Collapse Button */}
-        {node.hasChildren ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 flex-shrink-0"
-            onClick={handleExpandToggle}
-          >
-            {isExpanded ? (
-              <IconChevronDown className="h-3 w-3" />
-            ) : (
-              <IconChevronRight className="h-3 w-3" />
-            )}
-          </Button>
-        ) : (
-          <div className="h-6 w-6 flex-shrink-0" />
-        )}
-
         {/* Selection Checkbox */}
         <Checkbox
           checked={selectionState === "full"}
@@ -180,28 +146,63 @@ function SimpleTreeNode({
   );
 }
 
+interface CreateButtonProps {
+  disabled: boolean;
+  isPending: boolean;
+  isValidating: boolean;
+  hasMultipleRoles: boolean;
+  isIndividual: boolean;
+  onClick: () => void;
+}
+
+function renderCreateButton({
+  disabled,
+  isPending,
+  isValidating,
+  hasMultipleRoles,
+  isIndividual,
+  onClick,
+}: CreateButtonProps) {
+  const icon =
+    isPending || isValidating ? (
+      <IconLoader2 className="mr-2 animate-spin" />
+    ) : (
+      <IconPlus className="mr-2" />
+    );
+
+  const buttonText = isPending
+    ? "Creating Interviews..."
+    : isValidating
+      ? "Validating..."
+      : `Create ${hasMultipleRoles && isIndividual ? "Interviews" : "Interview"}`;
+
+  return (
+    <Button disabled={disabled} onClick={onClick}>
+      {icon}
+      {buttonText}
+    </Button>
+  );
+}
+
 export function CompanyStructureSelectionModal({
   open,
   onOpenChange,
   programId,
   programPhaseId,
-  defaultInterviewType = "onsite",
+  questionnaireType,
+  maxHeight = "300px",
+  questionnaireId,
 }: CompanyStructureSelectionModalProps) {
   const companyId = useCompanyFromUrl();
   const { data: tree, isLoading } = useCompanyTree(companyId);
   const { data: program } = useProgramById(programId);
   const createInterviews = useCreateProgramInterviews();
 
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoleIds, setSelectedRoleIds] = useState<Set<string>>(
     new Set()
   );
   const [isIndividualInterview, setIsIndividualInterview] =
     useState<boolean>(false);
-  const [interviewType, setInterviewType] = useState<"onsite" | "presite">(
-    defaultInterviewType
-  );
   const [availableContacts, setAvailableContacts] = useState<ContactWithPath[]>(
     []
   );
@@ -220,7 +221,7 @@ export function CompanyStructureSelectionModal({
    * between different entity types that share the same numeric IDs in their respective tables.
    */
   const extractNumericId = (compositeId: string): number => {
-    const parts = compositeId.split('-');
+    const parts = compositeId.split("-");
     return parseInt(parts[parts.length - 1], 10);
   };
 
@@ -263,7 +264,8 @@ export function CompanyStructureSelectionModal({
 
       nodes.push({
         id: nodeId,
-        dbId: typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10),
+        dbId:
+          typeof item.id === "number" ? item.id : parseInt(String(item.id), 10),
         name: itemName,
         type,
         level,
@@ -313,7 +315,11 @@ export function CompanyStructureSelectionModal({
         item.roles.forEach((child) =>
           flattenNode(child, "role", level + 1, nodePath, nodeId)
         );
-      } else if (type === "role" && "reporting_roles" in item && item.reporting_roles) {
+      } else if (
+        type === "role" &&
+        "reporting_roles" in item &&
+        item.reporting_roles
+      ) {
         // Handle direct reports (role → role hierarchy, 1 level deep)
         item.reporting_roles.forEach((child) =>
           flattenNode(child, "role", level + 1, nodePath, nodeId)
@@ -325,21 +331,6 @@ export function CompanyStructureSelectionModal({
 
     return nodes;
   }, [tree]);
-
-  // Filter nodes based on search query
-  const filteredNodes = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return flatNodes;
-    }
-
-    const query = searchQuery.toLowerCase();
-    return flatNodes.filter(
-      (node) =>
-        node.name.toLowerCase().includes(query) ||
-        node.path.toLowerCase().includes(query) ||
-        node.type.toLowerCase().includes(query)
-    );
-  }, [flatNodes, searchQuery]);
 
   // Helper function to get all descendant role IDs for a given node
   const getDescendantRoleIds = (nodeId: string): string[] => {
@@ -358,6 +349,8 @@ export function CompanyStructureSelectionModal({
       children.forEach((child) => {
         if (child.type === "role") {
           roleIds.push(child.id);
+          // Continue recursing to collect reporting roles (role → role hierarchy)
+          collectRoles(child.id);
         } else {
           collectRoles(child.id);
         }
@@ -427,12 +420,6 @@ export function CompanyStructureSelectionModal({
         return;
       }
 
-      // Get the appropriate questionnaire based on interview type
-      const questionnaireId =
-        interviewType === "onsite"
-          ? program.onsite_questionnaire_id
-          : program.presite_questionnaire_id;
-
       if (!questionnaireId) {
         setHasApplicableQuestions(false);
         return;
@@ -441,7 +428,9 @@ export function CompanyStructureSelectionModal({
       setIsValidatingRoles(true);
       try {
         // Extract numeric database IDs from composite role IDs for API call
-        const roleIds = Array.from(selectedRoleIds).map((compositeId) => extractNumericId(compositeId));
+        const roleIds = Array.from(selectedRoleIds).map((compositeId) =>
+          extractNumericId(compositeId)
+        );
 
         // Check if questionnaire has questions applicable to the selected roles
         const result = await validateProgramQuestionnaireRoles(
@@ -459,7 +448,7 @@ export function CompanyStructureSelectionModal({
     }
 
     validateRoleApplicability();
-  }, [selectedRoleIds, interviewType, program]);
+  }, [selectedRoleIds, program, questionnaireId]);
 
   // Load contacts when public mode is enabled and roles are selected
   useEffect(() => {
@@ -518,56 +507,13 @@ export function CompanyStructureSelectionModal({
     loadContacts();
   }, [isIndividualInterview, selectedRoleIds, flatNodes, companyId]);
 
-  // Auto-expand company node and reset state when modal opens
-  useEffect(() => {
-    if (open) {
-      if (tree && expandedNodes.size === 0) {
-        // Use composite ID for the company node
-        setExpandedNodes(new Set([`company-${tree.id}`]));
-      }
-      // Reset state when modal opens
-      setInterviewType(defaultInterviewType);
-      setIsValidatingRoles(false);
-      setHasApplicableQuestions(true);
-    } else {
-      // Reset validation state when modal closes
-      setIsValidatingRoles(false);
-      setHasApplicableQuestions(true);
-    }
-  }, [tree, open, expandedNodes.size, defaultInterviewType]);
-
-  const toggleExpanded = (nodeId: string) => {
-    const newExpanded = new Set(expandedNodes);
-    if (newExpanded.has(nodeId)) {
-      newExpanded.delete(nodeId);
-    } else {
-      newExpanded.add(nodeId);
-    }
-    setExpandedNodes(newExpanded);
-  };
-
-  const isNodeVisible = (node: FlatNode): boolean => {
-    if (node.level === 0) return true; // Company is always visible
-
-    // If searching, all matching nodes are visible
-    if (searchQuery.trim()) {
-      return filteredNodes.includes(node);
-    }
-
-    // Check if all parent nodes are expanded
-    let currentParentId = node.parentId;
-    while (currentParentId) {
-      if (!expandedNodes.has(currentParentId)) {
-        return false;
-      }
-      const parent = flatNodes.find((n) => n.id === currentParentId);
-      currentParentId = parent?.parentId;
-    }
-
-    return true;
-  };
-
   const handleSubmit = async () => {
+    if (!questionnaireId) {
+      toast.error(
+        `No questionnaire of this type is configured for this program. Please configure one first.`
+      );
+      return;
+    }
     if (selectedRoleIds.size === 0) {
       toast.error("Please select at least one role");
       return;
@@ -575,19 +521,6 @@ export function CompanyStructureSelectionModal({
 
     if (isIndividualInterview && selectedContactIds.length === 0) {
       toast.error("Please select at least one contact for public interviews");
-      return;
-    }
-
-    // Validate that appropriate questionnaire is configured
-    const questionnaireId =
-      interviewType === "onsite"
-        ? program?.onsite_questionnaire_id
-        : program?.presite_questionnaire_id;
-
-    if (!questionnaireId) {
-      toast.error(
-        `No ${interviewType} questionnaire is configured for this program. Please configure one first.`
-      );
       return;
     }
 
@@ -631,20 +564,22 @@ export function CompanyStructureSelectionModal({
             isIndividualInterview,
             roleIds: [roleId], // Only the specific role for these contacts
             contactIds,
-            interviewType,
+            interviewType: questionnaireType,
           });
         }
       } else {
         // For non-public interviews, use all selected roles as before
         // Extract numeric database IDs from composite role IDs
-        const roleIds = Array.from(selectedRoleIds).map((compositeId) => extractNumericId(compositeId));
+        const roleIds = Array.from(selectedRoleIds).map((compositeId) =>
+          extractNumericId(compositeId)
+        );
         await createInterviews.mutateAsync({
           programId,
           phaseId: programPhaseId,
           isIndividualInterview,
           roleIds,
           contactIds: [],
-          interviewType,
+          interviewType: questionnaireType,
         });
       }
 
@@ -652,7 +587,6 @@ export function CompanyStructureSelectionModal({
       setSelectedRoleIds(new Set());
       setSelectedContactIds([]);
       setIsIndividualInterview(false);
-      setInterviewType(defaultInterviewType);
       onOpenChange(false);
     } catch (error) {
       // Error handling is done by the mutation hook
@@ -670,27 +604,14 @@ export function CompanyStructureSelectionModal({
             interviews. You can select specific sites, work groups, or roles to
             define the scope of your interviews.
           </DialogDescription>
-          <span className="text-xs">
-            Program {programId} - Assessment {programPhaseId}
-          </span>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            {/* Search Field */}
-            <div className="pb-4">
-              <div className="relative">
-                <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search company structure..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            </div>
-
             <div className="flex-1 min-h-0">
-              <ScrollArea className="border rounded-md overflow-y-auto">
+              <ScrollArea
+                className="border rounded-md overflow-y-auto"
+                style={{ maxHeight }}
+              >
                 <div className="p-4">
                   {isLoading ? (
                     <div className="flex items-center justify-center py-8">
@@ -700,19 +621,15 @@ export function CompanyStructureSelectionModal({
                     </div>
                   ) : flatNodes.length > 0 ? (
                     <div className="space-y-0">
-                      {(searchQuery.trim() ? filteredNodes : flatNodes).map(
-                        (node) => (
-                          <SimpleTreeNode
-                            key={node.id}
-                            node={node}
-                            isExpanded={expandedNodes.has(node.id)}
-                            onToggleExpanded={toggleExpanded}
-                            isVisible={isNodeVisible(node)}
-                            selectionState={getNodeSelectionState(node.id)}
-                            onNodeSelection={handleNodeSelection}
-                          />
-                        )
-                      )}
+                      {flatNodes.map((node) => (
+                        <SimpleTreeNode
+                          key={node.id}
+                          node={node}
+                          isVisible={true}
+                          selectionState={getNodeSelectionState(node.id)}
+                          onNodeSelection={handleNodeSelection}
+                        />
+                      ))}
                     </div>
                   ) : (
                     <div className="flex items-center justify-center py-8">
@@ -756,8 +673,8 @@ export function CompanyStructureSelectionModal({
                   !isValidatingRoles && (
                     <p className="text-sm text-destructive mt-2">
                       The selected roles have no applicable questions in the{" "}
-                      {interviewType} questionnaire. Please select different
-                      roles or ensure the questionnaire is properly configured.
+                      questionnaire. Please select different roles or ensure the
+                      questionnaire is properly configured.
                     </p>
                   )}
               </div>
@@ -765,193 +682,171 @@ export function CompanyStructureSelectionModal({
           </div>
 
           <div className="space-y-6">
-            {/* Interview Type Selection */}
+            {/* Placeholder */}
+            {selectedRoles.length === 0 && (
+              <div className="shadow-none text-center border-dashed border-2 border-border rounded-lg bg-background h-full flex items-center justify-center">
+                <div className="p-8">
+                  <div className="text-center py-8">
+                    <IconUsers className="mx-auto mb-4 h-8 w-8 text-muted-foreground" />
+                    <div className="text-muted-foreground text-sm">
+                      Select roles from the company structure on the left to
+                      begin creating interviews.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {selectedRoles.length > 0 && (
-              <div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Interview Type</Label>
-                  <Select
-                    value={interviewType}
-                    onValueChange={(value: "onsite" | "presite") =>
-                      setInterviewType(value)
-                    }
+              <div className="space-y-2">
+                <Label>Create interview(s) for individuals or a group?</Label>
+                <div className="flex space-x-2 mb-2">
+                  <Button
+                    variant={isIndividualInterview ? "default" : "outline"}
+                    onClick={() => setIsIndividualInterview(true)}
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="onsite">Onsite Interview</SelectItem>
-                      <SelectItem value="presite">
-                        Pre-assessment Interview
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    {interviewType === "onsite"
-                      ? "Create interviews using the onsite questionnaire"
-                      : "Create interviews using the self-audit questionnaire"}
-                  </p>
+                    Individual
+                  </Button>
+                  <Button
+                    variant={!isIndividualInterview ? "default" : "outline"}
+                    onClick={() => setIsIndividualInterview(false)}
+                    className="ml-2"
+                  >
+                    Group
+                  </Button>
                 </div>
               </div>
             )}
 
-            {/* Public Interview Toggle */}
-            {selectedRoles.length > 0 && (
-              <div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="public-mode"
-                    checked={isIndividualInterview}
-                    onCheckedChange={setIsIndividualInterview}
-                  />
-                  <Label htmlFor="public-mode" className="text-sm">
-                    Create public interviews with contacts
-                  </Label>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Public interviews can be accessed by contacts using an access
-                  code
-                </p>
-              </div>
-            )}
-
-            {/* Contact Selection - Only show when public mode is enabled */}
+            {/* Contact Selection */}
             {isIndividualInterview && selectedRoles.length > 0 && (
-              <div className="px-6 py-4">
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Label className="text-sm font-medium">
-                          Interviewee Contacts
-                        </Label>
-                        {selectedContactIds.length > 0 && (
-                          <span className="text-sm text-muted-foreground">
-                            ({selectedContactIds.length} selected)
-                          </span>
-                        )}
-                      </div>
-                      {availableContacts.length > 0 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const allContactIds = availableContacts.map(
-                              (contact) => contact.id
-                            );
-                            const allSelected = allContactIds.every((id) =>
-                              selectedContactIds.includes(id)
-                            );
-
-                            if (allSelected) {
-                              setSelectedContactIds([]);
-                            } else {
-                              setSelectedContactIds(allContactIds);
-                            }
-                          }}
-                        >
-                          {(() => {
-                            const allContactIds = availableContacts.map(
-                              (contact) => contact.id
-                            );
-                            const allSelected = allContactIds.every((id) =>
-                              selectedContactIds.includes(id)
-                            );
-                            return allSelected ? "Unselect All" : "Select All";
-                          })()}
-                        </Button>
+              <div className="space-y-2">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Label>Interviewee Contacts</Label>
+                      {selectedContactIds.length > 0 && (
+                        <span className="text-sm text-muted-foreground">
+                          ({selectedContactIds.length} selected)
+                        </span>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Select contacts to create interviews for each
-                    </p>
-                  </div>
-                  <div className="max-h-60 overflow-y-auto space-y-2 border rounded-md p-3">
-                    {isLoadingContacts ? (
-                      <div className="text-sm text-muted-foreground text-center py-4">
-                        Loading contacts...
-                      </div>
-                    ) : selectedRoleIds.size === 0 ? (
-                      <div className="text-sm text-muted-foreground text-center py-4">
-                        Please select roles first
-                      </div>
-                    ) : availableContacts.length === 0 ? (
-                      <div className="text-sm text-muted-foreground text-center py-4">
-                        No contacts available for selected roles
-                      </div>
-                    ) : (
-                      availableContacts.map((contact) => (
-                        <div
-                          key={contact.id}
-                          className="flex items-start space-x-3 p-2 hover:bg-muted/50 rounded-md"
-                        >
-                          <Checkbox
-                            id={`contact-${contact.id}`}
-                            checked={selectedContactIds.includes(contact.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedContactIds([
-                                  ...selectedContactIds,
-                                  contact.id,
-                                ]);
-                              } else {
-                                setSelectedContactIds(
-                                  selectedContactIds.filter(
-                                    (id) => id !== contact.id
-                                  )
-                                );
-                              }
-                            }}
-                          />
-                          <Label
-                            htmlFor={`contact-${contact.id}`}
-                            className="cursor-pointer flex-1"
-                          >
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {contact.full_name}
-                              </span>
-                              <span className="text-sm text-muted-foreground">
-                                {contact.email}
-                              </span>
-                              {contact.title && (
-                                <span className="text-xs text-muted-foreground">
-                                  {contact.title}
-                                </span>
-                              )}
-                              <span className="text-xs text-muted-foreground/70 mt-1">
-                                📍 {contact.organizationPath}
-                              </span>
-                            </div>
-                          </Label>
-                        </div>
-                      ))
+                    {availableContacts.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const allContactIds = availableContacts.map(
+                            (contact) => contact.id
+                          );
+                          const allSelected = allContactIds.every((id) =>
+                            selectedContactIds.includes(id)
+                          );
+
+                          if (allSelected) {
+                            setSelectedContactIds([]);
+                          } else {
+                            setSelectedContactIds(allContactIds);
+                          }
+                        }}
+                      >
+                        {(() => {
+                          const allContactIds = availableContacts.map(
+                            (contact) => contact.id
+                          );
+                          const allSelected = allContactIds.every((id) =>
+                            selectedContactIds.includes(id)
+                          );
+                          return allSelected ? "Unselect All" : "Select All";
+                        })()}
+                      </Button>
                     )}
                   </div>
+                  <p className="text-sm text-muted-foreground">
+                    Select who you would like to create interviews for from the
+                    list below
+                  </p>
+                </div>
+                <div className="max-h-60 overflow-y-auto space-y-2 border rounded-md p-3">
+                  {isLoadingContacts ? (
+                    <div className="text-sm text-muted-foreground text-center py-4">
+                      Loading contacts...
+                    </div>
+                  ) : selectedRoleIds.size === 0 ? (
+                    <div className="text-sm text-muted-foreground text-center py-4">
+                      Please select roles first
+                    </div>
+                  ) : availableContacts.length === 0 ? (
+                    <div className="text-sm text-muted-foreground text-center py-4">
+                      No contacts available for selected roles
+                    </div>
+                  ) : (
+                    availableContacts.map((contact) => (
+                      <div
+                        key={contact.id}
+                        className="flex items-start space-x-3 p-2 hover:bg-muted/50 rounded-md"
+                      >
+                        <Checkbox
+                          id={`contact-${contact.id}`}
+                          checked={selectedContactIds.includes(contact.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedContactIds([
+                                ...selectedContactIds,
+                                contact.id,
+                              ]);
+                            } else {
+                              setSelectedContactIds(
+                                selectedContactIds.filter(
+                                  (id) => id !== contact.id
+                                )
+                              );
+                            }
+                          }}
+                        />
+                        <Label
+                          htmlFor={`contact-${contact.id}`}
+                          className="cursor-pointer flex-1"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {contact.full_name}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {contact.email}
+                            </span>
+                            {contact.title && (
+                              <span className="text-xs text-muted-foreground">
+                                {contact.title}
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-foreground/70 mt-1">
+                              📍 {contact.organizationPath}
+                            </span>
+                          </div>
+                        </Label>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
-            <Button
-              onClick={handleSubmit}
-              disabled={
-                createInterviews.isPending ||
-                selectedRoleIds.size === 0 ||
-                isValidatingRoles ||
-                !hasApplicableQuestions ||
-                (isIndividualInterview && selectedContactIds.length === 0)
-              }
-            >
-              {createInterviews.isPending
-                ? "Creating Interviews..."
-                : isValidatingRoles
-                  ? "Validating..."
-                  : isIndividualInterview && selectedContactIds.length > 0
-                    ? `Create ${selectedContactIds.length} ${interviewType === "onsite" ? "Onsite" : "Pre-assessment"} Interview${selectedContactIds.length > 1 ? "s" : ""}`
-                    : selectedRoleIds.size > 0
-                      ? `Create ${interviewType === "onsite" ? "Onsite" : "Pre-assessment"} Interview${selectedRoleIds.size > 1 ? "s" : ""}`
-                      : "Create Interviews"}
-            </Button>
+            {selectedRoles.length > 0 &&
+              renderCreateButton({
+                disabled:
+                  createInterviews.isPending ||
+                  selectedRoleIds.size === 0 ||
+                  !hasApplicableQuestions ||
+                  (isIndividualInterview && selectedContactIds.length === 0),
+                isPending: createInterviews.isPending,
+                isValidating: isValidatingRoles,
+                hasMultipleRoles: isIndividualInterview
+                  ? selectedContactIds.length > 1
+                  : selectedRoleIds.size > 1,
+                isIndividual: isIndividualInterview,
+                onClick: handleSubmit,
+              })}
           </div>
         </div>
       </DialogContent>
