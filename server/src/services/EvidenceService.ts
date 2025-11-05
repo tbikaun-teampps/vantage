@@ -51,9 +51,9 @@ export class EvidenceService {
     const bucketName = process.env.VITE_SUPABASE_EVIDENCE_BUCKET;
     if (!bucketName) {
       console.warn(
-        'VITE_SUPABASE_EVIDENCE_BUCKET not configured, falling back to "temp"'
+        'VITE_SUPABASE_EVIDENCE_BUCKET not configured, falling back to "evidence"'
       );
-      return "temp";
+      return "evidence";
     }
     return bucketName;
   }

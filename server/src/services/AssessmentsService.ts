@@ -620,7 +620,7 @@ export class AssessmentsService {
   }
 
   async getMeasurementsByAssessmentId(
-    assessmentId: number,
+    assessmentId: number
   ): Promise<CalculatedMeasurementWithLocation[]> {
     // Fetch measurements associated with the assessment, enriched with definition data
     const { data: measurements, error: measurementsError } = await this.supabase
@@ -696,6 +696,25 @@ export class AssessmentsService {
       throw new Error("Measurement definition not found");
     }
 
+    // Check that the value is within the min_value/max_value range
+    if (
+      measurementDef.min_value !== null &&
+      measurementDef.max_value !== null
+    ) {
+      if (
+        !(calculated_value >= measurementDef.min_value) &&
+        calculated_value <= measurementDef.max_value
+      ) {
+        throw new Error(
+          `Calculated value must be between ${measurementDef.min_value} and ${measurementDef.max_value}`
+        );
+      }
+    } else {
+      console.warn(
+        "Measurement definition does not have min_value/max_value set"
+      );
+    }
+
     // Resolve the location hierarchy from the selected node
     let resolvedLocation: {
       business_unit_id?: number;
@@ -715,7 +734,7 @@ export class AssessmentsService {
       );
     }
 
-    console.log('resolvedLocation: ', resolvedLocation)
+    // console.log('resolvedLocation: ', resolvedLocation)
 
     // Check measurement isn't already associated with the assessment at this location
     let existenceCheckQuery = this.supabase
