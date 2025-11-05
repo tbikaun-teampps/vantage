@@ -81,6 +81,8 @@ export class ProgramService {
         sequence_number: 1,
         name: "Program Assessment - Phase 1",
         status: "in_progress",
+        planned_start_date: new Date().toISOString(),
+        planned_end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // +1 week
       });
 
     if (phaseError) throw phaseError;

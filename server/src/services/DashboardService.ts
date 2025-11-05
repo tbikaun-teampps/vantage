@@ -32,7 +32,7 @@ export class DashboardService {
       .select("*")
       .eq("company_id", companyId)
       .eq("is_deleted", false)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: true });
 
     if (error) throw error;
 
