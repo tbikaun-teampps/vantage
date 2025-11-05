@@ -33,7 +33,7 @@ const INTERVIEW_CONFIG = {
     emptyDescription:
       "Get started by creating your first onsite-audit interview for this program using the linked questionnaire.",
     icon: IconUsers,
-    defaultInterviewType: undefined,
+    defaultInterviewType: 'onsite' as const,
   },
   presite: {
     title: "Self-Audit Interviews",
@@ -74,6 +74,8 @@ export function Interviews({
   if (questionnaireId === null) {
     return null;
   }
+
+  console.log('config', config)
 
   return (
     <>
@@ -116,15 +118,16 @@ export function Interviews({
         </CardContent>
       </Card>
 
-      <CompanyStructureSelectionModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        programId={programId}
-        programPhaseId={programPhaseId}
-        {...(config.defaultInterviewType && {
-          defaultInterviewType: config.defaultInterviewType,
-        })}
-      />
+      {config.defaultInterviewType && (
+        <CompanyStructureSelectionModal
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          programId={programId}
+          programPhaseId={programPhaseId}
+          questionnaireType={config.defaultInterviewType}
+          questionnaireId={questionnaireId}
+        />
+      )}
     </>
   );
 }
