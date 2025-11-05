@@ -27,7 +27,8 @@ export function InterviewQuestionContent({
         data-tour="interview-question"
       >
         <div className="w-full">
-          <h1 className="text-lg font-bold">Context</h1>
+          <h1  className="text-lg font-bold">{question.title}</h1>
+          {/* <h1 className="text-md font-bold">Context</h1> */}
           <h2 className="text-foreground leading-relaxed whitespace-pre-line">
             {question.context}
           </h2>
@@ -44,9 +45,10 @@ export function InterviewQuestionContent({
       {question.context ? (
         // Traditional layout when context exists
         <div className="flex flex-col">
+          <h1  className="text-2xl font-bold mb-2">{question.title}</h1>
           {/* Question Text */}
           <div className="text-left">
-            <h2 className="text-xl font-bold text-foreground leading-relaxed whitespace-pre-line">
+            <h2 className="text-lg text-foreground leading-relaxed whitespace-pre-line">
               {question.question_text}
             </h2>
           </div>
@@ -64,8 +66,9 @@ export function InterviewQuestionContent({
           <div className="max-w-4xl w-full">
             <div className="rounded-xl p-8 bg-muted">
               <div className="text-center space-y-6">
+                <h1  className="text-2xl font-bold  mb-2">{question.title}</h1>
                 <div className="space-y-4">
-                  <h2 className="text-2xl font-bold text-foreground leading-relaxed">
+                  <h2 className="text-lg text-foreground leading-relaxed">
                     {question.question_text}
                   </h2>
                   <p className="text-muted-foreground">

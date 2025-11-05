@@ -36,10 +36,7 @@ import {
   type Dashboard,
   type WidgetConfig,
 } from "@/hooks/useDashboardLayouts";
-import {
-  getWidget,
-  WidgetContainer,
-} from "@/components/dashboard/widgets";
+import { getWidget, WidgetContainer } from "@/components/dashboard/widgets";
 import { ConfigDialog } from "../widgets/ConfigDialog";
 import type { WidgetType } from "../widgets/types";
 import { Loader } from "@/components/loader";
@@ -432,7 +429,9 @@ function GridLayoutContent() {
                   ) : (
                     <ReactGridLayout
                       className="layout"
-                      layout={pendingDashboard?.layout ?? currentDashboard.layout}
+                      layout={
+                        pendingDashboard?.layout ?? currentDashboard.layout
+                      }
                       rowHeight={60}
                       isDraggable={isEditMode}
                       isResizable={isEditMode}
@@ -441,24 +440,24 @@ function GridLayoutContent() {
                       verticalCompact={true}
                       onLayoutChange={handleLayoutChange}
                     >
-                      {(pendingDashboard?.widgets ?? currentDashboard.widgets).map(
-                        (dashboardItem: DashboardItem) => (
-                          <div key={dashboardItem.id}>
-                            <WidgetContainer
-                              dashboardItem={dashboardItem}
-                              isEditMode={isEditMode}
-                              onRemove={() => removeWidget(dashboardItem.id)}
-                              onConfigClick={() =>
-                                openConfig(
-                                  dashboardItem.id,
-                                  dashboardItem.widgetType,
-                                  dashboardItem.config || {}
-                                )
-                              }
-                            />
-                          </div>
-                        )
-                      )}
+                      {(
+                        pendingDashboard?.widgets ?? currentDashboard.widgets
+                      ).map((dashboardItem: DashboardItem) => (
+                        <div key={dashboardItem.id}>
+                          <WidgetContainer
+                            dashboardItem={dashboardItem}
+                            isEditMode={isEditMode}
+                            onRemove={() => removeWidget(dashboardItem.id)}
+                            onConfigClick={() =>
+                              openConfig(
+                                dashboardItem.id,
+                                dashboardItem.widgetType,
+                                dashboardItem.config || {}
+                              )
+                            }
+                          />
+                        </div>
+                      ))}
                     </ReactGridLayout>
                   )}
                   {configDialog.isOpen &&

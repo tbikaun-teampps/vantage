@@ -53,7 +53,6 @@ export function AddEditTab({
   const [mode, setMode] = useState<"add" | "edit">("add");
 
   // Get mapping between instances and their lowest level node for marker display
-  // Use Set for O(1) lookup performance instead of O(n) with array.find()
   const instanceMap = useMemo(() => {
     const map = new Set<string>();
     instances.forEach((i) => {
@@ -179,7 +178,9 @@ export function AddEditTab({
     ) : null;
   };
 
-  console.log("selectedLocation: ", selectedLocation);
+  // console.log("selectedLocation: ", selectedLocation);
+
+  console.log("measurement: ", measurement);
 
   return (
     <div className="grid grid-cols-2 gap-6">
@@ -215,6 +216,8 @@ export function AddEditTab({
                   value={manualValue}
                   onChange={(e) => setManualValue(e.target.value)}
                   disabled={!hasSelection}
+                  min={measurement.min_value}
+                  max={measurement.max_value}
                 />
               </div>
               {!hasSelection && (
@@ -257,6 +260,8 @@ export function AddEditTab({
                     value={manualValue}
                     onChange={(e) => setManualValue(e.target.value)}
                     disabled={isUpdating}
+                    min={measurement.min_value}
+                    max={measurement.max_value}
                   />
                   <Button
                     onClick={handleSaveManualValue}
