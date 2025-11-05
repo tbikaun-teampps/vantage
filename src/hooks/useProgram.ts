@@ -28,7 +28,9 @@ import {
   deleteProgramPhaseMeasurementData,
   type LocationParams,
   type CreateMeasurementDataParams,
+  getProgramAllowedMeasurementDefinitions,
 } from "@/lib/api/programs";
+import { getMeasurementDefinitionById } from "@/lib/api/shared";
 
 // Query key factory for cache management
 const programKeys = {
@@ -270,7 +272,13 @@ export function useDeletePhase() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ programId, phaseId }: { programId: number; phaseId: number }) => deletePhase(programId, phaseId),
+    mutationFn: ({
+      programId,
+      phaseId,
+    }: {
+      programId: number;
+      phaseId: number;
+    }) => deletePhase(programId, phaseId),
     onSuccess: () => {
       // Invalidate program queries to refresh phase data
       queryClient.invalidateQueries({ queryKey: programKeys.all });
@@ -402,6 +410,13 @@ export function useAddMeasurementDefinitionsToProgram() {
           variables.programId
         ),
       });
+      queryClient.invalidateQueries({
+        queryKey: [
+          "program",
+          variables.programId,
+          "allowed-measurement-definitions",
+        ],
+      });
       toast.success("Measurements added to program successfully.");
     },
     onError: (error) => {
@@ -436,6 +451,13 @@ export function useRemoveMeasurementDefinitionFromProgram() {
           variables.programId
         ),
       });
+      queryClient.invalidateQueries({
+        queryKey: [
+          "program",
+          variables.programId,
+          "allowed-measurement-definitions",
+        ],
+      });
       toast.success("Measurement removed from program successfully.");
     },
     onError: (error) => {
@@ -449,11 +471,19 @@ export function useRemoveMeasurementDefinitionFromProgram() {
 
 export function useProgramPhaseCalculatedMeasurements(
   programId: number,
-  programPhaseId: number
+  programPhaseId: number,
+  filters?: { measurementDefinitionId?: number }
 ) {
   return useQuery({
-    queryKey: ["program", programId, "calculated-measurements", programPhaseId],
-    queryFn: () => getProgramCalculatedMeasurements(programId, programPhaseId),
+    queryKey: [
+      "program",
+      programId,
+      "calculated-measurements",
+      programPhaseId,
+      filters,
+    ],
+    queryFn: () =>
+      getProgramCalculatedMeasurements(programId, programPhaseId, filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!programId && !!programPhaseId,
   });
@@ -485,8 +515,7 @@ export function useProgramPhaseMeasurementData(
         location
       ),
     staleTime: 2 * 60 * 1000, // 2 minutes
-    enabled:
-      !!programId && !!programPhaseId && !!measurementDefinitionId,
+    enabled: !!programId && !!programPhaseId && !!measurementDefinitionId,
     retry: false, // Don't retry if measurement doesn't exist
   });
 }
@@ -592,7 +621,11 @@ export function useDeleteProgramPhaseMeasurementData() {
       programPhaseId: number;
       measurementId: number;
     }) =>
-      deleteProgramPhaseMeasurementData(programId, programPhaseId, measurementId),
+      deleteProgramPhaseMeasurementData(
+        programId,
+        programPhaseId,
+        measurementId
+      ),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: [
@@ -617,5 +650,23 @@ export function useDeleteProgramPhaseMeasurementData() {
       console.error("Failed to delete measurement data:", error);
       toast.error("Failed to delete measurement data. Please try again.");
     },
+  });
+}
+
+export function useProgramAllowedMeasurementDefinitions(programId: number) {
+  return useQuery({
+    queryKey: ["program", programId, "allowed-measurement-definitions"],
+    queryFn: () => getProgramAllowedMeasurementDefinitions(programId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!programId,
+  });
+}
+
+export function useMeasurementDefinition(measurementDefinitionId: number) {
+  return useQuery({
+    queryKey: ["measurement-definition", measurementDefinitionId],
+    queryFn: () => getMeasurementDefinitionById(measurementDefinitionId),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    enabled: !!measurementDefinitionId,
   });
 }

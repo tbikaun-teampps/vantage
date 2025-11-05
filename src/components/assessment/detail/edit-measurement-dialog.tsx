@@ -90,7 +90,7 @@ export function EditMeasurementDialog({
         <DialogHeader>
           <DialogTitle>Edit Measurement Value</DialogTitle>
           <DialogDescription>
-            Update the calculated value for this measurement instance.
+            Update the value for this measurement instance.
           </DialogDescription>
         </DialogHeader>
 

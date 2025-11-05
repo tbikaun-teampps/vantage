@@ -74,4 +74,19 @@ export async function measurementsRoutes(fastify: FastifyInstance) {
       return { success: true, data };
     }
   );
+  fastify.get("/measurement-definitions/:id", async (request) => {
+    const { id } = request.params as { id: number };
+
+    const { data, error } = await request.supabaseClient
+      .from("measurement_definitions")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      throw new InternalServerError("Failed to fetch measurement definition");
+    }
+
+    return { success: true, data };
+  });
 }

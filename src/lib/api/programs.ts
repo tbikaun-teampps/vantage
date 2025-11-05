@@ -2,6 +2,7 @@ import type { ProgramUpdateFormData } from "@/components/programs/detail/overvie
 import { apiClient } from "./client";
 import type { CreateProgramFormData, ProgramObjective } from "@/types/program";
 import type {
+  ProgramAllowedMeasurementDefinitions,
   ProgramDetailResponseData,
   ProgramListResponseData,
   ProgramObjectivesListResponseData,
@@ -264,7 +265,10 @@ export async function createPhase(
   return response.data.data;
 }
 
-export async function deletePhase(programId: number, phaseId: number): Promise<void> {
+export async function deletePhase(
+  programId: number,
+  phaseId: number
+): Promise<void> {
   const response = await apiClient.delete<ApiResponse<void>>(
     `/programs/${programId}/phases/${phaseId}`
   );
@@ -379,11 +383,15 @@ export async function removeMeasurementDefinitionFromProgram(
 }
 
 export async function getProgramCalculatedMeasurements(
-  programid: number,
-  programPhaseId: number
+  programId: number,
+  programPhaseId: number,
+  filters?: { measurementDefinitionId?: number }
 ): Promise<any> {
   const response = await apiClient.get<ApiResponse<any>>(
-    `/programs/${programid}/phases/${programPhaseId}/calculated-measurements`
+    `/programs/${programId}/phases/${programPhaseId}/calculated-measurements`,
+    {
+      params: filters,
+    }
   );
 
   if (!response.data.success) {
@@ -396,16 +404,6 @@ export async function getProgramCalculatedMeasurements(
 }
 
 // ====== Program Phase Measurement Data CRUD ======
-
-export interface LocationParams {
-  business_unit_id?: number;
-  region_id?: number;
-  site_id?: number;
-  asset_group_id?: number;
-  work_group_id?: number;
-  role_id?: number;
-}
-
 export interface LocationNode {
   id: number;
   type:
@@ -421,22 +419,20 @@ export async function getProgramPhaseMeasurementData(
   programId: number,
   programPhaseId: number,
   measurementDefinitionId: number,
-  location?: LocationParams | LocationNode
+  location?: LocationNode
 ): Promise<any> {
   const response = await apiClient.get<ApiResponse<any>>(
     `/programs/${programId}/phases/${programPhaseId}/calculated-measurement`,
     {
       params: {
-        measurementId: measurementDefinitionId,
-        location,
+        measurementDefinitionId,
+        ...(location ? { location_id: location.id, location_type: location.type } : {}),
       },
     }
   );
 
   if (!response.data.success) {
-    throw new Error(
-      response.data.error || "Failed to fetch measurement data"
-    );
+    throw new Error(response.data.error || "Failed to fetch measurement data");
   }
 
   return response.data.data;
@@ -449,11 +445,6 @@ export type CreateMeasurementDataParams =
       calculated_value: number;
       location: LocationNode;
     }
-  | (LocationParams & {
-      measurement_definition_id: number;
-      calculated_value: number;
-      location?: never;
-    });
 
 export async function createProgramPhaseMeasurementData(
   programId: number,
@@ -466,9 +457,7 @@ export async function createProgramPhaseMeasurementData(
   );
 
   if (!response.data.success) {
-    throw new Error(
-      response.data.error || "Failed to create measurement data"
-    );
+    throw new Error(response.data.error || "Failed to create measurement data");
   }
 
   return response.data.data;
@@ -486,9 +475,7 @@ export async function updateProgramPhaseMeasurementData(
   );
 
   if (!response.data.success) {
-    throw new Error(
-      response.data.error || "Failed to update measurement data"
-    );
+    throw new Error(response.data.error || "Failed to update measurement data");
   }
 
   return response.data.data;
@@ -504,8 +491,23 @@ export async function deleteProgramPhaseMeasurementData(
   );
 
   if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to delete measurement data");
+  }
+}
+
+export async function getProgramAllowedMeasurementDefinitions(
+  programId: number
+): Promise<ProgramAllowedMeasurementDefinitions> {
+  const response = await apiClient.get<
+    ApiResponse<ProgramAllowedMeasurementDefinitions>
+  >(`/programs/${programId}/measurement-definitions/allowed`);
+
+  if (!response.data.success) {
     throw new Error(
-      response.data.error || "Failed to delete measurement data"
+      response.data.error ||
+        "Failed to fetch program allowed measurement definitions"
     );
   }
+
+  return response.data.data;
 }

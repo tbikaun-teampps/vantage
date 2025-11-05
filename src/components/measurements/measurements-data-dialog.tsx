@@ -12,6 +12,7 @@ interface MetricsDataDialogProps {
   onOpenChange: (open: boolean) => void;
   programId: number;
   programPhaseId: number;
+  measurementDefinitionId: number;
 }
 
 export function MeasurementsDataDialog({
@@ -19,6 +20,7 @@ export function MeasurementsDataDialog({
   onOpenChange,
   programId,
   programPhaseId,
+  measurementDefinitionId,
 }: MetricsDataDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -34,6 +36,7 @@ export function MeasurementsDataDialog({
           <MeasurementDataAddUploadEdit
             programId={programId}
             programPhaseId={programPhaseId}
+            measurementDefinitionId={measurementDefinitionId}
           />
         </div>
       </DialogContent>
