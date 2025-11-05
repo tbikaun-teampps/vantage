@@ -908,6 +908,50 @@ export async function programRoutes(fastify: FastifyInstance) {
     }
   );
 
+  // GET /programs/:programId/measurement-definitions/allowed - Get allowed measurement definitions for a program
+  // These are the measurement definitions linked to the program and constrain the measurements that can be collected
+  fastify.get(
+    "/:programId/measurement-definitions/allowed",
+    {
+      schema: {
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "number" },
+                    name: { type: "string" },
+                    description: { type: "string", nullable: true },
+                    objective: { type: "string", nullable: true },
+                  },
+                  required: ["id", "name", "description", "objective"],
+                },
+              },
+            },
+            required: ["success", "data"],
+          },
+        },
+      },
+    },
+    async (request) => {
+      const programId = (request.params as { programId: number }).programId;
+      const programService = new ProgramService(request.supabaseClient);
+
+      const measurementDefinitions =
+        await programService.getProgramMeasurementDefinitions(programId);
+
+      return {
+        success: true,
+        data: measurementDefinitions,
+      };
+    }
+  );
+
   fastify.get("/:programId/measurements/available", async (request) => {
     const programId = (request.params as { programId: number }).programId;
     const programService = new ProgramService(request.supabaseClient);
@@ -961,12 +1005,29 @@ export async function programRoutes(fastify: FastifyInstance) {
 
   fastify.get(
     "/:programId/phases/:phaseId/calculated-measurements",
+    {
+      schema: {
+        querystring: {
+          type: "object",
+          properties: {
+            measurementDefinitionId: { type: "number", nullable: true },
+          },
+        },
+      },
+    },
     async (request) => {
       const phaseId = (request.params as { phaseId: number }).phaseId;
       const programService = new ProgramService(request.supabaseClient);
 
+      const measurementDefinitionId = (
+        request.query as { measurementDefinitionId?: number }
+      ).measurementDefinitionId;
+
       const measurements =
-        await programService.getCalculatedMeasurementsForProgramPhase(phaseId);
+        await programService.getCalculatedMeasurementsForProgramPhase({
+          programPhaseId: phaseId,
+          filters: { measurementDefinitionId },
+        });
 
       return {
         success: true,
@@ -985,30 +1046,18 @@ export async function programRoutes(fastify: FastifyInstance) {
           type: "object",
           properties: {
             measurementId: { type: "number" },
-            location: {
-              type: "object",
-              properties: {
-                // New format
-                id: { type: "number" },
-                type: {
-                  type: "string",
-                  enum: [
-                    "business_unit",
-                    "region",
-                    "site",
-                    "asset_group",
-                    "work_group",
-                    "role",
-                  ],
-                },
-                // Old format (kept for backward compatibility)
-                business_unit_id: { type: "string", nullable: true },
-                region_id: { type: "string", nullable: true },
-                site_id: { type: "string", nullable: true },
-                asset_group_id: { type: "string", nullable: true },
-                work_group_id: { type: "string", nullable: true },
-                role_id: { type: "string", nullable: true },
-              },
+            measurementDefinitionId: { type: "number" },
+            location_id: { type: "number" },
+            location_type: {
+              type: "string",
+              enum: [
+                "business_unit",
+                "region",
+                "site",
+                "asset_group",
+                "work_group",
+                "role",
+              ],
             },
           },
         },
@@ -1016,16 +1065,37 @@ export async function programRoutes(fastify: FastifyInstance) {
     },
     async (request) => {
       const phaseId = (request.params as { phaseId: number }).phaseId;
-      const { measurementId, location } = request.query as {
+      const {
+        measurementId,
+        measurementDefinitionId,
+        location_id,
+        location_type,
+      } = request.query as {
         measurementId?: number;
-        location?: any;
+        measurementDefinitionId?: number;
+        location_id?: number;
+        location_type?:
+          | "business_unit"
+          | "region"
+          | "site"
+          | "asset_group"
+          | "work_group"
+          | "role";
       };
+
+      // Reconstruct location object if both parts are provided
+      const location =
+        location_id && location_type
+          ? { id: location_id, type: location_type }
+          : undefined;
+
       const programService = new ProgramService(request.supabaseClient);
 
       const measurement =
         await programService.getCalculatedMeasurementForProgramPhase(
           phaseId,
           measurementId,
+          measurementDefinitionId,
           location
         );
 

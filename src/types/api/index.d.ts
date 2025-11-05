@@ -572,8 +572,8 @@ export interface paths {
             name?: string;
             description?: string;
             status?: string;
-            presite_questionnaire_id?: number;
-            onsite_questionnaire_id?: number;
+            presite_questionnaire_id?: number | null;
+            onsite_questionnaire_id?: number | null;
           };
         };
       };
@@ -1156,6 +1156,51 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/programs/{programId}/measurement-definitions/allowed": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          programId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string | null;
+                objective: string | null;
+              }[];
+            };
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/programs/{programId}/measurements/available": {
     parameters: {
       query?: never;
@@ -1310,6 +1355,15 @@ export interface paths {
         query?: {
           measurementId?: number;
           location?: {
+            id?: number;
+            /** @enum {string} */
+            type?:
+              | "business_unit"
+              | "region"
+              | "site"
+              | "asset_group"
+              | "work_group"
+              | "role";
             business_unit_id?: string | null;
             region_id?: string | null;
             site_id?: string | null;
@@ -1368,6 +1422,17 @@ export interface paths {
           "application/json": {
             measurement_definition_id: number;
             calculated_value: number;
+            location?: {
+              id: number;
+              /** @enum {string} */
+              type:
+                | "business_unit"
+                | "region"
+                | "site"
+                | "asset_group"
+                | "work_group"
+                | "role";
+            };
             business_unit_id?: number;
             region_id?: number;
             site_id?: number;
@@ -7111,20 +7176,12 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          assessmentId: string;
+          assessmentId: number;
         };
         cookie?: never;
       };
       requestBody?: never;
-      responses: {
-        /** @description Default Response */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content?: never;
-        };
-      };
+      responses: never;
     };
     put?: never;
     post: {

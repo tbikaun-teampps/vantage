@@ -1,4 +1,7 @@
-import type { MeasurementDefinitionsResponseData } from "@/types/api/shared";
+import type {
+  MeasurementDefinitionsListItem,
+  MeasurementDefinitionsResponseData,
+} from "@/types/api/shared";
 import { apiClient } from "./client";
 import type { SharedRole } from "@/types/assessment";
 
@@ -105,6 +108,20 @@ export async function getMeasurementDefinitions(): Promise<MeasurementDefinition
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch measurements");
+  }
+
+  return response.data.data;
+}
+
+export async function getMeasurementDefinitionById(
+  id: number
+): Promise<MeasurementDefinitionsListItem> {
+  const response = await apiClient.get<
+    ApiResponse<MeasurementDefinitionsListItem>
+  >(`/shared/measurement-definitions/${id}`);
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to fetch measurement");
   }
 
   return response.data.data;

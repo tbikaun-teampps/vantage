@@ -16,3 +16,9 @@ export type ProgramObjectivesListItem =
 
 export type ProgramMeasurementListResponseData =
   paths["/programs/{programId}/measurements"]["get"]["responses"]["200"]["content"]["application/json"]["data"];
+
+export type ProgramAllowedMeasurementDefinitions =
+  paths["/programs/{programId}/measurement-definitions/allowed"]["get"]["responses"]["200"]["content"]["application/json"]["data"];
+
+export type ProgramAllowedMeasurementDefinitionItem =
+  ProgramAllowedMeasurementDefinitions[number];

@@ -889,10 +889,16 @@ export class ProgramService {
     if (error) throw error;
   }
 
-  async getCalculatedMeasurementsForProgramPhase(
-    programPhaseId: number
-  ): Promise<any> {
-    const { data: metrics, error } = await this.supabase
+  async getCalculatedMeasurementsForProgramPhase({
+    programPhaseId,
+    filters,
+  }: {
+    programPhaseId: number;
+    filters?: {
+      measurementDefinitionId?: number;
+    };
+  }): Promise<any> {
+    let query = this.supabase
       .from("measurements_calculated")
       .select(
         `
@@ -904,61 +910,75 @@ export class ProgramService {
           calculation_type,
           required_csv_columns,
           provider
-        )
+        ),
+        business_unit:business_units!business_unit_id(id, name),
+        region:regions!region_id(id, name),
+        site:sites!site_id(id, name),
+        asset_group:asset_groups!asset_group_id(id, name),
+        work_group:work_groups!work_group_id(id, name),
+        role:roles!role_id(id, shared_role:shared_role_id(id, name))
       `
       )
-      .eq("program_phase_id", programPhaseId)
-      .order("created_at", { ascending: false });
+      .eq("program_phase_id", programPhaseId);
+
+    if (filters?.measurementDefinitionId) {
+      query = query.eq(
+        "measurement_definition_id",
+        filters.measurementDefinitionId
+      );
+    }
+
+    const { data: measurements, error } = await query.order("created_at", {
+      ascending: false,
+    });
 
     if (error) throw error;
-    return metrics || [];
+
+    // Add context by concatenating location names
+    if (measurements) {
+      for (const measurement of measurements) {
+        const locationParts: string[] = [];
+        if (measurement.business_unit)
+          locationParts.push(measurement.business_unit.name);
+        if (measurement.region) locationParts.push(measurement.region.name);
+        if (measurement.site) locationParts.push(measurement.site.name);
+        if (measurement.asset_group)
+          locationParts.push(measurement.asset_group.name);
+        if (measurement.work_group)
+          locationParts.push(measurement.work_group.name);
+        if (measurement.role && measurement.role.shared_role)
+          locationParts.push(measurement.role.shared_role.name);
+
+        measurement.location_context = locationParts.join(" > ");
+      }
+    }
+
+    return measurements || [];
   }
 
   async getCalculatedMeasurementForProgramPhase(
     programPhaseId: number,
     measurementId?: number,
-    location?:
-      | {
-          business_unit_id?: number;
-          region_id?: number;
-          site_id?: number;
-          asset_group_id?: number;
-          work_group_id?: number;
-          role_id?: number;
-        }
-      | { id: number; type: LocationNodeType }
+    measurementDefinitionId?: number,
+    location?: { id: number; type: LocationNodeType }
   ): Promise<any> {
-    // Resolve location from new format if needed
-    let resolvedLocation:
-      | {
-          business_unit_id?: number;
-          region_id?: number;
-          site_id?: number;
-          asset_group_id?: number;
-          work_group_id?: number;
-          role_id?: number;
-        }
-      | undefined = undefined;
+    // New format: need to resolve and get company_id first
+    const { data: phase } = await this.supabase
+      .from("program_phases")
+      .select("company_id")
+      .eq("id", programPhaseId)
+      .single();
 
-    if (location && "id" in location && "type" in location) {
-      // New format: need to resolve and get company_id first
-      const { data: phase } = await this.supabase
-        .from("program_phases")
-        .select("company_id")
-        .eq("id", programPhaseId)
-        .single();
+    if (!phase) throw new Error("Program phase not found");
 
-      if (!phase) throw new Error("Program phase not found");
-
+    let resolvedLocation = undefined;
+    if (location) {
       resolvedLocation = await resolveLocationFromNode(
         this.supabase,
         location.id,
         location.type,
         phase.company_id
       );
-    } else if (location) {
-      // Old format: use as-is
-      resolvedLocation = location;
     }
 
     let query = this.supabase
@@ -982,6 +1002,10 @@ export class ProgramService {
       query = query.eq("id", measurementId);
     }
 
+    if (measurementDefinitionId) {
+      query = query.eq("measurement_definition_id", measurementDefinitionId);
+    }
+
     if (resolvedLocation) {
       if (resolvedLocation.business_unit_id) {
         query = query.eq("business_unit_id", resolvedLocation.business_unit_id);
@@ -990,9 +1014,15 @@ export class ProgramService {
           if (resolvedLocation.site_id) {
             query = query.eq("site_id", resolvedLocation.site_id);
             if (resolvedLocation.asset_group_id) {
-              query = query.eq("asset_group_id", resolvedLocation.asset_group_id);
+              query = query.eq(
+                "asset_group_id",
+                resolvedLocation.asset_group_id
+              );
               if (resolvedLocation.work_group_id) {
-                query = query.eq("work_group_id", resolvedLocation.work_group_id);
+                query = query.eq(
+                  "work_group_id",
+                  resolvedLocation.work_group_id
+                );
                 if (resolvedLocation.role_id) {
                   query = query.eq("role_id", resolvedLocation.role_id);
                 }
@@ -1003,33 +1033,19 @@ export class ProgramService {
       }
     }
 
-    const { data: metric, error } = await query.maybeSingle();
+    const { data: measurement, error } = await query.maybeSingle();
 
     if (error) throw error;
-    return metric;
+    console.log("measurement: ", measurement);
+    return measurement;
   }
 
-  async createCalculatedMeasurement(
-    data:
-      | {
-          program_phase_id: number;
-          measurement_definition_id: number;
-          calculated_value: number;
-          location: { id: number; type: LocationNodeType };
-        }
-      | {
-          program_phase_id: number;
-          measurement_definition_id: number;
-          calculated_value: number;
-          business_unit_id?: number;
-          region_id?: number;
-          site_id?: number;
-          asset_group_id?: number;
-          work_group_id?: number;
-          role_id?: number;
-          location?: never;
-        }
-  ): Promise<CalculatedMeasurementWithDefinition> {
+  async createCalculatedMeasurement(data: {
+    program_phase_id: number;
+    measurement_definition_id: number;
+    calculated_value: number;
+    location: { id: number; type: LocationNodeType };
+  }): Promise<CalculatedMeasurementWithDefinition> {
     // Check phase exists and get company_id and sequence_number from it
     const { data: phase } = await this.supabase
       .from("program_phases")
@@ -1057,16 +1073,6 @@ export class ProgramService {
         data.location.type,
         phase.company_id
       );
-    } else {
-      // Old format: use provided location fields directly
-      resolvedLocation = {
-        business_unit_id: data.business_unit_id,
-        region_id: data.region_id,
-        site_id: data.site_id,
-        asset_group_id: data.asset_group_id,
-        work_group_id: data.work_group_id,
-        role_id: data.role_id,
-      };
     }
 
     // Check if a desktop assessment exists for this program phase, or create one
@@ -1182,5 +1188,25 @@ export class ProgramService {
       .eq("id", measurementId);
 
     if (error) throw error;
+  }
+
+  async getProgramMeasurementDefinitions(programId: number): Promise<any> {
+    const { data: definitions, error } = await this.supabase
+      .from("program_measurements")
+      .select(
+        `
+        measurement_definition:measurement_definitions!measurement_definition_id(
+          id,
+          name,
+          description,
+          objective
+        )
+      `
+      )
+      .eq("program_id", programId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return definitions?.map((d) => d.measurement_definition) || [];
   }
 }
