@@ -10,6 +10,10 @@ import { NotFoundError } from "../plugins/errorHandler.js";
 import { InterviewsService } from "./InterviewsService.js";
 import { CreateInterviewData } from "../types/entities/interviews.js";
 import { RecommendationsService } from "./RecommendationsService.js";
+import {
+  resolveLocationFromNode,
+  type LocationNodeType,
+} from "../lib/location-resolver.js";
 
 export class ProgramService {
   private supabase: SupabaseClient<Database>;
@@ -82,7 +86,9 @@ export class ProgramService {
         name: "Program Assessment - Phase 1",
         status: "in_progress",
         planned_start_date: new Date().toISOString(),
-        planned_end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // +1 week
+        planned_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(), // +1 week
       });
 
     if (phaseError) throw phaseError;
@@ -339,7 +345,7 @@ export class ProgramService {
 
     return phase;
   }
-  
+
   /**
    * Soft deletes a program phase
    * @param phaseId
@@ -774,6 +780,16 @@ export class ProgramService {
     programId: number,
     measurementDefinitionIds: number[]
   ): Promise<any> {
+    // Fetch progrmam to get company_id
+    const { data: program, error: programError } = await this.supabase
+      .from("programs")
+      .select("company_id")
+      .eq("id", programId)
+      .single();
+
+    if (programError) throw programError;
+    if (!program) throw new NotFoundError("Program not found");
+
     // Ensure no duplicates in measurementDefinitionIds
     measurementDefinitionIds = Array.from(new Set(measurementDefinitionIds));
 
@@ -817,6 +833,7 @@ export class ProgramService {
     const records = newDefinitionIds.map((id) => ({
       program_id: programId,
       measurement_definition_id: id,
+      company_id: program.company_id,
     }));
 
     const { data, error } = await this.supabase
@@ -900,15 +917,50 @@ export class ProgramService {
   async getCalculatedMeasurementForProgramPhase(
     programPhaseId: number,
     measurementId?: number,
-    location?: {
-      business_unit_id?: number;
-      region_id?: number;
-      site_id?: number;
-      asset_group_id?: number;
-      work_group_id?: number;
-      role_id?: number;
-    }
+    location?:
+      | {
+          business_unit_id?: number;
+          region_id?: number;
+          site_id?: number;
+          asset_group_id?: number;
+          work_group_id?: number;
+          role_id?: number;
+        }
+      | { id: number; type: LocationNodeType }
   ): Promise<any> {
+    // Resolve location from new format if needed
+    let resolvedLocation:
+      | {
+          business_unit_id?: number;
+          region_id?: number;
+          site_id?: number;
+          asset_group_id?: number;
+          work_group_id?: number;
+          role_id?: number;
+        }
+      | undefined = undefined;
+
+    if (location && "id" in location && "type" in location) {
+      // New format: need to resolve and get company_id first
+      const { data: phase } = await this.supabase
+        .from("program_phases")
+        .select("company_id")
+        .eq("id", programPhaseId)
+        .single();
+
+      if (!phase) throw new Error("Program phase not found");
+
+      resolvedLocation = await resolveLocationFromNode(
+        this.supabase,
+        location.id,
+        location.type,
+        phase.company_id
+      );
+    } else if (location) {
+      // Old format: use as-is
+      resolvedLocation = location;
+    }
+
     let query = this.supabase
       .from("measurements_calculated")
       .select(
@@ -930,19 +982,19 @@ export class ProgramService {
       query = query.eq("id", measurementId);
     }
 
-    if (location) {
-      if (location.business_unit_id) {
-        query = query.eq("business_unit_id", location.business_unit_id);
-        if (location.region_id) {
-          query = query.eq("region_id", location.region_id);
-          if (location.site_id) {
-            query = query.eq("site_id", location.site_id);
-            if (location.asset_group_id) {
-              query = query.eq("asset_group_id", location.asset_group_id);
-              if (location.work_group_id) {
-                query = query.eq("work_group_id", location.work_group_id);
-                if (location.role_id) {
-                  query = query.eq("role_id", location.role_id);
+    if (resolvedLocation) {
+      if (resolvedLocation.business_unit_id) {
+        query = query.eq("business_unit_id", resolvedLocation.business_unit_id);
+        if (resolvedLocation.region_id) {
+          query = query.eq("region_id", resolvedLocation.region_id);
+          if (resolvedLocation.site_id) {
+            query = query.eq("site_id", resolvedLocation.site_id);
+            if (resolvedLocation.asset_group_id) {
+              query = query.eq("asset_group_id", resolvedLocation.asset_group_id);
+              if (resolvedLocation.work_group_id) {
+                query = query.eq("work_group_id", resolvedLocation.work_group_id);
+                if (resolvedLocation.role_id) {
+                  query = query.eq("role_id", resolvedLocation.role_id);
                 }
               }
             }
@@ -957,17 +1009,27 @@ export class ProgramService {
     return metric;
   }
 
-  async createCalculatedMeasurement(data: {
-    program_phase_id: number;
-    measurement_definition_id: number;
-    calculated_value: number;
-    business_unit_id?: number;
-    region_id?: number;
-    site_id?: number;
-    asset_group_id?: number;
-    work_group_id?: number;
-    role_id?: number;
-  }): Promise<CalculatedMeasurementWithDefinition> {
+  async createCalculatedMeasurement(
+    data:
+      | {
+          program_phase_id: number;
+          measurement_definition_id: number;
+          calculated_value: number;
+          location: { id: number; type: LocationNodeType };
+        }
+      | {
+          program_phase_id: number;
+          measurement_definition_id: number;
+          calculated_value: number;
+          business_unit_id?: number;
+          region_id?: number;
+          site_id?: number;
+          asset_group_id?: number;
+          work_group_id?: number;
+          role_id?: number;
+          location?: never;
+        }
+  ): Promise<CalculatedMeasurementWithDefinition> {
     // Check phase exists and get company_id and sequence_number from it
     const { data: phase } = await this.supabase
       .from("program_phases")
@@ -976,6 +1038,36 @@ export class ProgramService {
       .single();
 
     if (!phase) throw new Error("Program phase not found");
+
+    // Resolve location from new format if provided
+    let resolvedLocation: {
+      business_unit_id?: number;
+      region_id?: number;
+      site_id?: number;
+      asset_group_id?: number;
+      work_group_id?: number;
+      role_id?: number;
+    } = {};
+
+    if ("location" in data && data.location) {
+      // New format: resolve from location node
+      resolvedLocation = await resolveLocationFromNode(
+        this.supabase,
+        data.location.id,
+        data.location.type,
+        phase.company_id
+      );
+    } else {
+      // Old format: use provided location fields directly
+      resolvedLocation = {
+        business_unit_id: data.business_unit_id,
+        region_id: data.region_id,
+        site_id: data.site_id,
+        asset_group_id: data.asset_group_id,
+        work_group_id: data.work_group_id,
+        role_id: data.role_id,
+      };
+    }
 
     // Check if a desktop assessment exists for this program phase, or create one
     // As the structure is program > phase > assessment > measurement(s)
@@ -1027,12 +1119,12 @@ export class ProgramService {
         calculated_value: data.calculated_value,
         company_id: phase.company_id,
         data_source: "manual",
-        business_unit_id: data.business_unit_id || null,
-        region_id: data.region_id || null,
-        site_id: data.site_id || null,
-        asset_group_id: data.asset_group_id || null,
-        work_group_id: data.work_group_id || null,
-        role_id: data.role_id || null,
+        business_unit_id: resolvedLocation.business_unit_id || null,
+        region_id: resolvedLocation.region_id || null,
+        site_id: resolvedLocation.site_id || null,
+        asset_group_id: resolvedLocation.asset_group_id || null,
+        work_group_id: resolvedLocation.work_group_id || null,
+        role_id: resolvedLocation.role_id || null,
       })
       .select(
         `

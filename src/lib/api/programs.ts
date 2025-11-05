@@ -406,11 +406,22 @@ export interface LocationParams {
   role_id?: number;
 }
 
+export interface LocationNode {
+  id: number;
+  type:
+    | "business_unit"
+    | "region"
+    | "site"
+    | "asset_group"
+    | "work_group"
+    | "role";
+}
+
 export async function getProgramPhaseMeasurementData(
   programId: number,
   programPhaseId: number,
   measurementDefinitionId: number,
-  location?: LocationParams
+  location?: LocationParams | LocationNode
 ): Promise<any> {
   const response = await apiClient.get<ApiResponse<any>>(
     `/programs/${programId}/phases/${programPhaseId}/calculated-measurement`,
@@ -431,10 +442,18 @@ export async function getProgramPhaseMeasurementData(
   return response.data.data;
 }
 
-export interface CreateMeasurementDataParams extends LocationParams {
-  measurement_definition_id: number;
-  calculated_value: number;
-}
+// Support both old format (separate fields) and new format (location object)
+export type CreateMeasurementDataParams =
+  | {
+      measurement_definition_id: number;
+      calculated_value: number;
+      location: LocationNode;
+    }
+  | (LocationParams & {
+      measurement_definition_id: number;
+      calculated_value: number;
+      location?: never;
+    });
 
 export async function createProgramPhaseMeasurementData(
   programId: number,
