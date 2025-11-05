@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict NjqJGScNzYEsLxdAfccvvUi9ba1LKCJbeF8hTQxmQT6jj7CWIoh9LgWFMH3VoE7
+-- \restrict o5890Z1mTrmeOxPLWVh9EhbMH8QVdAxdqq8SuhGouPaMQfpNXK9CkYL5J5i7ogc
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -35,7 +35,9 @@ INSERT INTO "auth"."audit_log_entries" ("instance_id", "id", "payload", "created
 	('00000000-0000-0000-0000-000000000000', '1f461699-ece9-432e-a723-371db2d9792c', '{"action":"token_refreshed","actor_id":"00000000-0000-0000-0000-000000000001","actor_username":"tbikaun+vantage_local@teampps.com.au","actor_via_sso":false,"log_type":"token"}', '2025-11-04 00:49:35.435647+00', ''),
 	('00000000-0000-0000-0000-000000000000', '844c5e24-8b3d-4b12-9d7a-fd973fab3187', '{"action":"login","actor_id":"00000000-0000-0000-0000-000000000001","actor_username":"tbikaun+vantage_local@teampps.com.au","actor_via_sso":false,"log_type":"account","traits":{"provider":"email"}}', '2025-11-04 23:14:34.174508+00', ''),
 	('00000000-0000-0000-0000-000000000000', '4707f4ac-b5ad-46d1-a508-42bb9b9e665b', '{"action":"logout","actor_id":"00000000-0000-0000-0000-000000000001","actor_username":"tbikaun+vantage_local@teampps.com.au","actor_via_sso":false,"log_type":"account"}', '2025-11-04 23:15:47.458713+00', ''),
-	('00000000-0000-0000-0000-000000000000', 'b47534f0-cf52-40b6-a723-ae835f104d68', '{"action":"login","actor_id":"00000000-0000-0000-0000-000000000001","actor_username":"tbikaun+vantage_local@teampps.com.au","actor_via_sso":false,"log_type":"account","traits":{"provider":"email"}}', '2025-11-04 23:15:48.80954+00', '');
+	('00000000-0000-0000-0000-000000000000', 'b47534f0-cf52-40b6-a723-ae835f104d68', '{"action":"login","actor_id":"00000000-0000-0000-0000-000000000001","actor_username":"tbikaun+vantage_local@teampps.com.au","actor_via_sso":false,"log_type":"account","traits":{"provider":"email"}}', '2025-11-04 23:15:48.80954+00', ''),
+	('00000000-0000-0000-0000-000000000000', 'af9f01b2-d8c0-49e3-8c02-e36c0ba7b838', '{"action":"login","actor_id":"00000000-0000-0000-0000-000000000001","actor_username":"tbikaun+vantage_local@teampps.com.au","actor_via_sso":false,"log_type":"account","traits":{"provider":"email"}}', '2025-11-04 23:50:55.426787+00', ''),
+	('00000000-0000-0000-0000-000000000000', 'e2bfb794-3863-4850-aaaa-8ae42f3b3769', '{"action":"login","actor_id":"00000000-0000-0000-0000-000000000001","actor_username":"tbikaun+vantage_local@teampps.com.au","actor_via_sso":false,"log_type":"account","traits":{"provider":"email"}}', '2025-11-05 00:12:17.55861+00', '');
 
 
 --
@@ -51,7 +53,7 @@ INSERT INTO "auth"."audit_log_entries" ("instance_id", "id", "payload", "created
 INSERT INTO "auth"."users" ("instance_id", "id", "aud", "role", "email", "encrypted_password", "email_confirmed_at", "invited_at", "confirmation_token", "confirmation_sent_at", "recovery_token", "recovery_sent_at", "email_change_token_new", "email_change", "email_change_sent_at", "last_sign_in_at", "raw_app_meta_data", "raw_user_meta_data", "is_super_admin", "created_at", "updated_at", "phone", "phone_confirmed_at", "phone_change", "phone_change_token", "phone_change_sent_at", "email_change_token_current", "email_change_confirm_status", "banned_until", "reauthentication_token", "reauthentication_sent_at", "is_sso_user", "deleted_at", "is_anonymous") VALUES
 	('00000000-0000-0000-0000-000000000000', 'd34835f8-a043-42f9-a376-6aac23cb76ce', 'authenticated', 'authenticated', 'tbikaun+planner@teampps.com.au', '$2a$10$qKAMVjOmXjWurTaTbNa5bOPCOhDm7tFLbSyBdcyf7d1GSv.FS1RzC', '2025-10-31 05:32:42.614454+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}', '{"account_type": "interviewee", "email_verified": true}', NULL, '2025-10-31 05:32:42.598491+00', '2025-10-31 05:32:42.616483+00', NULL, NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false),
 	('00000000-0000-0000-0000-000000000000', 'd5f1252a-9d56-47f8-98cf-f6f34914bb6c', 'authenticated', 'authenticated', 'tbikaun+jd@teampps.com.au', '$2a$10$kUkKev8JHqNQSCM4bLNYheDazSYTewYEO8BNbEwAkwypht0Fe4JOq', '2025-10-31 08:11:45.238948+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}', '{"account_type": "interviewee", "email_verified": true}', NULL, '2025-10-31 08:11:45.222337+00', '2025-10-31 08:11:45.240872+00', NULL, NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false),
-	('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'tbikaun+vantage_local@teampps.com.au', '$2a$10$UkCKciSi7RIOxC2fjk3psOMp0wgMGWsJHJOgZGZBGlWNe69rDSQui', '2025-10-31 02:21:44.433362+00', NULL, '', NULL, '', NULL, '', '', NULL, '2025-11-04 23:15:48.811631+00', '{"provider": "email", "providers": ["email"]}', '{"email_verified": true}', NULL, '2025-10-31 02:21:44.423295+00', '2025-11-04 23:15:48.817427+00', NULL, NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false);
+	('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'tbikaun+vantage_local@teampps.com.au', '$2a$10$UkCKciSi7RIOxC2fjk3psOMp0wgMGWsJHJOgZGZBGlWNe69rDSQui', '2025-10-31 02:21:44.433362+00', NULL, '', NULL, '', NULL, '', '', NULL, '2025-11-05 00:12:17.562003+00', '{"provider": "email", "providers": ["email"]}', '{"email_verified": true}', NULL, '2025-10-31 02:21:44.423295+00', '2025-11-05 00:12:17.56828+00', NULL, NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false);
 
 
 --
@@ -79,7 +81,9 @@ INSERT INTO "auth"."identities" ("provider_id", "user_id", "identity_data", "pro
 --
 
 INSERT INTO "auth"."sessions" ("id", "user_id", "created_at", "updated_at", "factor_id", "aal", "not_after", "refreshed_at", "user_agent", "ip", "tag", "oauth_client_id") VALUES
-	('6de50776-b610-4d18-8a39-38e4f6f6d565', '00000000-0000-0000-0000-000000000001', '2025-11-04 23:15:48.811851+00', '2025-11-04 23:15:48.811851+00', NULL, 'aal1', NULL, NULL, 'node', '172.19.0.1', NULL, NULL);
+	('6de50776-b610-4d18-8a39-38e4f6f6d565', '00000000-0000-0000-0000-000000000001', '2025-11-04 23:15:48.811851+00', '2025-11-04 23:15:48.811851+00', NULL, 'aal1', NULL, NULL, 'node', '172.19.0.1', NULL, NULL),
+	('6000d653-d0b3-4511-86f4-887fb95ac993', '00000000-0000-0000-0000-000000000001', '2025-11-04 23:50:55.43046+00', '2025-11-04 23:50:55.43046+00', NULL, 'aal1', NULL, NULL, 'node', '172.19.0.1', NULL, NULL),
+	('1c0ee01e-2204-45d2-92fb-f42700ddc94a', '00000000-0000-0000-0000-000000000001', '2025-11-05 00:12:17.562151+00', '2025-11-05 00:12:17.562151+00', NULL, 'aal1', NULL, NULL, 'node', '172.19.0.1', NULL, NULL);
 
 
 --
@@ -87,7 +91,9 @@ INSERT INTO "auth"."sessions" ("id", "user_id", "created_at", "updated_at", "fac
 --
 
 INSERT INTO "auth"."mfa_amr_claims" ("session_id", "created_at", "updated_at", "authentication_method", "id") VALUES
-	('6de50776-b610-4d18-8a39-38e4f6f6d565', '2025-11-04 23:15:48.819058+00', '2025-11-04 23:15:48.819058+00', 'password', '6b599c99-fe55-4c1d-a239-cb1df2950fc4');
+	('6de50776-b610-4d18-8a39-38e4f6f6d565', '2025-11-04 23:15:48.819058+00', '2025-11-04 23:15:48.819058+00', 'password', '6b599c99-fe55-4c1d-a239-cb1df2950fc4'),
+	('6000d653-d0b3-4511-86f4-887fb95ac993', '2025-11-04 23:50:55.443238+00', '2025-11-04 23:50:55.443238+00', 'password', '2728a690-8a6f-4760-8ff1-06c2b34ed0ca'),
+	('1c0ee01e-2204-45d2-92fb-f42700ddc94a', '2025-11-05 00:12:17.570322+00', '2025-11-05 00:12:17.570322+00', 'password', 'a3ede32a-6b21-4008-9d94-04459f6b4986');
 
 
 --
@@ -125,7 +131,9 @@ INSERT INTO "auth"."mfa_amr_claims" ("session_id", "created_at", "updated_at", "
 --
 
 INSERT INTO "auth"."refresh_tokens" ("instance_id", "id", "token", "user_id", "revoked", "created_at", "updated_at", "parent", "session_id") VALUES
-	('00000000-0000-0000-0000-000000000000', 6, 'zkt6dr4etve2', '00000000-0000-0000-0000-000000000001', false, '2025-11-04 23:15:48.814714+00', '2025-11-04 23:15:48.814714+00', NULL, '6de50776-b610-4d18-8a39-38e4f6f6d565');
+	('00000000-0000-0000-0000-000000000000', 6, 'zkt6dr4etve2', '00000000-0000-0000-0000-000000000001', false, '2025-11-04 23:15:48.814714+00', '2025-11-04 23:15:48.814714+00', NULL, '6de50776-b610-4d18-8a39-38e4f6f6d565'),
+	('00000000-0000-0000-0000-000000000000', 7, 'lzzldkdbgwy4', '00000000-0000-0000-0000-000000000001', false, '2025-11-04 23:50:55.437411+00', '2025-11-04 23:50:55.437411+00', NULL, '6000d653-d0b3-4511-86f4-887fb95ac993'),
+	('00000000-0000-0000-0000-000000000000', 8, 'ifqk2oakwq4g', '00000000-0000-0000-0000-000000000001', false, '2025-11-05 00:12:17.565403+00', '2025-11-05 00:12:17.565403+00', NULL, '1c0ee01e-2204-45d2-92fb-f42700ddc94a');
 
 
 --
@@ -277,7 +285,8 @@ INSERT INTO "public"."assessment_objectives" ("id", "created_at", "updated_at", 
 
 INSERT INTO "public"."contacts" ("id", "created_at", "updated_at", "full_name", "email", "phone", "title", "created_by", "is_deleted", "deleted_at", "company_id") VALUES
 	(1, '2025-10-31 03:31:59.079731+00', '2025-10-31 03:31:59.079731+00', 'John Doe', 'tbikaun+jd@teampps.com.au', '', '', '00000000-0000-0000-0000-000000000001', false, NULL, 'b64d182f-0ee3-40a0-b367-281f31902620'),
-	(2, '2025-10-31 05:21:33.861052+00', '2025-10-31 05:21:33.861052+00', 'Simon Says', 'tbikaun+planner@teampps.com.au', '', '', '00000000-0000-0000-0000-000000000001', false, NULL, 'b64d182f-0ee3-40a0-b367-281f31902620');
+	(2, '2025-10-31 05:21:33.861052+00', '2025-10-31 05:21:33.861052+00', 'Simon Says', 'tbikaun+planner@teampps.com.au', '', '', '00000000-0000-0000-0000-000000000001', false, NULL, 'b64d182f-0ee3-40a0-b367-281f31902620'),
+	(3, '2025-11-04 23:51:15.613443+00', '2025-11-04 23:51:15.613443+00', 'John Manager', 'tbikaun+maintenancesuper@teampps.com.au', '', '', '00000000-0000-0000-0000-000000000001', false, NULL, 'b64d182f-0ee3-40a0-b367-281f31902620');
 
 
 --
@@ -563,7 +572,8 @@ INSERT INTO "public"."audit_logs" ("id", "company_id", "user_id", "user_email", 
 	(270, 'b64d182f-0ee3-40a0-b367-281f31902620', '00000000-0000-0000-0000-000000000001', 'tbikaun+vantage_local@teampps.com.au', 'Tyler Bikaun (Test User)', 'UPDATE', 'sites', '4', 'user_action', NULL, NULL, false, '{"id": 4, "lat": null, "lng": null, "code": "", "name": "Sahara Mine", "region_id": 4, "company_id": "b64d182f-0ee3-40a0-b367-281f31902620", "created_at": "2025-10-31T03:30:59.044752+00:00", "created_by": "00000000-0000-0000-0000-000000000001", "deleted_at": null, "is_deleted": false, "updated_at": "2025-10-31T03:30:59.044752+00:00", "description": ""}', '{"id": 4, "lat": 17.600503, "lng": -0.312393, "code": "", "name": "Sahara Mine", "region_id": 4, "company_id": "b64d182f-0ee3-40a0-b367-281f31902620", "created_at": "2025-10-31T03:30:59.044752+00:00", "created_by": "00000000-0000-0000-0000-000000000001", "deleted_at": null, "is_deleted": false, "updated_at": "2025-10-31T03:30:59.044752+00:00", "description": ""}', '{lat,lng}', '{"ip": "172.19.0.1", "user_agent": "node", "soft_delete_at": null}', '2025-11-04 23:20:29.131519+00'),
 	(271, 'b64d182f-0ee3-40a0-b367-281f31902620', '00000000-0000-0000-0000-000000000001', 'tbikaun+vantage_local@teampps.com.au', 'Tyler Bikaun (Test User)', 'UPDATE', 'sites', '3', 'user_action', NULL, NULL, false, '{"id": 3, "lat": null, "lng": null, "code": "GH-VGM", "name": "Volta Gold Mine", "region_id": 4, "company_id": "b64d182f-0ee3-40a0-b367-281f31902620", "created_at": "2025-10-31T02:53:17.811837+00:00", "created_by": "00000000-0000-0000-0000-000000000001", "deleted_at": null, "is_deleted": false, "updated_at": "2025-10-31T02:53:17.811837+00:00", "description": "Open-pit and underground combination, 3Mtpa"}', '{"id": 3, "lat": 10.008749, "lng": 7.285286, "code": "GH-VGM", "name": "Volta Gold Mine", "region_id": 4, "company_id": "b64d182f-0ee3-40a0-b367-281f31902620", "created_at": "2025-10-31T02:53:17.811837+00:00", "created_by": "00000000-0000-0000-0000-000000000001", "deleted_at": null, "is_deleted": false, "updated_at": "2025-10-31T02:53:17.811837+00:00", "description": "Open-pit and underground combination, 3Mtpa"}', '{lat,lng}', '{"ip": "172.19.0.1", "user_agent": "node", "soft_delete_at": null}', '2025-11-04 23:20:42.781835+00'),
 	(272, 'b64d182f-0ee3-40a0-b367-281f31902620', '00000000-0000-0000-0000-000000000001', 'tbikaun+vantage_local@teampps.com.au', 'Tyler Bikaun (Test User)', 'UPDATE', 'sites', '6', 'user_action', NULL, NULL, false, '{"id": 6, "lat": null, "lng": null, "code": "TZ-KJM", "name": "Kilimanjaro Mine", "region_id": 5, "company_id": "b64d182f-0ee3-40a0-b367-281f31902620", "created_at": "2025-10-31T02:59:54.251234+00:00", "created_by": "00000000-0000-0000-0000-000000000001", "deleted_at": null, "is_deleted": false, "updated_at": "2025-10-31T02:59:54.251234+00:00", "description": "Deep underground operation, 800m depth, 1.5Mtpa"}', '{"id": 6, "lat": -2.90601, "lng": 30.655199, "code": "TZ-KJM", "name": "Kilimanjaro Mine", "region_id": 5, "company_id": "b64d182f-0ee3-40a0-b367-281f31902620", "created_at": "2025-10-31T02:59:54.251234+00:00", "created_by": "00000000-0000-0000-0000-000000000001", "deleted_at": null, "is_deleted": false, "updated_at": "2025-10-31T02:59:54.251234+00:00", "description": "Deep underground operation, 800m depth, 1.5Mtpa"}', '{lat,lng}', '{"ip": "172.19.0.1", "user_agent": "node", "soft_delete_at": null}', '2025-11-04 23:21:02.072737+00'),
-	(273, 'b64d182f-0ee3-40a0-b367-281f31902620', '00000000-0000-0000-0000-000000000001', 'tbikaun+vantage_local@teampps.com.au', 'Tyler Bikaun (Test User)', 'UPDATE', 'sites', '7', 'user_action', NULL, NULL, false, '{"id": 7, "lat": null, "lng": null, "code": "", "name": "Bushveld Mine", "region_id": 5, "company_id": "b64d182f-0ee3-40a0-b367-281f31902620", "created_at": "2025-10-31T03:31:13.250913+00:00", "created_by": "00000000-0000-0000-0000-000000000001", "deleted_at": null, "is_deleted": false, "updated_at": "2025-10-31T03:31:13.250913+00:00", "description": ""}', '{"id": 7, "lat": -25.088708, "lng": 27.412401, "code": "", "name": "Bushveld Mine", "region_id": 5, "company_id": "b64d182f-0ee3-40a0-b367-281f31902620", "created_at": "2025-10-31T03:31:13.250913+00:00", "created_by": "00000000-0000-0000-0000-000000000001", "deleted_at": null, "is_deleted": false, "updated_at": "2025-10-31T03:31:13.250913+00:00", "description": ""}', '{lat,lng}', '{"ip": "172.19.0.1", "user_agent": "node", "soft_delete_at": null}', '2025-11-04 23:21:22.488902+00');
+	(273, 'b64d182f-0ee3-40a0-b367-281f31902620', '00000000-0000-0000-0000-000000000001', 'tbikaun+vantage_local@teampps.com.au', 'Tyler Bikaun (Test User)', 'UPDATE', 'sites', '7', 'user_action', NULL, NULL, false, '{"id": 7, "lat": null, "lng": null, "code": "", "name": "Bushveld Mine", "region_id": 5, "company_id": "b64d182f-0ee3-40a0-b367-281f31902620", "created_at": "2025-10-31T03:31:13.250913+00:00", "created_by": "00000000-0000-0000-0000-000000000001", "deleted_at": null, "is_deleted": false, "updated_at": "2025-10-31T03:31:13.250913+00:00", "description": ""}', '{"id": 7, "lat": -25.088708, "lng": 27.412401, "code": "", "name": "Bushveld Mine", "region_id": 5, "company_id": "b64d182f-0ee3-40a0-b367-281f31902620", "created_at": "2025-10-31T03:31:13.250913+00:00", "created_by": "00000000-0000-0000-0000-000000000001", "deleted_at": null, "is_deleted": false, "updated_at": "2025-10-31T03:31:13.250913+00:00", "description": ""}', '{lat,lng}', '{"ip": "172.19.0.1", "user_agent": "node", "soft_delete_at": null}', '2025-11-04 23:21:22.488902+00'),
+	(274, 'b64d182f-0ee3-40a0-b367-281f31902620', '00000000-0000-0000-0000-000000000001', 'tbikaun+vantage_local@teampps.com.au', 'Tyler Bikaun (Test User)', 'INSERT', 'contacts', '3', 'user_action', NULL, NULL, false, NULL, '{"id": 3, "email": "tbikaun+maintenancesuper@teampps.com.au", "phone": "", "title": "", "full_name": "John Manager", "company_id": "b64d182f-0ee3-40a0-b367-281f31902620", "created_at": "2025-11-04T23:51:15.613443+00:00", "created_by": "00000000-0000-0000-0000-000000000001", "deleted_at": null, "is_deleted": false, "updated_at": "2025-11-04T23:51:15.613443+00:00"}', '{}', '{"ip": "172.19.0.1", "user_agent": "node", "soft_delete_at": null}', '2025-11-04 23:51:15.613443+00');
 
 
 --
@@ -1244,7 +1254,8 @@ INSERT INTO "public"."questionnaire_question_roles" ("id", "created_at", "create
 
 INSERT INTO "public"."role_contacts" ("role_id", "contact_id", "created_at", "created_by", "company_id") VALUES
 	(2, 2, '2025-10-31 05:21:33.87781+00', '00000000-0000-0000-0000-000000000001', 'b64d182f-0ee3-40a0-b367-281f31902620'),
-	(7, 1, '2025-10-31 03:31:59.09276+00', '00000000-0000-0000-0000-000000000001', 'b64d182f-0ee3-40a0-b367-281f31902620');
+	(7, 1, '2025-10-31 03:31:59.09276+00', '00000000-0000-0000-0000-000000000001', 'b64d182f-0ee3-40a0-b367-281f31902620'),
+	(4, 3, '2025-11-04 23:51:15.634883+00', '00000000-0000-0000-0000-000000000001', 'b64d182f-0ee3-40a0-b367-281f31902620');
 
 
 --
@@ -1334,7 +1345,7 @@ INSERT INTO "storage"."prefixes" ("bucket_id", "name", "created_at", "updated_at
 -- Name: refresh_tokens_id_seq; Type: SEQUENCE SET; Schema: auth; Owner: supabase_auth_admin
 --
 
-SELECT pg_catalog.setval('"auth"."refresh_tokens_id_seq"', 6, true);
+SELECT pg_catalog.setval('"auth"."refresh_tokens_id_seq"', 8, true);
 
 
 --
@@ -1376,7 +1387,7 @@ SELECT pg_catalog.setval('"public"."asset_groups_id_seq"', 12, false);
 -- Name: audit_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."audit_logs_id_seq"', 273, true);
+SELECT pg_catalog.setval('"public"."audit_logs_id_seq"', 274, true);
 
 
 --
@@ -1397,7 +1408,7 @@ SELECT pg_catalog.setval('"public"."calculated_metrics_id_seq"', 1, false);
 -- Name: contacts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."contacts_id_seq"', 3, false);
+SELECT pg_catalog.setval('"public"."contacts_id_seq"', 3, true);
 
 
 --
@@ -1537,7 +1548,7 @@ SELECT pg_catalog.setval('"public"."qustionnaire_question_roles_id_seq"', 23, fa
 -- Name: recommendations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('"public"."recommendations_id_seq"', 1, false);
+SELECT pg_catalog.setval('"public"."recommendations_id_seq"', 15, true);
 
 
 --
@@ -1614,6 +1625,6 @@ SELECT pg_catalog.setval('"supabase_functions"."hooks_id_seq"', 1, false);
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict NjqJGScNzYEsLxdAfccvvUi9ba1LKCJbeF8hTQxmQT6jj7CWIoh9LgWFMH3VoE7
+-- \unrestrict o5890Z1mTrmeOxPLWVh9EhbMH8QVdAxdqq8SuhGouPaMQfpNXK9CkYL5J5i7ogc
 
 RESET ALL;
