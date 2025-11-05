@@ -178,10 +178,6 @@ export function AddEditTab({
     ) : null;
   };
 
-  // console.log("selectedLocation: ", selectedLocation);
-
-  console.log("measurement: ", measurement);
-
   return (
     <div className="grid grid-cols-2 gap-6">
       {/* Left Column: Company Structure */}
