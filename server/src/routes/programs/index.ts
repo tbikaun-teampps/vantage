@@ -975,6 +975,8 @@ export async function programRoutes(fastify: FastifyInstance) {
     }
   );
 
+  // GET endpoint to fetch calculated measurement for a program phase
+  // Supports both old format (separate location fields) and new format (location object with id + type)
   fastify.get(
     "/:programId/phases/:phaseId/calculated-measurement",
     {
@@ -986,6 +988,20 @@ export async function programRoutes(fastify: FastifyInstance) {
             location: {
               type: "object",
               properties: {
+                // New format
+                id: { type: "number" },
+                type: {
+                  type: "string",
+                  enum: [
+                    "business_unit",
+                    "region",
+                    "site",
+                    "asset_group",
+                    "work_group",
+                    "role",
+                  ],
+                },
+                // Old format (kept for backward compatibility)
                 business_unit_id: { type: "string", nullable: true },
                 region_id: { type: "string", nullable: true },
                 site_id: { type: "string", nullable: true },
@@ -1002,7 +1018,7 @@ export async function programRoutes(fastify: FastifyInstance) {
       const phaseId = (request.params as { phaseId: number }).phaseId;
       const { measurementId, location } = request.query as {
         measurementId?: number;
-        location?: Record<string, string | null>;
+        location?: any;
       };
       const programService = new ProgramService(request.supabaseClient);
 
@@ -1021,6 +1037,7 @@ export async function programRoutes(fastify: FastifyInstance) {
   );
 
   // POST endpoint to create a new measurement data
+  // Supports both old format (separate location fields) and new format (location object with id + type)
   fastify.post(
     "/:programId/phases/:phaseId/measurement-data",
     {
@@ -1038,6 +1055,26 @@ export async function programRoutes(fastify: FastifyInstance) {
           properties: {
             measurement_definition_id: { type: "number" },
             calculated_value: { type: "number" },
+            // New format: location object
+            location: {
+              type: "object",
+              properties: {
+                id: { type: "number" },
+                type: {
+                  type: "string",
+                  enum: [
+                    "business_unit",
+                    "region",
+                    "site",
+                    "asset_group",
+                    "work_group",
+                    "role",
+                  ],
+                },
+              },
+              required: ["id", "type"],
+            },
+            // Old format: separate fields (kept for backward compatibility)
             business_unit_id: { type: "number" },
             region_id: { type: "number" },
             site_id: { type: "number" },
@@ -1051,38 +1088,14 @@ export async function programRoutes(fastify: FastifyInstance) {
     },
     async (request) => {
       const { phaseId } = request.params as { phaseId: number };
-      const {
-        measurement_definition_id,
-        calculated_value,
-        business_unit_id,
-        region_id,
-        site_id,
-        asset_group_id,
-        work_group_id,
-        role_id,
-      } = request.body as {
-        measurement_definition_id: number;
-        calculated_value: number;
-        business_unit_id?: number;
-        region_id?: number;
-        site_id?: number;
-        asset_group_id?: number;
-        work_group_id?: number;
-        role_id?: number;
-      };
+      const body = request.body as any;
 
       const programService = new ProgramService(request.supabaseClient);
 
+      // Pass the entire body to the service, which handles both formats
       const measurement = await programService.createCalculatedMeasurement({
         program_phase_id: phaseId,
-        measurement_definition_id,
-        calculated_value,
-        business_unit_id,
-        region_id,
-        site_id,
-        asset_group_id,
-        work_group_id,
-        role_id,
+        ...body,
       });
 
       return {
