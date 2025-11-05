@@ -159,8 +159,6 @@ export function DetailsTab({ program }: DetailsTabProps) {
     return charts;
   }, [program, programMeasurements]);
 
-  console.log("chartPriority: ", chartPriority);
-
   return (
     <>
       <div className="space-y-6 mb-8">

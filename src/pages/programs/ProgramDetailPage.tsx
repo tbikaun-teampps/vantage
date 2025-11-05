@@ -103,7 +103,9 @@ export function ProgramDetailPage() {
     >
       <div className="mx-auto h-full" data-tour="program-detail-main">
         {activeTab === "overview" ? (
-          <DetailsTab program={program} />
+          <div className="h-full overflow-y-auto">
+            <DetailsTab program={program} />
+          </div>
         ) : activeTab === "setup" ? (
           <SetupTab program={program} />
         ) : activeTab === "manage" ? (
