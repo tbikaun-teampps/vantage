@@ -461,3 +461,19 @@ export async function getProgramMeasurementHeatmap(programId: string): Promise<{
 
   return response.data.data;
 }
+
+export async function getAssessmentRadarChart(
+  assessmentId: number
+): Promise<any> {
+  const response = await apiClient.get<ApiResponse<any>>(
+    `/analytics/assessment/radar-chart/${assessmentId}`
+  );
+
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to fetch assessment radar chart"
+    );
+  }
+
+  return response.data.data;
+}

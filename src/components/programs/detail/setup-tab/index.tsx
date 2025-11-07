@@ -7,6 +7,7 @@ import { OnsiteQuestionnaireSelection } from "@/components/programs/detail/setup
 import { PresiteQuestionnaireSelection } from "@/components/programs/detail/setup-tab/presite-questionnaire-selection";
 import type { ProgramDetailResponseData } from "@/types/api/programs";
 import { Measurements } from "@/components/programs/detail/setup-tab/desktop-measurements";
+import { Alignment } from "./alignment";
 
 interface SetupTabProps {
   program: ProgramDetailResponseData;
@@ -53,6 +54,7 @@ export function SetupTab({ program }: SetupTabProps) {
         isUpdating={updateOnsiteQuestionnaireMutation.isPending}
       />
       <Measurements programId={program.id} />
+      <Alignment />
     </div>
   );
 }

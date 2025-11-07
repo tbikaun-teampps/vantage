@@ -12,6 +12,7 @@ import {
   InterviewResponseData,
   ProgramInterviewHeatmapDataPoint,
 } from "../../types/analytics";
+import { BadRequestError, NotFoundError } from "../../plugins/errorHandler";
 
 export async function analyticsRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -1082,4 +1083,120 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
       };
     }
   );
+
+  // Method for getting radar chart data for questionnaire assessments
+  fastify.get("/assessment/radar-chart/:assessmentId", async (request) => {
+    const { assessmentId } = request.params as { assessmentId: number };
+    const { supabaseClient } = request;
+
+    // Check that assessment exists and is of type 'onsite'
+    const { data: assessment, error: assessmentError } = await supabaseClient
+      .from("assessments")
+      .select("id, type, questionnaire_id")
+      .eq("id", assessmentId)
+      .single();
+
+    if (assessmentError || !assessment)
+      throw new NotFoundError("Assessment not found");
+    if (assessment.type !== "onsite")
+      throw new BadRequestError(
+        "Radar chart data is only available for onsite assessments"
+      );
+
+    // The response data structure will be:
+    const data = {
+      sections: [
+        {
+          id: 1,
+          title: "Section 1",
+          order_index: 1,
+          average_score: 4.2,
+          response_count: 45,
+        },
+        {
+          id: 2,
+          title: "Section 2",
+          order_index: 2,
+          average_score: 3.8,
+          response_count: 45,
+        },
+      ],
+      steps: [
+        {
+          id: 1,
+          title: "Step 1",
+          section_id: 1,
+          section_title: "Section 1",
+          order_index: 1,
+          average_score: 4.5,
+          response_count: 45,
+        },
+        {
+          id: 2,
+          title: "Step 2",
+          section_id: 1,
+          section_title: "Section 1",
+          order_index: 2,
+          average_score: 3.9,
+          response_count: 45,
+        },
+        {
+          id: 3,
+          title: "Step 3",
+          section_id: 2,
+          section_title: "Section 2",
+          order_index: 1,
+          average_score: 3.8,
+          response_count: 45,
+        },
+      ],
+      questions: [
+        {
+          id: 1,
+          title: "Question 1",
+          step_id: 1,
+          section_id: 1,
+          average_score: 4.7,
+          response_count: 45,
+        },
+        {
+          id: 2,
+          title: "Question 2",
+          step_id: 1,
+          section_id: 1,
+          average_score: 3.9,
+          response_count: 45,
+        },
+        {
+          id: 3,
+          title: "Question 3",
+          step_id: 2,
+          section_id: 1,
+          average_score: 3.8,
+          response_count: 45,
+        },
+        {
+          id: 4,
+          title: "Question 4",
+          step_id: 2,
+          section_id: 1,
+          average_score: 4.0,
+          response_count: 45,
+        },
+        {
+          id: 5,
+          title: "Question 5",
+          step_id: 3,
+          section_id: 2,
+          average_score: 3.8,
+          response_count: 45,
+        }
+      ],
+    };
+
+    return {
+      success: true,
+      data,
+    };
+  });
 }

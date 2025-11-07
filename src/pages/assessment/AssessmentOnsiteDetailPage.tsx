@@ -19,6 +19,7 @@ import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 import { AssessmentLocation } from "@/components/assessment/detail/assessment-location";
 import { AssessmentActions } from "@/components/assessment/detail/assessment-actions";
+import { AssessmentRadarCharts } from "@/components/assessment/detail/assessment-radar-charts";
 
 export function AssessmentOnsiteDetailPage() {
   const userCanAdmin = useCanAdmin();
@@ -111,6 +112,7 @@ export function AssessmentOnsiteDetailPage() {
 
           <AssessmentLocation location={assessment.location} />
           <AssessmentObjectives objectives={assessment.objectives || []} />
+          <AssessmentRadarCharts assessmentId={assessmentId} /> 
           <InterviewsList assessmentId={assessmentId} />
           <AssessmentActions assessmentId={assessmentId} />
           <AssessmentEvidence assessmentId={assessmentId} />
