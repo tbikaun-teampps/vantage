@@ -775,6 +775,7 @@ export type Database = {
         Row: {
           company_id: string;
           created_at: string;
+          deleted_at: string | null;
           file_name: string;
           file_path: string;
           file_size: number;
@@ -782,12 +783,14 @@ export type Database = {
           id: number;
           interview_id: number;
           interview_response_id: number;
+          is_deleted: boolean | null;
           uploaded_at: string;
           uploaded_by: string;
         };
         Insert: {
           company_id: string;
           created_at?: string;
+          deleted_at?: string | null;
           file_name: string;
           file_path: string;
           file_size: number;
@@ -795,12 +798,14 @@ export type Database = {
           id?: number;
           interview_id: number;
           interview_response_id: number;
+          is_deleted?: boolean | null;
           uploaded_at?: string;
           uploaded_by?: string;
         };
         Update: {
           company_id?: string;
           created_at?: string;
+          deleted_at?: string | null;
           file_name?: string;
           file_path?: string;
           file_size?: number;
@@ -808,6 +813,7 @@ export type Database = {
           id?: number;
           interview_id?: number;
           interview_response_id?: number;
+          is_deleted?: boolean | null;
           uploaded_at?: string;
           uploaded_by?: string;
         };
@@ -846,8 +852,10 @@ export type Database = {
         Row: {
           company_id: string;
           created_at: string;
+          deleted_at: string | null;
           id: number;
           interview_id: number;
+          is_deleted: boolean | null;
           is_universal: boolean | null;
           questionnaire_question_id: number;
           role_id: number | null;
@@ -855,8 +863,10 @@ export type Database = {
         Insert: {
           company_id: string;
           created_at?: string;
+          deleted_at?: string | null;
           id?: number;
           interview_id: number;
+          is_deleted?: boolean | null;
           is_universal?: boolean | null;
           questionnaire_question_id: number;
           role_id?: number | null;
@@ -864,8 +874,10 @@ export type Database = {
         Update: {
           company_id?: string;
           created_at?: string;
+          deleted_at?: string | null;
           id?: number;
           interview_id?: number;
+          is_deleted?: boolean | null;
           is_universal?: boolean | null;
           questionnaire_question_id?: number;
           role_id?: number | null;
@@ -1045,9 +1057,11 @@ export type Database = {
           company_id: string;
           created_at: string;
           created_by: string | null;
+          deleted_at: string | null;
           id: number;
           interview_id: number;
           interview_response_id: number;
+          is_deleted: boolean | null;
           role_id: number;
           updated_at: string;
         };
@@ -1055,9 +1069,11 @@ export type Database = {
           company_id: string;
           created_at?: string;
           created_by?: string | null;
+          deleted_at?: string | null;
           id?: number;
           interview_id: number;
           interview_response_id: number;
+          is_deleted?: boolean | null;
           role_id: number;
           updated_at?: string;
         };
@@ -1065,9 +1081,11 @@ export type Database = {
           company_id?: string;
           created_at?: string;
           created_by?: string | null;
+          deleted_at?: string | null;
           id?: number;
           interview_id?: number;
           interview_response_id?: number;
+          is_deleted?: boolean | null;
           role_id?: number;
           updated_at?: string;
         };
@@ -1190,24 +1208,30 @@ export type Database = {
           company_id: string;
           created_at: string;
           created_by: string | null;
+          deleted_at: string | null;
           id: number;
           interview_id: number;
+          is_deleted: boolean | null;
           role_id: number;
         };
         Insert: {
           company_id: string;
           created_at?: string;
           created_by?: string | null;
+          deleted_at?: string | null;
           id?: number;
           interview_id: number;
+          is_deleted?: boolean | null;
           role_id: number;
         };
         Update: {
           company_id?: string;
           created_at?: string;
           created_by?: string | null;
+          deleted_at?: string | null;
           id?: number;
           interview_id?: number;
+          is_deleted?: boolean | null;
           role_id?: number;
         };
         Relationships: [
@@ -1399,7 +1423,9 @@ export type Database = {
           company_id: string;
           created_at: string;
           created_by: string;
+          deleted_at: string | null;
           id: number;
+          is_deleted: boolean | null;
           program_id: number;
           questionnaire_question_id: number | null;
           questionnaire_section_id: number | null;
@@ -1414,7 +1440,9 @@ export type Database = {
           company_id: string;
           created_at?: string;
           created_by?: string;
+          deleted_at?: string | null;
           id?: number;
+          is_deleted?: boolean | null;
           program_id: number;
           questionnaire_question_id?: number | null;
           questionnaire_section_id?: number | null;
@@ -1429,7 +1457,9 @@ export type Database = {
           company_id?: string;
           created_at?: string;
           created_by?: string;
+          deleted_at?: string | null;
           id?: number;
+          is_deleted?: boolean | null;
           program_id?: number;
           questionnaire_question_id?: number | null;
           questionnaire_section_id?: number | null;
@@ -1730,6 +1760,7 @@ export type Database = {
       };
       program_measurements: {
         Row: {
+          company_id: string;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -1740,6 +1771,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1750,6 +1782,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -1760,6 +1793,13 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "fk_company";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "program_measurements_created_by_fkey";
             columns: ["created_by"];

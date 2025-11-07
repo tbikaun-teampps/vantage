@@ -258,7 +258,7 @@ export function Measurements({ programId }: MeasurementsProps) {
             <span className="ml-2">Loading measurements...</span>
           </div>
         ) : hasMeasurements ? (
-          <div className="space-y-3">
+          <div className="space-y-3 grid grid-cols-4 gap-4">
             {programMeasurements.map(
               (programMeasurement: {
                 id: number;
@@ -290,7 +290,7 @@ export function Measurements({ programId }: MeasurementsProps) {
                       )}
                     </div>
                     {programMeasurement.measurement_definition.description && (
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {programMeasurement.measurement_definition.description}
                       </p>
                     )}

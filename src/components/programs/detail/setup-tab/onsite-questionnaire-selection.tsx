@@ -16,13 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  IconEdit,
   IconCheck,
   IconX,
   IconClipboardList,
   IconLink,
   IconUnlink,
   IconExternalLink,
+  IconPlus,
 } from "@tabler/icons-react";
 import { useQuestionnaires } from "@/hooks/useAssessments";
 import { Link } from "react-router-dom";
@@ -111,7 +111,7 @@ export function OnsiteQuestionnaireSelection({
               onClick={() => setIsEditing(true)}
               disabled={isUpdating}
             >
-              <IconEdit className="h-4 w-4 mr-2" />
+              <IconPlus className="h-4 w-4 mr-2" />
               {currentQuestionnaire ? "Change" : "Link"} Questionnaire
             </Button>
           )}

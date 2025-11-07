@@ -107,7 +107,9 @@ export function ProgramDetailPage() {
             <DetailsTab program={program} />
           </div>
         ) : activeTab === "setup" ? (
-          <SetupTab program={program} />
+          <div className="h-full overflow-y-auto">
+            <SetupTab program={program} />
+          </div>
         ) : activeTab === "manage" ? (
           <ManageTab program={program} />
         ) : activeTab === "schedule" ? (

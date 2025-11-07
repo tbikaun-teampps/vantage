@@ -582,9 +582,9 @@ export function QuestionPartsWeightedScoringBuilder({
       const labelScoring = scoring as Record<string, number> | undefined;
 
       return (
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {labels.map((label) => (
-            <div key={label} className="flex items-center gap-4">
+            <div key={label} className="grid grid-cols-2 gap-2">
               <Label
                 htmlFor={`${partId}-${label}`}
                 className="text-sm truncate"
