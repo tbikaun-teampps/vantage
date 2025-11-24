@@ -552,6 +552,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
                           min: z.number(),
                           decimal_places: z.number().optional(),
                         }),
+                        z.object({}), // Empty object for answer types that don't require options (e.g., boolean)
                       ])
                       .nullable(),
                   })

@@ -50,14 +50,19 @@ export const GetActivityDataResponseSchema = z.object({
   data: z.object({
     total: z.number(),
     breakdown: z.record(z.string(), z.number()),
-    scope: z.object({
-      assessmentName: z.string().optional(),
-      programName: z.string().optional(),
-    }),
+    // TODO: re-add scope once implemented in service
+    // scope: z.object({
+    //   assessmentName: z.string().optional(),
+    //   programName: z.string().optional(),
+    // }),
     items: z.array(
       z.object({
         id: z.number(),
-        status: z.enum(AssessmentStatusEnum),
+        status: z.union([
+          z.enum(AssessmentStatusEnum),
+          z.enum(ProgramStatusEnum),
+          z.enum(InterviewStatusEnum),
+        ]),
         created_at: z.string(),
         updated_at: z.string(),
         name: z.string(),
@@ -78,6 +83,7 @@ export const GetActivityDataResponseSchema = z.object({
               name: z.string(),
             }),
           })
+          .nullable()
           .optional(),
       })
     ),
