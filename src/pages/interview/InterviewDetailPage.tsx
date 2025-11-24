@@ -17,14 +17,69 @@ interface InterviewDetailPageProps {
   isIndividualInterview?: boolean;
 }
 
-// Form schema for interview responses
-const responseSchema = z.object({
-  rating_score: z.number().nullable().optional(),
-  role_ids: z.array(z.number()).optional(),
-  is_unknown: z.boolean().optional(),
-});
+// Form schema for interview responses - dynamic based on question parts
+const createResponseSchema = (questionParts?: Array<{
+  id: number;
+  answer_type: string;
+  options: unknown;
+}>) => {
+  const baseSchema = z.object({
+    rating_score: z.number().nullable().optional(),
+    role_ids: z.array(z.number()).optional(),
+    is_unknown: z.boolean().optional(),
+  });
 
-type ResponseFormData = z.infer<typeof responseSchema>;
+  // If no question parts, return base schema
+  if (!questionParts || questionParts.length === 0) {
+    return baseSchema;
+  }
+
+  // Build dynamic validation rules for question parts
+  const questionPartSchema: Record<string, z.ZodTypeAny> = {};
+
+  for (const part of questionParts) {
+    const fieldName = `question_part_${part.id}`;
+
+    if (part.answer_type === "scale" || part.answer_type === "number") {
+      const options = part.options as { min: number; max: number };
+
+      questionPartSchema[fieldName] = z
+        .string()
+        .optional()
+        .refine(
+          (val) => {
+            if (!val) return true; // Optional fields are valid
+            const num = parseFloat(val);
+            return !isNaN(num) && num >= options.min && num <= options.max;
+          },
+          {
+            message: `Value must be between ${options.min} and ${options.max}`,
+          }
+        );
+    } else if (part.answer_type === "percentage") {
+      questionPartSchema[fieldName] = z
+        .string()
+        .optional()
+        .refine(
+          (val) => {
+            if (!val) return true;
+            const num = parseFloat(val);
+            return !isNaN(num) && num >= 0 && num <= 100;
+          },
+          {
+            message: "Percentage must be between 0 and 100",
+          }
+        );
+    } else {
+      // For other types (labelled_scale, boolean), just accept strings
+      questionPartSchema[fieldName] = z.string().optional();
+    }
+  }
+
+  return baseSchema.extend(questionPartSchema);
+};
+
+type ResponseFormData = z.infer<ReturnType<typeof createResponseSchema>>;
 
 export type InterviewFormData = ResponseFormData & {
   [key: `question_part_${number}`]: string | undefined;
@@ -114,9 +169,16 @@ export function InterviewDetailPage({
   const { mutateAsync: completeInterviewMutation, isPending: isCompleting } =
     useCompleteInterview();
 
-  // Form for current question
+  // Form for current question - schema updates when question changes
+  const schema = useMemo(
+    () => createResponseSchema(question?.question_parts),
+    [question?.question_parts]
+  );
+
   const form = useForm<InterviewFormData>({
-    resolver: zodResolver(responseSchema),
+    resolver: zodResolver(schema),
+    mode: "onBlur", // Validate when user leaves field
+    reValidateMode: "onChange", // Re-validate on change after first validation
     defaultValues: {
       rating_score: null,
       role_ids: [],
@@ -182,10 +244,9 @@ export function InterviewDetailPage({
     );
   }
 
-  const handleSave = () => {
+  const handleSave = form.handleSubmit((formData) => {
+    // This function only runs if validation passes
     if (!question?.response?.id || !currentQuestionId) return;
-
-    const formData = form.getValues();
 
     // Convert any question_part_{id} fields to part answers
     const partAnswers: {
@@ -216,7 +277,7 @@ export function InterviewDetailPage({
         question_part_answers: partAnswers,
       },
     });
-  };
+  });
 
   const dismissIntro = () => {
     setShowIntro(false);
