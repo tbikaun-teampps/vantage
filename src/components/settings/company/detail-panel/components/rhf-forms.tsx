@@ -29,6 +29,8 @@ import {
 import { FormInput, FormSelect, FormLocationMap } from "./form-fields";
 import { RoleSelector } from "./role-selector";
 import { ContactCRUD } from "./contact-crud";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { FormHeader } from "../shared/form-header";
 import { FormSection } from "../shared/form-section";
 import { FormActions } from "../shared/form-actions";
@@ -758,9 +760,8 @@ export const RHFRoleForm: React.FC<
     defaultValues: {
       id: selectedItem.id,
       level: selectedItem.level || undefined,
-      description: selectedItem.description || "",
       shared_role_id: selectedItem.shared_role_id?.toString() || undefined,
-      reports_to_role_id: selectedItem.reports_to_role_id?.toString() || "null",
+      reports_to_role_id: selectedItem.reports_to_role_id?.toString() || undefined,
     },
   });
 
@@ -769,10 +770,9 @@ export const RHFRoleForm: React.FC<
       form.reset({
         id: selectedItem.id,
         level: selectedItem.level || undefined,
-        description: selectedItem.description || "",
         shared_role_id: selectedItem.shared_role_id?.toString() || undefined,
         reports_to_role_id:
-          selectedItem.reports_to_role_id?.toString() || "null",
+          selectedItem.reports_to_role_id?.toString() || undefined,
       });
     }
   }, [selectedItem, form]);
@@ -833,19 +833,24 @@ export const RHFRoleForm: React.FC<
                     label="Role Level"
                     options={roleLevelOptions}
                     disabled={!userCanAdmin}
+                    required
                   />
                 </div>
 
                 {/* Second row: Description with more space */}
                 <div className="grid grid-cols-1">
-                  <FormInput
-                    control={form.control}
-                    name="description"
-                    label="Description"
-                    placeholder="Role description and responsibilities"
-                    disabled
-                    className="min-h-[60px]"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="role-description" className="text-sm font-medium">
+                      Description
+                    </Label>
+                    <Input
+                      id="role-description"
+                      value={selectedItem.description || ""}
+                      // disabled
+                      placeholder="Role description and responsibilities"
+                      className="h-10 cursor-not-allowed"
+                    />
+                  </div>
                 </div>
               </div>
             </FormSection>

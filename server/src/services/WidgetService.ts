@@ -99,7 +99,8 @@ export class WidgetService {
    */
   async getActivityData<T extends "interviews" | "assessments" | "programs">(
     entityType: T
-  ) { // Promise<ActivityData>
+  ) {
+    // Promise<ActivityData>
     const validEntityTypes = ["interviews", "assessments", "programs"] as const;
     if (!validEntityTypes.includes(entityType)) {
       throw new Error(`Unsupported entity type: ${entityType}`);
@@ -116,7 +117,16 @@ export class WidgetService {
         const result = await this.supabase
           .from("interviews")
           .select(
-            "id, status, created_at, updated_at, name, is_individual, assessment:assessment_id(id, name)"
+            `id,
+            status,
+            created_at,
+            updated_at,
+            name,
+            is_individual,
+            assessment:assessment_id(
+              id,
+              name
+            )`
           )
           .eq("company_id", this.companyId)
           .eq("is_deleted", false)
@@ -130,7 +140,20 @@ export class WidgetService {
         const result = await this.supabase
           .from("assessments")
           .select(
-            "id, status, created_at, updated_at, name, type, program_phase:program_phase_id(id, name, program:program_id(id, name))"
+            `id,
+            status,
+            created_at,
+            updated_at,
+            name,
+            type,
+            program_phase:program_phase_id(
+              id,
+              name,
+              program:program_id(
+                id, name
+              )
+            )
+            `
           )
           .eq("company_id", this.companyId)
           .eq("is_deleted", false)

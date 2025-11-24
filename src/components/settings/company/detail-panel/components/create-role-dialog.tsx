@@ -117,7 +117,7 @@ export function CreateRoleDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <IconUser className="h-4 w-4" />
-            Create New Role
+            Add New Role
           </DialogTitle>
           <DialogDescription>
             Select a role and configure its details for this work group.
@@ -144,6 +144,7 @@ export function CreateRoleDialog({
                 label="Level"
                 options={roleLevelOptions}
                 placeholder="Select level..."
+                required
               />
             </div>
           </div>
@@ -159,7 +160,7 @@ export function CreateRoleDialog({
             </Button>
             <Button
               type="submit"
-              disabled={isLoading || !form.watch("shared_role_id")}
+              disabled={isLoading || !form.watch("shared_role_id") || !form.watch("level")}
             >
               {isLoading ? (
                 <>
@@ -167,7 +168,7 @@ export function CreateRoleDialog({
                   Creating...
                 </>
               ) : (
-                "Create Role"
+                "Add Role"
               )}
             </Button>
           </DialogFooter>

@@ -33,23 +33,23 @@ import type { GetActivityWidgetResponseData } from "@/types/api/dashboard";
 const getStatusColor = (status: string) => {
   switch (status) {
     case "pending":
-      return "bg-amber-100 text-amber-500 border border-amber-500 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-200";
+      return "bg-amber-100 text-amber-500 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-200";
     case "in_progress":
-      return "bg-blue-100 text-blue-500 border border-blue-500 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-200";
+      return "bg-blue-100 text-blue-500 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-200";
     case "completed":
-      return "bg-green-100 text-green-500 border border-green-500 dark:bg-green-950 dark:text-green-200 dark:border-green-200";
+      return "bg-green-100 text-green-500 dark:bg-green-950 dark:text-green-200 dark:border-green-200";
     case "cancelled":
-      return "bg-red-100 text-red-500 border border-red-500 dark:bg-red-950 dark:text-red-200 dark:border-red-200";
+      return "bg-red-100 text-red-500 dark:bg-red-950 dark:text-red-200 dark:border-red-200";
     case "draft":
-      return "bg-gray-100 text-gray-500 border border-gray-500 dark:bg-gray-950 dark:text-gray-200 dark:border-gray-200";
+      return "bg-gray-100 text-gray-500 dark:bg-gray-950 dark:text-gray-200 dark:border-gray-200";
     case "active":
-      return "bg-blue-100 text-blue-500 border border-blue-500 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-200";
+      return "bg-blue-100 text-blue-500 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-200";
     case "under_review":
-      return "bg-orange-100 text-orange-500 border border-orange-500 dark:bg-orange-950 dark:text-orange-200 dark:border-orange-200";
+      return "bg-orange-100 text-orange-500 dark:bg-orange-950 dark:text-orange-200 dark:border-orange-200";
     case "archived":
-      return "bg-slate-100 text-slate-500 border border-slate-500 dark:bg-slate-950 dark:text-slate-200 dark:border-slate-200";
+      return "bg-slate-100 text-slate-500 dark:bg-slate-950 dark:text-slate-200 dark:border-slate-200";
     default:
-      return "bg-gray-100 text-gray-500 border border-gray-500 dark:bg-gray-950 dark:text-gray-200 dark:border-gray-200";
+      return "bg-gray-100 text-gray-500 dark:bg-gray-950 dark:text-gray-200 dark:border-gray-200";
   }
 };
 
@@ -166,14 +166,14 @@ const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
             </Badge>
           </div>
           <Badge variant="secondary">{data.total} total</Badge>
-          {data.scope.assessmentName && (
+          {/* {data.scope.assessmentName && (
             <Badge variant="secondary" className="text-xs">
               Assessment: {data.scope.assessmentName}
             </Badge>
           )}
           {data.scope.programName && (
             <Badge variant="secondary">Program: {data.scope.programName}</Badge>
-          )}
+          )} */}
         </div>
 
         <div className="flex min-h-0 gap-2">
@@ -203,7 +203,7 @@ const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
             <div
               key={item.id}
               onClick={() => handleItemClick(item)}
-              className="cursor-pointer w-full flex items-center gap-3 p-2 rounded-lg bg-accent/25 hover:bg-accent/75 border border-border transition-colors dark:bg-secondary/25 dark:hover:bg-secondary/75"
+              className="cursor-pointer w-full flex items-center gap-3 p-2 rounded-sm bg-accent/25 hover:bg-accent/75 border border-border transition-colors dark:bg-secondary/25 dark:hover:bg-secondary/75"
             >
               <div className="text-xs flex flex-col gap-1 w-full text-left">
                 <div className="flex items-center gap-2">
