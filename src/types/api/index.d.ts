@@ -7641,6 +7641,7 @@ export interface paths {
                           min: number;
                           decimal_places?: number;
                         }
+                      | Record<string, never>
                     )
                   | null;
                 order_index: number;
@@ -8022,6 +8023,7 @@ export interface paths {
                           min: number;
                           decimal_places?: number;
                         }
+                      | Record<string, never>
                     )
                   | null;
                 order_index: number;
@@ -8423,7 +8425,7 @@ export interface paths {
                                 level: number;
                               }[];
                         };
-                      };
+                      } | null;
                       question_rating_scales: {
                         id: number;
                         name: string;
@@ -8431,35 +8433,37 @@ export interface paths {
                         questionnaire_rating_scale_id: number;
                         value: number;
                       }[];
-                      question_parts: {
-                        id: number;
-                        text: string;
-                        /** @enum {string} */
-                        answer_type:
-                          | "number"
-                          | "boolean"
-                          | "scale"
-                          | "labelled_scale"
-                          | "percentage";
-                        options:
-                          | (
-                              | {
-                                  labels: string[];
-                                }
-                              | {
-                                  max: number;
-                                  min: number;
-                                  step: number;
-                                }
-                              | {
-                                  max: number;
-                                  min: number;
-                                  decimal_places?: number;
-                                }
-                            )
-                          | null;
-                        order_index: number;
-                      }[];
+                      question_parts:
+                        | {
+                            id: number;
+                            text: string;
+                            /** @enum {string} */
+                            answer_type:
+                              | "number"
+                              | "boolean"
+                              | "scale"
+                              | "labelled_scale"
+                              | "percentage";
+                            options:
+                              | (
+                                  | {
+                                      labels: string[];
+                                    }
+                                  | {
+                                      max: number;
+                                      min: number;
+                                      step: number;
+                                    }
+                                  | {
+                                      max: number;
+                                      min: number;
+                                      decimal_places?: number;
+                                    }
+                                )
+                              | null;
+                            order_index: number;
+                          }[]
+                        | null;
                     }[];
                   }[];
                 }[];
@@ -11224,19 +11228,24 @@ export interface paths {
                 breakdown: {
                   [key: string]: number;
                 };
-                scope: {
-                  assessmentName?: string;
-                  programName?: string;
-                };
                 items: {
                   id: number;
-                  /** @enum {string} */
                   status:
-                    | "draft"
-                    | "active"
-                    | "under_review"
-                    | "completed"
-                    | "archived";
+                    | (
+                        | "draft"
+                        | "active"
+                        | "under_review"
+                        | "completed"
+                        | "archived"
+                      )
+                    | (
+                        | "draft"
+                        | "active"
+                        | "under_review"
+                        | "completed"
+                        | "archived"
+                      )
+                    | ("pending" | "in_progress" | "completed" | "cancelled");
                   created_at: string;
                   updated_at: string;
                   name: string;
@@ -11254,7 +11263,7 @@ export interface paths {
                       id: number;
                       name: string;
                     };
-                  };
+                  } | null;
                 }[];
               };
             };
@@ -13578,6 +13587,7 @@ export interface paths {
                             min: number;
                             decimal_places?: number;
                           }
+                        | Record<string, never>
                       )
                     | null;
                 }[];
