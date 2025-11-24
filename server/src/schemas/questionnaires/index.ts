@@ -64,7 +64,7 @@ export const GetQuestionnaireByIdResponseSchema = z.object({
                     name: z.string(),
                   })
                 ),
-                rating_scale_mapping: WeightedScoringConfigSchema,
+                rating_scale_mapping: WeightedScoringConfigSchema.nullable(),
                 question_rating_scales: z.array(
                   z.object({
                     id: z.number(),
@@ -98,7 +98,7 @@ export const GetQuestionnaireByIdResponseSchema = z.object({
                       .nullable(),
                     order_index: z.number(),
                   })
-                ),
+                ).nullable(),
               })
             ),
           })

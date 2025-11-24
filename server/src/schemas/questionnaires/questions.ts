@@ -139,6 +139,7 @@ const QuestionPart = z.object({
         min: z.number(),
         decimal_places: z.number().optional(),
       }),
+      z.object({}), // Empty object for answer types that don't require options (e.g., boolean)
     ])
     .nullable(),
   order_index: z.number(),

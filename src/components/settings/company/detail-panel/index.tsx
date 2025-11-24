@@ -82,8 +82,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
     const duplicateRole = parentWorkGroup.roles?.find(
       (role) =>
         role.shared_role_id.toString() === data.shared_role_id &&
-        role.id.toString() !== currentRoleId &&
-        role.id.toString() !== selectedItem.id
+        role.id.toString() !== String(currentRoleId || selectedItem.id)
     );
 
     if (duplicateRole) {
@@ -125,7 +124,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
   const handleRoleSave = async (data: RoleFormData) => {
     try {
       // Check for duplicate roles first
-      const duplicateError = checkForDuplicateRole(data);
+      const duplicateError = checkForDuplicateRole(data, String(selectedItem.id));
       if (duplicateError) {
         toast.error(duplicateError);
         return;

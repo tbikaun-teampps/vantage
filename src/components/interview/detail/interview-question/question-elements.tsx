@@ -6,6 +6,12 @@ import type { InterviewFormData } from "@/pages/interview/InterviewDetailPage";
 import type { GetInterviewQuestionByIdResponseData } from "@/types/api/interviews";
 import type { QuestionPart } from "@/types/api/questionnaire";
 import type { UseFormReturn } from "react-hook-form";
+import {
+  FormField,
+  FormItem,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 
 interface InterviewQuestionElementsProps {
   question: GetInterviewQuestionByIdResponseData;
@@ -116,27 +122,26 @@ export function InterviewQuestionElements({
           step: number;
         };
         return (
-          <div className="mt-2">
-            <Input
-              type="number"
-              min={scaleOptions.min}
-              max={scaleOptions.max}
-              step={scaleOptions.step}
-              value={selectedValue ?? ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                form.setValue(
-                  `question_part_${part.id}` as `question_part_${number}`,
-                  value,
-                  {
-                    shouldDirty: true,
-                  }
-                );
-              }}
-              placeholder={`Enter a value from ${scaleOptions.min} to ${scaleOptions.max}`}
-              className={cn("text-sm", isMobile ? "h-12" : "h-16")}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name={`question_part_${part.id}` as `question_part_${number}`}
+            render={({ field }) => (
+              <FormItem className="mt-2">
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={scaleOptions.min}
+                    max={scaleOptions.max}
+                    step={scaleOptions.step}
+                    placeholder={`Enter a value from ${scaleOptions.min} to ${scaleOptions.max}`}
+                    className={cn("text-sm", isMobile ? "h-12" : "h-16")}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         );
       }
       return null;
@@ -152,56 +157,54 @@ export function InterviewQuestionElements({
         const decimalPlaces = numberOptions.decimal_places ?? 0;
         const step =
           decimalPlaces === 0 ? "1" : Math.pow(10, -decimalPlaces).toString();
-
+        
         return (
-          <div className="mt-2">
-            <Input
-              type="number"
-              min={numberOptions.min}
-              max={numberOptions.max}
-              step={step}
-              value={selectedValue ?? ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                form.setValue(
-                  `question_part_${part.id}` as `question_part_${number}`,
-                  value,
-                  {
-                    shouldDirty: true,
-                  }
-                );
-              }}
-              placeholder={`Enter a number between ${numberOptions.min} and ${numberOptions.max}`}
-              className={cn("text-sm", isMobile ? "h-12" : "h-16")}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name={`question_part_${part.id}` as `question_part_${number}`}
+            render={({ field }) => (
+              <FormItem className="mt-2">
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={numberOptions.min}
+                    max={numberOptions.max}
+                    step={step}
+                    placeholder={`Enter a number between ${numberOptions.min} and ${numberOptions.max}`}
+                    className={cn("text-sm", isMobile ? "h-12" : "h-16")}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         );
       }
       return null;
     } else if (part.answer_type === "percentage") {
       // Percentage allows free-form input from 0 to 100
       return (
-        <div className="mt-2">
-          <Input
-            type="number"
-            min={0}
-            max={100}
-            step="0.1"
-            value={selectedValue ?? ""}
-            onChange={(e) => {
-              const value = e.target.value;
-              form.setValue(
-                `question_part_${part.id}` as `question_part_${number}`,
-                value,
-                {
-                  shouldDirty: true,
-                }
-              );
-            }}
-            placeholder="Enter a percentage (0-100)"
-            className={cn("text-sm", isMobile ? "h-12" : "h-16")}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name={`question_part_${part.id}` as `question_part_${number}`}
+          render={({ field }) => (
+            <FormItem className="mt-2">
+              <FormControl>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="0.1"
+                  placeholder="Enter a percentage (0-100)"
+                  className={cn("text-sm", isMobile ? "h-12" : "h-16")}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       );
     } else {
       return null;
