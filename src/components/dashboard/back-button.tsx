@@ -1,7 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
-import type { BackButtonProps } from "@/types/ui/dashboard";
 import { Link } from "react-router-dom";
+
+interface BackButtonProps {
+  href: string;
+  children?: React.ReactNode;
+}
 
 export function BackButton({ href, children }: BackButtonProps) {
   return (

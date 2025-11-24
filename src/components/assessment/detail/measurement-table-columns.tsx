@@ -5,10 +5,10 @@ import {
   IconCircleCheck,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
-import type { AssessmentMeasurement } from "../../../types/assessment-measurements";
 import { cn } from "@/lib/utils";
+import type { AssessmentMeasurementDefinition } from "@/types/api/assessments";
 
-export const MEASUREMENT_STATUS_OPTIONS = [
+const MEASUREMENT_STATUS_OPTIONS = [
   {
     value: "available",
     label: "Available",
@@ -36,7 +36,7 @@ function StatusIcon({ status }: { status: string }) {
   return <option.icon className={`h-4 w-4 ${option.iconColor}`} />;
 }
 
-export function createMeasurementColumns(): ColumnDef<AssessmentMeasurement>[] {
+export function createMeasurementColumns(): ColumnDef<AssessmentMeasurementDefinition>[] {
   return [
     {
       id: "selected",
@@ -46,7 +46,7 @@ export function createMeasurementColumns(): ColumnDef<AssessmentMeasurement>[] {
           className="flex items-center justify-center w-8"
           key={row.original.id}
         >
-          {row.original.isInUse && (
+          {row.original.is_in_use && (
             <IconCircleCheck className="h-5 w-5 text-primary" />
           )}
         </div>
@@ -104,7 +104,7 @@ export function createMeasurementColumns(): ColumnDef<AssessmentMeasurement>[] {
             <StatusIcon status={row.original.status} />
             {row.original.status.replaceAll("_", " ")}
           </Badge>
-          {row.original.isInUse && (
+          {row.original.is_in_use && (
             <Badge
               className={cn(
                 "flex items-center gap-1 capitalize bg-green-100 text-green-800"
@@ -123,7 +123,7 @@ export function createMeasurementColumns(): ColumnDef<AssessmentMeasurement>[] {
       header: () => <div className="text-center">Instances</div>,
       cell: ({ row }) => (
         <div key={row.original.id} className="flex justify-center">
-          <Badge variant="secondary">{row.original?.instanceCount ?? 0}</Badge>
+          <Badge variant="secondary">{row.original.instance_count ?? 0}</Badge>
         </div>
       ),
     },

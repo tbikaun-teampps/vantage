@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
-import type { ProgramPhase } from "@/types/program";
+import type { ProgramPhase } from "@/types/api/programs";
 
 interface DeletePhaseConfirmationDialogProps {
   open: boolean;

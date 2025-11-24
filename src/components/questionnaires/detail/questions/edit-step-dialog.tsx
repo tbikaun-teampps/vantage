@@ -8,12 +8,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { QuestionnaireSteps } from "@/types/api/questionnaire";
 
 interface EditStepDialogProps {
   open: boolean;
   onOpenChange: () => void;
-  step: { id: number; title: string } | null;
-  onStepChange: (step: { id: number; title: string }) => void;
+  step: QuestionnaireSteps[number] | null;
+  onStepChange: (step: QuestionnaireSteps[number]) => void;
   isProcessing: boolean;
   onSave: (stepId: number, updates: { title: string }) => void;
 }

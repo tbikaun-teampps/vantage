@@ -26,20 +26,16 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { IconLoader } from "@tabler/icons-react";
 import { toast } from "sonner";
-import type { Role, CreateInterviewData } from "@/types/assessment";
 import {
   getRolesAssociatedWithAssessment,
   validateAssessmentRolesForQuestionnaire,
 } from "@/lib/api/interviews";
 import { getContactsByRole } from "@/lib/api/contacts";
-
-interface Contact {
-  id: number;
-  full_name: string;
-  email: string;
-  title?: string | null;
-  phone?: string | null;
-}
+import type {
+  CreateInterviewBodyData,
+  GetInterviewAssessmentRolesResponseData,
+} from "@/types/api/interviews";
+import type { GetContactsByRoleResponseData } from "@/types/api/companies";
 
 interface CreateInterviewDialogProps {
   open: boolean;
@@ -77,9 +73,11 @@ export function CreateInterviewDialog({
   const [isIndividualInterview, setIsIndividualInterview] =
     useState<boolean>(false);
   const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
-  const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
+  const [availableRoles, setAvailableRoles] =
+    useState<GetInterviewAssessmentRolesResponseData>([]);
   const [isLoadingRoles, setIsLoadingRoles] = useState<boolean>(false);
-  const [availableContacts, setAvailableContacts] = useState<Contact[]>([]);
+  const [availableContacts, setAvailableContacts] =
+    useState<GetContactsByRoleResponseData>([]);
   const [selectedContactIds, setSelectedContactIds] = useState<number[]>([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState<boolean>(false);
   const [isValidatingRoles, setIsValidatingRoles] = useState<boolean>(false);
@@ -136,10 +134,10 @@ export function CreateInterviewDialog({
 
       setIsValidatingRoles(true);
       try {
-        const validation = await validateAssessmentRolesForQuestionnaire(
-          selectedAssessmentId,
-          selectedRoleIds
-        );
+        const validation = await validateAssessmentRolesForQuestionnaire({
+          assessmentId: selectedAssessmentId,
+          roleIds: selectedRoleIds,
+        });
 
         setHasApplicableQuestions(validation.isValid);
       } catch (error) {
@@ -256,7 +254,7 @@ export function CreateInterviewDialog({
         }
       } else {
         // Original single interview creation logic for group or non-contact scenarios
-        const interviewData: CreateInterviewData = {
+        const interviewData: CreateInterviewBodyData = {
           assessment_id: selectedAssessmentId,
           interviewer_id: isIndividualInterview ? null : user.id,
           name: interviewName,
@@ -351,9 +349,9 @@ export function CreateInterviewDialog({
                           <span className="truncate font-medium">
                             {assessment.name}
                           </span>
-                          {assessment.questionnaire && (
+                          {assessment.questionnaire_name && (
                             <span className="text-muted-foreground text-sm truncate">
-                              {assessment.questionnaire.name}
+                              {assessment.questionnaire_name}
                             </span>
                           )}
                         </div>
@@ -397,9 +395,10 @@ export function CreateInterviewDialog({
                   No roles available
                 </p>
                 <p className="text-sm text-destructive/90 mt-1">
-                  The location of this assessment has no roles configured. Please add roles to
-                  your company structure before creating interviews, as roles
-                  are required to identify who will provide answers.
+                  The location of this assessment has no roles configured.
+                  Please add roles to your company structure before creating
+                  interviews, as roles are required to identify who will provide
+                  answers.
                 </p>
               </div>
             )}
@@ -545,7 +544,7 @@ export function CreateInterviewDialog({
                             </span>
                           )}
                         </div>
-                        {availableContacts.length > 0 && (
+                        {availableContacts && availableContacts.length > 0 && (
                           <Button
                             type="button"
                             variant="outline"
@@ -600,12 +599,14 @@ export function CreateInterviewDialog({
                         <div className="text-sm text-muted-foreground text-center py-4">
                           Please select a role first
                         </div>
-                      ) : availableContacts.length === 0 ? (
+                      ) : availableContacts &&
+                        availableContacts.length === 0 ? (
                         <div className="text-sm text-muted-foreground text-center py-4">
                           No contacts available for this role. Please add
                           contacts to the role first.
                         </div>
                       ) : (
+                        availableContacts &&
                         availableContacts.map((contact) => (
                           <div
                             key={contact.id}

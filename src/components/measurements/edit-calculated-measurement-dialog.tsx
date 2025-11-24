@@ -12,31 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useUpdateProgramPhaseMeasurementData } from "@/hooks/useProgram";
-
-interface CalculatedMeasurementWithDefinition {
-  id: number;
-  calculated_value: number;
-  measurement_definition_id: number;
-  measurement_definition: {
-    id: number;
-    name: string;
-    description?: string;
-    min_value?: number;
-    max_value?: number;
-  };
-  business_unit_id?: number | null;
-  region_id?: number | null;
-  site_id?: number | null;
-  asset_group_id?: number | null;
-  work_group_id?: number | null;
-  role_id?: number | null;
-  location_context: string;
-}
+import type { ProgramCalculatedMeasurement } from "@/types/api/programs";
 
 interface EditCalculatedMeasurementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  measurement: CalculatedMeasurementWithDefinition | null;
+  measurement: ProgramCalculatedMeasurement | null;
   programId: number;
   programPhaseId: number;
 }
@@ -71,12 +52,12 @@ export function EditCalculatedMeasurementDialog({
     const minValue = measurement.measurement_definition.min_value;
     const maxValue = measurement.measurement_definition.max_value;
 
-    if (minValue !== undefined && numericValue < minValue) {
+    if (minValue && numericValue < minValue) {
       toast.error(`Value must be at least ${minValue}`);
       return;
     }
 
-    if (maxValue !== undefined && numericValue > maxValue) {
+    if (maxValue && numericValue > maxValue) {
       toast.error(`Value must be at most ${maxValue}`);
       return;
     }
@@ -152,8 +133,8 @@ export function EditCalculatedMeasurementDialog({
               onChange={(e) => setValue(e.target.value)}
               disabled={updateMutation.isPending}
               placeholder="Enter measurement value"
-              min={measurement.measurement_definition.min_value}
-              max={measurement.measurement_definition.max_value}
+              min={measurement.measurement_definition.min_value ?? undefined}
+              max={measurement.measurement_definition.max_value ?? undefined}
             />
             {(measurement.measurement_definition.min_value !== undefined ||
               measurement.measurement_definition.max_value !== undefined) && (

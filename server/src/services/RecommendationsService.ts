@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { Database, Tables } from "../types/database";
 
 import { b } from "./../../baml_client";
+import { NotFoundError } from "../plugins/errorHandler";
 // import type { Recommendation } from "./../../baml_client/types";
 
 export type Recommendation = Tables<"recommendations">;
@@ -676,24 +677,7 @@ export class RecommendationsService {
     this.supabase = supabaseClient;
   }
 
-  async getAllRecommendations(companyId: string): Promise<
-    {
-      id: number;
-      created_at: string;
-      updated_at: string;
-      title: string;
-      content: string;
-      context: string;
-      priority: Recommendation["priority"];
-      status: Recommendation["status"];
-      assessment: {
-        id: number;
-        name: string;
-        type: "onsite" | "desktop";
-      } | null;
-      program: { id: number; name: string } | null;
-    }[]
-  > {
+  async getAllRecommendations(companyId: string) {
     const { data, error } = await this.supabase
       .from("recommendations")
       .select(
@@ -723,7 +707,7 @@ export class RecommendationsService {
 
   async getRecommendationById(
     recommendationId: number
-  ): Promise<Recommendation | null> {
+  ): Promise<Recommendation> {
     const { data, error } = await this.supabase
       .from("recommendations")
       .select("*")
@@ -734,6 +718,9 @@ export class RecommendationsService {
     if (error) {
       console.error("Error fetching recommendation:", error);
       throw new Error(`Failed to fetch recommendation: ${error.message}`);
+    }
+    if (!data) {
+      throw new NotFoundError(`Recommendation not found`);
     }
 
     return data;
@@ -748,6 +735,10 @@ export class RecommendationsService {
       >
     >
   ): Promise<Recommendation> {
+
+    // Check existence
+    await this.getRecommendationById(id);
+
     const { data, error } = await this.supabase
       .from("recommendations")
       .update({ ...updates, updated_at: new Date().toISOString() })

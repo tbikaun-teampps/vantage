@@ -10,8 +10,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { LoadingSpinner } from "@/components/loader";
 import { UnauthorizedPage } from "@/pages/UnauthorizedPage";
-import type { InterviewFeedback } from "@/components/interview/detail/InterviewCompletionDialog";
 import { IntroScreen } from "@/components/interview/detail/IntroScreen";
+import type { CompleteInterviewBodyData } from "@/types/api/interviews";
 
 interface InterviewDetailPageProps {
   isIndividualInterview?: boolean;
@@ -25,6 +25,10 @@ const responseSchema = z.object({
 });
 
 type ResponseFormData = z.infer<typeof responseSchema>;
+
+export type InterviewFormData = ResponseFormData & {
+  [key: `question_part_${number}`]: string | undefined;
+};
 
 // localStorage utilities for interview state
 interface InterviewState {
@@ -111,7 +115,7 @@ export function InterviewDetailPage({
     useCompleteInterview();
 
   // Form for current question
-  const form = useForm<ResponseFormData>({
+  const form = useForm<InterviewFormData>({
     resolver: zodResolver(responseSchema),
     defaultValues: {
       rating_score: null,
@@ -123,7 +127,7 @@ export function InterviewDetailPage({
   // Update form when question data loads
   useEffect(() => {
     if (question?.response) {
-      const formValues: any = {
+      const formValues: InterviewFormData = {
         rating_score: question.response.rating_score ?? null,
         role_ids:
           question.response.response_roles?.map((rr) => rr.role.id) ?? [],
@@ -186,32 +190,31 @@ export function InterviewDetailPage({
     // Convert any question_part_{id} fields to part answers
     const partAnswers: {
       question_part_id: number;
-      answer_text?: string;
-      answer_value?: number;
+      answer_value: string;
     }[] = [];
 
     for (const key in formData) {
       if (key.startsWith("question_part_")) {
         const partId = parseInt(key.replace("question_part_", ""));
-        const value = (formData as any)[key];
+        const value = formData[key as keyof InterviewFormData];
 
         if (value !== undefined && value !== null) {
           partAnswers.push({
             question_part_id: partId,
-            answer_value: value,
+            answer_value: String(value),
           });
         }
       }
     }
 
     saveResponse({
-      interviewId: parseInt(interviewId!),
       responseId: question.response.id,
-      questionId: currentQuestionId,
-      rating_score: formData.rating_score,
-      role_ids: formData.role_ids,
-      is_unknown: formData.is_unknown,
-      question_part_answers: partAnswers,
+      data: {
+        rating_score: formData.rating_score,
+        role_ids: formData.role_ids,
+        is_unknown: formData.is_unknown,
+        question_part_answers: partAnswers,
+      },
     });
   };
 
@@ -223,7 +226,7 @@ export function InterviewDetailPage({
     });
   };
 
-  const handleComplete = async (feedback: InterviewFeedback) => {
+  const handleComplete = async (feedback: CompleteInterviewBodyData) => {
     await completeInterviewMutation({
       interviewId: parseInt(interviewId!),
       feedback,

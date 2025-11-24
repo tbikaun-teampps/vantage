@@ -8,16 +8,12 @@ import { useQuestionActions } from "@/hooks/questionnaire/useQuestions";
 import { useAllSharedRoles } from "@/hooks/useSharedRoles";
 import MultiSelect from "@/components/questionnaires/detail/questions/question-editor/multi-select";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import type { QuestionRoles } from "@/types/api/questionnaire";
 
 interface InlineRolesEditorProps {
   disabled?: boolean;
   questionId: number;
-  questionRoles: Array<{
-    id: number;
-    shared_role_id: number;
-    name: string;
-    description: string | null;
-  }>;
+  questionRoles: QuestionRoles;
 }
 
 export function InlineRolesEditor({
@@ -136,9 +132,9 @@ export function InlineRolesEditor({
         ) : (
           <MultiSelect
             options={sharedRoles.map((role) => ({
-              id: role.id,
+              id: role.id.toString(),
               name: role.name,
-              description: role.description,
+              description: role.description ?? undefined,
             }))}
             value={selectedRoles}
             searchable={true}

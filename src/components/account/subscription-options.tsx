@@ -12,16 +12,16 @@ import { Badge } from "@/components/ui/badge";
 import { IconCheck } from "@tabler/icons-react";
 import { useProfile, useProfileActions } from "@/hooks/useProfile";
 import { companyKeys } from "@/hooks/useCompany";
-import type { SubscriptionTier } from "@/types/auth";
-import type { Company } from "@/types/company";
+import type { SubscriptionTier } from "@/types/api/auth";
 import { subscriptionPlans } from "@/components/account/subscription-data";
 import { BRAND_COLORS } from "@/lib/brand";
 import { companyRoutes } from "@/router/routes";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
+import type { GetCompaniesResponseData } from "@/types/api/companies";
 
 export function SubscriptionOptions() {
   const { data: profile } = useProfile();
-  const { updateProfile } = useProfileActions();
+  const { updateSubscription } = useProfileActions();
   const navigate = useCompanyAwareNavigate();
   const queryClient = useQueryClient();
   const [updatingTier, setUpdatingTier] = useState<SubscriptionTier | null>(
@@ -35,22 +35,22 @@ export function SubscriptionOptions() {
 
     setUpdatingTier(tier);
     try {
-      const plan = subscriptionPlans[tier];
-      await updateProfile({
-        subscription_tier: tier,
-        subscription_features: plan.features,
-      });
+      await updateSubscription(tier);
 
       // When switching to demo, refresh companies and select first demo company
       if (tier === "demo") {
         // Force refresh companies data
         await queryClient.invalidateQueries({ queryKey: companyKeys.lists() });
-        
+
         // Wait a moment for the data to refresh, then find and navigate to first demo company
         setTimeout(async () => {
-          const updatedCompanies = queryClient.getQueryData(companyKeys.lists()) as Company[];
-          const demoCompany = updatedCompanies?.find(company => company.is_demo === true);
-          
+          const updatedCompanies = queryClient.getQueryData(
+            companyKeys.lists()
+          ) as GetCompaniesResponseData;
+          const demoCompany = updatedCompanies?.find(
+            (company) => company.is_demo === true
+          );
+
           if (demoCompany) {
             navigate(companyRoutes.dashboard(demoCompany.id));
           }
@@ -93,7 +93,8 @@ export function SubscriptionOptions() {
                     className="inline-flex items-center justify-center w-8 h-8 rounded-full"
                     style={{ backgroundColor: plan.iconColor }}
                   >
-                    <IconComponent className="h-4 w-4 text-white" />
+                    <IconComponent />
+                    {/* className="h-4 w-4 text-white" */}
                   </div>
                   {plan.name}
                   {isCurrentPlan && (
@@ -137,10 +138,10 @@ export function SubscriptionOptions() {
                     {isThisTierUpdating
                       ? "Updating..."
                       : isCurrentPlan
-                      ? "Current Plan"
-                      : tier === "demo"
-                      ? "Switch to Demo"
-                      : "Upgrade Available"}
+                        ? "Current Plan"
+                        : tier === "demo"
+                          ? "Switch to Demo"
+                          : "Upgrade Available"}
                   </Button>
                 </div>
               </CardContent>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,36 +17,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import type { QuestionPart } from "./question-parts-types";
 import {
   type WeightedScoringConfig,
   type PartScoring,
   type NumericScoring,
-  type TestScenario,
   type NumericRange,
   isBooleanScoring,
   isNumericScoring,
-  calculatePartLevel,
-  calculateAverageLevel,
 } from "./question-parts-weighted-scoring-types";
 import { toast } from "sonner";
 import { useQuestionRatingScaleMapping } from "@/hooks/questionnaire/useQuestionParts";
-import { Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface RatingScaleLevel {
@@ -97,140 +78,6 @@ export function QuestionPartsWeightedScoringBuilder({
     // Data should already be in weighted format from backend
     setConfig(mappingData);
   }, [mappingData, questionParts, ratingScaleLevels.length]);
-
-  // No threshold calculation needed - levels are assigned directly!
-
-  // Generate test scenarios for preview
-  const testScenarios = useMemo<TestScenario[]>(() => {
-    if (questionParts.length === 0 || ratingScaleLevels.length === 0) {
-      return [];
-    }
-
-    const scenarios: TestScenario[] = [];
-    const numLevels = ratingScaleLevels.length;
-
-    // Scenario 1: All minimum level answers
-    const minAnswers: Record<string, boolean | string | number> = {};
-    const minPartLevels: number[] = [];
-
-    questionParts.forEach((part) => {
-      const partId = part.id.toString();
-      const scoring = config.partScoring[partId];
-
-      let answer: boolean | string | number;
-      if (part.answer_type === "boolean") {
-        // Choose answer with lower level
-        const boolScoring = scoring as { true: number; false: number };
-        answer =
-          (boolScoring?.false || 1) <= (boolScoring?.true || numLevels)
-            ? false
-            : true;
-      } else if (part.answer_type === "labelled_scale") {
-        const labels = part.options.labels || [];
-        const labelScoring = scoring as Record<string, number>;
-        // Find label with minimum level
-        const minLabel = labels.reduce((min, label) =>
-          (labelScoring?.[label] || numLevels) <
-          (labelScoring?.[min] || numLevels)
-            ? label
-            : min
-        );
-        answer = minLabel;
-      } else {
-        // Numeric: use min value
-        answer = part.options.min || 0;
-      }
-
-      minAnswers[partId] = answer;
-      const partLevel = calculatePartLevel(part, scoring, answer, numLevels);
-      minPartLevels.push(partLevel);
-    });
-
-    scenarios.push({
-      name: "All Minimum",
-      description: "Lowest levels from all parts",
-      answers: minAnswers,
-      partLevels: minPartLevels,
-      averageLevel: calculateAverageLevel(minPartLevels),
-    });
-
-    // Scenario 2: All maximum level answers
-    const maxAnswers: Record<string, boolean | string | number> = {};
-    const maxPartLevels: number[] = [];
-
-    questionParts.forEach((part) => {
-      const partId = part.id.toString();
-      const scoring = config.partScoring[partId];
-
-      let answer: boolean | string | number;
-      if (part.answer_type === "boolean") {
-        const boolScoring = scoring as { true: number; false: number };
-        answer =
-          (boolScoring?.true || numLevels) >= (boolScoring?.false || 1)
-            ? true
-            : false;
-      } else if (part.answer_type === "labelled_scale") {
-        const labels = part.options.labels || [];
-        const labelScoring = scoring as Record<string, number>;
-        const maxLabel = labels.reduce((max, label) =>
-          (labelScoring?.[label] || 1) > (labelScoring?.[max] || 1)
-            ? label
-            : max
-        );
-        answer = maxLabel;
-      } else {
-        answer = part.options.max || 100;
-      }
-
-      maxAnswers[partId] = answer;
-      const partLevel = calculatePartLevel(part, scoring, answer, numLevels);
-      maxPartLevels.push(partLevel);
-    });
-
-    scenarios.push({
-      name: "All Maximum",
-      description: "Highest levels from all parts",
-      answers: maxAnswers,
-      partLevels: maxPartLevels,
-      averageLevel: calculateAverageLevel(maxPartLevels),
-    });
-
-    // Scenario 3: Mixed/median values
-    const mixedAnswers: Record<string, boolean | string | number> = {};
-    const mixedPartLevels: number[] = [];
-
-    questionParts.forEach((part) => {
-      const partId = part.id.toString();
-      const scoring = config.partScoring[partId];
-
-      let answer: boolean | string | number;
-      if (part.answer_type === "boolean") {
-        answer = true; // Default to true for mixed
-      } else if (part.answer_type === "labelled_scale") {
-        const labels = part.options.labels || [];
-        const midIndex = Math.floor(labels.length / 2);
-        answer = labels[midIndex] || labels[0];
-      } else {
-        const min = part.options.min || 0;
-        const max = part.options.max || 100;
-        answer = min + (max - min) / 2;
-      }
-
-      mixedAnswers[partId] = answer;
-      const partLevel = calculatePartLevel(part, scoring, answer, numLevels);
-      mixedPartLevels.push(partLevel);
-    });
-
-    scenarios.push({
-      name: "Mixed Values",
-      description: "Middle/median answers",
-      answers: mixedAnswers,
-      partLevels: mixedPartLevels,
-      averageLevel: calculateAverageLevel(mixedPartLevels),
-    });
-
-    return scenarios;
-  }, [questionParts, config, ratingScaleLevels]);
 
   const handleLevelChange = (partId: string, key: string, value: string) => {
     const levelValue = parseInt(value, 10);

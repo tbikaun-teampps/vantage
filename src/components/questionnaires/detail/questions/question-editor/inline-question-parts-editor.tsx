@@ -15,24 +15,52 @@ import {
 } from "@tabler/icons-react";
 import { QuestionPartsDialog } from "./question-parts-dialog";
 import { QuestionPartsWeightedScoringBuilder } from "./question-parts-weighted-scoring-builder";
-import type {
-  QuestionPart,
-  QuestionPartFormData,
-  AnswerType,
-} from "./question-parts-types";
+import type { QuestionPartFormData, QuestionPart, AnswerType } from "./question-parts-types";
 import {
   useQuestionParts,
   useQuestionPartsActions,
 } from "@/hooks/questionnaire/useQuestionParts";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { WeightedScoringConfig } from "./question-parts-weighted-scoring-types";
+import type {
+  QuestionRatingScale,
+} from "@/types/api/questionnaire";
 
 interface InlineQuestionPartsEditorProps {
   questionId: number;
-  ratingScales: unknown[];
-  ratingScaleMapping?: Record<string, unknown> | null;
+  ratingScales: QuestionRatingScale[];
+  ratingScaleMapping?: WeightedScoringConfig | null;
   disabled?: boolean;
 }
+
+// Local type that extends QuestionPart
+// Note: QuestionPart already includes mapping, so this is just an alias for clarity
+type QuestionPartWithMapping = QuestionPart;
+
+// Type guard helpers for options
+const hasMinMax = (
+  options: QuestionPart["options"]
+): options is { min: number; max: number; step: number } | { min: number; max: number; decimal_places?: number } => {
+  return options !== null && "min" in options && "max" in options;
+};
+
+const hasLabels = (
+  options: QuestionPart["options"]
+): options is { labels: string[] } => {
+  return options !== null && "labels" in options;
+};
+
+const hasStep = (
+  options: QuestionPart["options"]
+): options is { min: number; max: number; step: number } => {
+  return options !== null && "step" in options;
+};
+
+const hasDecimalPlaces = (
+  options: QuestionPart["options"]
+): options is { min: number; max: number; decimal_places?: number } => {
+  return options !== null && "min" in options && "max" in options && !("step" in options);
+};
 
 const getDefaultFormData = (): QuestionPartFormData => ({
   text: "",
@@ -60,13 +88,22 @@ const getAnswerTypeDetails = (part: QuestionPart): string => {
     case "boolean":
       return `Yes / No`;
     case "scale":
-      return `${part.options.min || 1}-${part.options.max || 5}${part.options.step ? ` (step: ${part.options.step})` : ""}`;
+      if (hasStep(part.options)) {
+        return `${part.options.min || 1}-${part.options.max || 5}${part.options.step ? ` (step: ${part.options.step})` : ""}`;
+      }
+      return "Scale";
     case "labelled_scale":
-      return part.options.labels && part.options.labels.length > 0
-        ? part.options.labels.filter((l) => l.trim()).join(", ")
-        : "No labels defined";
+      if (hasLabels(part.options)) {
+        return part.options.labels && part.options.labels.length > 0
+          ? part.options.labels.filter((l: string) => l.trim()).join(", ")
+          : "No labels defined";
+      }
+      return "No labels defined";
     case "number":
-      return `${part.options.min || 0}-${part.options.max || 100}${part.options.decimal_places ? ` (decimal_places: ${part.options.decimal_places})` : ""}`;
+      if (hasDecimalPlaces(part.options)) {
+        return `${part.options.min || 0}-${part.options.max || 100}${part.options.decimal_places ? ` (decimal_places: ${part.options.decimal_places})` : ""}`;
+      }
+      return "Number";
     case "percentage":
       return "0-100%";
     default:
@@ -83,7 +120,7 @@ export function InlineQuestionPartsEditor({
   const userCanAdmin = useCanAdmin();
   const [showDialog, setShowDialog] = useState<boolean>(false);
   const [showMatrixBuilder, setShowMatrixBuilder] = useState<boolean>(false);
-  const [editingPart, setEditingPart] = useState<QuestionPart | null>(null);
+  const [editingPart, setEditingPart] = useState<QuestionPartWithMapping | null>(null);
   const [formData, setFormData] =
     useState<QuestionPartFormData>(getDefaultFormData());
 
@@ -91,11 +128,9 @@ export function InlineQuestionPartsEditor({
     useQuestionParts(questionId);
 
   // Populate parts with their mappings from the question's rating_scale_mapping
-  const questionParts: QuestionPart[] = rawQuestionParts.map((part) => ({
+  const questionParts: QuestionPartWithMapping[] = (rawQuestionParts as QuestionPart[]).map((part) => ({
     ...part,
-    mapping: ratingScaleMapping?.[
-      part.id.toString()
-    ] as QuestionPart["mapping"],
+    mapping: ratingScaleMapping?.partScoring?.[part.id.toString()] as QuestionPart["mapping"],
   }));
 
   const {
@@ -112,7 +147,7 @@ export function InlineQuestionPartsEditor({
     isDuplicatingQuestionPart,
     duplicateQuestionPartError,
     reorderQuestionParts,
-    isReorderingQuestionParts,
+    // isReorderingQuestionParts,
     reorderQuestionPartsError,
     updateQuestionRatingScaleMapping,
     isUpdatingQuestionRatingScaleMapping,
@@ -132,49 +167,71 @@ export function InlineQuestionPartsEditor({
     setShowDialog(true);
   };
 
-  const handleEdit = (part: QuestionPart) => {
+  const handleEdit = (part: QuestionPartWithMapping) => {
     if (disabled) return;
+
+    let min = "1";
+    let max = "5";
+    let step = "1";
+    let decimal_places = "0";
+    let labels = ["", ""];
+
+    if (hasMinMax(part.options)) {
+      min = part.options.min?.toString() || "1";
+      max = part.options.max?.toString() || "5";
+
+      if (hasStep(part.options)) {
+        step = part.options.step?.toString() || "1";
+      } else if (hasDecimalPlaces(part.options)) {
+        decimal_places = part.options.decimal_places?.toString() || "0";
+      }
+    } else if (hasLabels(part.options)) {
+      labels = part.options.labels || ["", ""];
+    }
 
     setFormData({
       text: part.text,
       answer_type: part.answer_type,
-      min: part.options.min?.toString() || "1",
-      max: part.options.max?.toString() || "5",
-      step: part.options.step?.toString() || "1",
-      decimal_places: part.options.decimal_places?.toString() || "0",
-      labels: part.options.labels || ["", ""],
+      min,
+      max,
+      step,
+      decimal_places,
+      labels,
     });
     setEditingPart(part);
     setShowDialog(true);
   };
 
   const handleSave = async () => {
-    const newPart: QuestionPart = {
+    // Build the correct options object based on answer_type
+    let options:
+      | { labels: string[] }
+      | { max: number; min: number; step: number }
+      | { max: number; min: number; decimal_places?: number }
+      | undefined;
+
+    if (formData.answer_type === "labelled_scale") {
+      options = {
+        labels: formData.labels.filter((l) => l.trim().length > 0),
+      };
+    } else if (formData.answer_type === "scale") {
+      options = {
+        min: parseFloat(formData.min),
+        max: parseFloat(formData.max),
+        step: parseFloat(formData.step),
+      };
+    } else if (formData.answer_type === "number") {
+      options = {
+        min: parseFloat(formData.min),
+        max: parseFloat(formData.max),
+        decimal_places: parseInt(formData.decimal_places),
+      };
+    }
+
+    const newPart = {
       text: formData.text,
       answer_type: formData.answer_type,
-      options: {
-        min:
-          formData.answer_type === "scale" || formData.answer_type === "number"
-            ? parseFloat(formData.min)
-            : undefined,
-        max:
-          formData.answer_type === "scale" || formData.answer_type === "number"
-            ? parseFloat(formData.max)
-            : undefined,
-        step:
-          formData.answer_type === "scale"
-            ? parseFloat(formData.step)
-            : undefined,
-        decimal_places:
-          formData.answer_type === "number"
-            ? parseInt(formData.decimal_places)
-            : undefined,
-        labels:
-          formData.answer_type === "labelled_scale"
-            ? formData.labels.filter((l) => l.trim().length > 0)
-            : undefined,
-      },
-      mapping: editingPart?.mapping, // Preserve existing mapping
+      options,
       order_index: editingPart?.order_index ?? questionParts.length,
     };
 
@@ -203,12 +260,12 @@ export function InlineQuestionPartsEditor({
     setEditingPart(null);
   };
 
-  const handleDuplicate = async (part: QuestionPart) => {
+  const handleDuplicate = async (part: QuestionPartWithMapping) => {
     if (disabled) return;
     await duplicateQuestionPart(part.id);
   };
 
-  const handleMoveUp = async (part: QuestionPart) => {
+  const handleMoveUp = async (part: QuestionPartWithMapping) => {
     if (disabled || part.order_index === 0) return;
 
     await reorderQuestionParts(
@@ -222,7 +279,7 @@ export function InlineQuestionPartsEditor({
     );
   };
 
-  const handleMoveDown = async (part: QuestionPart) => {
+  const handleMoveDown = async (part: QuestionPartWithMapping) => {
     if (disabled || part.order_index === questionParts.length - 1) return;
     // setQuestionParts((prev) => {
     //   const newParts = [...prev];
@@ -257,25 +314,25 @@ export function InlineQuestionPartsEditor({
 
   const handleSaveMappings = async (config: WeightedScoringConfig) => {
     // Update the question's rating_scale_mapping field with weighted config
-    await updateQuestionRatingScaleMapping(config);
+    await updateQuestionRatingScaleMapping({ rating_scale_mapping: config });
   };
 
-  const getMappingSummary = (part: QuestionPart): string | null => {
+  const getMappingSummary = (part: QuestionPartWithMapping): string | null => {
     if (!part.mapping) return null;
 
     const mappedLevels = new Set<number>();
 
     // Extract all mapped levels
     Object.values(part.mapping).forEach((value) => {
-      if (Array.isArray(value)) {
+      if (Array.isArray(value) && value.length > 0) {
         if (typeof value[0] === "number") {
-          // Boolean or labelled_scale mapping
+          // Boolean or labelled_scale mapping - array of numbers
           (value as number[]).forEach((level) => mappedLevels.add(level));
-        } else {
-          // Range mapping
-          (value as any[]).forEach((range: any) => {
-            if (range.levels) {
-              range.levels.forEach((level: number) => mappedLevels.add(level));
+        } else if (typeof value[0] === "object" && value[0] !== null && "levels" in value[0]) {
+          // Range mapping - array of RangeMapping objects
+          value.forEach((range) => {
+            if (typeof range === "object" && range !== null && "levels" in range) {
+              (range.levels as number[]).forEach((level) => mappedLevels.add(level));
             }
           });
         }
@@ -310,10 +367,11 @@ export function InlineQuestionPartsEditor({
         <div className="grid w-full gap-2">
           <Label htmlFor="question-parts">Question Elements</Label>
           <span className="text-xs text-muted-foreground">
-            Define the individual elements that make up this question. Each element
-            can have its own answer type and is mappable to the questions rating
-            scale. This makes it easier to interviewees to answer questions, without
-            overwhelming them with a single large rating scale.
+            Define the individual elements that make up this question. Each
+            element can have its own answer type and is mappable to the
+            questions rating scale. This makes it easier to interviewees to
+            answer questions, without overwhelming them with a single large
+            rating scale.
           </span>
 
           {errors.length > 0 && (

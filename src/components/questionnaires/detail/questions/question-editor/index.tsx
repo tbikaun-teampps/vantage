@@ -1,24 +1,25 @@
 import { InlineFieldEditor } from "@/components/ui/inline-field-editor";
 import { InlineRatingScalesEditor } from "@/components/questionnaires/detail/questions/question-editor/inline-rating-scales-editor";
 import { InlineRolesEditor } from "@/components/questionnaires/detail/questions/question-editor/inline-roles-editor";
-import type { QuestionWithRatingScales } from "@/types/assessment";
 import { InlineQuestionPartsEditor } from "@/components/questionnaires/detail/questions/question-editor/inline-question-parts-editor";
+import type {
+  GetQuestionnaireByIdResponseData,
+  QuestionnaireQuestions,
+  UpdateQuestionnaireQuestionBodyData,
+  UpdateQuestionnaireQuestionResponseData,
+} from "@/types/api/questionnaire";
 
 interface QuestionEditorProps {
-  question: QuestionWithRatingScales;
-  questionnaire: {
-    id: number;
-    title: string;
-    description: string | null;
-    sections: any[];
-    questions: any[];
-    questionnaire_rating_scales: any[];
-  };
+  question: QuestionnaireQuestions[number];
+  questionnaire: GetQuestionnaireByIdResponseData;
   isProcessing: boolean;
-  updateQuestion: (params: {
+  updateQuestion: ({
+    id,
+    updates,
+  }: {
     id: number;
-    updates: { [key: string]: any };
-  }) => Promise<void>;
+    updates: UpdateQuestionnaireQuestionBodyData;
+  }) => Promise<UpdateQuestionnaireQuestionResponseData>;
   questionDisplayNumber?: string;
 }
 
@@ -113,9 +114,7 @@ export function QuestionEditor({
         <InlineQuestionPartsEditor
           questionId={question.id}
           ratingScales={question.question_rating_scales}
-          ratingScaleMapping={
-            question.rating_scale_mapping as Record<string, unknown> | null
-          }
+          ratingScaleMapping={question.rating_scale_mapping}
         />
 
         <InlineRatingScalesEditor

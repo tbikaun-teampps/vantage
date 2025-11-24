@@ -6,9 +6,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import React, { useState } from "react";
-import type { WidgetType } from "../types";
-import type { WidgetConfig } from "@/hooks/useDashboardLayouts";
+import { useState } from "react";
+import type { WidgetConfig, WidgetType } from "@/types/api/dashboard";
 import { MetricConfigurationForm } from "./MetricConfig";
 import { ActionsWidgetConfig } from "./ActionsConfig";
 import { ActivityWidgetConfig } from "./ActivityConfig";

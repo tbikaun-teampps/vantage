@@ -3,17 +3,12 @@ import type { Database, Json } from "../types/database";
 import { createCustomSupabaseJWT } from "../lib/jwt";
 import type { QuestionnaireSectionFromDB } from "../types/entities/questionnaires";
 import type {
-  InterviewWithQuestionnaire,
   InterviewSummary,
   CreateInterviewData,
-  Interview,
   UpdateInterviewResponseActionData,
   CreateInterviewResponseActionData,
   UpdateInterviewData,
   InterviewStatus,
-  InterviewQuestion,
-  InterviewProgress,
-  InterviewStructure,
 } from "../types/entities/interviews";
 import {
   calculateAverageScore,
@@ -36,7 +31,7 @@ interface NumericRange {
 /**
  * Type guard to check if a scoring configuration is numeric
  */
-function isNumericScoring(scoring: any): scoring is NumericScoring {
+function isNumericScoring(scoring: unknown): scoring is NumericScoring {
   return Array.isArray(scoring);
 }
 
@@ -128,14 +123,14 @@ export class InterviewsService {
     program_id?: number;
     program_phase_id?: number;
     questionnaire_id?: number;
-  }): Promise<
+  }) {
+    // : Promise<
     // Array<
     //   Interview & {
     //     contact: { id: number; full_name: string; email: string };
     //   }
     // >
-    any[]
-  > {
+    // >
     if (!this.supabaseAdmin) {
       throw new Error("Supabase admin client is required for this operation");
     }
@@ -148,7 +143,7 @@ export class InterviewsService {
       program_phase_id,
       questionnaire_id,
     } = data;
-    const createdInterviews: any[] = [];
+    const createdInterviews = [];
     const failedContacts: Array<{ email: string; reason: string }> = [];
     // Array<
     //   Interview & {
@@ -190,7 +185,7 @@ export class InterviewsService {
       number,
       { id: number; full_name: string; email: string }
     >();
-    roleContacts.forEach((rc: any) => {
+    roleContacts.forEach((rc) => {
       contactRoleMap.set(rc.contact_id, rc.role_id);
       if (rc.contact) {
         contactInfoMap.set(rc.contact_id, rc.contact);
@@ -260,7 +255,7 @@ export class InterviewsService {
             // Check if error is due to existing email
             if (
               userError.message?.includes("already been registered") ||
-              (userError as any).code === "email_exists"
+              userError.code === "email_exists"
             ) {
               // User exists in auth.users but not in profiles - need to recover
               console.log(
@@ -470,9 +465,8 @@ export class InterviewsService {
    * @param interviewData Data for creating the interview
    * @returns
    */
-  async createInterview(
-    interviewData: CreateInterviewData
-  ): Promise<Interview> {
+  async createInterview(interviewData: CreateInterviewData) {
+    // : Promise<Interview>
     // Extract fields that aren't directly part of the database schema or need special handling
     const {
       role_ids,
@@ -519,7 +513,7 @@ export class InterviewsService {
       `
       )
       .eq("id", interviewData.assessment_id)
-      .single()) as { data: AssessmentWithQuestionnaire | null; error: any };
+      .single()) as { data: AssessmentWithQuestionnaire | null; error };
 
     if (assessmentError) throw assessmentError;
     if (!assessment) throw new Error("Assessment not found");
@@ -620,7 +614,18 @@ export class InterviewsService {
           access_code: accessCode, // Use generated or provided access code
         },
       ])
-      .select()
+      .select(
+        `id,
+        questionnaire_id,
+        name,
+        notes,
+        status,
+        is_individual,
+        enabled,
+        assessment_id,
+        created_at,
+        updated_at`
+      )
       .single();
 
     if (interviewError) throw interviewError;
@@ -839,9 +844,8 @@ export class InterviewsService {
    * @param interviewId ID of the interview to retrieve
    * @returns
    */
-  async getInterviewById(
-    interviewId: number
-  ): Promise<InterviewWithQuestionnaire | null> {
+  async getInterviewById(interviewId: number) {
+    // : Promise<InterviewWithQuestionnaire | null>
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
       .select(
@@ -935,9 +939,7 @@ export class InterviewsService {
    * @param interviewId ID of the interview to retrieve
    * @returns Interview summary with assessment, interviewer, and roles
    */
-  async getInterviewSummary(
-    interviewId: number
-  ): Promise<InterviewSummary | null> {
+  async getInterviewSummary(interviewId: number): Promise<InterviewSummary> {
     const { data: interview, error } = await this.supabase
       .from("interviews")
       .select(
@@ -965,7 +967,7 @@ export class InterviewsService {
       .maybeSingle();
 
     if (error) throw error;
-    if (!interview) return null;
+    if (!interview) throw new NotFoundError("Interview not found");
 
     if (!interview.assessment) {
       throw new InternalServerError(
@@ -1007,6 +1009,7 @@ export class InterviewsService {
           : interview.assessment,
       // Map interview_roles to expected structure
       interview_roles: interview.interview_roles || [],
+      company: null,
     };
 
     // For private interviews, fetch and add company information
@@ -1039,6 +1042,10 @@ export class InterviewsService {
       }
     }
 
+    if (!response) {
+      throw new NotFoundError("Interview summary not found");
+    }
+
     return response;
   }
 
@@ -1046,9 +1053,8 @@ export class InterviewsService {
    * Get interview structure (questionnaire hierarchy)
    * Optimized for navigation - minimal data, long cache TTL
    */
-  async getInterviewStructure(
-    interviewId: number
-  ): Promise<InterviewStructure | null> {
+  async getInterviewStructure(interviewId: number) {
+    // : Promise<InterviewStructure>
     // Get interview basic info
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
@@ -1060,7 +1066,8 @@ export class InterviewsService {
       .maybeSingle();
 
     if (interviewError) throw interviewError;
-    if (!interview || !interview.questionnaire_id) return null;
+    if (!interview || !interview.questionnaire_id)
+      throw new NotFoundError("Interview not found");
 
     // Validate that individual interviews are enabled
     if (interview.is_individual && !interview.enabled) {
@@ -1143,7 +1150,8 @@ export class InterviewsService {
   }
 
   // TODO: need to ensure that the counts are correct, currently they are higher than expected.
-  async getInterviewProgress(interviewId: number): Promise<InterviewProgress> {
+  async getInterviewProgress(interviewId: number) {
+    // : Promise<InterviewProgress>
     if (!this.supabaseAdmin) {
       console.log(
         "No supabaseAdmin client available. Cannot update interview status."
@@ -1262,10 +1270,8 @@ export class InterviewsService {
     };
   }
 
-  async getInterviewQuestionById(
-    interviewId: number,
-    questionId: number
-  ): Promise<InterviewQuestion | null> {
+  async getInterviewQuestionById(interviewId: number, questionId: number) {
+    // : Promise<InterviewQuestion | null>
     // First, get the interview to determine company context
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
@@ -1501,7 +1507,15 @@ export class InterviewsService {
         await this.supabase
           .from("interview_responses")
           .select(
-            "id, rating_score,is_unknown,question_part_responses:interview_question_part_responses(id,answer_value,question_part_id)"
+            `id,
+            rating_score,
+            is_unknown,
+            question_part_responses:interview_question_part_responses(
+              id,
+              answer_value,
+              question_part_id
+            ),
+            response_roles:interview_response_roles(id,role:roles(id))`
           )
           .eq("interview_id", interviewId)
           .eq("questionnaire_question_id", questionId)
@@ -1641,7 +1655,11 @@ export class InterviewsService {
       const { data: responseData, error: responseError } = await this.supabase
         .from("interview_responses")
         .select(
-          "id, question_part_responses:interview_question_part_responses(*)"
+          `id,
+          questionnaire_question_id,
+          interview_id,
+          question_part_responses:interview_question_part_responses(id, answer_value, question_part_id)
+          `
         )
         .eq("id", responseId)
         .maybeSingle();
@@ -1779,6 +1797,8 @@ export class InterviewsService {
         id,
         rating_score,
         is_unknown,
+        questionnaire_question_id,
+        interview_id,
         response_roles:interview_response_roles(
           id,
           role:roles(id)
@@ -2240,17 +2260,20 @@ export class InterviewsService {
       const baseOutput = {
         ...interview,
         assessment: {
-          id: interview.assessment?.id,
-          name: interview.assessment?.name,
-          type: interview.assessment?.type,
-          company_id: interview.assessment?.company_id,
+          id: interview.assessment.id,
+          name: interview.assessment.name,
+          type: interview.assessment.type,
+          // company_id: interview.assessment?.company_id,
         },
-        program: {
-          id: interview.assessment.program_phase?.program?.id || null,
-          name: interview.assessment.program_phase?.program?.name || null,
-          program_phase_id: interview.assessment.program_phase?.id || null,
-          program_phase_name: interview.assessment.program_phase?.name || null,
-        },
+        program:
+          interview.assessment.program_phase !== null
+            ? {
+                id: interview.assessment.program_phase.program.id,
+                name: interview.assessment.program_phase.program.name,
+                program_phase_id: interview.assessment.program_phase.id,
+                program_phase_name: interview.assessment.program_phase.name,
+              }
+            : null,
         completion_rate: calculateCompletionRate(interviewResponses || []),
         average_score: calculateAverageScore(interviewResponses || []),
         min_rating_value: ratingRange.min,
@@ -2314,7 +2337,7 @@ export class InterviewsService {
         updated_at: new Date().toISOString(),
       })
       .eq("id", interviewId)
-      .select()
+      .select("id, name, notes, status, updated_at, due_at, enabled")
       .single();
 
     if (error) throw error;
@@ -2332,6 +2355,19 @@ export class InterviewsService {
       .eq("id", interviewId);
 
     if (error) throw error;
+  }
+
+  async listInterviewResponseActions(responseId: number) {
+    const { data, error } = await this.supabase
+      .from("interview_response_actions")
+      .select("id, title, description, created_at, updated_at")
+      .eq("interview_response_id", responseId)
+      .eq("is_deleted", false)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    return data || [];
   }
 
   async addActionToInterviewResponse(
@@ -2355,7 +2391,7 @@ export class InterviewsService {
         description: data.description,
         title: data.title,
       })
-      .select()
+      .select("id, title, description, created_at, updated_at")
       .single();
 
     if (error) throw error;
@@ -2374,7 +2410,7 @@ export class InterviewsService {
         updated_at: new Date().toISOString(),
       })
       .eq("id", actionId)
-      .select()
+      .select("id, title, description, created_at, updated_at")
       .single();
 
     if (error) throw error;

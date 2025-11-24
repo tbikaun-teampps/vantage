@@ -34,28 +34,10 @@ import {
 } from "@/components/feedback/feedback-button";
 import { FeedbackDialogProvider } from "@/contexts/FeedbackDialogContext";
 import { formatDistance } from "date-fns";
+import type { GetInterviewSummaryResponseData } from "@/types/api/interviews";
 
 interface InterviewLayoutHeaderProps {
-  interviewData?: {
-    name: string;
-    assessment: {
-      name: string;
-    };
-    due_at: string | null;
-    is_individual: boolean;
-    interviewer: {
-      full_name: string;
-      email: string;
-    } | null;
-    interviewee: {
-      full_name: string;
-      email: string;
-    } | null;
-    company: {
-      name: string;
-      icon_url: string | null;
-    };
-  };
+  interviewData: GetInterviewSummaryResponseData;
   showExitDialog: () => void;
 }
 
@@ -129,20 +111,21 @@ export function InterviewLayoutHeader({
                         {username}
                       </DropdownMenuItem>
                       <DropdownMenuItem>
-                        {interviewData.company.name && (
-                          <div className="flex items-center gap-4">
-                            {interviewData.company.icon_url ? (
-                              <img
-                                src={interviewData.company.icon_url}
-                                alt="Company Icon"
-                                className="h-3 w-3 mr-1 rounded-sm object-cover"
-                              />
-                            ) : (
-                              <IconBuilding className="h-3 w-3 mr-1" />
-                            )}
-                            {interviewData.company.name || "Company"}
-                          </div>
-                        )}
+                        {interviewData.company &&
+                          interviewData.company.name && (
+                            <div className="flex items-center gap-4">
+                              {interviewData.company.icon_url ? (
+                                <img
+                                  src={interviewData.company.icon_url}
+                                  alt="Company Icon"
+                                  className="h-3 w-3 mr-1 rounded-sm object-cover"
+                                />
+                              ) : (
+                                <IconBuilding className="h-3 w-3 mr-1" />
+                              )}
+                              {interviewData.company.name || "Company"}
+                            </div>
+                          )}
                       </DropdownMenuItem>
                       <DropdownMenuItem>
                         <IconCalendar className="h-3 w-3 mr-2" />

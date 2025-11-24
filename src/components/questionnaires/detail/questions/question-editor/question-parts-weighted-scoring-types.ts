@@ -1,11 +1,11 @@
-import type { QuestionPart } from "./question-parts-types";
+// import type { QuestionPart } from "./question-parts-types";
 
 /**
  * Scoring configuration for a boolean question part
  * Maps true/false to rating scale level values (1 to N)
  */
-export interface BooleanScoring {
-  true: number;  // Level number (1-N)
+interface BooleanScoring {
+  true: number; // Level number (1-N)
   false: number; // Level number (1-N)
 }
 
@@ -13,7 +13,7 @@ export interface BooleanScoring {
  * Scoring configuration for a labelled scale question part
  * Maps each label to a rating scale level value (1 to N)
  */
-export interface LabelledScaleScoring {
+interface LabelledScaleScoring {
   [label: string]: number; // Level number (1-N)
 }
 
@@ -27,7 +27,10 @@ export type NumericScoring = NumericRange[];
 /**
  * Union type for all possible scoring configurations
  */
-export type PartScoring = BooleanScoring | LabelledScaleScoring | NumericScoring;
+export type PartScoring =
+  | BooleanScoring
+  | LabelledScaleScoring
+  | NumericScoring;
 
 /**
  * Complete weighted scoring configuration
@@ -38,20 +41,6 @@ export interface WeightedScoringConfig {
   partScoring: {
     [partId: string]: PartScoring;
   };
-}
-
-/**
- * Test scenario for the preview panel
- * Shows how a specific combination of answers maps to a level
- */
-export interface TestScenario {
-  name: string;
-  description: string;
-  answers: {
-    [partId: string]: boolean | string | number;
-  };
-  partLevels: number[]; // Individual levels from each part
-  averageLevel: number; // Final averaged level (rounded)
 }
 
 /**
@@ -66,86 +55,81 @@ export interface NumericRange {
 /**
  * Helper type to identify if a scoring config is for a specific type
  */
-export function isBooleanScoring(scoring: PartScoring): scoring is BooleanScoring {
+export function isBooleanScoring(
+  scoring: PartScoring
+): scoring is BooleanScoring {
   return "true" in scoring && "false" in scoring;
 }
 
-export function isLabelledScaleScoring(
+// function isLabelledScaleScoring(
+//   scoring: PartScoring
+// ): scoring is LabelledScaleScoring {
+//   return !isBooleanScoring(scoring) && !isNumericScoring(scoring);
+// }
+
+export function isNumericScoring(
   scoring: PartScoring
-): scoring is LabelledScaleScoring {
-  return !isBooleanScoring(scoring) && !isNumericScoring(scoring);
-}
-
-export function isNumericScoring(scoring: PartScoring): scoring is NumericScoring {
+): scoring is NumericScoring {
   return Array.isArray(scoring);
-}
-
-/**
- * Get ranges for numeric question types
- * Since ranges are now explicitly defined, this just returns them
- * @param ranges - The explicit range configuration
- */
-export function getNumericRanges(ranges: NumericRange[]): NumericRange[] {
-  return ranges;
 }
 
 /**
  * Calculate which level a numeric answer maps to
  */
-export function calculateNumericLevel(
-  answer: number,
-  ranges: NumericRange[]
-): number {
-  for (const range of ranges) {
-    if (answer >= range.min && answer <= range.max) {
-      return range.level;
-    }
-  }
-  // Default to highest level if answer exceeds all ranges
-  return ranges[ranges.length - 1]?.level || 1;
-}
+// function calculateNumericLevel(answer: number, ranges: NumericRange[]): number {
+//   for (const range of ranges) {
+//     if (answer >= range.min && answer <= range.max) {
+//       return range.level;
+//     }
+//   }
+//   // Default to highest level if answer exceeds all ranges
+//   return ranges[ranges.length - 1]?.level || 1;
+// }
 
 /**
  * Calculate the level for a specific part based on its answer
  */
-export function calculatePartLevel(
-  part: QuestionPart,
-  scoring: PartScoring | undefined,
-  answer: boolean | string | number,
-  numLevels: number
-): number {
-  switch (part.answer_type) {
-    case "boolean":
-      if (scoring && isBooleanScoring(scoring)) {
-        return answer ? scoring.true : scoring.false;
-      }
-      return 1;
+// export function calculatePartLevel(
+//   part: QuestionPart,
+//   scoring: PartScoring | undefined,
+//   answer: boolean | string | number,
+// ): number {
+//   switch (part.answer_type) {
+//     case "boolean":
+//       if (scoring && isBooleanScoring(scoring)) {
+//         return answer ? scoring.true : scoring.false;
+//       }
+//       return 1;
 
-    case "labelled_scale":
-      if (scoring && isLabelledScaleScoring(scoring) && typeof answer === "string") {
-        return scoring[answer] || 1;
-      }
-      return 1;
+//     case "labelled_scale":
+//       if (
+//         scoring &&
+//         isLabelledScaleScoring(scoring) &&
+//         typeof answer === "string"
+//       ) {
+//         return scoring[answer] || 1;
+//       }
+//       return 1;
 
-    case "scale":
-    case "number":
-    case "percentage":
-      if (typeof answer === "number" && scoring && isNumericScoring(scoring)) {
-        return calculateNumericLevel(answer, scoring);
-      }
-      return 1;
+//     case "scale":
+//     case "number":
+//     case "percentage":
+//       if (typeof answer === "number" && scoring && isNumericScoring(scoring)) {
+//         return calculateNumericLevel(answer, scoring);
+//       }
+//       return 1;
 
-    default:
-      return 1;
-  }
-}
+//     default:
+//       return 1;
+//   }
+// }
 
 /**
  * Calculate average level across multiple parts (rounded to nearest integer)
  */
-export function calculateAverageLevel(levels: number[]): number {
-  if (levels.length === 0) return 1;
-  const sum = levels.reduce((acc, level) => acc + level, 0);
-  const average = sum / levels.length;
-  return Math.round(average);
-}
+// export function calculateAverageLevel(levels: number[]): number {
+//   if (levels.length === 0) return 1;
+//   const sum = levels.reduce((acc, level) => acc + level, 0);
+//   const average = sum / levels.length;
+//   return Math.round(average);
+// }

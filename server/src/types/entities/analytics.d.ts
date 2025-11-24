@@ -143,7 +143,12 @@ export interface OverallDesktopHeatmapFilters
           order: number;
         }
     >;
-    measurements: number[] | null;
+    measurements: {
+      id: number;
+      name: string;
+      description: string | null;
+      unit: string | null;
+    }[];
     aggregationMethods: HeatmapAggregation[];
   };
 }
@@ -229,7 +234,7 @@ export interface HeatmapMetricResult {
   y: string;
   value: number | null;
   sampleSize: number;
-  metadata: object;
+  // metadata: object;
 }
 
 // ===== Geographical Map =====
@@ -288,6 +293,10 @@ export interface OnsiteGeographicalMapFilters
 export interface DesktopGeographicalMapFilters
   extends BaseGeographicalMapFilters {
   options: {
+    assessments: {
+      id: number;
+      name: string;
+    }[];
     measurements: {
       id: number;
       name: string;

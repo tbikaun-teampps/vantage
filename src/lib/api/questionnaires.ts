@@ -1,33 +1,49 @@
 import { apiClient } from "./client";
-import { toast } from "sonner";
-import { getErrorMessage } from "@/lib/utils";
-import type { WeightedScoringConfig } from "@/components/questionnaires/detail/questions/question-editor/question-parts-weighted-scoring-types";
+import type { ApiResponse } from "./utils";
 import type {
-  QuestionnaireWithCounts,
-  QuestionnaireWithStructure,
-  Questionnaire,
-  QuestionnaireSection,
-  QuestionnaireStep,
-  QuestionnaireQuestion,
-  QuestionnaireRatingScale,
-  CreateQuestionnaireData,
-  UpdateQuestionnaireData,
-  CreateQuestionnaireSectionData,
-  UpdateQuestionnaireSectionData,
-  CreateQuestionnaireStepData,
-  UpdateQuestionnaireStepData,
-  CreateQuestionnaireQuestionData,
-  UpdateQuestionnaireQuestionData,
-  CreateQuestionnaireRatingScaleData,
-  UpdateQuestionnaireRatingScaleData,
-} from "@/types/assessment";
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-  message?: string;
-}
+  BatchCreateQuestionnaireRatingScalesBodyData,
+  BatchCreateQuestionnaireRatingScalesResponseData,
+  CheckQuestionnaireUsageResponseData,
+  CreateQuestionnaireBodyData,
+  CreateQuestionnaireQuestionBodyData,
+  CreateQuestionnaireQuestionResponseData,
+  CreateQuestionnaireRatingScaleBodyData,
+  CreateQuestionnaireRatingScaleResponseData,
+  CreateQuestionnaireResponseData,
+  CreateQuestionnaireSectionBodyData,
+  CreateQuestionnaireSectionResponseData,
+  CreateQuestionnaireStepBodyData,
+  CreateQuestionnaireStepResponseData,
+  CreateQuestionPartBodyData,
+  CreateQuestionPartResponseData,
+  DuplicateQuestionnaireQuestionResponseData,
+  DuplicateQuestionnaireResponseData,
+  DuplicateQuestionPartResponseData,
+  GetQuestionnaireByIdResponseData,
+  GetQuestionnaireRatingScalesResponseData,
+  GetQuestionnairesResponseData,
+  GetQuestionPartsResponseData,
+  GetQuestionRatingScaleMappingResponseData,
+  ReorderQuestionPartsResponse,
+  UpdateQuestionApplicableRolesBodyData,
+  UpdateQuestionApplicableRolesResponseData,
+  UpdateQuestionnaireBodyData,
+  UpdateQuestionnaireQuestionBodyData,
+  UpdateQuestionnaireQuestionResponseData,
+  UpdateQuestionnaireRatingScaleResponseData,
+  UpdateQuestionnaireResponseData,
+  UpdateQuestionnaireSectionBodyData,
+  UpdateQuestionnaireSectionResponseData,
+  UpdateQuestionnaireStepBodyData,
+  UpdateQuestionnaireStepResponseData,
+  UpdateQuestionPartBodyData,
+  UpdateQuestionPartResponseData,
+  UpdateQuestionRatingScaleBodyData,
+  UpdateQuestionRatingScaleMappingBodyData,
+  UpdateQuestionRatingScaleMappingResponseData,
+  UpdateRatingScaleBodyData,
+  UpdateRatingScaleResponseData,
+} from "@/types/api/questionnaire";
 
 // ============================================================================
 // QUESTIONNAIRE OPERATIONS
@@ -35,10 +51,10 @@ export interface ApiResponse<T> {
 
 export async function getQuestionnaires(
   companyId: string
-): Promise<QuestionnaireWithCounts[]> {
-  const response = await apiClient.get<ApiResponse<QuestionnaireWithCounts[]>>(
-    `/companies/${companyId}/questionnaires`
-  );
+): Promise<GetQuestionnairesResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetQuestionnairesResponseData>
+  >(`/companies/${companyId}/questionnaires`);
 
   if (!response.data.success) {
     throw new Error(
@@ -51,10 +67,10 @@ export async function getQuestionnaires(
 
 export async function getQuestionnaireById(
   id: number
-): Promise<QuestionnaireWithStructure> {
-  const response = await apiClient.get<ApiResponse<QuestionnaireWithStructure>>(
-    `/questionnaires/${id}`
-  );
+): Promise<GetQuestionnaireByIdResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetQuestionnaireByIdResponseData>
+  >(`/questionnaires/${id}`);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch questionnaire");
@@ -64,107 +80,64 @@ export async function getQuestionnaireById(
 }
 
 export async function createQuestionnaire(
-  data: CreateQuestionnaireData
-): Promise<Questionnaire> {
-  try {
-    const response = await apiClient.post<ApiResponse<Questionnaire[]>>(
-      "/questionnaires",
-      data
-    );
+  data: CreateQuestionnaireBodyData
+): Promise<CreateQuestionnaireResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateQuestionnaireResponseData>
+  >("/questionnaires", data);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to create questionnaire");
-    }
-
-    toast.success("Questionnaire created successfully");
-    return response.data.data[0];
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to create questionnaire"
-    );
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to create questionnaire");
   }
+
+  return response.data.data;
 }
 
 export async function updateQuestionnaire(
   id: number,
-  updates: UpdateQuestionnaireData
-): Promise<Questionnaire> {
-  try {
-    const response = await apiClient.put<ApiResponse<Questionnaire[]>>(
-      `/questionnaires/${id}`,
-      updates
-    );
+  updates: UpdateQuestionnaireBodyData
+): Promise<UpdateQuestionnaireResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateQuestionnaireResponseData>
+  >(`/questionnaires/${id}`, updates);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to update questionnaire");
-    }
-
-    toast.success("Questionnaire updated successfully");
-    return response.data.data[0];
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to update questionnaire"
-    );
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to update questionnaire");
   }
+
+  return response.data.data;
 }
 
 export async function deleteQuestionnaire(id: number): Promise<void> {
-  try {
-    const response = await apiClient.delete<ApiResponse<null>>(
-      `/questionnaires/${id}`
-    );
+  const response = await apiClient.delete<ApiResponse<void>>(
+    `/questionnaires/${id}`
+  );
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to delete questionnaire");
-    }
-
-    toast.success("Questionnaire deleted successfully");
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to delete questionnaire"
-    );
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to delete questionnaire");
   }
 }
 
 export async function duplicateQuestionnaire(
   id: number
-): Promise<Questionnaire> {
-  try {
-    const response = await apiClient.post<ApiResponse<Questionnaire[]>>(
-      `/questionnaires/${id}/duplicate`
-    );
+): Promise<DuplicateQuestionnaireResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<DuplicateQuestionnaireResponseData>
+  >(`/questionnaires/${id}/duplicate`);
 
-    if (!response.data.success) {
-      throw new Error(
-        response.data.error || "Failed to duplicate questionnaire"
-      );
-    }
-
-    toast.success("Questionnaire duplicated successfully");
-    return response.data.data[0];
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to duplicate questionnaire"
-    );
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to duplicate questionnaire");
   }
+
+  return response.data.data;
 }
 
-export async function checkQuestionnaireUsage(id: number): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/questionnaires/${id}/usage`
-  );
+export async function checkQuestionnaireUsage(
+  id: number
+): Promise<CheckQuestionnaireUsageResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<CheckQuestionnaireUsageResponseData>
+  >(`/questionnaires/${id}/usage`);
 
   if (!response.data.success) {
     throw new Error(
@@ -180,65 +153,41 @@ export async function checkQuestionnaireUsage(id: number): Promise<any> {
 // ============================================================================
 
 export async function createSection(
-  data: CreateQuestionnaireSectionData
-): Promise<QuestionnaireSection> {
-  try {
-    const response = await apiClient.post<ApiResponse<QuestionnaireSection>>(
-      "/questionnaires/sections",
-      data
-    );
+  data: CreateQuestionnaireSectionBodyData
+): Promise<CreateQuestionnaireSectionResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateQuestionnaireSectionResponseData>
+  >(`/questionnaires/sections`, data);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to create section");
-    }
-
-    toast.success("Section created successfully");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to create section");
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to create section");
   }
+
+  return response.data.data;
 }
 
 export async function updateSection(
-  id: number,
-  updates: UpdateQuestionnaireSectionData
-): Promise<QuestionnaireSection> {
-  try {
-    const response = await apiClient.put<ApiResponse<QuestionnaireSection>>(
-      `/questionnaires/sections/${id}`,
-      updates
-    );
+  sectionId: number,
+  updates: UpdateQuestionnaireSectionBodyData
+): Promise<UpdateQuestionnaireSectionResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateQuestionnaireSectionResponseData>
+  >(`/questionnaires/sections/${sectionId}`, updates);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to update section");
-    }
-
-    toast.success("Section updated successfully");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to update section");
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to update section");
   }
+
+  return response.data.data;
 }
 
-export async function deleteSection(id: number): Promise<void> {
-  try {
-    const response = await apiClient.delete<ApiResponse<null>>(
-      `/questionnaires/sections/${id}`
-    );
+export async function deleteSection(sectionId: number): Promise<void> {
+  const response = await apiClient.delete<ApiResponse<void>>(
+    `/questionnaires/sections/${sectionId}`
+  );
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to delete section");
-    }
-
-    toast.success("Section deleted successfully");
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to delete section");
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to delete section");
   }
 }
 
@@ -247,68 +196,44 @@ export async function deleteSection(id: number): Promise<void> {
 // ============================================================================
 
 export async function createStep(
-  data: CreateQuestionnaireStepData
-): Promise<QuestionnaireStep> {
-  try {
-    const response = await apiClient.post<ApiResponse<QuestionnaireStep>>(
-      "/questionnaires/steps",
-      {
-        questionnaire_section_id: data.questionnaire_section_id,
-        title: data.title,
-      }
-    );
+  data: CreateQuestionnaireStepBodyData
+): Promise<CreateQuestionnaireStepResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateQuestionnaireStepResponseData>
+  >("/questionnaires/steps", {
+    questionnaire_section_id: data.questionnaire_section_id,
+    title: data.title,
+  });
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to create step");
-    }
-
-    toast.success("Step created successfully");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to create step");
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to create step");
   }
+
+  return response.data.data;
 }
 
 export async function updateStep(
   id: number,
-  updates: UpdateQuestionnaireStepData
-): Promise<QuestionnaireStep> {
-  try {
-    const response = await apiClient.put<ApiResponse<QuestionnaireStep>>(
-      `/questionnaires/steps/${id}`,
-      updates
-    );
+  updates: UpdateQuestionnaireStepBodyData
+): Promise<UpdateQuestionnaireStepResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateQuestionnaireStepResponseData>
+  >(`/questionnaires/steps/${id}`, updates);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to update step");
-    }
-
-    toast.success("Step updated successfully");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to update step");
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to update step");
   }
+
+  return response.data.data;
 }
 
 export async function deleteStep(id: number): Promise<void> {
-  try {
-    const response = await apiClient.delete<ApiResponse<null>>(
-      `/questionnaires/steps/${id}`
-    );
+  const response = await apiClient.delete<ApiResponse<void>>(
+    `/questionnaires/steps/${id}`
+  );
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to delete step");
-    }
-
-    toast.success("Step deleted successfully");
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to delete step");
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to delete step");
   }
 }
 
@@ -317,92 +242,56 @@ export async function deleteStep(id: number): Promise<void> {
 // ============================================================================
 
 export async function createQuestion(
-  data: CreateQuestionnaireQuestionData
-): Promise<QuestionnaireQuestion> {
-  try {
-    const response = await apiClient.post<ApiResponse<QuestionnaireQuestion>>(
-      "/questionnaires/questions",
-      {
-        questionnaire_step_id: data.questionnaire_step_id,
-        title: data.title,
-        question_text: data.question_text,
-        context: data.context,
-      }
-    );
+  data: CreateQuestionnaireQuestionBodyData
+): Promise<CreateQuestionnaireQuestionResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateQuestionnaireQuestionResponseData>
+  >("/questionnaires/questions", data);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to create question");
-    }
-
-    toast.success("Question created successfully");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to create question");
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to create question");
   }
+
+  return response.data.data;
 }
 
 export async function updateQuestion(
   id: number,
-  updates: UpdateQuestionnaireQuestionData
-): Promise<QuestionnaireQuestion> {
-  try {
-    const response = await apiClient.put<ApiResponse<QuestionnaireQuestion>>(
-      `/questionnaires/questions/${id}`,
-      updates
-    );
+  updates: UpdateQuestionnaireQuestionBodyData
+): Promise<UpdateQuestionnaireQuestionResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateQuestionnaireQuestionResponseData>
+  >(`/questionnaires/questions/${id}`, updates);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to update question");
-    }
-
-    toast.success("Question updated successfully");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to update question");
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to update question");
   }
+
+  return response.data.data;
 }
 
 export async function deleteQuestion(id: number): Promise<void> {
-  try {
-    const response = await apiClient.delete<ApiResponse<null>>(
-      `/questionnaires/questions/${id}`
-    );
+  const response = await apiClient.delete<ApiResponse<void>>(
+    `/questionnaires/questions/${id}`
+  );
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to delete question");
-    }
-
-    toast.success("Question deleted successfully");
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to delete question");
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to delete question");
   }
 }
 
 export async function duplicateQuestion(
   id: number
-): Promise<QuestionnaireQuestion> {
-  try {
-    const response = await apiClient.post<ApiResponse<QuestionnaireQuestion>>(
-      `/questionnaires/questions/${id}/duplicate`
-    );
+): Promise<DuplicateQuestionnaireQuestionResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<DuplicateQuestionnaireQuestionResponseData>
+  >(`/questionnaires/questions/${id}/duplicate`);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to duplicate question");
-    }
-
-    toast.success("Question duplicated successfully");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(error, "Failed to duplicate question");
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to duplicate question");
   }
+
+  return response.data.data;
 }
 
 // ============================================================================
@@ -411,10 +300,10 @@ export async function duplicateQuestion(
 
 export async function getRatingScales(
   questionnaireId: number
-): Promise<QuestionnaireRatingScale[]> {
-  const response = await apiClient.get<ApiResponse<QuestionnaireRatingScale[]>>(
-    `/questionnaires/${questionnaireId}/rating-scales`
-  );
+): Promise<GetQuestionnaireRatingScalesResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetQuestionnaireRatingScalesResponseData>
+  >(`/questionnaires/${questionnaireId}/rating-scales`);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch rating scales");
@@ -425,100 +314,56 @@ export async function getRatingScales(
 
 export async function createRatingScale(
   questionnaireId: number,
-  data: CreateQuestionnaireRatingScaleData
-): Promise<QuestionnaireRatingScale> {
-  try {
-    const response = await apiClient.post<
-      ApiResponse<QuestionnaireRatingScale>
-    >(`/questionnaires/${questionnaireId}/rating-scale`, data);
+  data: CreateQuestionnaireRatingScaleBodyData
+): Promise<CreateQuestionnaireRatingScaleResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateQuestionnaireRatingScaleResponseData>
+  >(`/questionnaires/${questionnaireId}/rating-scale`, data);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to create rating scale");
-    }
-
-    toast.success("Rating scale created successfully");
-    return response.data.data;
-  } catch (error) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to create rating scale"
-    );
-    toast.error(errorMessage);
-    throw error; // Re-throw so components can handle loading states
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to create rating scale");
   }
+
+  return response.data.data;
 }
 
 export async function createRatingScalesBatch(
   questionnaireId: number,
-  scales: CreateQuestionnaireRatingScaleData[]
-): Promise<QuestionnaireRatingScale[]> {
-  try {
-    const response = await apiClient.post<
-      ApiResponse<QuestionnaireRatingScale[]>
-    >(`/questionnaires/${questionnaireId}/rating-scales/batch`, { scales });
+  data: BatchCreateQuestionnaireRatingScalesBodyData
+): Promise<BatchCreateQuestionnaireRatingScalesResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<BatchCreateQuestionnaireRatingScalesResponseData>
+  >(`/questionnaires/${questionnaireId}/rating-scales/batch`, data);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to create rating scales");
-    }
-
-    toast.success(
-      `${scales.length} rating scale${scales.length > 1 ? "s" : ""} created successfully`
-    );
-    return response.data.data;
-  } catch (error) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to create rating scales"
-    );
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to create rating scales");
   }
+
+  return response.data.data;
 }
 
 export async function updateRatingScale(
   id: number,
-  updates: UpdateQuestionnaireRatingScaleData
-): Promise<QuestionnaireRatingScale> {
-  try {
-    const response = await apiClient.put<ApiResponse<QuestionnaireRatingScale>>(
-      `/questionnaires/rating-scales/${id}`,
-      updates
-    );
+  updates: UpdateRatingScaleBodyData
+): Promise<UpdateRatingScaleResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateRatingScaleResponseData>
+  >(`/questionnaires/rating-scales/${id}`, updates);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to update rating scale");
-    }
-
-    toast.success("Rating scale updated successfully");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to update rating scale"
-    );
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to update rating scale");
   }
+
+  return response.data.data;
 }
 
 export async function deleteRatingScale(id: number): Promise<void> {
-  try {
-    const response = await apiClient.delete<ApiResponse<null>>(
-      `/questionnaires/rating-scales/${id}`
-    );
+  const response = await apiClient.delete<ApiResponse<void>>(
+    `/questionnaires/rating-scales/${id}`
+  );
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to delete rating scale");
-    }
-
-    toast.success("Rating scale deleted successfully");
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to delete rating scale"
-    );
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to delete rating scale");
   }
 }
 
@@ -535,147 +380,92 @@ export async function addQuestionRatingScale(data: {
   questionnaire_rating_scale_id: number;
   description: string;
 }): Promise<any> {
-  try {
-    const response = await apiClient.post<ApiResponse<any>>(
-      `/questionnaires/questions/${data.questionId}/rating-scales`,
-      {
-        questionnaire_rating_scale_id: data.questionnaire_rating_scale_id,
-        description: data.description,
-      }
-    );
-
-    if (!response.data.success) {
-      throw new Error(
-        response.data.error || "Failed to add question rating scale"
-      );
+  const response = await apiClient.post<ApiResponse<any>>(
+    `/questionnaires/questions/${data.questionId}/rating-scales`,
+    {
+      questionnaire_rating_scale_id: data.questionnaire_rating_scale_id,
+      description: data.description,
     }
+  );
 
-    toast.success("Rating scale added to question");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to add question rating scale"
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to add question rating scale"
     );
-    toast.error(errorMessage);
-    throw error;
   }
+
+  return response.data.data;
 }
 
-export async function updateQuestionRatingScale(data: {
-  questionId: number;
-  questionRatingScaleId: number;
-  description: string;
-}): Promise<any> {
-  try {
-    const response = await apiClient.put<ApiResponse<any>>(
-      `/questionnaires/questions/${data.questionId}/rating-scales/${data.questionRatingScaleId}`,
-      {
-        description: data.description,
-      }
-    );
+export async function updateQuestionRatingScale(
+  questionId: number,
+  questionRatingScaleId: number,
+  data: UpdateQuestionRatingScaleBodyData
+): Promise<UpdateQuestionnaireRatingScaleResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateQuestionnaireRatingScaleResponseData>
+  >(
+    `/questionnaires/questions/${questionId}/rating-scales/${questionRatingScaleId}`,
+    data
+  );
 
-    if (!response.data.success) {
-      throw new Error(
-        response.data.error || "Failed to update question rating scale"
-      );
-    }
-
-    toast.success("Question rating scale updated successfully");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to update question rating scale"
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to update question rating scale"
     );
-    toast.error(errorMessage);
-    throw error;
   }
+  return response.data.data;
 }
 
 export async function addAllQuestionnaireRatingScales(data: {
   questionnaireId: number;
   questionId: number;
 }): Promise<any[]> {
-  try {
-    const response = await apiClient.post<ApiResponse<any[]>>(
-      `/questionnaires/questions/${data.questionId}/add-questionnaire-rating-scales`,
-      {
-        questionnaireId: data.questionnaireId,
-        questionId: data.questionId,
-      }
-    );
-
-    if (!response.data.success) {
-      throw new Error(
-        response.data.error || "Failed to add all questionnaire rating scales"
-      );
+  const response = await apiClient.post<ApiResponse<any[]>>(
+    `/questionnaires/questions/${data.questionId}/add-questionnaire-rating-scales`,
+    {
+      questionnaireId: data.questionnaireId,
+      questionId: data.questionId,
     }
+  );
 
-    toast.success("All rating scales added to question");
-    return response.data.data;
-  } catch (error) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to add all questionnaire rating scales"
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to add all questionnaire rating scales"
     );
-    toast.error(errorMessage);
-    throw error;
   }
+  return response.data.data;
 }
 
 export async function deleteQuestionRatingScale(data: {
   questionId: number;
   questionRatingScaleId: number;
 }): Promise<void> {
-  try {
-    const response = await apiClient.delete<ApiResponse<null>>(
-      `/questionnaires/questions/${data.questionId}/rating-scales/${data.questionRatingScaleId}`
-    );
+  const response = await apiClient.delete<ApiResponse<null>>(
+    `/questionnaires/questions/${data.questionId}/rating-scales/${data.questionRatingScaleId}`
+  );
 
-    if (!response.data.success) {
-      throw new Error(
-        response.data.error || "Failed to delete question rating scale"
-      );
-    }
-
-    toast.success("Rating scale removed from question");
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to delete question rating scale"
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to delete question rating scale"
     );
-    toast.error(errorMessage);
-    throw error;
   }
 }
 
 export async function updateQuestionRoles(
   questionId: number,
-  sharedRoleIds: number[]
-): Promise<any> {
-  try {
-    const response = await apiClient.put<ApiResponse<null>>(
-      `/questionnaires/questions/${questionId}/applicable-roles`,
-      { shared_role_ids: sharedRoleIds }
-    );
+  data: UpdateQuestionApplicableRolesBodyData
+): Promise<UpdateQuestionApplicableRolesResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateQuestionApplicableRolesResponseData>
+  >(`/questionnaires/questions/${questionId}/applicable-roles`, data);
 
-    if (!response.data.success) {
-      throw new Error(
-        response.data.error || "Failed to update question applicable roles"
-      );
-    }
-
-    toast.success("Question roles updated successfully");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to update question applicable roles"
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to update question applicable roles"
     );
-    toast.error(errorMessage);
-    throw error;
   }
+  return response.data.data;
 }
 
 // ===== Import =====
@@ -685,51 +475,43 @@ export async function importQuestionnaire(data: {
   companyId: string;
   description?: string;
   guidelines?: string;
-}): Promise<Questionnaire> {
-  try {
-    const formData = new FormData();
-    formData.append("file", data.file);
-    formData.append("name", data.name);
-    formData.append("company_id", data.companyId);
-    if (data.description) {
-      formData.append("description", data.description);
-    }
-    if (data.guidelines) {
-      formData.append("guidelines", data.guidelines);
-    }
-
-    const response = await apiClient.post<ApiResponse<Questionnaire>>(
-      `/questionnaires/import`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to import questionnaire");
-    }
-
-    toast.success("Questionnaire imported successfully");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to import questionnaire"
-    );
-    toast.error(errorMessage);
-    throw error;
+}): Promise<any> {
+  const formData = new FormData();
+  formData.append("file", data.file);
+  formData.append("name", data.name);
+  formData.append("company_id", data.companyId);
+  if (data.description) {
+    formData.append("description", data.description);
   }
+  if (data.guidelines) {
+    formData.append("guidelines", data.guidelines);
+  }
+
+  const response = await apiClient.post<ApiResponse<any>>(
+    `/questionnaires/import`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to import questionnaire");
+  }
+
+  return response.data.data;
 }
 
 // ===== Question Parts =====
 
-export async function getQuestionParts(questionId: number): Promise<any[]> {
-  const response = await apiClient.get<ApiResponse<any[]>>(
-    `/questionnaires/questions/${questionId}/parts`
-  );
+export async function getQuestionParts(
+  questionId: number
+): Promise<GetQuestionPartsResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetQuestionPartsResponseData>
+  >(`/questionnaires/questions/${questionId}/parts`);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch question parts");
@@ -740,141 +522,80 @@ export async function getQuestionParts(questionId: number): Promise<any[]> {
 
 export async function createQuestionPart(
   questionId: number,
-  partData: any
-): Promise<any> {
-  try {
-    const response = await apiClient.post<ApiResponse<any>>(
-      `/questionnaires/questions/${questionId}/parts`,
-      partData
-    );
+  data: CreateQuestionPartBodyData
+): Promise<CreateQuestionPartResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateQuestionPartResponseData>
+  >(`/questionnaires/questions/${questionId}/parts`, data);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to create question part");
-    }
-
-    toast.success("Question part created successfully");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to create question part"
-    );
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to create question part");
   }
+  return response.data.data;
 }
 
 export async function updateQuestionPart(
   questionId: number,
   partId: number,
-  partData: any
-): Promise<any> {
-  try {
-    const response = await apiClient.put<ApiResponse<any>>(
-      `/questionnaires/questions/${questionId}/parts/${partId}`,
-      partData
-    );
+  data: UpdateQuestionPartBodyData
+): Promise<UpdateQuestionPartResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateQuestionPartResponseData>
+  >(`/questionnaires/questions/${questionId}/parts/${partId}`, data);
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to update question part");
-    }
-
-    toast.success("Question part updated successfully");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to update question part"
-    );
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to update question part");
   }
+  return response.data.data;
 }
 
 export async function deleteQuestionPart(
   questionId: number,
   partId: number
 ): Promise<void> {
-  try {
-    const response = await apiClient.delete<ApiResponse<null>>(
-      `/questionnaires/questions/${questionId}/parts/${partId}`
-    );
+  const response = await apiClient.delete<ApiResponse<void>>(
+    `/questionnaires/questions/${questionId}/parts/${partId}`
+  );
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || "Failed to delete question part");
-    }
-
-    toast.success("Question part deleted successfully");
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to delete question part"
-    );
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to delete question part");
   }
 }
 
 export async function duplicateQuestionPart(
   questionId: number,
   partId: number
-): Promise<any> {
-  try {
-    const response = await apiClient.post<ApiResponse<any>>(
-      `/questionnaires/questions/${questionId}/parts/${partId}/duplicate`
-    );
+): Promise<DuplicateQuestionPartResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<DuplicateQuestionPartResponseData>
+  >(`/questionnaires/questions/${questionId}/parts/${partId}/duplicate`);
 
-    if (!response.data.success) {
-      throw new Error(
-        response.data.error || "Failed to duplicate question part"
-      );
-    }
-
-    toast.success("Question part duplicated successfully");
-    return response.data.data;
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to duplicate question part"
-    );
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to duplicate question part");
   }
+  return response.data.data;
 }
 
 export async function reorderQuestionParts(
   questionId: number,
   partIdsInOrder: number[]
 ): Promise<void> {
-  try {
-    const response = await apiClient.post<ApiResponse<null>>(
-      `/questionnaires/questions/${questionId}/parts/reorder`,
-      { part_ids_in_order: partIdsInOrder }
-    );
+  const response = await apiClient.post<ReorderQuestionPartsResponse>(
+    `/questionnaires/questions/${questionId}/parts/reorder`,
+    { part_ids_in_order: partIdsInOrder }
+  );
 
-    if (!response.data.success) {
-      throw new Error(
-        response.data.error || "Failed to reorder question parts"
-      );
-    }
-
-    toast.success("Question parts reordered successfully");
-  } catch (error: any) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to reorder question parts"
-    );
-    toast.error(errorMessage);
-    throw error;
+  if (!response.data.success) {
+    throw new Error("Failed to reorder question parts");
   }
 }
 
 export async function getQuestionRatingScaleMapping(
   questionId: number
-): Promise<WeightedScoringConfig | null> {
-  const response = await apiClient.get<ApiResponse<WeightedScoringConfig | null>>(
-    `/questionnaires/questions/${questionId}/rating-scale-mapping`
-  );
+): Promise<GetQuestionRatingScaleMappingResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetQuestionRatingScaleMappingResponseData>
+  >(`/questionnaires/questions/${questionId}/rating-scale-mapping`);
 
   if (!response.data.success) {
     throw new Error(
@@ -887,28 +608,16 @@ export async function getQuestionRatingScaleMapping(
 
 export async function updateQuestionRatingScaleMapping(
   questionId: number,
-  config: WeightedScoringConfig
+  data: UpdateQuestionRatingScaleMappingBodyData
 ): Promise<unknown> {
-  try {
-    const response = await apiClient.put<ApiResponse<unknown>>(
-      `/questionnaires/questions/${questionId}/rating-scale-mapping`,
-      { rating_scale_mapping: config }
-    );
+  const response = await apiClient.put<
+    ApiResponse<UpdateQuestionRatingScaleMappingResponseData>
+  >(`/questionnaires/questions/${questionId}/rating-scale-mapping`, data);
 
-    if (!response.data.success) {
-      throw new Error(
-        response.data.error || "Failed to update question rating scale mapping"
-      );
-    }
-
-    toast.success("Question mapping updated successfully");
-    return response.data.data;
-  } catch (error: unknown) {
-    const errorMessage = getErrorMessage(
-      error,
-      "Failed to update question rating scale mapping"
+  if (!response.data.success) {
+    throw new Error(
+      response.data.error || "Failed to update question rating scale mapping"
     );
-    toast.error(errorMessage);
-    throw error;
   }
+  return response.data.data;
 }

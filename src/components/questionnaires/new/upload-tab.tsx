@@ -119,11 +119,8 @@ export function NewQuestionnaireUploadTab() {
       setTimeout(() => {
         navigate(`/questionnaires/${response.id}`);
       }, 1000);
-    } catch (error) {
-      setValidationErrors([
-        error?.response?.data.error ||
-          "An unexpected error occurred during import",
-      ]);
+    } catch {
+      setValidationErrors(["An unexpected error occurred during import"]);
     } finally {
       setIsProcessing(false);
     }

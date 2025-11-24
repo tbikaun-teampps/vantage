@@ -25,10 +25,6 @@ import {
   useStepActions,
   useQuestionActions,
 } from "@/hooks/questionnaire/useQuestions";
-import type {
-  SectionWithSteps,
-  QuestionWithRatingScales,
-} from "@/types/assessment";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -43,25 +39,31 @@ import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 import { useQuestionnaireDetail } from "@/contexts/QuestionnaireDetailContext";
 import { AddSectionDialog } from "./add-section-dialog";
 import { QuestionnaireTemplateDialog } from "../questionnaire-template-dialog";
+import type {
+  QuestionnaireQuestions,
+  QuestionnaireSections,
+  QuestionnaireSteps,
+  UpdateQuestionnaireSectionBodyData,
+  UpdateQuestionnaireStepBodyData,
+} from "@/types/api/questionnaire";
 
 interface QuestionnaireTreeProps {
   selectedItem: {
     type: "section" | "step" | "question";
     id: number;
   } | null;
-  editingQuestion: QuestionWithRatingScales | null;
+  editingQuestion: QuestionnaireQuestions[number] | null;
   setSelectedItem: (
     item: {
       type: "section" | "step" | "question";
       id: number;
     } | null
   ) => void;
-  setEditingQuestion: (question: QuestionWithRatingScales | null) => void;
+  setEditingQuestion: (question: QuestionnaireQuestions[number] | null) => void;
 }
 
 export function QuestionnaireTree({
   selectedItem,
-  editingQuestion,
   setSelectedItem,
   setEditingQuestion,
 }: QuestionnaireTreeProps) {
@@ -74,27 +76,29 @@ export function QuestionnaireTree({
   const {
     questionnaire,
     sections,
-    isLoading,
     isProcessing,
     getQuestionsStatus,
     questionCount,
   } = useQuestionnaireDetail();
 
-  const [expandedNodes, setExpandedNodes] = useState<Set<number>>(() =>
-    new Set(
-      sections.length > 0
-        ? [sections[0].id, sections[0].steps[0]?.id].filter(Boolean)
-        : []
-    )
+  const [expandedNodes, setExpandedNodes] = useState<Set<number>>(
+    () =>
+      new Set(
+        sections.length > 0
+          ? [sections[0].id, sections[0].steps[0]?.id].filter(Boolean)
+          : []
+      )
   );
 
   const [showAddSectionDialog, setShowAddSectionDialog] =
     useState<boolean>(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState<boolean>(false);
-  const [editingSection, setEditingSection] = useState<SectionWithSteps | null>(
-    null
-  );
-  const [editingStep, setEditingStep] = useState<any | null>(null);
+  const [editingSection, setEditingSection] = useState<
+    QuestionnaireSections[number] | null
+  >(null);
+  const [editingStep, setEditingStep] = useState<
+    QuestionnaireSteps[number] | null
+  >(null);
   const [showAddDialog, setShowAddDialog] = useState<{
     type: "section" | "step" | "question";
     parentId?: number;
@@ -110,7 +114,7 @@ export function QuestionnaireTree({
 
   // Pure validation function - moved before early return to allow memoization
   const getQuestionValidation = useCallback(
-    (question: QuestionWithRatingScales) => {
+    (question: QuestionnaireQuestions[number]) => {
       const hasTitle = question.title && question.title.trim() !== "";
       const hasQuestionText =
         question.question_text && question.question_text.trim() !== "";
@@ -135,7 +139,8 @@ export function QuestionnaireTree({
         warnings.push("No specific roles selected - will apply to all roles");
 
       return {
-        isValid: hasTitle && (hasQuestionText || hasQuestionParts) && hasRatingScales,
+        isValid:
+          hasTitle && (hasQuestionText || hasQuestionParts) && hasRatingScales,
         missingFields,
         warnings,
       };
@@ -145,10 +150,7 @@ export function QuestionnaireTree({
 
   // Memoize validation results for all questions to avoid repeated computations
   const questionValidationMap = useMemo(() => {
-    const map = new Map<
-      number,
-      ReturnType<typeof getQuestionValidation>
-    >();
+    const map = new Map<number, ReturnType<typeof getQuestionValidation>>();
     sections.forEach((section) => {
       section.steps.forEach((step) => {
         step.questions.forEach((question) => {
@@ -161,14 +163,17 @@ export function QuestionnaireTree({
 
   // Helper to get cached validation results
   const getQuestionValidationCached = useCallback(
-    (question: QuestionWithRatingScales) => {
-      return questionValidationMap.get(question.id) || getQuestionValidation(question);
+    (question: QuestionnaireQuestions[number]) => {
+      return (
+        questionValidationMap.get(question.id) ||
+        getQuestionValidation(question)
+      );
     },
     [questionValidationMap, getQuestionValidation]
   );
 
   const isQuestionIncomplete = useCallback(
-    (question: QuestionWithRatingScales): boolean => {
+    (question: QuestionnaireQuestions[number]): boolean => {
       const validation = questionValidationMap.get(question.id);
       return validation ? !validation.isValid : true;
     },
@@ -176,7 +181,9 @@ export function QuestionnaireTree({
   );
 
   const getAllQuestionsFromSection = useCallback(
-    (section: SectionWithSteps): QuestionWithRatingScales[] => {
+    (
+      section: QuestionnaireSections[number]
+    ): QuestionnaireQuestions[number][] => {
       return section.steps.flatMap((step) => step.questions);
     },
     []
@@ -215,12 +222,12 @@ export function QuestionnaireTree({
       });
     } else if (showAddDialog.type === "step" && showAddDialog.parentId) {
       await createStep({
-        sectionId: showAddDialog.parentId,
+        questionnaire_section_id: showAddDialog.parentId,
         title: data.title,
       });
     } else if (showAddDialog.type === "question" && showAddDialog.parentId) {
       await createQuestion({
-        questionnaireStepId: showAddDialog.parentId,
+        questionnaire_step_id: showAddDialog.parentId,
         title: data.title,
         question_text: data.question_text || "",
         context: data.context,
@@ -229,12 +236,18 @@ export function QuestionnaireTree({
     setShowAddDialog(null);
   };
 
-  const handleUpdateSection = async (sectionId: number, updates: any) => {
+  const handleUpdateSection = async (
+    sectionId: number,
+    updates: UpdateQuestionnaireSectionBodyData
+  ) => {
     await updateSection({ id: sectionId, updates });
     setEditingSection(null);
   };
 
-  const handleUpdateStep = async (stepId: number, updates: any) => {
+  const handleUpdateStep = async (
+    stepId: number,
+    updates: UpdateQuestionnaireStepBodyData
+  ) => {
     await updateStep({ id: stepId, updates });
     setEditingStep(null);
   };

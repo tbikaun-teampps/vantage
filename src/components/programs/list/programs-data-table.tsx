@@ -7,13 +7,10 @@ import { formatDistanceToNow } from "date-fns";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
-import type {
-  ProgramListItem,
-  ProgramListResponseData,
-} from "@/types/api/programs";
+import type { GetProgramsResponseData } from "@/types/api/programs";
 
 interface ProgramsDataTableProps {
-  data: ProgramListResponseData;
+  data: GetProgramsResponseData;
   isLoading?: boolean;
 }
 
@@ -25,7 +22,7 @@ export function ProgramsDataTable({
   const routes = useCompanyRoutes();
   const navigate = useCompanyAwareNavigate();
 
-  const columns: ColumnDef<ProgramListItem>[] = [
+  const columns: ColumnDef<GetProgramsResponseData[number]>[] = [
     {
       accessorKey: "name",
       header: "Program Name",
@@ -82,6 +79,9 @@ export function ProgramsDataTable({
       header: "Desktop Measurements",
       cell: ({ row }) => {
         const count = row.original.measurements_count;
+        if (count === null) {
+          return <span className="text-sm text-muted-foreground">N/A</span>;
+        }
         return (
           <Badge variant={count > 0 ? "default" : "outline"}>
             {count > 0 ? count : "—"}

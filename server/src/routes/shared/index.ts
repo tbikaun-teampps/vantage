@@ -1,7 +1,23 @@
 import { FastifyInstance } from "fastify";
 import { SharedRolesService } from "../../services/SharedRolesService.js";
 import { measurementsRoutes } from "./measurements.js";
-import { BadRequestError } from "../../plugins/errorHandler.js";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
+import {
+  RoleIdParamsSchema,
+  CreateRoleBodySchema,
+  UpdateRoleBodySchema,
+  GetRolesResponseSchema,
+  CreateRoleResponseSchema,
+  UpdateRoleResponseSchema,
+  SuccessResponseSchema,
+} from "../../schemas/shared";
+import {
+  Error400Schema,
+  Error401Schema,
+  Error403Schema,
+  Error404Schema,
+  Error500Schema,
+} from "../../schemas/errors";
 
 export async function sharedRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -13,51 +29,18 @@ export async function sharedRoutes(fastify: FastifyInstance) {
   measurementsRoutes(fastify);
 
   // GET /shared/roles - Get all shared roles
-  fastify.get(
-    "/roles",
-    {
-      schema: {
-        description: "Get all shared roles (system roles + user-created roles)",
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    id: { type: "number" },
-                    name: { type: "string" },
-                    description: { type: "string", nullable: true },
-                    read_only: { type: "boolean" },
-                    created_at: { type: "string" },
-                    updated_at: { type: "string" },
-                    created_by: { type: "string", nullable: true },
-                  },
-                },
-              },
-            },
-          },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/roles",
+    schema: {
+      description: "Get all shared roles (system roles + user-created roles)",
+      response: {
+        200: GetRolesResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const userId = request.user.id;
       const service = new SharedRolesService(request.supabaseClient, userId);
 
@@ -70,75 +53,27 @@ export async function sharedRoutes(fastify: FastifyInstance) {
       }));
 
       return { data: rolesWithReadOnly, success: true };
-    }
-  );
+    },
+  });
 
   // POST /shared/roles - Create a new shared role
-  fastify.post(
-    "/roles",
-    {
-      schema: {
-        description: "Create a new shared role",
-        body: {
-          type: "object",
-          required: ["name", "companyId"],
-          properties: {
-            name: { type: "string" },
-            description: { type: "string" },
-            companyId: { type: "string" },
-          },
-        },
-        response: {
-          201: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  id: { type: "number" },
-                  name: { type: "string" },
-                  description: { type: "string", nullable: true },
-                  created_at: { type: "string" },
-                  updated_at: { type: "string" },
-                  created_by: { type: "string", nullable: true },
-                  is_deleted: { type: "boolean" },
-                },
-              },
-            },
-          },
-          400: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/roles",
+    schema: {
+      description: "Create a new shared role",
+      body: CreateRoleBodySchema,
+      response: {
+        201: CreateRoleResponseSchema,
+        400: Error400Schema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
+    handler: async (request, reply) => {
       try {
         const userId = request.user.id;
-        const body = request.body as {
-          name: string;
-          description?: string;
-          companyId: string;
-        };
+        const body = request.body;
 
         const service = new SharedRolesService(request.supabaseClient, userId);
         const newRole = await service.createRole({
@@ -160,95 +95,30 @@ export async function sharedRoutes(fastify: FastifyInstance) {
           error: error instanceof Error ? error.message : "Unknown error",
         });
       }
-    }
-  );
+    },
+  });
 
   // PUT /shared/roles/:roleId - Update an existing shared role
-  fastify.put(
-    "/roles/:roleId",
-    {
-      schema: {
-        description: "Update an existing shared role",
-        params: {
-          type: "object",
-          properties: {
-            roleId: { type: "string" },
-          },
-          required: ["roleId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            name: { type: "string" },
-            description: { type: "string" },
-          },
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  id: { type: "number" },
-                  name: { type: "string" },
-                  description: { type: "string", nullable: true },
-                  created_at: { type: "string" },
-                  updated_at: { type: "string" },
-                  created_by: { type: "string", nullable: true },
-                  is_deleted: { type: "boolean" },
-                },
-              },
-            },
-          },
-          400: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          403: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          404: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/roles/:roleId",
+    schema: {
+      description: "Update an existing shared role",
+      params: RoleIdParamsSchema,
+      body: UpdateRoleBodySchema,
+      response: {
+        200: UpdateRoleResponseSchema,
+        400: Error400Schema,
+        401: Error401Schema,
+        403: Error403Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const userId = request.user.id;
-      const params = request.params as { roleId: string };
-      const body = request.body as { name?: string; description?: string };
-
-      const roleId = parseInt(params.roleId, 10);
-      if (isNaN(roleId)) {
-        throw new BadRequestError("Invalid role ID");
-      }
+      const { roleId } = request.params;
+      const body = request.body;
 
       const service = new SharedRolesService(request.supabaseClient, userId);
       const updatedRole = await service.updateRole(roleId, {
@@ -257,66 +127,31 @@ export async function sharedRoutes(fastify: FastifyInstance) {
       });
 
       return { data: updatedRole, success: true };
-    }
-  );
+    },
+  });
 
   // DELETE /shared/roles/:roleId - Delete a shared role
-  fastify.delete(
-    "/roles/:roleId",
-    {
-      schema: {
-        description: "Delete a shared role (soft delete)",
-        params: {
-          type: "object",
-          properties: {
-            roleId: { type: "string" },
-          },
-          required: ["roleId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-            },
-          },
-          400: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/roles/:roleId",
+    schema: {
+      description: "Delete a shared role (soft delete)",
+      params: RoleIdParamsSchema,
+      response: {
+        200: SuccessResponseSchema,
+        400: Error400Schema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const userId = request.user.id;
-      const params = request.params as { roleId: string };
-
-      const roleId = parseInt(params.roleId, 10);
-      if (isNaN(roleId)) {
-        throw new BadRequestError("Invalid role ID");
-      }
+      const { roleId } = request.params;
 
       const service = new SharedRolesService(request.supabaseClient, userId);
       await service.deleteRole(roleId);
 
       return { success: true };
-    }
-  );
+    },
+  });
 }

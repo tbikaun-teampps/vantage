@@ -1,26 +1,27 @@
 import React, { useState } from "react";
-import type { MetricConfig, WidgetConfig } from "@/hooks/useDashboardLayouts";
+import type { WidgetConfig, MetricWidgetConfig } from "@/types/api/dashboard";
 
+type MetricType = NonNullable<MetricWidgetConfig>["metricType"];
 interface MetricConfigurationFormProps {
-  config?: MetricConfig;
+  config?: MetricWidgetConfig;
   onConfigChange: (config: WidgetConfig) => void;
 }
 
 export const MetricConfigurationForm: React.FC<
   MetricConfigurationFormProps
 > = ({ config, onConfigChange }) => {
-  const [metricType, setMetricType] = useState<MetricConfig["metricType"]>(
+  const [metricType, setMetricType] = useState<MetricType>(
     config?.metricType || "assessment-activity"
   );
 
   // Update pending config whenever selection changes
-  const handleMetricChange = (value: MetricConfig["metricType"]) => {
+  const handleMetricChange = (value: MetricType) => {
     setMetricType(value);
     updateConfig(value);
   };
 
   // Update config whenever any field changes
-  const updateConfig = (metricType: MetricConfig["metricType"]) => {
+  const updateConfig = (metricType: MetricType) => {
     const newConfig: WidgetConfig = {
       metric: {
         metricType,
@@ -32,33 +33,33 @@ export const MetricConfigurationForm: React.FC<
 
   const metricOptions = [
     {
-      value: "assessment-activity" as MetricConfig["metricType"],
+      value: "assessment-activity" as MetricType,
       title: "Assessment Activity",
       tags: [],
       description: "Shows recent activity on assessments",
     },
     {
-      value: "generated-actions" as MetricConfig["metricType"],
+      value: "generated-actions" as MetricType,
       title: "Generated Actions",
       tags: [],
       description:
         "Shows the count of actions identified from interview responses",
     },
     {
-      value: "generated-recommendations" as MetricConfig["metricType"],
+      value: "generated-recommendations" as MetricType,
       title: "Generated Recommendations",
       tags: [],
       description:
         "Shows the count of recommendations generated from assessments",
     },
     {
-      value: "worst-performing-domain" as MetricConfig["metricType"],
+      value: "worst-performing-domain" as MetricType,
       title: "Worst Performing Domain",
       tags: [],
       description: "Shows the domain with the lowest performance",
     },
     {
-      value: "high-risk-areas" as MetricConfig["metricType"],
+      value: "high-risk-areas" as MetricType,
       title: "High Risk Areas",
       tags: [],
       description: "Shows areas with the highest risk",

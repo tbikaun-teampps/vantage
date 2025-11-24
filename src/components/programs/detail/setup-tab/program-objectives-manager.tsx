@@ -25,7 +25,6 @@ import {
   IconCheck,
   IconX,
 } from "@tabler/icons-react";
-import type { ProgramObjective } from "@/types/program";
 import { formatDistanceToNow } from "date-fns";
 import {
   useProgramObjectives,
@@ -33,6 +32,7 @@ import {
   useUpdateObjective,
   useDeleteObjective,
 } from "@/hooks/useProgramObjectives";
+import type { ProgramObjective } from "@/types/api/programs";
 
 interface ProgramObjectivesManagerProps {
   programId: number;
@@ -85,9 +85,12 @@ export function ProgramObjectivesManager({
 
     try {
       await createObjectiveMutation.mutateAsync({
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        program_id: programId,
+        programId,
+        data: {
+          name: formData.name.trim(),
+          description: formData.description.trim() || undefined,
+
+        }
       });
       setIsCreating(false);
       setFormData({ name: "", description: "" });

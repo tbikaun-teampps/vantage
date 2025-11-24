@@ -31,7 +31,6 @@ interface InterviewCommentsContentProps {
 export function InterviewCommentsContent({
   disabled = false,
   responseId,
-  onClose,
   showLabel = true,
 }: InterviewCommentsContentProps) {
   const [commentText, setCommentText] = useState("");

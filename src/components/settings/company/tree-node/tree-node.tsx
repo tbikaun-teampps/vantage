@@ -28,10 +28,32 @@ import {
 import { useTreeNodeActions } from "@/hooks/useCompany";
 import { CreateRoleDialog } from "../detail-panel/components/create-role-dialog";
 import { CreateDirectReportDialog } from "../detail-panel/components/create-direct-report-dialog";
-import { type TreeNodeProps } from "./types";
 import { toast } from "sonner";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import type {
+  TreeNodeWithChildren,
+  BusinessUnitNode,
+  RegionNode,
+  SiteNode,
+  AssetGroupNode,
+  WorkGroupNode,
+  RoleNode,
+  CompanyTreeNodeType,
+  AnyTreeNode,
+} from "@/types/api/companies";
+
+interface TreeNodeProps {
+  item: AnyTreeNode;
+  type: CompanyTreeNodeType;
+  expandedNodes: Set<string>;
+  onToggleExpanded: (nodeId: string) => void;
+  onBulkToggleExpanded?: (nodeIds: string[], expand: boolean) => void;
+  onSelectItem: (item: AnyTreeNode | null) => void;
+  selectedItem?: AnyTreeNode | null;
+  level?: number;
+  parentPath?: string;
+}
 
 const TreeNode: React.FC<TreeNodeProps> = ({
   item,
@@ -80,27 +102,45 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
   // Helper: Get all children for current item
   const getChildren = () => {
+    const itemWithChildren = item as TreeNodeWithChildren;
     return [
-      ...(item.business_units || []).map((child) => ({
+      ...((itemWithChildren.business_units || []) as BusinessUnitNode[]).map(
+        (child) => ({
+          ...child,
+          type: "business_unit" as const,
+        })
+      ),
+      ...((itemWithChildren.regions || []) as RegionNode[]).map((child) => ({
         ...child,
-        type: "business_unit",
+        type: "region" as const,
       })),
-      ...(item.regions || []).map((child) => ({ ...child, type: "region" })),
-      ...(item.sites || []).map((child) => ({ ...child, type: "site" })),
-      ...(item.asset_groups || []).map((child) => ({
+      ...((itemWithChildren.sites || []) as SiteNode[]).map((child) => ({
         ...child,
-        type: "asset_group",
+        type: "site" as const,
       })),
-      ...(item.work_groups || []).map((child) => ({
+      ...((itemWithChildren.asset_groups || []) as AssetGroupNode[]).map(
+        (child) => ({
+          ...child,
+          type: "asset_group" as const,
+        })
+      ),
+      ...((itemWithChildren.work_groups || []) as WorkGroupNode[]).map(
+        (child) => ({
+          ...child,
+          type: "work_group" as const,
+        })
+      ),
+      ...((itemWithChildren.roles || []) as RoleNode[]).map((child) => ({
         ...child,
-        type: "work_group",
+        type: "role" as const,
       })),
-      ...(item.roles || []).map((child) => ({ ...child, type: "role" })),
       // For role nodes, include reporting roles as children
-      ...(item.reporting_roles || []).map((child) => ({
-        ...child,
-        type: "role",
-      })),
+      ...((itemWithChildren.reporting_roles || []) as RoleNode[]).map(
+        (child) => ({
+          ...child,
+          type: "role" as const,
+        })
+      ),
     ];
   };
 
@@ -109,8 +149,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
   // Helper: Collect all descendant node IDs recursively
   const collectAllDescendants = (
-    currentItem: any,
-    currentType: string,
+    currentItem: TreeNodeWithChildren & { id: string | number; name: string },
+    _currentType: string,
     currentPath: string
   ): string[] => {
     const currentNodeId = `${currentPath}-${
@@ -120,39 +160,49 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
     // Get children and recurse
     const itemChildren = [
-      ...(currentItem.business_units || []).map((child) => ({
+      ...((currentItem.business_units || []) as BusinessUnitNode[]).map(
+        (child) => ({
+          ...child,
+          type: "business_unit" as const,
+        })
+      ),
+      ...((currentItem.regions || []) as RegionNode[]).map((child) => ({
         ...child,
-        type: "business_unit",
+        type: "region" as const,
       })),
-      ...(currentItem.regions || []).map((child) => ({
+      ...((currentItem.sites || []) as SiteNode[]).map((child) => ({
         ...child,
-        type: "region",
+        type: "site" as const,
       })),
-      ...(currentItem.sites || []).map((child) => ({
+      ...((currentItem.asset_groups || []) as AssetGroupNode[]).map(
+        (child) => ({
+          ...child,
+          type: "asset_group" as const,
+        })
+      ),
+      ...((currentItem.work_groups || []) as WorkGroupNode[]).map((child) => ({
         ...child,
-        type: "site",
+        type: "work_group" as const,
       })),
-      ...(currentItem.asset_groups || []).map((child) => ({
+      ...((currentItem.roles || []) as RoleNode[]).map((child) => ({
         ...child,
-        type: "asset_group",
-      })),
-      ...(currentItem.work_groups || []).map((child) => ({
-        ...child,
-        type: "work_group",
-      })),
-      ...(currentItem.roles || []).map((child) => ({
-        ...child,
-        type: "role",
+        type: "role" as const,
       })),
       // For role nodes, include reporting roles as children
-      ...(currentItem.reporting_roles || []).map((child) => ({
+      ...((currentItem.reporting_roles || []) as RoleNode[]).map((child) => ({
         ...child,
-        type: "role",
+        type: "role" as const,
       })),
     ];
 
     itemChildren.forEach((child) => {
-      nodeIds.push(...collectAllDescendants(child, child.type, currentNodeId));
+      nodeIds.push(
+        ...collectAllDescendants(
+          child as TreeNodeWithChildren & { id: string | number; name: string },
+          child.type,
+          currentNodeId
+        )
+      );
     });
 
     return nodeIds;
@@ -160,14 +210,15 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
   // Helper: Get badge count
   const getBadgeCount = () => {
+    const itemWithChildren = item as TreeNodeWithChildren;
     const counts = {
-      company: item.business_units?.length,
-      business_unit: item.regions?.length,
-      region: item.sites?.length,
-      site: item.asset_groups?.length,
-      asset_group: item.work_groups?.length,
-      work_group: item.roles?.length,
-      role: item.reporting_roles?.length,
+      company: itemWithChildren.business_units?.length,
+      business_unit: itemWithChildren.regions?.length,
+      region: itemWithChildren.sites?.length,
+      site: itemWithChildren.asset_groups?.length,
+      asset_group: itemWithChildren.work_groups?.length,
+      work_group: itemWithChildren.roles?.length,
+      role: itemWithChildren.reporting_roles?.length,
     };
     return counts[type] || null;
   };
@@ -299,9 +350,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       formData.append("name", `New ${actionLabel.replace("Add ", "")}`);
 
       await createTreeNode({
-        parentType: type, // parent type
-        parentId: parseInt(item.id), // parent id
-        nodeType: actionType, // new node type
+        parentId:
+          typeof item.id === "number" ? item.id : parseInt(item.id.toString()), // parent id
+        nodeType: actionType as CompanyTreeNodeType, // new node type
         formData,
         companyId: companyId!,
       });
@@ -408,9 +459,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                     {badgeCount}
                   </Badge>
                 )}
-                {type === "role" && item.level && (
+                {type === "role" && (item as RoleNode).level && (
                   <Badge variant="outline" className="text-xs capitalize">
-                    {item.level}
+                    {(item as RoleNode).level}
                   </Badge>
                 )}
               </div>
@@ -470,7 +521,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         <CreateRoleDialog
           open={roleDialogOpen}
           onOpenChange={setRoleDialogOpen}
-          parentWorkGroup={item}
+          parentWorkGroup={item as WorkGroupNode}
           onSuccess={handleRoleCreated}
         />
       )}
@@ -480,7 +531,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         <CreateDirectReportDialog
           open={directReportDialogOpen}
           onOpenChange={setDirectReportDialogOpen}
-          parentRole={item}
+          parentRole={item as RoleNode}
           onSuccess={handleDirectReportCreated}
         />
       )}

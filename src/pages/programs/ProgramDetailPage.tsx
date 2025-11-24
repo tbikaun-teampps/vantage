@@ -113,7 +113,7 @@ export function ProgramDetailPage() {
         ) : activeTab === "manage" ? (
           <ManageTab program={program} />
         ) : activeTab === "schedule" ? (
-          <ScheduleTab programId={program.id} />
+          <ScheduleTab />
         ) : null}
       </div>
     </DashboardPage>

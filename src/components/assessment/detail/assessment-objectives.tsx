@@ -6,10 +6,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { IconTarget } from "@tabler/icons-react";
-import type { AssessmentObjective } from "@/types/assessment";
+import type { AssessmentObjectives } from "@/types/api/assessments";
 
 interface AssessmentObjectivesProps {
-  objectives: AssessmentObjective[];
+  objectives: AssessmentObjectives;
 }
 
 export function AssessmentObjectives({

@@ -3,8 +3,8 @@ import { routes } from "./routes";
 import { companyRoutes } from "./routes";
 import { useAuthStore } from "@/stores/auth-store";
 import { usePermissions } from "@/hooks/usePermissions";
-import type { UserCompany } from "@/types/auth";
 import { LoadingSpinner } from "@/components/loader";
+import type { UserCompanies } from "@/types/api/auth";
 
 /**
  * Route permission configuration
@@ -13,7 +13,7 @@ import { LoadingSpinner } from "@/components/loader";
 interface RoutePermission {
   path: string;
   requiredFeature: string;
-  getRedirectPath: (companies: UserCompany[]) => string;
+  getRedirectPath: (companies: UserCompanies) => string;
 }
 
 const ROUTE_PERMISSIONS: RoutePermission[] = [

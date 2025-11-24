@@ -9,12 +9,15 @@ import {
   PresiteInterviewsLineChart,
   OnsiteInterviewsLineChart,
 } from "@/components/programs/detail/analytics/interviews-line-chart";
-import type { ProgramDetailResponseData } from "@/types/api/programs";
+import type {
+  GetProgramByIdResponseData,
+  UpdateProgramBodyData,
+} from "@/types/api/programs";
 import { useProgramMeasurements } from "@/hooks/useProgram";
 import { IconChartBar } from "@tabler/icons-react";
 
 interface DetailsTabProps {
-  program: ProgramDetailResponseData;
+  program: GetProgramByIdResponseData;
 }
 
 export function DetailsTab({ program }: DetailsTabProps) {
@@ -26,11 +29,7 @@ export function DetailsTab({ program }: DetailsTabProps) {
   // Fetch program measurements to check if any are actually assigned
   const { data: programMeasurements } = useProgramMeasurements(program?.id);
 
-  const handleProgramUpdate = async (updateData: {
-    name?: string;
-    description?: string;
-    status?: string;
-  }) => {
+  const handleProgramUpdate = async (updateData: UpdateProgramBodyData) => {
     if (program) {
       await updateProgramMutation.mutateAsync({
         programId: program.id,

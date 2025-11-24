@@ -44,9 +44,12 @@ import {
   useUserSharedRoles,
   useSharedRoleActions,
 } from "@/hooks/useSharedRoles";
-import type { SharedRole, CreateSharedRoleData } from "@/types/assessment";
 import { toast } from "sonner";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import type {
+  CreateSharedRoleBodyData,
+  CreateSharedRoleResponseData,
+} from "@/types/api/shared";
 
 // Convert SharedRole to RoleOption format for consistency
 interface RoleOption {
@@ -57,7 +60,7 @@ interface RoleOption {
 }
 
 const convertSharedRoleToOption = (
-  role: SharedRole,
+  role: CreateSharedRoleResponseData,
   isUserRole = false
 ): RoleOption => ({
   id: role.id.toString(),
@@ -108,10 +111,10 @@ function CreateRoleDialog({
     if (!formData.title.trim()) return;
 
     try {
-      const roleData: CreateSharedRoleData = {
+      const roleData: CreateSharedRoleBodyData = {
         name: formData.title,
         description: formData.description || undefined,
-        company_id: companyId!, // Assume companyId is always available here
+        companyId: companyId!, // Assume companyId is always available here
       };
 
       const newRole = await createRole(roleData);
@@ -323,7 +326,6 @@ export function RoleSelector<TFieldValues extends FieldValues>({
   const [editingRole, setEditingRole] = useState<RoleOption | null>(null);
   const [searchValue, setSearchValue] = useState("");
 
-  // Get roles using React Query hooks
   const { data: sharedRoles = [], isLoading: isLoadingAll } =
     useAllSharedRoles();
   const { data: userRoles = [] } = useUserSharedRoles();
@@ -351,14 +353,14 @@ export function RoleSelector<TFieldValues extends FieldValues>({
     );
   }, [allRoles, searchValue]);
 
-  const handleRoleCreated = (newRole: RoleOption) => {
+  const handleRoleCreated = () => {
     // The store will automatically update the allRoles when a new role is created
     // No need to manually update local state
     // When a new role is created, it's a custom role (not associated with shared role)
     onSharedRoleSelected?.(null);
   };
 
-  const handleRoleUpdated = (updatedRole: RoleOption) => {
+  const handleRoleUpdated = () => {
     // The store will automatically update the allRoles when a role is updated
     // No need to manually update local state
   };
@@ -385,6 +387,10 @@ export function RoleSelector<TFieldValues extends FieldValues>({
       }
     }
   };
+
+  if (isLoadingAll) {
+    return <div>Loading roles...</div>;
+  }
 
   return (
     <div className={cn("space-y-2", className)}>

@@ -8,17 +8,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type {
-  TableConfig,
+  TableWidgetConfig as TableWidgetConfigType,
   WidgetConfig,
   ScopeConfig,
-} from "@/hooks/useDashboardLayouts";
+} from "@/types/api/dashboard";
 import { useWidgetConfigOptions } from "@/hooks/useWidgetConfigOptions";
 import { Loader2 } from "lucide-react";
 
 type TableEntityType = "actions" | "recommendations" | "comments";
 
 interface TableWidgetConfigProps {
-  config?: TableConfig;
+  config?: TableWidgetConfigType;
   currentScope?: ScopeConfig;
   onConfigChange: (config: WidgetConfig) => void;
 }
@@ -157,14 +157,16 @@ export const TableWidgetConfig: React.FC<TableWidgetConfigProps> = ({
       {/* Scope Selection */}
       {isLoading ? (
         <div className="flex justify-center py-4">
-          <Loader2 className='animate-spin'/>
+          <Loader2 className="animate-spin" />
         </div>
       ) : (
         <>
           {(selectedEntityType === "actions" ||
             selectedEntityType === "comments") && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Filter by Assessment</Label>
+              <Label className="text-sm font-medium">
+                Filter by Assessment
+              </Label>
               <Select
                 value={
                   selectedAssessmentId === "all"
@@ -179,7 +181,10 @@ export const TableWidgetConfig: React.FC<TableWidgetConfigProps> = ({
                 <SelectContent>
                   <SelectItem value="all">All Assessments</SelectItem>
                   {configOptions?.assessments.map((assessment) => (
-                    <SelectItem key={assessment.id} value={String(assessment.id)}>
+                    <SelectItem
+                      key={assessment.id}
+                      value={String(assessment.id)}
+                    >
                       {assessment.name}
                     </SelectItem>
                   ))}
@@ -193,7 +198,9 @@ export const TableWidgetConfig: React.FC<TableWidgetConfigProps> = ({
               <Label className="text-sm font-medium">Filter by Program</Label>
               <Select
                 value={
-                  selectedProgramId === "all" ? "all" : String(selectedProgramId)
+                  selectedProgramId === "all"
+                    ? "all"
+                    : String(selectedProgramId)
                 }
                 onValueChange={handleProgramChange}
               >

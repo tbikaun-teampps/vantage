@@ -53,5 +53,3 @@ tourManager.registerTour({
     console.log("Account settings tour completed");
   },
 });
-
-export { accountSteps };

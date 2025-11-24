@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getCompanyInterviewResponseActions } from "@/lib/api/companies";
+import type { GetCompanyInterviewResponseActionsResponseData } from "@/types/api/companies";
 
 // Query key factory for cache management
 const actionsKeys = {
@@ -12,7 +13,8 @@ const actionsKeys = {
 export function useActions(companyId: string) {
   return useQuery({
     queryKey: actionsKeys.list(companyId),
-    queryFn: () => getCompanyInterviewResponseActions(companyId),
+    queryFn: (): Promise<GetCompanyInterviewResponseActionsResponseData> =>
+      getCompanyInterviewResponseActions(companyId),
     staleTime: 2 * 60 * 1000, // 2 minutes - moderate changes during action management
     enabled: !!companyId,
   });

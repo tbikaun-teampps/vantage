@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getAuditLogs } from "@/lib/api/auditlogs";
 
 // Query key factory for audit logs cache management
-export const auditLogsKeys = {
+const auditLogsKeys = {
   all: ["auditLogs"] as const,
   list: (companyId: string) => [...auditLogsKeys.all, companyId] as const,
 };

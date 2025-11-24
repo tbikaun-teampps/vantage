@@ -31,7 +31,6 @@ import type {
   NavSectionProps,
 } from "@/types/sidebar";
 import CompanySelector from "@/components/company-selector";
-import { NavData } from "./nav-data";
 import showDisabledToast from "@/components/disabled-toast";
 import { getVersionInfo } from "@/lib/version";
 import { useCurrentCompany } from "@/components/CompanyRoute";

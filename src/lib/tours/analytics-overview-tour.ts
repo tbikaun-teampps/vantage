@@ -134,5 +134,3 @@ tourManager.registerTour({
     console.log("Analytics overview tour completed");
   }
 });
-
-export { analyticsSteps };

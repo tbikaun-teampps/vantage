@@ -9,20 +9,7 @@ import { useSearchParams } from "react-router-dom";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { getOverallHeatmapFilters } from "@/lib/api/analytics";
-
-interface AnalyticsFilters {
-  assessments: { id: number; name: string; questionnaireId?: number }[];
-  questionnaires?: { id: number; name: string; assessmentIds: number[] }[];
-  measurements?: {
-    id: number;
-    name: string;
-    description: string;
-    unit: string;
-  }[];
-  axes: { value: string; category: string; order: number }[];
-  metrics?: string[];
-  aggregationMethods?: string[];
-}
+import type { GetOverallHeatmapFiltersResponseData } from "@/types/api/analytics";
 
 type ViewType = "metrics" | "geography";
 
@@ -31,7 +18,7 @@ interface AnalyticsContextValue {
   setAssessmentType: (type: "onsite" | "desktop") => void;
   activeView: ViewType;
   setActiveView: (view: ViewType) => void;
-  filters: AnalyticsFilters | null;
+  filters: GetOverallHeatmapFiltersResponseData["options"] | null;
   isLoadingFilters: boolean;
   filterError: string | null;
   companyId: string;
@@ -58,7 +45,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     viewParam === "geography" ? "geography" : "metrics"
   );
 
-  const [filters, setFilters] = useState<AnalyticsFilters | null>(null);
+  const [filters, setFilters] = useState<GetOverallHeatmapFiltersResponseData["options"] | null>(null);
   const [isLoadingFilters, setIsLoadingFilters] = useState(false);
   const [filterError, setFilterError] = useState<string | null>(null);
 
@@ -116,32 +103,8 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
           assessmentType
         );
 
-        if (!response) {
-          setFilters(null);
-          return;
-        }
-
-        // Transform the response to match our interface
-        const transformedFilters: AnalyticsFilters = {
-          assessments: (response as any).assessments || [],
-          axes: (response as any).axes || [],
-        };
-
-        // Add type-specific fields
-        if (assessmentType === "onsite") {
-          transformedFilters.questionnaires =
-            (response as any).questionnaires || [];
-          transformedFilters.metrics = (response as any).metrics || [];
-        } else if (assessmentType === "desktop") {
-          transformedFilters.measurements =
-            (response as any).measurements || [];
-          transformedFilters.aggregationMethods =
-            (response as any).aggregationMethods || [];
-        }
-
-        console.log("transformed filters: ", transformedFilters);
-
-        setFilters(transformedFilters);
+        // Set the API response directly - no transformation needed
+        setFilters(response.options || null);
       } catch (err) {
         console.error("Failed to fetch analytics filters:", err);
         setFilterError(
@@ -180,4 +143,32 @@ export function useAnalytics() {
     throw new Error("useAnalytics must be used within an AnalyticsProvider");
   }
   return context;
+}
+
+export function useOnsiteAnalytics() {
+  const context = useAnalytics();
+  if (context.assessmentType !== "onsite") {
+    console.warn("useOnsiteAnalytics used with non-onsite assessment type");
+  }
+  return {
+    ...context,
+    filters: context.filters as Extract<
+      typeof context.filters,
+      { questionnaires?: unknown }
+    >,
+  };
+}
+
+export function useDesktopAnalytics() {
+  const context = useAnalytics();
+  if (context.assessmentType !== "desktop") {
+    console.warn("useDesktopAnalytics used with non-desktop assessment type");
+  }
+  return {
+    ...context,
+    filters: context.filters as Extract<
+      typeof context.filters,
+      { measurements?: unknown }
+    >,
+  };
 }

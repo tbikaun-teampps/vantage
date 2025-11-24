@@ -31,6 +31,10 @@ export function ExternalInterviewLayout({
     navigate("/");
   };
 
+  if (!interviewData) {
+    return null;  //TODO: review if this should be a loading component
+  }
+
   return (
     <>
       <div className="min-h-screen flex flex-col">

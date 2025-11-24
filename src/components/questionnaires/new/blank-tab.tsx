@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { QuestionnaireStatusEnum } from "@/types/assessment";
+import type { QuestionnaireStatusEnum } from "@/types/api/questionnaire";
 import { IconDeviceFloppy, IconLoader, IconPlus } from "@tabler/icons-react";
 
 interface NewQuestionnaireBlankTabProps {

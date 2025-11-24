@@ -5,19 +5,24 @@ import { Badge } from "@/components/ui/badge";
 import { IconPencil } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { QuestionRatingScaleDialog } from "@/components/questionnaires/detail/questions/question-editor/question-rating-scale-dialog";
-import type {
-  QuestionWithRatingScales,
-  QuestionRatingScaleWithDetails,
-  QuestionnaireRatingScale,
-} from "@/types/assessment";
 import { useQuestionActions } from "@/hooks/questionnaire/useQuestions";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import type {
+  QuestionnaireQuestions,
+  QuestionnaireRatingScales,
+  QuestionRatingScale,
+} from "@/types/api/questionnaire";
 
 interface InlineRatingScalesEditorProps {
-  question: QuestionWithRatingScales;
-  availableRatingScales?: QuestionnaireRatingScale[];
+  question: QuestionnaireQuestions[number];
+  availableRatingScales?: QuestionnaireRatingScales;
   disabled?: boolean;
   questionnaireId?: number; // Needed for bulk adding all rating scales
+}
+
+export interface RatingFormData {
+  ratingScaleId: string;
+  description: string | null;
 }
 
 export function InlineRatingScalesEditor({
@@ -43,8 +48,8 @@ export function InlineRatingScalesEditor({
     isAddingAllRatingScales;
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [editingRating, setEditingRating] =
-    useState<QuestionRatingScaleWithDetails | null>(null);
-  const [ratingFormData, setRatingFormData] = useState({
+    useState<QuestionRatingScale | null>(null);
+  const [ratingFormData, setRatingFormData] = useState<RatingFormData>({
     ratingScaleId: "",
     description: "",
   });
@@ -57,11 +62,9 @@ export function InlineRatingScalesEditor({
     (rs) => !assignedRatingScaleIds.includes(rs.id)
   );
 
-  const handleEditRatingScale = (
-    ratingScale: QuestionRatingScaleWithDetails
-  ) => {
+  const handleEditRatingScale = (ratingScale: QuestionRatingScale) => {
     setRatingFormData({
-      ratingScaleId: ratingScale.questionnaire_rating_scale_id.toString(),
+      ratingScaleId: ratingScale.id.toString(),
       description: ratingScale.description,
     });
     setEditingRating(ratingScale);
@@ -69,7 +72,7 @@ export function InlineRatingScalesEditor({
   };
 
   const handleSaveRatingScale = async () => {
-    if (!ratingFormData.ratingScaleId || !ratingFormData.description.trim())
+    if (!ratingFormData.ratingScaleId || !ratingFormData.description?.trim())
       return;
 
     try {
@@ -78,7 +81,9 @@ export function InlineRatingScalesEditor({
         await updateQuestionRatingScale({
           questionId: question.id,
           questionRatingScaleId: editingRating.id,
-          description: ratingFormData.description.trim(),
+          data: {
+            description: ratingFormData.description.trim(),
+          },
         });
       } else {
         // Add new association

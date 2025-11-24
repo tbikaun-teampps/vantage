@@ -8,18 +8,15 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { IconExternalLink, IconForms } from "@tabler/icons-react";
-import type {
-  AssessmentWithQuestionnaire,
-  DesktopAssessment,
-} from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { InlineFieldEditor } from "@/components/ui/inline-field-editor";
 import { InlineSelectEditor } from "@/components/ui/inline-select-editor";
 import type { SelectOption } from "@/components/ui/inline-select-editor";
 import { getStatusIcon } from "@/components/assessment/detail/status-utils";
+import type { GetAssessmentByIdResponseData } from "@/types/api/assessments";
 
 interface AssessmentDetailsProps {
-  assessment: AssessmentWithQuestionnaire | DesktopAssessment;
+  assessment: GetAssessmentByIdResponseData;
   onStatusChange: (status: string) => Promise<void>;
   onNameChange: (name: string) => Promise<void>;
   onDescriptionChange: (description: string) => Promise<void>;

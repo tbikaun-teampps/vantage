@@ -32,6 +32,7 @@ import {
   getOverallGeographicalMapFilters,
   getOverallOnsiteGeographicalMap,
 } from "@/lib/api/analytics";
+import type { OnsiteGeographicalMapFiltersData } from "@/types/api/analytics";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { LoadingSpinner } from "@/components/loader";
 import { useAnalytics } from "@/contexts/AnalyticsContext";
@@ -39,8 +40,8 @@ import { useAnalytics } from "@/contexts/AnalyticsContext";
 // Define the location/site data structure
 interface LocationData {
   name: string;
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
   score: number;
   interviews: number;
   completionRate: number;
@@ -109,7 +110,7 @@ const adjustColorBrightness = (hex: string, factor: number): string => {
 
 const getGroupColor = (
   location: LocationData,
-  groupBy: string,
+  _groupBy: string,
   colourBy: string,
   allData: LocationData[]
 ): string => {
@@ -211,7 +212,7 @@ const LeafletMap = ({
       {data.map((location, index) => (
         <CircleMarker
           key={`${location.name}-${index}`}
-          center={[location.lat, location.lng]}
+          center={[location.lat ?? 0, location.lng ?? 0]}
           radius={getCircleRadius(location, dataType)}
           pathOptions={{
             color: getGroupColor(location, groupBy, colourBy, data),
@@ -365,8 +366,6 @@ const FilterPanel = ({
   filtersLoading,
   dataType,
   setDataType,
-  groupBy,
-  setGroupBy,
   colourBy,
   setColourBy,
   showNoDataSites,
@@ -386,8 +385,6 @@ const FilterPanel = ({
   filtersLoading: boolean;
   dataType: string;
   setDataType: (value: string) => void;
-  groupBy: string;
-  setGroupBy: (value: string) => void;
   colourBy: string;
   setColourBy: (value: string) => void;
   showNoDataSites: boolean;
@@ -395,7 +392,7 @@ const FilterPanel = ({
   showLabels: boolean;
   setShowLabels: (value: boolean) => void;
   mapData: LocationData[];
-  mapContainerRef: React.RefObject<HTMLDivElement>;
+  mapContainerRef: React.RefObject<HTMLDivElement | null>;
   isFullscreen: boolean;
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -695,7 +692,6 @@ export function OnsiteMap() {
   const { assessmentType } = useAnalytics();
   const companyId = useCompanyFromUrl();
   const [dataType, setDataType] = useState<string>("Average Score");
-  const [groupBy, setGroupBy] = useState<string>("Site");
   const [colourBy, setColourBy] = useState<string>("Region");
   const [showNoDataSites, setShowNoDataSites] = useState<boolean>(false);
   const [showLabels, setShowLabels] = useState<boolean>(true);
@@ -705,10 +701,7 @@ export function OnsiteMap() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const [data, setData] = useState<LocationData[] | null>(null);
-  const [filters, setFilters] = useState<{
-    questionnaires: { id: number; name: string; assessmentIds: number[] }[];
-    assessments: { id: number; name: string; questionnaireId: number | null }[];
-  }>({ questionnaires: [], assessments: [] });
+  const [filters, setFilters] = useState<OnsiteGeographicalMapFiltersData["options"]>({ questionnaires: [], assessments: [] });
   const [selectedQuestionnaireId, setSelectedQuestionnaireId] =
     useState<string>("");
   const [selectedAssessmentId, setSelectedAssessmentId] =
@@ -718,7 +711,9 @@ export function OnsiteMap() {
   // Compute filtered map data based on showNoDataSites
   const filteredMapData = useMemo(() => {
     if (!data) return [];
-    return showNoDataSites ? data : data.filter((site) => site.interviews > 0);
+    // Filter out locations without valid coordinates and optionally filter by interviews
+    const validLocations = data.filter((site) => site.lat !== null && site.lng !== null);
+    return showNoDataSites ? validLocations : validLocations.filter((site) => site.interviews > 0);
   }, [data, showNoDataSites]);
 
   useEffect(() => {
@@ -730,10 +725,13 @@ export function OnsiteMap() {
           companyId,
           assessmentType
         );
-        setFilters(data.options);
-        // Initialize with first questionnaire if available
-        if (data?.options?.questionnaires && data.options.questionnaires.length > 0) {
-          setSelectedQuestionnaireId(data.options.questionnaires[0].id.toString());
+        // Type guard to ensure we have onsite filters (with questionnaires)
+        if ("questionnaires" in data.options) {
+          setFilters(data.options);
+          // Initialize with first questionnaire if available
+          if (data.options.questionnaires.length > 0) {
+            setSelectedQuestionnaireId(data.options.questionnaires[0].id.toString());
+          }
         }
       } catch (err) {
         console.error("Error fetching filters:", err);
@@ -851,7 +849,7 @@ export function OnsiteMap() {
           <LeafletMap
             data={filteredMapData}
             dataType={dataType}
-            groupBy={groupBy}
+            groupBy=""
             colourBy={colourBy}
             showLabels={showLabels}
           />
@@ -872,8 +870,6 @@ export function OnsiteMap() {
             filtersLoading={filtersLoading}
             dataType={dataType}
             setDataType={setDataType}
-            groupBy={groupBy}
-            setGroupBy={setGroupBy}
             colourBy={colourBy}
             setColourBy={setColourBy}
             showNoDataSites={showNoDataSites}

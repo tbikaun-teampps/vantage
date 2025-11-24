@@ -349,7 +349,7 @@ export type Database = {
           action: string;
           changed_fields: string[] | null;
           company_id: string | null;
-          created_at: string | null;
+          created_at: string;
           id: number;
           is_soft_delete: boolean | null;
           metadata: Json | null;
@@ -368,7 +368,7 @@ export type Database = {
           action: string;
           changed_fields?: string[] | null;
           company_id?: string | null;
-          created_at?: string | null;
+          created_at?: string;
           id?: number;
           is_soft_delete?: boolean | null;
           metadata?: Json | null;
@@ -387,7 +387,7 @@ export type Database = {
           action?: string;
           changed_fields?: string[] | null;
           company_id?: string | null;
-          created_at?: string | null;
+          created_at?: string;
           id?: number;
           is_soft_delete?: boolean | null;
           metadata?: Json | null;
@@ -1591,7 +1591,7 @@ export type Database = {
           region_id: number | null;
           role_id: number | null;
           site_id: number | null;
-          updated_at: string | null;
+          updated_at: string;
           work_group_id: number | null;
         };
         Insert: {
@@ -1612,7 +1612,7 @@ export type Database = {
           region_id?: number | null;
           role_id?: number | null;
           site_id?: number | null;
-          updated_at?: string | null;
+          updated_at?: string;
           work_group_id?: number | null;
         };
         Update: {
@@ -1633,7 +1633,7 @@ export type Database = {
           region_id?: number | null;
           role_id?: number | null;
           site_id?: number | null;
-          updated_at?: string | null;
+          updated_at?: string;
           work_group_id?: number | null;
         };
         Relationships: [

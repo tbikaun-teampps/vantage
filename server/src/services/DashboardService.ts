@@ -1,21 +1,20 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import { Database } from "../types/database";
+import {
+  DashboardSchema,
+  CreateDashboardBodySchema,
+  UpdateDashboardBodySchema,
+} from "../schemas/dashboard";
 
 type DashboardRow = Database["public"]["Tables"]["dashboards"]["Row"];
 type DashboardInsert = Database["public"]["Tables"]["dashboards"]["Insert"];
 type DashboardUpdate = Database["public"]["Tables"]["dashboards"]["Update"];
 
-export interface CreateDashboardInput {
-  name: string;
-  widgets: any[]; // JSON structure for widget configurations
-  layout: any[]; // JSON structure for react-grid-layout
-}
-
-export interface UpdateDashboardInput {
-  name?: string;
-  widgets?: any[];
-  layout?: any[];
-}
+// Infer types from Zod schemas instead of using 'any'
+export type CreateDashboardInput = z.infer<typeof CreateDashboardBodySchema>;
+export type UpdateDashboardInput = z.infer<typeof UpdateDashboardBodySchema>;
+export type Dashboard = z.infer<typeof DashboardSchema>;
 
 export class DashboardService {
   private supabase: SupabaseClient<Database>;
@@ -26,20 +25,28 @@ export class DashboardService {
     this.userId = userId;
   }
 
-  async getDashboards(companyId: string): Promise<DashboardRow[]> {
+  /**
+   * Parse and validate a DashboardRow from the database into a typed Dashboard object
+   * This ensures the Json fields (widgets, layout) are properly typed arrays
+   */
+  private parseDashboard(row: Partial<DashboardRow>): Dashboard {
+    return DashboardSchema.parse(row);
+  }
+
+  async getDashboards(companyId: string): Promise<Dashboard[]> {
     const { data, error } = await this.supabase
       .from("dashboards")
-      .select("*")
+      .select("id,name,created_at,updated_at,widgets,layout")
       .eq("company_id", companyId)
       .eq("is_deleted", false)
       .order("created_at", { ascending: true });
 
     if (error) throw error;
 
-    return data || [];
+    return (data || []).map((row) => this.parseDashboard(row));
   }
 
-  async getDashboardById(dashboardId: number): Promise<DashboardRow | null> {
+  async getDashboardById(dashboardId: number): Promise<Dashboard | null> {
     const { data, error } = await this.supabase
       .from("dashboards")
       .select("*")
@@ -49,18 +56,18 @@ export class DashboardService {
 
     if (error) throw error;
 
-    return data;
+    return data ? this.parseDashboard(data) : null;
   }
 
   async createDashboard(
     companyId: string,
     input: CreateDashboardInput
-  ): Promise<DashboardRow> {
+  ): Promise<Dashboard> {
     const dashboardData: DashboardInsert = {
       name: input.name,
       company_id: companyId,
-      layout: input.layout as any,
-      widgets: input.widgets as any,
+      layout: input.layout,
+      widgets: input.widgets,
       created_by: this.userId,
     };
 
@@ -72,21 +79,20 @@ export class DashboardService {
 
     if (error) throw error;
 
-    return data;
+    return this.parseDashboard(data);
   }
 
   async updateDashboard(
     dashboardId: number,
     updates: UpdateDashboardInput
-  ): Promise<DashboardRow> {
+  ): Promise<Dashboard> {
     const updateData: DashboardUpdate = {
       updated_at: new Date().toISOString(),
     };
 
     if (updates.name !== undefined) updateData.name = updates.name;
-    if (updates.layout !== undefined) updateData.layout = updates.layout as any;
-    if (updates.widgets !== undefined)
-      updateData.widgets = updates.widgets as any;
+    if (updates.layout !== undefined) updateData.layout = updates.layout;
+    if (updates.widgets !== undefined) updateData.widgets = updates.widgets;
 
     const { data, error } = await this.supabase
       .from("dashboards")
@@ -97,7 +103,7 @@ export class DashboardService {
 
     if (error) throw error;
 
-    return data;
+    return this.parseDashboard(data);
   }
 
   async deleteDashboard(dashboardId: number): Promise<void> {

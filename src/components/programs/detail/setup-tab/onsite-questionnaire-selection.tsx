@@ -28,10 +28,10 @@ import { useQuestionnaires } from "@/hooks/useAssessments";
 import { Link } from "react-router-dom";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
-import type { ProgramDetailResponseData } from "@/types/api/programs";
+import type { GetProgramByIdResponseData } from "@/types/api/programs";
 
 interface ProgramQuestionnaireSelectionProps {
-  program: ProgramDetailResponseData;
+  program: GetProgramByIdResponseData;
   onOnsiteQuestionnaireUpdate: (questionnaireId: number | null) => void;
   isUpdating?: boolean;
 }

@@ -12,12 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAssessmentMeasurementActions } from "@/hooks/use-assessment-measurements";
-import type { EnrichedMeasurementInstance } from "@/types/assessment-measurements";
+import type { GetAssessmentMeasurementsResponseData } from "@/types/api/assessments";
 
 interface EditMeasurementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  instance: EnrichedMeasurementInstance | null;
+  instance: GetAssessmentMeasurementsResponseData[number] | null;
   assessmentId: number;
   onSuccess?: () => void;
 }
@@ -76,13 +76,17 @@ export function EditMeasurementDialog({
 
   // Build location display string
   const locationParts: string[] = [];
-  if (instance.business_unit?.name) locationParts.push(instance.business_unit.name);
+  if (instance.business_unit?.name)
+    locationParts.push(instance.business_unit.name);
   if (instance.region?.name) locationParts.push(instance.region.name);
   if (instance.site?.name) locationParts.push(instance.site.name);
   if (instance.asset_group?.name) locationParts.push(instance.asset_group.name);
   if (instance.work_group?.name) locationParts.push(instance.work_group.name);
   if (instance.role?.name) locationParts.push(instance.role.name);
-  const locationDisplay = locationParts.length > 0 ? locationParts.join(" > ") : "No location specified";
+  const locationDisplay =
+    locationParts.length > 0
+      ? locationParts.join(" > ")
+      : "No location specified";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -122,7 +126,20 @@ export function EditMeasurementDialog({
               onChange={(e) => setValue(e.target.value)}
               disabled={isUpdating}
               placeholder="Enter measurement value"
+              min={instance.measurement_min_value ?? undefined}
+              max={instance.measurement_max_value ?? undefined}
             />
+            {(instance.measurement_min_value !== undefined ||
+              instance.measurement_max_value !== undefined) && (
+              <div className="text-xs text-muted-foreground">
+                {instance.measurement_min_value !== undefined &&
+                instance.measurement_max_value !== undefined
+                  ? `Valid range: ${instance.measurement_min_value} - ${instance.measurement_max_value}`
+                  : instance.measurement_min_value !== undefined
+                    ? `Minimum: ${instance.measurement_min_value}`
+                    : `Maximum: ${instance.measurement_max_value}`}
+              </div>
+            )}
           </div>
         </div>
 
@@ -134,10 +151,7 @@ export function EditMeasurementDialog({
           >
             Cancel
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isUpdating || !value}
-          >
+          <Button onClick={handleSave} disabled={isUpdating || !value}>
             {isUpdating ? "Saving..." : "Save"}
           </Button>
         </DialogFooter>

@@ -1,3 +1,4 @@
+import type { Dispatch, SetStateAction } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,17 +17,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type {
+  QuestionnaireRatingScales,
+  QuestionRatingScale,
+} from "@/types/api/questionnaire";
 import { IconCheck, IconX } from "@tabler/icons-react";
+import type { RatingFormData } from "./inline-rating-scales-editor";
 
 interface QuestionRatingScaleDialogProps {
   open: boolean;
-  handleClose: any;
-  isEditing: any;
-  data: any;
-  setData: any;
-  isProcessing: any;
-  unassignedRatingScales: any;
-  handleSaveRatingScale: any;
+  handleClose: () => void;
+  isEditing: QuestionRatingScale | null;
+  data: RatingFormData;
+  setData: Dispatch<SetStateAction<RatingFormData>>;
+  isProcessing: boolean;
+  unassignedRatingScales: QuestionnaireRatingScales;
+  handleSaveRatingScale: () => void;
 }
 
 export function QuestionRatingScaleDialog({
@@ -85,7 +91,10 @@ export function QuestionRatingScaleDialog({
                 ) : (
                   // When adding, show unassigned rating scales
                   unassignedRatingScales.map((ratingScale) => (
-                    <SelectItem key={ratingScale.id} value={ratingScale.id}>
+                    <SelectItem
+                      key={ratingScale.id}
+                      value={ratingScale.id.toString()}
+                    >
                       {ratingScale.value} - {ratingScale.name}
                     </SelectItem>
                   ))
@@ -98,7 +107,7 @@ export function QuestionRatingScaleDialog({
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={data.description}
+              value={data.description ?? ""}
               onChange={(e) =>
                 setData((prev) => ({
                   ...prev,
@@ -129,7 +138,7 @@ export function QuestionRatingScaleDialog({
                 onClick={handleSaveRatingScale}
                 disabled={
                   !data.ratingScaleId ||
-                  !data.description.trim() ||
+                  !data.description?.trim() ||
                   isProcessing
                 }
               >

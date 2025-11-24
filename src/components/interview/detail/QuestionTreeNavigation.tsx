@@ -184,7 +184,7 @@ export function QuestionTreeNavigation({
           selectedRoles.length === 0 ||
           (node.roles &&
             node.roles.some((role) =>
-              selectedRoles.includes(role.shared_role?.name)
+              role.shared_role?.name && selectedRoles.includes(role.shared_role.name)
             ));
 
         return matchesSearch && matchesRole ? node : null;
@@ -241,7 +241,9 @@ export function QuestionTreeNavigation({
   const availableRoles = useMemo(() => {
     const roleNames = new Set<string>();
     allQuestionnaireRoles.forEach((role) => {
-      roleNames.add(role.shared_role.name);
+      if (role.shared_role?.name) {
+        roleNames.add(role.shared_role.name);
+      }
     });
     return Array.from(roleNames).sort();
   }, [allQuestionnaireRoles]);

@@ -1,10 +1,81 @@
 import { FastifyInstance } from "fastify";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { ProgramService } from "../../services/ProgramService.js";
 import { InterviewsService } from "../../services/InterviewsService.js";
 import {
   ProgramPhaseStatus,
   ProgramStatus,
 } from "../../types/entities/programs.js";
+import {
+  GetProgramsQuerySchema,
+  GetProgramsResponseSchema,
+  CreateProgramBodySchema,
+  CreateProgramResponseSchema,
+  GetProgramByIdParamsSchema,
+  GetProgramByIdResponseSchema,
+  UpdateProgramParamsSchema,
+  UpdateProgramBodySchema,
+  UpdateProgramResponseSchema,
+} from "../../schemas/programs/index.js";
+import {
+  AddProgramPhaseParamsSchema,
+  AddProgramPhaseBodySchema,
+  AddProgramPhaseResponseSchema,
+  UpdateProgramPhaseParamsSchema,
+  UpdateProgramPhaseBodySchema,
+  UpdateProgramPhaseResponseSchema,
+  DeleteProgramPhaseParamsSchema,
+  DeleteProgramPhaseResponseSchema,
+} from "../../schemas/programs/phases.js";
+import {
+  GetObjectivesParamsSchema,
+  GetObjectivesResponseSchema,
+  CreateObjectiveParamsSchema,
+  CreateObjectiveBodySchema,
+  CreateObjectiveResponseSchema,
+  UpdateObjectiveParamsSchema,
+  UpdateObjectiveBodySchema,
+  UpdateObjectiveResponseSchema,
+  DeleteObjectiveParamsSchema,
+  DeleteObjectiveResponseSchema,
+  GetObjectiveCountParamsSchema,
+  GetObjectiveCountResponseSchema,
+} from "../../schemas/programs/objectives.js";
+import {
+  GetMeasurementsParamsSchema,
+  GetMeasurementsQuerySchema,
+  GetMeasurementsResponseSchema,
+  GetAllowedMeasurementDefinitionsParamsSchema,
+  GetAllowedMeasurementDefinitionsResponseSchema,
+  GetAvailableMeasurementsParamsSchema,
+  GetAvailableMeasurementsResponseSchema,
+  AddMeasurementDefinitionsParamsSchema,
+  AddMeasurementDefinitionsBodySchema,
+  AddMeasurementDefinitionsResponseSchema,
+  RemoveMeasurementDefinitionParamsSchema,
+  RemoveMeasurementDefinitionResponseSchema,
+  GetCalculatedMeasurementsParamsSchema,
+  GetCalculatedMeasurementsQuerySchema,
+  GetCalculatedMeasurementsResponseSchema,
+  GetCalculatedMeasurementParamsSchema,
+  GetCalculatedMeasurementQuerySchema,
+  GetCalculatedMeasurementResponseSchema,
+  CreateMeasurementDataParamsSchema,
+  CreateMeasurementDataBodySchema,
+  CreateMeasurementDataResponseSchema,
+  UpdateMeasurementDataParamsSchema,
+  UpdateMeasurementDataBodySchema,
+  UpdateMeasurementDataResponseSchema,
+  DeleteMeasurementDataParamsSchema,
+  DeleteMeasurementDataResponseSchema,
+} from "../../schemas/programs/measurements.js";
+import {
+  CreateInterviewsParamsSchema,
+  CreateInterviewsBodySchema,
+  CreateInterviewsResponseSchema,
+  CreateInterviewsError400Schema,
+} from "../../schemas/programs/interviews.js";
+import { Error401Schema, Error500Schema } from "../../schemas/errors.js";
 
 export async function programRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -14,74 +85,19 @@ export async function programRoutes(fastify: FastifyInstance) {
     }
   });
   // Method to get all programs
-  fastify.get(
-    "",
-    {
-      schema: {
-        querystring: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-          },
-          required: ["companyId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    id: { type: "number" },
-                    name: { type: "string" },
-                    description: { type: "string", nullable: true },
-                    status: { type: "string" },
-                    presite_questionnaire_id: {
-                      type: "number",
-                      nullable: true,
-                    },
-                    onsite_questionnaire_id: { type: "number", nullable: true },
-                    measurements_count: { type: "number", nullable: true },
-                    created_at: { type: "string", format: "date-time" },
-                    updated_at: { type: "string", format: "date-time" },
-                  },
-                  required: [
-                    "id",
-                    "name",
-                    "status",
-                    "presite_questionnaire_id",
-                    "onsite_questionnaire_id",
-                    "measurements_count",
-                    "created_at",
-                    "updated_at",
-                  ],
-                },
-              },
-            },
-            required: ["success", "data"],
-          },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "",
+    schema: {
+      querystring: GetProgramsQuerySchema,
+      response: {
+        200: GetProgramsResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId } = request.query as { companyId: string };
+    handler: async (request) => {
+      const { companyId } = request.query;
       const programService = new ProgramService(request.supabaseClient);
 
       const programs = await programService.getPrograms(companyId);
@@ -90,134 +106,52 @@ export async function programRoutes(fastify: FastifyInstance) {
         success: true,
         data: programs,
       };
-    }
-  );
+    },
+  });
 
   // Method for creating a program
-  fastify.post("", async (request) => {
-    const { name, description, company_id } = request.body as {
-      name: string;
-      description?: string;
-      company_id: string;
-    };
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "",
+    schema: {
+      body: CreateProgramBodySchema,
+      response: {
+        201: CreateProgramResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const { name, description, company_id } = request.body;
 
-    const programService = new ProgramService(request.supabaseClient);
-    const program = await programService.createProgram({
-      name,
-      description,
-      company_id,
-    });
+      const programService = new ProgramService(request.supabaseClient);
+      const program = await programService.createProgram({
+        name,
+        description,
+        company_id,
+      });
 
-    return {
-      success: true,
-      data: program,
-    };
+      return {
+        success: true,
+        data: program,
+      };
+    },
   });
 
   // Method for getting a program by ID
-  fastify.get(
-    "/:programId",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-          },
-          required: ["programId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  id: { type: "number" },
-                  name: { type: "string" },
-                  description: { type: "string", nullable: true },
-                  status: { type: "string" },
-                  presite_questionnaire_id: { type: "number", nullable: true },
-                  presite_questionnaire: {
-                    type: "object",
-                    properties: {
-                      id: { type: "number" },
-                      name: { type: "string" },
-                    },
-                    is_nullable: true,
-                  },
-                  onsite_questionnaire_id: { type: "number", nullable: true },
-                  onsite_questionnaire: {
-                    type: "object",
-                    properties: {
-                      id: { type: "number" },
-                      name: { type: "string" },
-                    },
-                    is_nullable: true,
-                  },
-                  measurements_count: { type: "number", nullable: true },
-                  created_at: { type: "string", format: "date-time" },
-                  updated_at: { type: "string", format: "date-time" },
-                  phases: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        id: { type: "number" },
-                        name: { type: "string" },
-                        status: { type: "string" },
-                        sequence_number: { type: "number" },
-                        notes: { type: "string", nullable: true },
-                        program_id: { type: "number" },
-                        planned_start_date: {
-                          type: "string",
-                          format: "date-time",
-                          nullable: true,
-                        },
-                        actual_start_date: {
-                          type: "string",
-                          format: "date-time",
-                          nullable: true,
-                        },
-                        planned_end_date: {
-                          type: "string",
-                          format: "date-time",
-                          nullable: true,
-                        },
-                        actual_end_date: {
-                          type: "string",
-                          format: "date-time",
-                          nullable: true,
-                        },
-                        created_at: { type: "string", format: "date-time" },
-                        updated_at: { type: "string", format: "date-time" },
-                      },
-                    },
-                  },
-                },
-                required: [
-                  "id",
-                  "name",
-                  "status",
-                  "created_at",
-                  "updated_at",
-                  "presite_questionnaire_id",
-                  "presite_questionnaire",
-                  "onsite_questionnaire_id",
-                  "onsite_questionnaire",
-                  "measurements_count",
-                  "phases",
-                ],
-              },
-            },
-            required: ["success", "data"],
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:programId",
+    schema: {
+      params: GetProgramByIdParamsSchema,
+      response: {
+        200: GetProgramByIdResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const programId = (request.params as { programId: number }).programId;
+    handler: async (request) => {
+      const { programId } = request.params;
       const programService = new ProgramService(request.supabaseClient);
       const program = await programService.getProgramById(programId);
 
@@ -225,101 +159,68 @@ export async function programRoutes(fastify: FastifyInstance) {
         success: true,
         data: program,
       };
-    }
-  );
+    },
+  });
 
   // Method for updating a programs details
-  fastify.put(
-    "/:programId",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-          },
-          required: ["programId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            name: { type: "string" },
-            description: { type: "string" },
-            status: { type: "string" },
-            presite_questionnaire_id: { type: "number", nullable: true },
-            onsite_questionnaire_id: { type: "number", nullable: true },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/:programId",
+    schema: {
+      params: UpdateProgramParamsSchema,
+      body: UpdateProgramBodySchema,
+      response: {
+        200: UpdateProgramResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const programId = (request.params as { programId: number }).programId;
+    handler: async (request) => {
+      const { programId } = request.params;
       const {
         name,
         description,
         status,
         presite_questionnaire_id,
         onsite_questionnaire_id,
-      } = request.body as {
-        name?: string;
-        description?: string;
-        status?: ProgramStatus;
-        presite_questionnaire_id?: number;
-        onsite_questionnaire_id?: number;
-      };
+      } = request.body;
 
       const programService = new ProgramService(request.supabaseClient);
       const program = await programService.updateProgram(programId, {
         name,
         description,
-        status,
-        presite_questionnaire_id,
-        onsite_questionnaire_id,
+        status: status as ProgramStatus | undefined,
+        presite_questionnaire_id: presite_questionnaire_id ?? undefined,
+        onsite_questionnaire_id: onsite_questionnaire_id ?? undefined,
       });
 
       return {
         success: true,
         data: program,
       };
-    }
-  );
+    },
+  });
 
   // Method for deleting a program
   // TODO: Add cascade delete for related entities.
 
   // Method for adding a program phase
-  fastify.post(
-    "/:programId/phases",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-          },
-          required: ["programId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            name: { type: "string" },
-            planned_start_date: { type: "string", format: "date-time" },
-            planned_end_date: { type: "string", format: "date-time" },
-            activate: { type: "boolean", default: false },
-          },
-          required: ["name", "planned_start_date", "planned_end_date"],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/:programId/phases",
+    schema: {
+      params: AddProgramPhaseParamsSchema,
+      body: AddProgramPhaseBodySchema,
+      response: {
+        201: AddProgramPhaseResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const programId = (request.params as { programId: number }).programId;
+    handler: async (request) => {
+      const { programId } = request.params;
       const { name, planned_start_date, planned_end_date, activate } =
-        request.body as {
-          name: string;
-          planned_start_date: string;
-          planned_end_date: string;
-          activate?: boolean;
-        };
+        request.body;
 
       const programService = new ProgramService(request.supabaseClient);
       const createdPhases = await programService.addPhaseToProgram(
@@ -336,176 +237,87 @@ export async function programRoutes(fastify: FastifyInstance) {
         success: true,
         data: createdPhases,
       };
-    }
-  );
+    },
+  });
 
   // Method for updating a program phase
-  fastify.put(
-    "/:programId/phases/:phaseId",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-            phaseId: { type: "number" },
-          },
-          required: ["programId", "phaseId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            name: { type: "string" },
-            status: { type: "string" },
-            notes: { type: "string" },
-            planned_start_date: { type: "string", format: "date-time" },
-            actual_start_date: { type: "string", format: "date-time" },
-            planned_end_date: { type: "string", format: "date-time" },
-            actual_end_date: { type: "string", format: "date-time" },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/:programId/phases/:phaseId",
+    schema: {
+      params: UpdateProgramPhaseParamsSchema,
+      body: UpdateProgramPhaseBodySchema,
+      response: {
+        200: UpdateProgramPhaseResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { phaseId } = request.params as {
-        phaseId: number;
-      };
-      const updates = request.body as {
-        name?: string;
-        status?: ProgramPhaseStatus;
-        notes?: string;
-        planned_start_date?: string;
-        actual_start_date?: string;
-        planned_end_date?: string;
-        actual_end_date?: string;
-      };
+    handler: async (request) => {
+      const { phaseId } = request.params;
+      const updates = request.body;
 
       const programService = new ProgramService(request.supabaseClient);
-      const phase = await programService.updateProgramPhase(phaseId, updates);
+      const phase = await programService.updateProgramPhase(phaseId, {
+        ...updates,
+        status: updates.status as ProgramPhaseStatus | undefined,
+      });
       return {
         success: true,
         data: phase,
       };
-    }
-  );
+    },
+  });
 
   // Method to delete a program phase
-  fastify.delete(
-    "/:programId/phases/:phaseId",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-            phaseId: { type: "number" },
-          },
-          required: ["programId", "phaseId"],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/:programId/phases/:phaseId",
+    schema: {
+      params: DeleteProgramPhaseParamsSchema,
+      response: {
+        200: DeleteProgramPhaseResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { phaseId } = request.params as {
-        phaseId: number;
-      };
+    handler: async (request) => {
+      const { phaseId } = request.params;
 
       const programService = new ProgramService(request.supabaseClient);
       await programService.deleteProgramPhase(phaseId);
 
       return {
         success: true,
+        message: "Phase deleted successfully",
       };
-    }
-  );
+    },
+  });
 
   // POST /programs/:programId/interviews - Create interviews for a program phase
-  fastify.post(
-    "/:programId/interviews",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-          },
-          required: ["programId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            phaseId: { type: "number" },
-            isIndividual: { type: "boolean", default: false },
-            roleIds: {
-              type: "array",
-              items: { type: "number" },
-              minItems: 1,
-            },
-            contactIds: {
-              type: "array",
-              items: { type: "number" },
-            },
-            interviewType: {
-              type: "string",
-              enum: ["onsite", "presite"],
-            },
-          },
-          required: ["phaseId", "roleIds", "contactIds", "interviewType"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  success: { type: "boolean" },
-                  message: { type: "string" },
-                  interviewsCreated: { type: "number" },
-                },
-              },
-            },
-          },
-          400: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/:programId/interviews",
+    schema: {
+      params: CreateInterviewsParamsSchema,
+      body: CreateInterviewsBodySchema,
+      response: {
+        201: CreateInterviewsResponseSchema,
+        400: CreateInterviewsError400Schema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
+    handler: async (request, reply) => {
       try {
-        const programId = (request.params as { programId: number }).programId;
+        const { programId } = request.params;
         const {
           phaseId,
           isIndividual = false,
           roleIds,
           contactIds,
           interviewType,
-        } = request.body as {
-          phaseId: number;
-          isIndividual?: boolean;
-          roleIds: number[];
-          contactIds: number[];
-          interviewType: "onsite" | "presite";
-        };
+        } = request.body;
 
         // Get the user ID from the request
         const createdBy = request.user.id;
@@ -562,69 +374,24 @@ export async function programRoutes(fastify: FastifyInstance) {
           error: "Internal server error",
         });
       }
-    }
-  );
+    },
+  });
 
   // GET /programs/:programId/objectives - Get objectives for a program
-  fastify.get(
-    "/:programId/objectives",
-    {
-      schema: {
-        description: "Get all objectives for a program",
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-          },
-          required: ["programId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    created_at: { type: "string" },
-                    description: { type: "string", nullable: true },
-                    id: { type: "number" },
-                    name: { type: "string" },
-                    updated_at: { type: "string" },
-                  },
-                },
-                required: [
-                  "created_at",
-                  "description",
-                  "id",
-                  "name",
-                  "updated_at",
-                ],
-              },
-            },
-            required: ["success", "data"],
-          },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:programId/objectives",
+    schema: {
+      description: "Get all objectives for a program",
+      params: GetObjectivesParamsSchema,
+      response: {
+        200: GetObjectivesResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
-      const programId = (request.params as { programId: number }).programId;
+    handler: async (request, reply) => {
+      const { programId } = request.params;
       const programService = new ProgramService(request.supabaseClient);
 
       const objectives =
@@ -634,61 +401,26 @@ export async function programRoutes(fastify: FastifyInstance) {
         success: true,
         data: objectives,
       });
-    }
-  );
+    },
+  });
 
   // POST /programs/:programId/objectives - Create objective for a program
-  fastify.post(
-    "/:programId/objectives",
-    {
-      schema: {
-        description: "Create a new objective for a program",
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-          },
-          required: ["programId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            name: { type: "string" },
-            description: { type: "string" },
-          },
-          required: ["name"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "object" },
-            },
-          },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/:programId/objectives",
+    schema: {
+      description: "Create a new objective for a program",
+      params: CreateObjectiveParamsSchema,
+      body: CreateObjectiveBodySchema,
+      response: {
+        200: CreateObjectiveResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
-      const programId = (request.params as { programId: number }).programId;
-      const { name, description } = request.body as {
-        name: string;
-        description?: string;
-      };
+    handler: async (request, reply) => {
+      const { programId } = request.params;
+      const { name, description } = request.body;
 
       const programService = new ProgramService(request.supabaseClient);
       const objective = await programService.createObjective({
@@ -701,64 +433,26 @@ export async function programRoutes(fastify: FastifyInstance) {
         success: true,
         data: objective,
       });
-    }
-  );
+    },
+  });
 
   // PUT /programs/:programId/objectives/:objectiveId - Update objective
-  fastify.put(
-    "/:programId/objectives/:objectiveId",
-    {
-      schema: {
-        description: "Update a program objective",
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-            objectiveId: { type: "number" },
-          },
-          required: ["programId", "objectiveId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            name: { type: "string" },
-            description: { type: "string" },
-          },
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "object" },
-            },
-          },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/:programId/objectives/:objectiveId",
+    schema: {
+      description: "Update a program objective",
+      params: UpdateObjectiveParamsSchema,
+      body: UpdateObjectiveBodySchema,
+      response: {
+        200: UpdateObjectiveResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
-      const { objectiveId } = request.params as {
-        programId: number;
-        objectiveId: number;
-      };
-      const updates = request.body as {
-        name?: string;
-        description?: string;
-      };
+    handler: async (request, reply) => {
+      const { objectiveId } = request.params;
+      const updates = request.body;
 
       const programService = new ProgramService(request.supabaseClient);
       const objective = await programService.updateObjective(
@@ -770,130 +464,76 @@ export async function programRoutes(fastify: FastifyInstance) {
         success: true,
         data: objective,
       });
-    }
-  );
+    },
+  });
 
   // DELETE /programs/:programId/objectives/:objectiveId - Delete objective
-  fastify.delete(
-    "/:programId/objectives/:objectiveId",
-    {
-      schema: {
-        description: "Delete a program objective",
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-            objectiveId: { type: "number" },
-          },
-          required: ["programId", "objectiveId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-            },
-          },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/:programId/objectives/:objectiveId",
+    schema: {
+      description: "Delete a program objective",
+      params: DeleteObjectiveParamsSchema,
+      response: {
+        200: DeleteObjectiveResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
-      const { objectiveId } = request.params as {
-        programId: number;
-        objectiveId: number;
-      };
+    handler: async (request, reply) => {
+      const { objectiveId } = request.params;
 
       const programService = new ProgramService(request.supabaseClient);
       await programService.deleteObjective(objectiveId);
 
       return reply.send({
         success: true,
+        message: "Objective deleted successfully",
       });
-    }
-  );
+    },
+  });
 
   // GET /programs/:programId/objectives/count - Get objective count
-  fastify.get(
-    "/:programId/objectives/count",
-    {
-      schema: {
-        description: "Get the count of objectives for a program",
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-          },
-          required: ["programId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "number" },
-            },
-          },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:programId/objectives/count",
+    schema: {
+      description: "Get the count of objectives for a program",
+      params: GetObjectiveCountParamsSchema,
+      response: {
+        200: GetObjectiveCountResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
-      const programId = (request.params as { programId: number }).programId;
+    handler: async (request, reply) => {
+      const { programId } = request.params;
       const programService = new ProgramService(request.supabaseClient);
 
       const count = await programService.getObjectiveCount(programId);
 
       return reply.send({
         success: true,
-        data: count,
+        data: { count },
       });
-    }
-  );
+    },
+  });
 
-  fastify.get(
-    "/:programId/measurements",
-    {
-      schema: {
-        querystring: {
-          type: "object",
-          properties: {
-            includeDefinitions: { type: "boolean", default: false },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:programId/measurements",
+    schema: {
+      params: GetMeasurementsParamsSchema,
+      querystring: GetMeasurementsQuerySchema,
+      response: {
+        200: GetMeasurementsResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const programId = (request.params as { programId: number }).programId;
-      const { includeDefinitions } = request.query as {
-        includeDefinitions: boolean;
-      };
+    handler: async (request) => {
+      const { programId } = request.params;
+      const { includeDefinitions } = request.query;
       const programService = new ProgramService(request.supabaseClient);
 
       const measurements = await programService.getProgramMeasurements(
@@ -901,45 +541,30 @@ export async function programRoutes(fastify: FastifyInstance) {
         includeDefinitions
       );
 
+      console.log("measurements:", measurements);
+
       return {
         success: true,
         data: measurements,
       };
-    }
-  );
+    },
+  });
 
   // GET /programs/:programId/measurement-definitions/allowed - Get allowed measurement definitions for a program
   // These are the measurement definitions linked to the program and constrain the measurements that can be collected
-  fastify.get(
-    "/:programId/measurement-definitions/allowed",
-    {
-      schema: {
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    id: { type: "number" },
-                    name: { type: "string" },
-                    description: { type: "string", nullable: true },
-                    objective: { type: "string", nullable: true },
-                  },
-                  required: ["id", "name", "description", "objective"],
-                },
-              },
-            },
-            required: ["success", "data"],
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:programId/measurement-definitions/allowed",
+    schema: {
+      params: GetAllowedMeasurementDefinitionsParamsSchema,
+      response: {
+        200: GetAllowedMeasurementDefinitionsResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const programId = (request.params as { programId: number }).programId;
+    handler: async (request) => {
+      const { programId } = request.params;
       const programService = new ProgramService(request.supabaseClient);
 
       const measurementDefinitions =
@@ -949,47 +574,76 @@ export async function programRoutes(fastify: FastifyInstance) {
         success: true,
         data: measurementDefinitions,
       };
-    }
-  );
-
-  fastify.get("/:programId/measurements/available", async (request) => {
-    const programId = (request.params as { programId: number }).programId;
-    const programService = new ProgramService(request.supabaseClient);
-
-    const measurements =
-      await programService.getAvailableProgramMeasurements(programId);
-
-    return {
-      success: true,
-      data: measurements,
-    };
+    },
   });
 
-  fastify.post("/:programId/measurement-definitions", async (request) => {
-    const programId = (request.params as { programId: number }).programId;
-    const { measurementDefinitionIds } = request.body as {
-      measurementDefinitionIds: number[];
-    };
-    const programService = new ProgramService(request.supabaseClient);
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:programId/measurements/available",
+    schema: {
+      params: GetAvailableMeasurementsParamsSchema,
+      response: {
+        200: GetAvailableMeasurementsResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const { programId } = request.params;
+      const programService = new ProgramService(request.supabaseClient);
 
-    const data = await programService.addMeasurementDefinitionsToProgram(
-      programId,
-      measurementDefinitionIds
-    );
+      const measurements =
+        await programService.getAvailableProgramMeasurements(programId);
 
-    return {
-      success: true,
-      data,
-    };
+      return {
+        success: true,
+        data: measurements,
+      };
+    },
   });
 
-  fastify.delete(
-    "/:programId/measurement-definitions/:measurementDefinitionId",
-    async (request) => {
-      const programId = (request.params as { programId: number }).programId;
-      const measurementDefinitionId = (
-        request.params as { measurementDefinitionId: number }
-      ).measurementDefinitionId;
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/:programId/measurement-definitions",
+    schema: {
+      params: AddMeasurementDefinitionsParamsSchema,
+      body: AddMeasurementDefinitionsBodySchema,
+      response: {
+        201: AddMeasurementDefinitionsResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const { programId } = request.params;
+      const { measurementDefinitionIds } = request.body;
+      const programService = new ProgramService(request.supabaseClient);
+
+      const data = await programService.addMeasurementDefinitionsToProgram(
+        programId,
+        measurementDefinitionIds
+      );
+
+      return {
+        success: true,
+        data,
+      };
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/:programId/measurement-definitions/:measurementDefinitionId",
+    schema: {
+      params: RemoveMeasurementDefinitionParamsSchema,
+      response: {
+        200: RemoveMeasurementDefinitionResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const { programId, measurementDefinitionId } = request.params;
       const programService = new ProgramService(request.supabaseClient);
 
       await programService.removeMeasurementDefinitionFromProgram(
@@ -999,94 +653,67 @@ export async function programRoutes(fastify: FastifyInstance) {
 
       return {
         success: true,
+        message: "Measurement definition removed successfully",
       };
-    }
-  );
+    },
+  });
 
-  fastify.get(
-    "/:programId/phases/:phaseId/calculated-measurements",
-    {
-      schema: {
-        querystring: {
-          type: "object",
-          properties: {
-            measurementDefinitionId: { type: "number", nullable: true },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:programId/phases/:phaseId/calculated-measurements",
+    schema: {
+      params: GetCalculatedMeasurementsParamsSchema,
+      querystring: GetCalculatedMeasurementsQuerySchema,
+      response: {
+        200: GetCalculatedMeasurementsResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const phaseId = (request.params as { phaseId: number }).phaseId;
+    handler: async (request) => {
+      const { phaseId } = request.params;
+      const { measurementDefinitionId } = request.query;
       const programService = new ProgramService(request.supabaseClient);
-
-      const measurementDefinitionId = (
-        request.query as { measurementDefinitionId?: number }
-      ).measurementDefinitionId;
 
       const measurements =
         await programService.getCalculatedMeasurementsForProgramPhase({
           programPhaseId: phaseId,
           filters: { measurementDefinitionId },
         });
-
       return {
         success: true,
         data: measurements,
       };
-    }
-  );
+    },
+  });
 
   // GET endpoint to fetch calculated measurement for a program phase
   // Supports both old format (separate location fields) and new format (location object with id + type)
-  fastify.get(
-    "/:programId/phases/:phaseId/calculated-measurement",
-    {
-      schema: {
-        querystring: {
-          type: "object",
-          properties: {
-            measurementId: { type: "number" },
-            measurementDefinitionId: { type: "number" },
-            location_id: { type: "number" },
-            location_type: {
-              type: "string",
-              enum: [
-                "business_unit",
-                "region",
-                "site",
-                "asset_group",
-                "work_group",
-                "role",
-              ],
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:programId/phases/:phaseId/calculated-measurement",
+    schema: {
+      params: GetCalculatedMeasurementParamsSchema,
+      querystring: GetCalculatedMeasurementQuerySchema,
+      response: {
+        200: GetCalculatedMeasurementResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const phaseId = (request.params as { phaseId: number }).phaseId;
+    handler: async (request) => {
+      const { phaseId } = request.params;
       const {
         measurementId,
         measurementDefinitionId,
         location_id,
         location_type,
-      } = request.query as {
-        measurementId?: number;
-        measurementDefinitionId?: number;
-        location_id?: number;
-        location_type?:
-          | "business_unit"
-          | "region"
-          | "site"
-          | "asset_group"
-          | "work_group"
-          | "role";
-      };
+      } = request.query;
 
       // Reconstruct location object if both parts are provided
       const location =
         location_id && location_type
-          ? { id: location_id, type: location_type }
+          ? { id: location_id, type: location_type as any }
           : undefined;
 
       const programService = new ProgramService(request.supabaseClient);
@@ -1103,62 +730,26 @@ export async function programRoutes(fastify: FastifyInstance) {
         success: true,
         data: measurement,
       };
-    }
-  );
+    },
+  });
 
   // POST endpoint to create a new measurement data
   // Supports both old format (separate location fields) and new format (location object with id + type)
-  fastify.post(
-    "/:programId/phases/:phaseId/measurement-data",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-            phaseId: { type: "number" },
-          },
-          required: ["programId", "phaseId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            measurement_definition_id: { type: "number" },
-            calculated_value: { type: "number" },
-            // New format: location object
-            location: {
-              type: "object",
-              properties: {
-                id: { type: "number" },
-                type: {
-                  type: "string",
-                  enum: [
-                    "business_unit",
-                    "region",
-                    "site",
-                    "asset_group",
-                    "work_group",
-                    "role",
-                  ],
-                },
-              },
-              required: ["id", "type"],
-            },
-            // Old format: separate fields (kept for backward compatibility)
-            business_unit_id: { type: "number" },
-            region_id: { type: "number" },
-            site_id: { type: "number" },
-            asset_group_id: { type: "number" },
-            work_group_id: { type: "number" },
-            role_id: { type: "number" },
-          },
-          required: ["measurement_definition_id", "calculated_value"],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/:programId/phases/:phaseId/measurement-data",
+    schema: {
+      params: CreateMeasurementDataParamsSchema,
+      body: CreateMeasurementDataBodySchema,
+      response: {
+        201: CreateMeasurementDataResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { phaseId } = request.params as { phaseId: number };
-      const body = request.body as any;
+    handler: async (request) => {
+      const { phaseId } = request.params;
+      const body = request.body;
 
       const programService = new ProgramService(request.supabaseClient);
 
@@ -1166,41 +757,31 @@ export async function programRoutes(fastify: FastifyInstance) {
       const measurement = await programService.createCalculatedMeasurement({
         program_phase_id: phaseId,
         ...body,
-      });
+      } as any);
 
       return {
         success: true,
         data: measurement,
       };
-    }
-  );
+    },
+  });
 
   // PUT endpoint to update an existing measurement data
-  fastify.put(
-    "/:programId/phases/:phaseId/measurement-data/:measurementId",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-            phaseId: { type: "number" },
-            measurementId: { type: "number" },
-          },
-          required: ["programId", "phaseId", "measurementId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            calculated_value: { type: "number" },
-          },
-          required: ["calculated_value"],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/:programId/phases/:phaseId/measurement-data/:measurementId",
+    schema: {
+      params: UpdateMeasurementDataParamsSchema,
+      body: UpdateMeasurementDataBodySchema,
+      response: {
+        200: UpdateMeasurementDataResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { measurementId } = request.params as { measurementId: number };
-      const { calculated_value } = request.body as { calculated_value: number };
+    handler: async (request) => {
+      const { measurementId } = request.params;
+      const { calculated_value } = request.body;
 
       const programService = new ProgramService(request.supabaseClient);
       const measurement = await programService.updateCalculatedMeasurement(
@@ -1212,27 +793,23 @@ export async function programRoutes(fastify: FastifyInstance) {
         success: true,
         data: measurement,
       };
-    }
-  );
+    },
+  });
 
   // DELETE endpoint to remove a measurement data
-  fastify.delete(
-    "/:programId/phases/:phaseId/measurement-data/:measurementId",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            programId: { type: "number" },
-            phaseId: { type: "number" },
-            measurementId: { type: "number" },
-          },
-          required: ["programId", "phaseId", "measurementId"],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/:programId/phases/:phaseId/measurement-data/:measurementId",
+    schema: {
+      params: DeleteMeasurementDataParamsSchema,
+      response: {
+        200: DeleteMeasurementDataResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { measurementId } = request.params as { measurementId: number };
+    handler: async (request) => {
+      const { measurementId } = request.params;
 
       const programService = new ProgramService(request.supabaseClient);
       await programService.deleteCalculatedMeasurement(measurementId);
@@ -1240,6 +817,6 @@ export async function programRoutes(fastify: FastifyInstance) {
       return {
         success: true,
       };
-    }
-  );
+    },
+  });
 }

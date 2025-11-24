@@ -16,25 +16,25 @@ import {
   IconDatabase,
   IconSettings,
 } from "@tabler/icons-react";
-import type {
-  AssessmentMeasurement,
-  EnrichedMeasurementInstance,
-} from "@/types/assessment-measurements";
 import { AddEditTab } from "./add-edit-tab";
 import { MeasurementInstancesTable } from "../measurement-instances-table";
 import { useAssessmentMeasurementInstances } from "@/hooks/use-assessment-measurements";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 import { cn } from "@/lib/utils";
+import type {
+  AssessmentMeasurementDefinition,
+  AssessmentMeasurementInstance,
+} from "@/types/api/assessments";
 
 interface MeasurementDetailsDialogProps {
-  measurement: AssessmentMeasurement | null;
+  measurement: AssessmentMeasurementDefinition | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUploadData: (measurement: AssessmentMeasurement) => void;
+  onUploadData: (measurement: AssessmentMeasurementDefinition) => void;
   assessmentId?: number;
   isDeleting?: boolean;
-  onEditInstance?: (instance: EnrichedMeasurementInstance) => void;
-  onDeleteInstance?: (instance: EnrichedMeasurementInstance) => void;
+  onEditInstance?: (instance: AssessmentMeasurementInstance) => void;
+  onDeleteInstance?: (instance: AssessmentMeasurementInstance) => void;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -87,7 +87,7 @@ export function MeasurementDetailsDialog({
     useAssessmentMeasurementInstances(assessmentId);
 
   // Filter instances to only show those for this measurement definition
-  const measurementInstances = (instances ?? []).filter(
+  const measurementInstances = instances?.filter(
     (inst) => inst.measurement_definition_id === measurement?.id
   );
 
@@ -111,7 +111,7 @@ export function MeasurementDetailsDialog({
               </span>
               <div className="flex items-center gap-2 flex-wrap">
                 <StatusBadge status={measurement.status} />
-                {measurement.isInUse && (
+                {measurement.is_in_use && (
                   <>
                     <Badge variant="secondary">
                       <IconCheck className="h-3 w-3 text-green-600 mr-1" />
@@ -129,12 +129,12 @@ export function MeasurementDetailsDialog({
         <div className="space-y-4">
           <div className="flex flex-col gap-4">
             {/* Selection prompt for unselected measurements */}
-            {!measurement.isInUse && (
+            {!measurement.is_in_use && (
               <div className="bg-muted/50 rounded-lg p-4 border flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
                   This measurement is not part of your assessment. Navigate to
-                  the <strong>Manage</strong> tab to select a location and enter a
-                  value.
+                  the <strong>Manage</strong> tab to select a location and enter
+                  a value.
                 </p>
                 <Button
                   onClick={() => setActiveTab("manage")}
@@ -300,7 +300,7 @@ export function MeasurementDetailsDialog({
               </div>
 
               {/* Terms Section */}
-              {measurement.terms && measurement.terms.length > 0 && (
+              {/* {measurement.terms && measurement.terms.length > 0 && (
                 <div>
                   <h4 className="font-medium mb-3">Defined Terms</h4>
                   <div className="space-y-2">
@@ -314,14 +314,14 @@ export function MeasurementDetailsDialog({
                     ))}
                   </div>
                 </div>
-              )}
+              )} */}
             </TabsContent>
 
             {/* Instances Tab - shows all measurement instances for this definition */}
             <TabsContent value="instances">
               <div className="overflow-x-auto">
                 <MeasurementInstancesTable
-                  instances={measurementInstances}
+                  instances={measurementInstances ?? []}
                   isLoading={isLoadingInstances}
                   onEdit={(inst) => {
                     if (onEditInstance) onEditInstance(inst);
@@ -345,7 +345,7 @@ export function MeasurementDetailsDialog({
                   onUploadData={onUploadData}
                   isDeleting={isDeleting}
                   onDeleteInstance={onDeleteInstance}
-                  instances={measurementInstances}
+                  instances={measurementInstances ?? []}
                 />
               </TabsContent>
             )}

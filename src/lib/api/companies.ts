@@ -1,41 +1,41 @@
 import type {
-  CompanyResponseData,
-  CompanyListResponseData,
-  CompanyIconDeleteResponseData,
-  CompanyIconPostResponseData,
-  TeamListResponseData,
-  TeamMemberPostResponseData,
-  TeamMemberDeleteResponseData,
-  TeamMemberPutResponseData,
   CompanyImportResponseData,
-  EntityDeleteResponseData,
-  EntityPutResponseData,
-  EntityPostResponseData,
-  EntityListResponseData,
+  GetCompaniesResponseData,
+  GetCompanyByIdResponseData,
+  CreateCompanyBodyData,
+  CreateCompanyResponseData,
+  UpdateCompanyBodyData,
+  UpdateCompanyResponseData,
+  GetCompanyTreeResponseData,
+  GetCompanyEntitiesResponseData,
+  GetCompanyEntitiesParams,
+  CreateCompanyEntityBodyData,
+  CreateCompanyEntityResponseData,
+  CreateCompanyEntityParams,
+  UpdateCompanyEntityResponseData,
+  UpdateCompanyEntityBodyData,
+  UpdateCompanyEntityParams,
+  DeleteCompanyEntityParams,
+  GetTeamResponseData,
+  AddTeamMemberBodyData,
+  AddTeamMemberResponseData,
+  UpdateTeamMemberBodyData,
+  UpdateTeamMemberResponseData,
+  GetCompanyInterviewResponseActionsResponseData,
+  UploadCompanyIconResponseData,
+  UpdateCompanyBrandingBodyData,
+  UpdateCompanyBrandingResponseData,
+  BusinessUnitEntity,
+  RegionEntity,
+  SiteEntity,
+  AssetGroupEntity,
 } from "@/types/api/companies";
-import type {
-  CompanyTreeNode,
-  BusinessUnit,
-  Region,
-  Site,
-  AssetGroup,
-  TreeNodeType,
-} from "@/types/company";
+import type { TreeNodeType } from "@/types/company";
 import { apiClient } from "./client";
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-}
-
-export interface MessageResponse {
-  success: boolean;
-  message: string;
-}
+import type { ApiResponse } from "./utils";
 
 // Map TreeNodeType to API EntityType (with hyphens)
-export type EntityType =
+type EntityType =
   | "business-units"
   | "regions"
   | "sites"
@@ -56,9 +56,9 @@ const treeNodeTypeToEntityType: Record<
 };
 
 // Company CRUD
-export async function getCompanies(): Promise<CompanyListResponseData> {
+export async function getCompanies(): Promise<GetCompaniesResponseData> {
   const response =
-    await apiClient.get<ApiResponse<CompanyListResponseData>>("/companies");
+    await apiClient.get<ApiResponse<GetCompaniesResponseData>>("/companies");
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch companies");
@@ -69,8 +69,8 @@ export async function getCompanies(): Promise<CompanyListResponseData> {
 
 export async function getCompanyById(
   companyId: string
-): Promise<CompanyResponseData> {
-  const response = await apiClient.get<ApiResponse<CompanyResponseData>>(
+): Promise<GetCompanyByIdResponseData> {
+  const response = await apiClient.get<ApiResponse<GetCompanyByIdResponseData>>(
     `/companies/${companyId}`
   );
 
@@ -81,12 +81,10 @@ export async function getCompanyById(
   return response.data.data;
 }
 
-export async function createCompany(data: {
-  name: string;
-  code?: string;
-  description?: string;
-}): Promise<CompanyResponseData> {
-  const response = await apiClient.post<ApiResponse<CompanyResponseData>>(
+export async function createCompany(
+  data: CreateCompanyBodyData
+): Promise<CreateCompanyResponseData> {
+  const response = await apiClient.post<ApiResponse<CreateCompanyResponseData>>(
     "/companies",
     data
   );
@@ -100,13 +98,9 @@ export async function createCompany(data: {
 
 export async function updateCompany(
   companyId: string,
-  data: {
-    name?: string;
-    code?: string;
-    description?: string;
-  }
-): Promise<CompanyResponseData> {
-  const response = await apiClient.put<ApiResponse<CompanyResponseData>>(
+  data: UpdateCompanyBodyData
+): Promise<UpdateCompanyResponseData> {
+  const response = await apiClient.put<ApiResponse<UpdateCompanyResponseData>>(
     `/companies/${companyId}`,
     data
   );
@@ -119,7 +113,7 @@ export async function updateCompany(
 }
 
 export async function deleteCompany(companyId: string): Promise<void> {
-  const response = await apiClient.delete<ApiResponse<null>>(
+  const response = await apiClient.delete<ApiResponse<void>>(
     `/companies/${companyId}`
   );
 
@@ -131,8 +125,8 @@ export async function deleteCompany(companyId: string): Promise<void> {
 // Company tree
 export async function getCompanyTree(
   companyId: string
-): Promise<CompanyTreeNode | null> {
-  const response = await apiClient.get<ApiResponse<CompanyTreeNode>>(
+): Promise<GetCompanyTreeResponseData> {
+  const response = await apiClient.get<ApiResponse<GetCompanyTreeResponseData>>(
     `/companies/${companyId}/tree`
   );
 
@@ -146,17 +140,16 @@ export async function getCompanyTree(
 // Generic entity operations
 async function getEntities(
   companyId: string,
-  entityType: EntityType
-): Promise<EntityListResponseData> {
-  const response = await apiClient.get<ApiResponse<EntityListResponseData>>(
-    `/companies/${companyId}/entities`,
-    {
-      params: { type: entityType },
-    }
-  );
+  params: GetCompanyEntitiesParams
+): Promise<GetCompanyEntitiesResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetCompanyEntitiesResponseData>
+  >(`/companies/${companyId}/entities`, {
+    params,
+  });
 
   if (!response.data.success) {
-    throw new Error(response.data.error || `Failed to fetch ${entityType}`);
+    throw new Error(response.data.error || `Failed to fetch ${params.type}`);
   }
 
   return response.data.data;
@@ -164,19 +157,17 @@ async function getEntities(
 
 export async function createEntity(
   companyId: string,
-  entityType: EntityType,
-  data: any
-): Promise<EntityPostResponseData> {
-  const response = await apiClient.post<ApiResponse<EntityPostResponseData>>(
-    `/companies/${companyId}/entities`,
-    data,
-    {
-      params: { type: entityType },
-    }
-  );
+  params: CreateCompanyEntityParams,
+  data: CreateCompanyEntityBodyData
+): Promise<CreateCompanyEntityResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateCompanyEntityResponseData>
+  >(`/companies/${companyId}/entities`, data, {
+    params,
+  });
 
   if (!response.data.success) {
-    throw new Error(response.data.error || `Failed to create ${entityType}`);
+    throw new Error(response.data.error || `Failed to create ${params.type}`);
   }
 
   return response.data.data;
@@ -185,19 +176,17 @@ export async function createEntity(
 export async function updateEntity(
   companyId: string,
   entityId: string | number,
-  entityType: EntityType,
-  data: any
-): Promise<EntityPutResponseData> {
-  const response = await apiClient.put<ApiResponse<EntityPutResponseData>>(
-    `/companies/${companyId}/entities/${entityId}`,
-    data,
-    {
-      params: { type: entityType },
-    }
-  );
+  params: UpdateCompanyEntityParams,
+  data: UpdateCompanyEntityBodyData
+): Promise<UpdateCompanyEntityResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateCompanyEntityResponseData>
+  >(`/companies/${companyId}/entities/${entityId}`, data, {
+    params,
+  });
 
   if (!response.data.success) {
-    throw new Error(response.data.error || `Failed to update ${entityType}`);
+    throw new Error(response.data.error || `Failed to update ${params.type}`);
   }
 
   return response.data.data;
@@ -206,36 +195,48 @@ export async function updateEntity(
 export async function deleteEntity(
   companyId: string,
   entityId: string | number,
-  entityType: EntityType
-): Promise<EntityDeleteResponseData> {
-  const response = await apiClient.delete<
-    ApiResponse<EntityDeleteResponseData>
-  >(`/companies/${companyId}/entities/${entityId}`, {
-    params: { type: entityType },
-  });
+  params: DeleteCompanyEntityParams
+): Promise<void> {
+  const response = await apiClient.delete<ApiResponse<void>>(
+    `/companies/${companyId}/entities/${entityId}`,
+    {
+      params,
+    }
+  );
 
   if (!response.data.success) {
-    throw new Error(response.data.error || `Failed to delete ${entityType}`);
+    throw new Error(response.data.error || `Failed to delete ${params.type}`);
   }
 }
 
 // Convenience functions for specific entity types
+// These now have proper type inference from the discriminated union
 export async function getBusinessUnits(
   companyId: string
-): Promise<BusinessUnit[]> {
-  return getEntities<BusinessUnit>(companyId, "business-units");
+): Promise<BusinessUnitEntity[]> {
+  const entities = await getEntities(companyId, { type: "business-units" });
+  return entities.filter(
+    (e): e is BusinessUnitEntity => e.entity_type === "business_unit"
+  );
 }
 
-export async function getRegions(companyId: string): Promise<Region[]> {
-  return getEntities<Region>(companyId, "regions");
+export async function getRegions(companyId: string): Promise<RegionEntity[]> {
+  const entities = await getEntities(companyId, { type: "regions" });
+  return entities.filter((e): e is RegionEntity => e.entity_type === "region");
 }
 
-export async function getSites(companyId: string): Promise<Site[]> {
-  return getEntities<Site>(companyId, "sites");
+export async function getSites(companyId: string): Promise<SiteEntity[]> {
+  const entities = await getEntities(companyId, { type: "sites" });
+  return entities.filter((e): e is SiteEntity => e.entity_type === "site");
 }
 
-export async function getAssetGroups(companyId: string): Promise<AssetGroup[]> {
-  return getEntities<AssetGroup>(companyId, "asset-groups");
+export async function getAssetGroups(
+  companyId: string
+): Promise<AssetGroupEntity[]> {
+  const entities = await getEntities(companyId, { type: "asset-groups" });
+  return entities.filter(
+    (e): e is AssetGroupEntity => e.entity_type === "asset_group"
+  );
 }
 
 // Tree node operations helper
@@ -290,26 +291,10 @@ export async function exportCompanyStructure(companyId: string): Promise<Blob> {
 
 // Team Management
 
-export type CompanyRole = "owner" | "admin" | "viewer" | "interviewee";
-
-export interface TeamMember {
-  id: number;
-  user_id: string;
-  company_id: string;
-  role: CompanyRole;
-  created_at: string;
-  updated_at: string;
-  user: {
-    id: string;
-    email: string;
-    full_name: string | null;
-  };
-}
-
 export async function getTeamMembers(
   companyId: string
-): Promise<TeamListResponseData> {
-  const response = await apiClient.get<ApiResponse<TeamListResponseData>>(
+): Promise<GetTeamResponseData> {
+  const response = await apiClient.get<ApiResponse<GetTeamResponseData>>(
     `/companies/${companyId}/team`
   );
 
@@ -322,14 +307,12 @@ export async function getTeamMembers(
 
 export async function addTeamMember(
   companyId: string,
-  data: {
-    email: string;
-    role: CompanyRole;
-  }
-): Promise<TeamMemberPostResponseData> {
-  const response = await apiClient.post<
-    ApiResponse<TeamMemberPostResponseData>
-  >(`/companies/${companyId}/team`, data);
+  data: AddTeamMemberBodyData
+): Promise<AddTeamMemberResponseData> {
+  const response = await apiClient.post<ApiResponse<AddTeamMemberResponseData>>(
+    `/companies/${companyId}/team`,
+    data
+  );
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to add team member");
@@ -341,14 +324,11 @@ export async function addTeamMember(
 export async function updateTeamMember(
   companyId: string,
   userId: string,
-  data: {
-    role: CompanyRole;
-  }
-): Promise<TeamMemberPutResponseData> {
-  const response = await apiClient.put<ApiResponse<TeamMemberPutResponseData>>(
-    `/companies/${companyId}/team/${userId}`,
-    data
-  );
+  data: UpdateTeamMemberBodyData
+): Promise<UpdateTeamMemberResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateTeamMemberResponseData>
+  >(`/companies/${companyId}/team/${userId}`, data);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to update team member");
@@ -361,9 +341,9 @@ export async function removeTeamMember(
   companyId: string,
   userId: string
 ): Promise<void> {
-  const response = await apiClient.delete<
-    ApiResponse<TeamMemberDeleteResponseData>
-  >(`/companies/${companyId}/team/${userId}`);
+  const response = await apiClient.delete<ApiResponse<void>>(
+    `/companies/${companyId}/team/${userId}`
+  );
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to remove team member");
@@ -372,10 +352,10 @@ export async function removeTeamMember(
 
 export async function getCompanyInterviewResponseActions(
   companyId: string
-): Promise<any[]> {
-  const response = await apiClient.get<ApiResponse<any[]>>(
-    `/companies/${companyId}/actions`
-  );
+): Promise<GetCompanyInterviewResponseActionsResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetCompanyInterviewResponseActionsResponseData>
+  >(`/companies/${companyId}/actions`);
 
   if (!response.data.success) {
     throw new Error(
@@ -390,12 +370,12 @@ export async function getCompanyInterviewResponseActions(
 export async function uploadCompanyIcon(
   companyId: string,
   file: File
-): Promise<CompanyIconPostResponseData> {
+): Promise<UploadCompanyIconResponseData> {
   const formData = new FormData();
   formData.append("icon", file);
 
   const response = await apiClient.post<
-    ApiResponse<CompanyIconPostResponseData>
+    ApiResponse<UploadCompanyIconResponseData>
   >(`/companies/${companyId}/icon`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
@@ -410,9 +390,9 @@ export async function uploadCompanyIcon(
 }
 
 export async function removeCompanyIcon(companyId: string): Promise<void> {
-  const response = await apiClient.delete<
-    ApiResponse<CompanyIconDeleteResponseData>
-  >(`/companies/${companyId}/icon`);
+  const response = await apiClient.delete<ApiResponse<void>>(
+    `/companies/${companyId}/icon`
+  );
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to remove company icon");
@@ -422,16 +402,11 @@ export async function removeCompanyIcon(companyId: string): Promise<void> {
 // Company Branding Management
 export async function updateCompanyBranding(
   companyId: string,
-  colors: {
-    primary?: string;
-    secondary?: string;
-    accent?: string;
-  }
-): Promise<CompanyResponseData> {
-  const response = await apiClient.patch<ApiResponse<CompanyResponseData>>(
-    `/companies/${companyId}/branding`,
-    colors
-  );
+  data: UpdateCompanyBrandingBodyData
+): Promise<UpdateCompanyBrandingResponseData> {
+  const response = await apiClient.patch<
+    ApiResponse<UpdateCompanyBrandingResponseData>
+  >(`/companies/${companyId}/branding`, data);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to update company branding");

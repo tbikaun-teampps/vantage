@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { type FeedbackType } from "@/lib/api/feedback";
+import type { FeedbackType } from "@/types/api/feedback";
 
 interface FeedbackDialogProps {
   isOpen: boolean;

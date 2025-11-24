@@ -1,5 +1,5 @@
 import { SidebarGroup } from "@/components/ui/sidebar";
-import  { type Icon } from "@tabler/icons-react";
+import { type Icon } from "@tabler/icons-react";
 
 // Base interface for navigation items
 export interface NavItem {

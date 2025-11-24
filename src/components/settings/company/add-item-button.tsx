@@ -3,15 +3,16 @@ import { toast } from "sonner";
 import { useTreeNodeActions } from "@/hooks/useCompany";
 import { Button } from "@/components/ui/button";
 import { IconLoader2, IconPlus } from "@tabler/icons-react";
-import type { TreeNodeType } from "@/types/company";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import type {
+  CreateableTreeNode,
+  CreateableTreeNodeType,
+} from "@/types/api/companies";
 
 interface AddItemButtonProps {
-  parentItem: any;
-  parentType: TreeNodeType;
-  newItemType: TreeNodeType;
+  parentItem: CreateableTreeNode;
+  newItemType: CreateableTreeNodeType;
   newItemName: string;
-  defaultValues?: Record<string, any>;
   onSuccess?: () => void;
   onError?: (error: string) => void;
   size?: "sm" | "default" | "lg";
@@ -21,7 +22,6 @@ interface AddItemButtonProps {
 
 export function AddItemButton({
   parentItem,
-  parentType,
   newItemType,
   newItemName,
   onSuccess,
@@ -46,8 +46,7 @@ export function AddItemButton({
       formData.append("description", "");
 
       await createTreeNode({
-        parentType: parentType,
-        parentId: parseInt(parentItem.id),
+        parentId: parentItem.id,
         nodeType: newItemType,
         formData,
         companyId: companyId!,

@@ -1,37 +1,49 @@
-import type { ProgramUpdateFormData } from "@/components/programs/detail/overview-tab/program-update-schema";
 import { apiClient } from "./client";
-import type { CreateProgramFormData, ProgramObjective } from "@/types/program";
 import type {
-  ProgramAllowedMeasurementDefinitions,
-  ProgramDetailResponseData,
-  ProgramListResponseData,
-  ProgramObjectivesListResponseData,
+  AddMeasurementDefinitionsToProgramBodyData,
+  AddMeasurementDefinitionsToProgramResponseData,
+  CreateProgramBodyData,
+  CreateProgramInterviewsBodyData,
+  CreateProgramInterviewsResponseData,
+  CreateProgramObjectiveBodyData,
+  CreateProgramObjectiveResponseData,
+  CreateProgramPhaseBodyData,
+  CreateProgramPhaseMeasurementBodyData,
+  CreateProgramPhaseMeasurementResponseData,
+  CreateProgramPhaseResponseData,
+  CreateProgramResponseData,
+  GetProgramAllowedMeasurementDefinitionsResponseData,
+  GetProgramAvailableMeasurementsResponseData,
+  GetProgramByIdResponseData,
+  GetProgramCalculatedMeasurementsParams,
+  GetProgramCalculatedMeasurementsResponseData,
+  GetProgramMeasurementsParams,
+  GetProgramMeasurementsResponseData,
+  GetProgramObjectivesResponseData,
+  GetProgramPhaseMeasurementsParams,
+  GetProgramPhaseMeasurementsResponseData,
+  GetProgramsParams,
+  GetProgramsResponseData,
+  UpdateProgramBodyData,
+  UpdateProgramObjectiveBodyData,
+  UpdateProgramObjectiveResponseData,
+  UpdateProgramOnsiteQuestionnaireResponseData,
+  UpdateProgramPhaseBodyData,
+  UpdateProgramPhaseMeasurementBodyData,
+  UpdateProgramPhaseMeasurementResponseData,
+  UpdateProgramPhaseResponseData,
+  UpdateProgramPresiteQuestionnaireResponseData,
+  UpdateProgramResponseData,
 } from "@/types/api/programs";
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-}
-
-export interface CreateObjectiveData {
-  name: string;
-  description?: string;
-  program_id: number;
-}
-
-export interface UpdateObjectiveData {
-  name?: string;
-  description?: string;
-}
+import type { ApiResponse } from "./utils";
 
 export async function getPrograms(
-  companyId: string
-): Promise<ProgramListResponseData> {
-  const response = await apiClient.get<ApiResponse<ProgramListResponseData>>(
+  params: GetProgramsParams
+): Promise<GetProgramsResponseData> {
+  const response = await apiClient.get<ApiResponse<GetProgramsResponseData>>(
     "/programs",
     {
-      params: { companyId },
+      params,
     }
   );
 
@@ -44,8 +56,8 @@ export async function getPrograms(
 
 export async function getProgramById(
   programId: number
-): Promise<ProgramDetailResponseData> {
-  const response = await apiClient.get<ApiResponse<ProgramDetailResponseData>>(
+): Promise<GetProgramByIdResponseData> {
+  const response = await apiClient.get<ApiResponse<GetProgramByIdResponseData>>(
     `/programs/${programId}`
   );
 
@@ -56,22 +68,13 @@ export async function getProgramById(
   return response.data.data;
 }
 
-export async function getCurrentProgramPhase(programId: number): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/programs/${programId}/current-phase`
+export async function createProgram(
+  data: CreateProgramBodyData
+): Promise<CreateProgramResponseData> {
+  const response = await apiClient.post<ApiResponse<CreateProgramResponseData>>(
+    "/programs",
+    data
   );
-
-  if (!response.data.success) {
-    throw new Error(
-      response.data.error || "Failed to fetch current program phase"
-    );
-  }
-
-  return response.data.data;
-}
-
-export async function createProgram(data: CreateProgramFormData): Promise<any> {
-  const response = await apiClient.post<ApiResponse<any>>("/programs", data);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to create program");
@@ -82,9 +85,9 @@ export async function createProgram(data: CreateProgramFormData): Promise<any> {
 
 export async function updateProgram(
   programId: number,
-  updates: ProgramUpdateFormData
-): Promise<any> {
-  const response = await apiClient.put<ApiResponse<any>>(
+  updates: UpdateProgramBodyData
+): Promise<UpdateProgramResponseData> {
+  const response = await apiClient.put<ApiResponse<UpdateProgramResponseData>>(
     `/programs/${programId}`,
     updates
   );
@@ -96,13 +99,23 @@ export async function updateProgram(
   return response.data.data;
 }
 
+export async function deleteProgram(programId: number): Promise<void> {
+  const response = await apiClient.delete<ApiResponse<void>>(
+    `/programs/${programId}`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to delete program");
+  }
+}
+
 // ====== Program Objectives ======
 
 export async function getProgramObjectives(
   programId: number
-): Promise<ProgramObjectivesListResponseData> {
+): Promise<GetProgramObjectivesResponseData> {
   const response = await apiClient.get<
-    ApiResponse<ProgramObjectivesListResponseData>
+    ApiResponse<GetProgramObjectivesResponseData>
   >(`/programs/${programId}/objectives`);
 
   if (!response.data.success) {
@@ -115,12 +128,12 @@ export async function getProgramObjectives(
 }
 
 export async function createProgramObjective(
-  data: CreateObjectiveData
-): Promise<ProgramObjective> {
-  const response = await apiClient.post<ApiResponse<ProgramObjective>>(
-    `/programs/${data.program_id}/objectives`,
-    { name: data.name, description: data.description }
-  );
+  programId: number,
+  data: CreateProgramObjectiveBodyData
+): Promise<CreateProgramObjectiveResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateProgramObjectiveResponseData>
+  >(`/programs/${programId}/objectives`, data);
 
   if (!response.data.success) {
     throw new Error(
@@ -134,12 +147,11 @@ export async function createProgramObjective(
 export async function updateProgramObjective(
   programId: number,
   objectiveId: number,
-  updates: UpdateObjectiveData
-): Promise<ProgramObjective> {
-  const response = await apiClient.put<ApiResponse<ProgramObjective>>(
-    `/programs/${programId}/objectives/${objectiveId}`,
-    updates
-  );
+  updates: UpdateProgramObjectiveBodyData
+): Promise<UpdateProgramObjectiveResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateProgramObjectiveResponseData>
+  >(`/programs/${programId}/objectives/${objectiveId}`, updates);
 
   if (!response.data.success) {
     throw new Error(
@@ -170,11 +182,10 @@ export async function deleteProgramObjective(
 export async function updateProgramOnsiteQuestionnaire(
   programId: number,
   questionnaireId: number | null
-): Promise<any> {
-  const response = await apiClient.put<ApiResponse<any>>(
-    `/programs/${programId}`,
-    { onsite_questionnaire_id: questionnaireId }
-  );
+): Promise<UpdateProgramOnsiteQuestionnaireResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateProgramOnsiteQuestionnaireResponseData>
+  >(`/programs/${programId}`, { onsite_questionnaire_id: questionnaireId });
 
   if (!response.data.success) {
     throw new Error(
@@ -188,11 +199,10 @@ export async function updateProgramOnsiteQuestionnaire(
 export async function updateProgramPresiteQuestionnaire(
   programId: number,
   questionnaireId: number | null
-): Promise<any> {
-  const response = await apiClient.put<ApiResponse<any>>(
-    `/programs/${programId}`,
-    { presite_questionnaire_id: questionnaireId }
-  );
+): Promise<UpdateProgramPresiteQuestionnaireResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateProgramPresiteQuestionnaireResponseData>
+  >(`/programs/${programId}`, { presite_questionnaire_id: questionnaireId });
 
   if (!response.data.success) {
     throw new Error(
@@ -203,44 +213,16 @@ export async function updateProgramPresiteQuestionnaire(
   return response.data.data;
 }
 
-export async function deleteProgram(programId: number): Promise<void> {
-  const response = await apiClient.delete<ApiResponse<void>>(
-    `/programs/${programId}`
-  );
-
-  if (!response.data.success) {
-    throw new Error(response.data.error || "Failed to delete program");
-  }
-}
-
 // ====== Program Phases ======
-
-export interface UpdatePhaseData {
-  name?: string | null;
-  status?: "scheduled" | "in_progress" | "completed" | "archived";
-  notes?: string | null;
-  planned_start_date?: string | null;
-  actual_start_date?: string | null;
-  planned_end_date?: string | null;
-  actual_end_date?: string | null;
-}
-
-export interface CreatePhaseData {
-  name: string;
-  activate: boolean;
-  planned_start_date?: string | null;
-  planned_end_date?: string | null;
-}
 
 export async function updatePhase(
   programId: number,
   phaseId: number,
-  updateData: UpdatePhaseData
-): Promise<any> {
-  const response = await apiClient.put<ApiResponse<any>>(
-    `/programs/${programId}/phases/${phaseId}`,
-    updateData
-  );
+  updates: UpdateProgramPhaseBodyData
+): Promise<UpdateProgramPhaseResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateProgramPhaseResponseData>
+  >(`/programs/${programId}/phases/${phaseId}`, updates);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to update phase");
@@ -251,12 +233,11 @@ export async function updatePhase(
 
 export async function createPhase(
   programId: number,
-  phaseData: CreatePhaseData
-): Promise<any> {
-  const response = await apiClient.post<ApiResponse<any>>(
-    `/programs/${programId}/phases`,
-    phaseData
-  );
+  data: CreateProgramPhaseBodyData
+): Promise<CreateProgramPhaseResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateProgramPhaseResponseData>
+  >(`/programs/${programId}/phases`, data);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to create phase");
@@ -280,28 +261,13 @@ export async function deletePhase(
 
 // ====== Program Interviews ======
 
-export interface CreateProgramInterviewsData {
-  programId: number;
-  phaseId: number;
-  isIndividualInterview?: boolean;
-  roleIds?: number[];
-  contactIds: number[];
-  interviewType: "onsite" | "presite";
-}
-
 export async function createProgramInterviews(
-  data: CreateProgramInterviewsData
-): Promise<any> {
-  const response = await apiClient.post<ApiResponse<any>>(
-    `/programs/${data.programId}/interviews`,
-    {
-      phaseId: data.phaseId,
-      isIndividual: data.isIndividualInterview,
-      roleIds: data.roleIds,
-      contactIds: data.contactIds,
-      interviewType: data.interviewType,
-    }
-  );
+  programId: number,
+  data: CreateProgramInterviewsBodyData
+): Promise<CreateProgramInterviewsResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateProgramInterviewsResponseData>
+  >(`/programs/${programId}/interviews`, data);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to create interviews");
@@ -310,16 +276,17 @@ export async function createProgramInterviews(
   return response.data.data;
 }
 
+// ====== Program Measurements ======
+
 export async function getProgramMeasurements(
   programId: number,
-  includeDefinitions: boolean = false
-): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/programs/${programId}/measurements`,
-    {
-      params: { includeDefinitions },
-    }
-  );
+  params: GetProgramMeasurementsParams
+): Promise<GetProgramMeasurementsResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetProgramMeasurementsResponseData>
+  >(`/programs/${programId}/measurements`, {
+    params,
+  });
 
   if (!response.data.success) {
     throw new Error(
@@ -332,10 +299,10 @@ export async function getProgramMeasurements(
 
 export async function getProgramAvailableMeasurements(
   programId: number
-): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/programs/${programId}/measurements/available`
-  );
+): Promise<GetProgramAvailableMeasurementsResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetProgramAvailableMeasurementsResponseData>
+  >(`/programs/${programId}/measurements/available`);
 
   if (!response.data.success) {
     throw new Error(
@@ -348,14 +315,11 @@ export async function getProgramAvailableMeasurements(
 
 export async function addMeasurementDefinitionsToProgram(
   programId: number,
-  measurementDefinitionIds: number[]
-): Promise<any> {
-  const response = await apiClient.post<ApiResponse<any>>(
-    `/programs/${programId}/measurement-definitions`,
-    {
-      measurementDefinitionIds,
-    }
-  );
+  data: AddMeasurementDefinitionsToProgramBodyData
+): Promise<AddMeasurementDefinitionsToProgramResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<AddMeasurementDefinitionsToProgramResponseData>
+  >(`/programs/${programId}/measurement-definitions`, data);
 
   if (!response.data.success) {
     throw new Error(
@@ -385,14 +349,13 @@ export async function removeMeasurementDefinitionFromProgram(
 export async function getProgramCalculatedMeasurements(
   programId: number,
   programPhaseId: number,
-  filters?: { measurementDefinitionId?: number }
-): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/programs/${programId}/phases/${programPhaseId}/calculated-measurements`,
-    {
-      params: filters,
-    }
-  );
+  params: GetProgramCalculatedMeasurementsParams
+): Promise<GetProgramCalculatedMeasurementsResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetProgramCalculatedMeasurementsResponseData>
+  >(`/programs/${programId}/phases/${programPhaseId}/calculated-measurements`, {
+    params,
+  });
 
   if (!response.data.success) {
     throw new Error(
@@ -404,32 +367,17 @@ export async function getProgramCalculatedMeasurements(
 }
 
 // ====== Program Phase Measurement Data CRUD ======
-export interface LocationNode {
-  id: number;
-  type:
-    | "business_unit"
-    | "region"
-    | "site"
-    | "asset_group"
-    | "work_group"
-    | "role";
-}
 
 export async function getProgramPhaseMeasurementData(
   programId: number,
   programPhaseId: number,
-  measurementDefinitionId: number,
-  location?: LocationNode
-): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/programs/${programId}/phases/${programPhaseId}/calculated-measurement`,
-    {
-      params: {
-        measurementDefinitionId,
-        ...(location ? { location_id: location.id, location_type: location.type } : {}),
-      },
-    }
-  );
+  params: GetProgramPhaseMeasurementsParams
+): Promise<GetProgramPhaseMeasurementsResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetProgramPhaseMeasurementsResponseData>
+  >(`/programs/${programId}/phases/${programPhaseId}/calculated-measurement`, {
+    params,
+  });
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch measurement data");
@@ -438,23 +386,14 @@ export async function getProgramPhaseMeasurementData(
   return response.data.data;
 }
 
-// Support both old format (separate fields) and new format (location object)
-export type CreateMeasurementDataParams =
-  | {
-      measurement_definition_id: number;
-      calculated_value: number;
-      location: LocationNode;
-    }
-
 export async function createProgramPhaseMeasurementData(
   programId: number,
   programPhaseId: number,
-  data: CreateMeasurementDataParams
-): Promise<any> {
-  const response = await apiClient.post<ApiResponse<any>>(
-    `/programs/${programId}/phases/${programPhaseId}/measurement-data`,
-    data
-  );
+  data: CreateProgramPhaseMeasurementBodyData
+): Promise<CreateProgramPhaseMeasurementResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateProgramPhaseMeasurementResponseData>
+  >(`/programs/${programId}/phases/${programPhaseId}/measurement-data`, data);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to create measurement data");
@@ -467,11 +406,13 @@ export async function updateProgramPhaseMeasurementData(
   programId: number,
   programPhaseId: number,
   measurementId: number,
-  calculated_value: number
-): Promise<any> {
-  const response = await apiClient.put<ApiResponse<any>>(
+  data: UpdateProgramPhaseMeasurementBodyData
+): Promise<UpdateProgramPhaseMeasurementResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateProgramPhaseMeasurementResponseData>
+  >(
     `/programs/${programId}/phases/${programPhaseId}/measurement-data/${measurementId}`,
-    { calculated_value }
+    data
   );
 
   if (!response.data.success) {
@@ -497,9 +438,9 @@ export async function deleteProgramPhaseMeasurementData(
 
 export async function getProgramAllowedMeasurementDefinitions(
   programId: number
-): Promise<ProgramAllowedMeasurementDefinitions> {
+): Promise<GetProgramAllowedMeasurementDefinitionsResponseData> {
   const response = await apiClient.get<
-    ApiResponse<ProgramAllowedMeasurementDefinitions>
+    ApiResponse<GetProgramAllowedMeasurementDefinitionsResponseData>
   >(`/programs/${programId}/measurement-definitions/allowed`);
 
   if (!response.data.success) {

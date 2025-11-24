@@ -1,16 +1,18 @@
 import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
-import type { EnrichedMeasurementInstance } from "@/types/assessment-measurements";
 import { formatDistance } from "date-fns";
+import type { GetAssessmentMeasurementsResponseData } from "@/types/api/assessments";
 
 // Create measurement instances table columns
 export function createMeasurementInstancesColumns(
-  onEdit: (instance: EnrichedMeasurementInstance) => void,
-  onDelete: (instance: EnrichedMeasurementInstance) => void,
+  onEdit: (instance: GetAssessmentMeasurementsResponseData[number]) => void,
+  onDelete: (instance: GetAssessmentMeasurementsResponseData[number]) => void,
   showActions: boolean = true
-): ColumnDef<EnrichedMeasurementInstance>[] {
-  const baseColumns: ColumnDef<EnrichedMeasurementInstance>[] = [
+): ColumnDef<GetAssessmentMeasurementsResponseData[number]>[] {
+  const baseColumns: ColumnDef<
+    GetAssessmentMeasurementsResponseData[number]
+  >[] = [
     {
       accessorKey: "measurement_name",
       header: "Measurement",

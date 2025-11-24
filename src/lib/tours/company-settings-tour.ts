@@ -103,5 +103,3 @@ tourManager.registerTour({
     console.log('Company settings tour completed');
   }
 });
-
-export { companySettingsSteps };

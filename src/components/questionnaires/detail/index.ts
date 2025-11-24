@@ -1,1 +1,0 @@
-export type { Questionnaire } from '../list/questionnaires-data-table';

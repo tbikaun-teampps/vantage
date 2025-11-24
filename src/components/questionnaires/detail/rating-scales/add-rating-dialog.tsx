@@ -26,9 +26,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { IconX, IconCheck } from "@tabler/icons-react";
-import type { QuestionnaireRatingScale } from "@/types/assessment";
 import { ratingScaleSets } from "@/lib/library/rating-scales";
 import { useRatingScaleActions } from "@/hooks/questionnaire/useRatingScales";
+import type {
+  BatchCreateQuestionnaireRatingScalesBodyData,
+  GetQuestionnaireRatingScalesResponseData,
+} from "@/types/api/questionnaire";
 
 // Zod schema for rating scale creation
 const ratingScaleSchema = z.object({
@@ -50,7 +53,7 @@ interface AddRatingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   questionnaireId: number;
-  ratings: QuestionnaireRatingScale[];
+  ratings: GetQuestionnaireRatingScalesResponseData;
 }
 
 export default function AddRatingDialog({
@@ -117,19 +120,10 @@ export default function AddRatingDialog({
     onOpenChange(false);
   };
 
-  const handleUseRatingSet = async (ratingSet: {
-    id: number;
-    name: string;
-    scales: Array<{ value: number; name: string; description: string }>;
-  }) => {
-    await createRatingScalesBatch(
-      ratingSet.scales.map((scale, index) => ({
-        value: scale.value,
-        name: scale.name,
-        description: scale.description,
-        order_index: index + 1,
-      }))
-    );
+  const handleUseRatingSet = async (
+    data: BatchCreateQuestionnaireRatingScalesBodyData
+  ) => {
+    await createRatingScalesBatch(data);
 
     form.reset();
     onOpenChange(false);
@@ -327,7 +321,9 @@ export default function AddRatingDialog({
           )}
           {selectedTab === "library" && selectedScaleSet && (
             <Button
-              onClick={() => handleUseRatingSet(selectedScaleSet)}
+              onClick={() =>
+                handleUseRatingSet({ scales: selectedScaleSet.scales })
+              }
               disabled={isCreatingRatingScalesBatch || isCreatingRatingScale}
             >
               <IconCheck className="h-4 w-4 mr-2" />

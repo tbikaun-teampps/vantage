@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { IconCheck } from "@tabler/icons-react";
 import { useProfile, useProfileActions } from "@/hooks/useProfile";
-import type { SubscriptionTier } from "@/types/auth";
+import type { SubscriptionTier } from "@/types/api/auth";
 import { subscriptionPlans } from "@/components/account/subscription-data";
 import { BRAND_COLORS } from "@/lib/brand";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
@@ -32,7 +32,7 @@ export function SubscriptionModal({
   onOpenChange,
 }: SubscriptionModalProps) {
   const { data: profile } = useProfile();
-  const { updateProfile } = useProfileActions();
+  const { updateSubscription } = useProfileActions();
   const navigate = useCompanyAwareNavigate();
   const [updatingTier, setUpdatingTier] = useState<SubscriptionTier | null>(
     null
@@ -40,17 +40,13 @@ export function SubscriptionModal({
 
   const currentTier = profile?.subscription_tier || "demo";
 
-  const handleSubscriptionChange = async (tier: Exclude<SubscriptionTier, "interviewee">) => {
+  const handleSubscriptionChange = async (tier: SubscriptionTier) => {
     if (tier === currentTier || updatingTier) return;
 
     setUpdatingTier(tier);
     try {
-      const plan = subscriptionPlans[tier];
       // updateProfile now handles session refetch internally
-      await updateProfile({
-        subscription_tier: tier,
-        subscription_features: plan.features,
-      });
+      await updateSubscription(tier);
 
       // Redirect to select-company page after any subscription change
       navigate("/select-company");
@@ -102,7 +98,8 @@ export function SubscriptionModal({
                       className="inline-flex items-center justify-center w-8 h-8 rounded-full"
                       style={{ backgroundColor: plan.iconColor }}
                     >
-                      <IconComponent className="h-4 w-4 text-white" />
+                      <IconComponent />
+                      {/* className="h-4 w-4 text-white"  */}
                     </div>
                     {plan.name}
                     {isCurrentPlan && (

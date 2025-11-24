@@ -14,19 +14,19 @@ import {
 import { Loader2 } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
-import type {
-  AssessmentMeasurement,
-  EnrichedMeasurementInstance,
-} from "@/types/assessment-measurements";
 import type { TreeNodeType } from "@/types/company";
+import type {
+  AssessmentMeasurementDefinition,
+  AssessmentMeasurementInstance,
+} from "@/types/api/assessments";
 
 interface ConfigTabProps {
   assessmentId?: number;
-  measurement: AssessmentMeasurement;
-  onUploadData: (measurement: AssessmentMeasurement) => void;
+  measurement: AssessmentMeasurementDefinition | null;
+  onUploadData: (measurement: AssessmentMeasurementDefinition) => void;
   isDeleting: boolean;
-  onDeleteInstance?: (instance: EnrichedMeasurementInstance) => void;
-  instances: EnrichedMeasurementInstance[];
+  onDeleteInstance?: (instance: AssessmentMeasurementInstance) => void;
+  instances: AssessmentMeasurementInstance[];
 }
 
 export function AddEditTab({
@@ -160,7 +160,11 @@ export function AddEditTab({
     };
 
     try {
-      await addMeasurement(assessmentId, measurement.id, value, location);
+      await addMeasurement(assessmentId, {
+        measurement_definition_id: measurement.id,
+        calculated_value: value,
+        location,
+      });
       toast.success(`Added "${measurement.name}" to assessment`);
       // Clear form after successful add
       setManualValue("");
@@ -212,8 +216,8 @@ export function AddEditTab({
                   value={manualValue}
                   onChange={(e) => setManualValue(e.target.value)}
                   disabled={!hasSelection}
-                  min={measurement.min_value}
-                  max={measurement.max_value}
+                  min={measurement.min_value ?? undefined}
+                  max={measurement.max_value ?? undefined}
                 />
               </div>
               {!hasSelection && (
@@ -256,8 +260,8 @@ export function AddEditTab({
                     value={manualValue}
                     onChange={(e) => setManualValue(e.target.value)}
                     disabled={isUpdating}
-                    min={measurement.min_value}
-                    max={measurement.max_value}
+                    min={measurement.min_value ?? undefined}
+                    max={measurement.max_value ?? undefined}
                   />
                   <Button
                     onClick={handleSaveManualValue}
@@ -277,8 +281,8 @@ export function AddEditTab({
         <div>
           <h4 className="font-medium mb-3">Upload Data</h4>
           <div className="flex items-center justify-between p-3 border rounded-lg">
-            <div className="flex items-center gap-3">
-              {/* <DataStatusBadge status={measurement.data_status} /> */}
+            {/* <div className="flex items-center gap-3">
+              <DataStatusBadge status={measurement.data_status} />
               <div>
                 <div className="text-sm font-medium">
                   {measurement.data_status === "uploaded"
@@ -295,18 +299,18 @@ export function AddEditTab({
                       : "Upload your data file to begin analysis"}
                 </div>
               </div>
-            </div>
-            {measurement.data_status !== "uploaded" && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onUploadData(measurement)}
-                disabled
-              >
-                <IconFileUpload className="h-4 w-4 mr-2" />
-                Upload
-              </Button>
-            )}
+            </div> */}
+            {/* {measurement.data_status !== "uploaded" && ( */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onUploadData(measurement)}
+              disabled
+            >
+              <IconFileUpload className="h-4 w-4 mr-2" />
+              Upload
+            </Button>
+            {/* )} */}
           </div>
         </div>
 

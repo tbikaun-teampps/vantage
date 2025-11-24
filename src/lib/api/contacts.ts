@@ -1,21 +1,14 @@
-import type {
-  Contact,
-  ContactFormData,
-  ContactableEntityType,
-} from "@/types/contact";
+import type { ContactableEntityType } from "@/types/api/companies";
 import { apiClient } from "./client";
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-}
-
-export interface MessageResponse {
-  success: boolean;
-  message: string;
-  error?: string;
-}
+import type {
+  GetContactsByRoleResponseData,
+  GetEntityContactsResponseData,
+  LinkContactToEntityBodyData,
+  LinkContactToEntityResponseData,
+  UpdateContactBodyData,
+  UpdateContactResponseData,
+} from "@/types/api/companies";
+import type { ApiResponse } from "./utils";
 
 // Map frontend entity types (with underscores) to backend API types (with hyphens)
 const entityTypeToApi: Record<ContactableEntityType, string> = {
@@ -42,11 +35,11 @@ export async function getEntityContacts(
   companyId: string,
   entityType: ContactableEntityType,
   entityId: string | number
-): Promise<Contact[]> {
+): Promise<GetEntityContactsResponseData> {
   const apiEntityType = toApiEntityType(entityType);
-  const response = await apiClient.get<ApiResponse<Contact[]>>(
-    `/companies/${companyId}/contacts/${apiEntityType}/${entityId}`
-  );
+  const response = await apiClient.get<
+    ApiResponse<GetEntityContactsResponseData>
+  >(`/companies/${companyId}/contacts/${apiEntityType}/${entityId}`);
 
   if (!response.data.success) {
     throw new Error(
@@ -64,13 +57,12 @@ export async function createAndLinkContact(
   companyId: string,
   entityType: ContactableEntityType,
   entityId: string | number,
-  contactData: ContactFormData
-): Promise<Contact> {
+  data: LinkContactToEntityBodyData
+): Promise<LinkContactToEntityResponseData> {
   const apiEntityType = toApiEntityType(entityType);
-  const response = await apiClient.post<ApiResponse<Contact>>(
-    `/companies/${companyId}/contacts/${apiEntityType}/${entityId}`,
-    contactData
-  );
+  const response = await apiClient.post<
+    ApiResponse<LinkContactToEntityResponseData>
+  >(`/companies/${companyId}/contacts/${apiEntityType}/${entityId}`, data);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to create contact");
@@ -85,11 +77,11 @@ export async function createAndLinkContact(
 export async function updateContact(
   companyId: string,
   contactId: number,
-  contactData: Partial<ContactFormData>
-): Promise<Contact> {
-  const response = await apiClient.put<ApiResponse<Contact>>(
+  updates: UpdateContactBodyData
+): Promise<UpdateContactResponseData> {
+  const response = await apiClient.put<ApiResponse<UpdateContactResponseData>>(
     `/companies/${companyId}/contacts/${contactId}`,
-    contactData
+    updates
   );
 
   if (!response.data.success) {
@@ -107,17 +99,15 @@ export async function unlinkContact(
   entityType: ContactableEntityType,
   entityId: string | number,
   contactId: number
-): Promise<{ message: string }> {
+): Promise<void> {
   const apiEntityType = toApiEntityType(entityType);
-  const response = await apiClient.delete<MessageResponse>(
+  const response = await apiClient.delete<ApiResponse<void>>(
     `/companies/${companyId}/contacts/${apiEntityType}/${entityId}/${contactId}`
   );
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to unlink contact");
   }
-
-  return { message: response.data.message };
 }
 
 /**
@@ -126,15 +116,14 @@ export async function unlinkContact(
 export async function getContactsByRole(
   companyId: string,
   roleId: number
-): Promise<Contact[]> {
-  const response = await apiClient.get<ApiResponse<{ contact: Contact }[]>>(
-    `/companies/${companyId}/contacts/roles/${roleId}`
-  );
+): Promise<GetContactsByRoleResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetContactsByRoleResponseData>
+  >(`/companies/${companyId}/contacts/roles/${roleId}`);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch contacts by role");
   }
 
-  // The backend returns an array of objects with a 'contact' property, so we need to extract the contacts
-  return response.data.data.map((item) => item.contact);
+  return response.data.data;
 }

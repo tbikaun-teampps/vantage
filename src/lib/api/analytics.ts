@@ -1,22 +1,25 @@
 import type {
-  OverallGeographicalMapFiltersResponseData,
-  OverallOnsiteGeographicalMapResponseData,
+  GetOverallDesktopHeatmapParams,
+  GetOverallDesktopHeatmapResponseData,
+  GetOverallHeatmapFiltersResponseData,
+  GetOverallOnsiteHeatmapParams,
+  GetOverallOnsiteHeatmapResponseData,
+  GetProgramInterviewHeatmapParams,
+  GetProgramInterviewHeatmapResponseData,
+  GetProgramMeasurementHeatmapResponseData,
+  GetOverallGeographicalMapFiltersResponseData,
+  GetOverallOnsiteGeographicalMapResponseData,
 } from "@/types/api/analytics";
 import { apiClient } from "./client";
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-}
+import type { ApiResponse } from "./utils";
 
 export async function getOverallGeographicalMapFilters(
   companyId: string,
   assessmentType: "onsite" | "desktop"
-): Promise<OverallGeographicalMapFiltersResponseData> {
+): Promise<GetOverallGeographicalMapFiltersResponseData> {
   const response = await apiClient.get<
-    ApiResponse<OverallGeographicalMapFiltersResponseData>
-  >("/analytics/overall/geographical-map/filters", {
+    ApiResponse<GetOverallGeographicalMapFiltersResponseData>
+  >("/analytics/geographical-map/overall/filters", {
     params: {
       companyId,
       assessmentType,
@@ -40,10 +43,10 @@ export async function getOverallOnsiteGeographicalMap(
   companyId: string,
   questionnaireId: number,
   assessmentId?: number
-): Promise<OverallOnsiteGeographicalMapResponseData> {
+): Promise<GetOverallOnsiteGeographicalMapResponseData> {
   const response = await apiClient.get<
-    ApiResponse<OverallOnsiteGeographicalMapResponseData>
-  >("/analytics/geographical-map/overall-onsite", {
+    ApiResponse<GetOverallOnsiteGeographicalMapResponseData>
+  >("/analytics/geographical-map/overall/onsite", {
     params: {
       companyId,
       questionnaireId,
@@ -94,7 +97,7 @@ export async function getOverallDesktopGeographicalMap(
         }[];
       }[]
     >
-  >("/analytics/geographical-map/overall-desktop", {
+  >("/analytics/geographical-map/overall/desktop", {
     params: {
       companyId,
       assessmentId,
@@ -113,26 +116,10 @@ export async function getOverallDesktopGeographicalMap(
 export async function getOverallHeatmapFilters(
   companyId: string,
   assessmentType: "onsite" | "desktop"
-): Promise<{
-  questionnaires: { id: number; name: string; assessmentIds: number[] }[];
-  assessments: { id: number; name: string; questionnaireId: number }[];
-  axes: { value: string; category: string }[];
-  metrics: string[];
-}> {
+): Promise<GetOverallHeatmapFiltersResponseData> {
   const response = await apiClient.get<
-    ApiResponse<{
-      options: {
-        questionnaires: { id: number; name: string; assessmentIds: number[] }[];
-        assessments: {
-          id: number;
-          name: string;
-          questionnaireId: number;
-        }[];
-        axes: { value: string; category: string }[];
-        metrics: string[];
-      };
-    }>
-  >(`/analytics/overall/heatmap/filters`, {
+    ApiResponse<GetOverallHeatmapFiltersResponseData>
+  >(`/analytics/heatmap/overall/filters`, {
     params: { companyId, assessmentType },
   });
 
@@ -140,142 +127,16 @@ export async function getOverallHeatmapFilters(
     throw new Error(response.data.error || "Failed to fetch heatmap filters");
   }
 
-  return response.data.data.options;
+  return response.data.data;
 }
 
 export async function getOverallOnsiteHeatmap(
-  companyId: string,
-  questionnaireId: number,
-  assessmentId?: number,
-  xAxis?:
-    | "business_unit"
-    | "region"
-    | "site"
-    | "asset_group"
-    | "work_group"
-    | "role"
-    | "role_level"
-    | "section"
-    | "step"
-    | "question",
-  yAxis?:
-    | "business_unit"
-    | "region"
-    | "site"
-    | "asset_group"
-    | "work_group"
-    | "role"
-    | "role_level"
-    | "section"
-    | "step"
-    | "question"
-): Promise<{
-  xLabels: string[];
-  yLabels: string[];
-  metrics: {
-    average_score: {
-      data: {
-        x: string;
-        y: string;
-        value: number;
-        sampleSize: number;
-        metadata: any;
-      }[];
-      values: number[];
-    };
-    total_interviews: {
-      data: {
-        x: string;
-        y: string;
-        value: number;
-        sampleSize: number;
-        metadata: any;
-      }[];
-      values: number[];
-    };
-    completion_rate: {
-      data: {
-        x: string;
-        y: string;
-        value: number;
-        sampleSize: number;
-        metadata: any;
-      }[];
-      values: number[];
-    };
-    total_actions: {
-      data: {
-        x: string;
-        y: string;
-        value: number;
-        sampleSize: number;
-        metadata: any;
-      }[];
-      values: number[];
-    };
-  };
-  config: {
-    xAxis: string;
-    yAxis: string;
-    questionnaireId: number;
-    assessmentId: number | null;
-  };
-}> {
+  params: GetOverallOnsiteHeatmapParams
+): Promise<GetOverallOnsiteHeatmapResponseData> {
   const response = await apiClient.get<
-    ApiResponse<{
-      xLabels: string[];
-      yLabels: string[];
-      metrics: {
-        average_score: {
-          data: {
-            x: string;
-            y: string;
-            value: number;
-            sampleSize: number;
-            metadata: any;
-          }[];
-          values: number[];
-        };
-        total_interviews: {
-          data: {
-            x: string;
-            y: string;
-            value: number;
-            sampleSize: number;
-            metadata: any;
-          }[];
-          values: number[];
-        };
-        completion_rate: {
-          data: {
-            x: string;
-            y: string;
-            value: number;
-            sampleSize: number;
-            metadata: any;
-          }[];
-          values: number[];
-        };
-        total_actions: {
-          data: {
-            x: string;
-            y: string;
-            value: number;
-            sampleSize: number;
-            metadata: any;
-          }[];
-          values: number[];
-        };
-      };
-      config: {
-        xAxis: string;
-        yAxis: string;
-        questionnaireId: number;
-        assessmentId: number | null;
-      };
-    }>
-  >("/analytics/heatmap/overall-onsite", {
-    params: { companyId, questionnaireId, assessmentId, xAxis, yAxis },
+    ApiResponse<GetOverallOnsiteHeatmapResponseData>
+  >("/analytics/heatmap/overall/onsite", {
+    params,
   });
 
   if (!response.data.success) {
@@ -286,111 +147,12 @@ export async function getOverallOnsiteHeatmap(
 }
 
 export async function getOverallDesktopHeatmap(
-  companyId: string,
-  assessmentId?: number,
-  xAxis?:
-    | "business_unit"
-    | "region"
-    | "site"
-    | "asset_group"
-    | "work_group"
-    | "role"
-    | "role_level"
-    | "measurement",
-  yAxis?:
-    | "business_unit"
-    | "region"
-    | "site"
-    | "asset_group"
-    | "work_group"
-    | "role"
-    | "role_level"
-    | "measurement"
-): Promise<{
-  xLabels: string[];
-  yLabels: string[];
-  aggregations: {
-    sum: {
-      data: {
-        x: string;
-        y: string;
-        value: number;
-        sampleSize: number;
-        metadata: any;
-      }[];
-      values: number[];
-    };
-    count: {
-      data: {
-        x: string;
-        y: string;
-        value: number;
-        sampleSize: number;
-        metadata: any;
-      }[];
-      values: number[];
-    };
-    average: {
-      data: {
-        x: string;
-        y: string;
-        value: number;
-        sampleSize: number;
-        metadata: any;
-      }[];
-      values: number[];
-    };
-  };
-  config: {
-    xAxis: string;
-    yAxis: string;
-    assessmentId: number | null;
-  };
-}> {
+  params: GetOverallDesktopHeatmapParams
+): Promise<GetOverallDesktopHeatmapResponseData> {
   const response = await apiClient.get<
-    ApiResponse<{
-      xLabels: string[];
-      yLabels: string[];
-      aggregations: {
-        sum: {
-          data: {
-            x: string;
-            y: string;
-            value: number;
-            sampleSize: number;
-            metadata: object;
-          }[];
-          values: number[];
-        };
-        count: {
-          data: {
-            x: string;
-            y: string;
-            value: number;
-            sampleSize: number;
-            metadata: object;
-          }[];
-          values: number[];
-        };
-        average: {
-          data: {
-            x: string;
-            y: string;
-            value: number;
-            sampleSize: number;
-            metadata: object;
-          }[];
-          values: number[];
-        };
-      };
-      config: {
-        xAxis: string;
-        yAxis: string;
-        assessmentId: number | null;
-      };
-    }>
-  >("/analytics/heatmap/overall-desktop", {
-    params: { companyId, assessmentId, xAxis, yAxis },
+    ApiResponse<GetOverallDesktopHeatmapResponseData>
+  >("/analytics/heatmap/overall/desktop", {
+    params,
   });
 
   if (!response.data.success) {
@@ -402,16 +164,13 @@ export async function getOverallDesktopHeatmap(
 
 export async function getProgramInterviewHeatmap(
   programId: string,
-  questionnaireType: "presite" | "onsite"
-): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/analytics/heatmap/program-interviews/${programId}`,
-    {
-      params: {
-        questionnaireType,
-      },
-    }
-  );
+  params: GetProgramInterviewHeatmapParams
+): Promise<GetProgramInterviewHeatmapResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetProgramInterviewHeatmapResponseData>
+  >(`/analytics/heatmap/program-interviews/${programId}`, {
+    params,
+  });
 
   if (!response.data.success) {
     throw new Error(
@@ -422,35 +181,11 @@ export async function getProgramInterviewHeatmap(
   return response.data.data;
 }
 
-export async function getProgramMeasurementHeatmap(programId: string): Promise<{
-  data: Array<{
-    measurement: string;
-    phaseTransition: string;
-    difference: number;
-    percentChange: number;
-    fromValue: number;
-    toValue: number;
-    fromPhase: string;
-    toPhase: string;
-  }>;
-  measurements: string[];
-  transitions: string[];
-}> {
+export async function getProgramMeasurementHeatmap(
+  programId: string
+): Promise<GetProgramMeasurementHeatmapResponseData> {
   const response = await apiClient.get<
-    ApiResponse<{
-      data: Array<{
-        measurement: string;
-        phaseTransition: string;
-        difference: number;
-        percentChange: number;
-        fromValue: number;
-        toValue: number;
-        fromPhase: string;
-        toPhase: string;
-      }>;
-      measurements: string[];
-      transitions: string[];
-    }>
+    ApiResponse<GetProgramMeasurementHeatmapResponseData>
   >(`/analytics/heatmap/program-measurements/${programId}`);
 
   if (!response.data.success) {

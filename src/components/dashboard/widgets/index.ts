@@ -3,7 +3,8 @@ import MetricWidget from "./MetricWidget";
 import ChartWidget from "./ChartWidget";
 import ActivityWidget from "./ActivityWidget";
 import ActionsWidget from "./ActionsWidget";
-import type { Widget, WidgetType } from "./types";
+import type { Widget } from "./types";
+import type { WidgetType } from "@/types/api/dashboard";
 import TableWidget from "./TableWidget";
 
 export const availableWidgets: Widget[] = [

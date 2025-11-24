@@ -9,11 +9,9 @@ import {
   IconCheck,
   IconLoader2,
 } from "@tabler/icons-react";
-import {
-  InterviewCompletionDialog,
-  type InterviewFeedback,
-} from "./InterviewCompletionDialog";
+import { InterviewCompletionDialog } from "./InterviewCompletionDialog";
 import { useState } from "react";
+import type { InterviewFeedback } from "@/types/api/interviews";
 
 interface InterviewNavigationProps {
   interviewId: number;

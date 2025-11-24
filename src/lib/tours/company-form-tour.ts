@@ -37,5 +37,3 @@ tourManager.registerTour({
   id: 'company-form',
   steps: companyFormSteps
 });
-
-export { companyFormSteps };

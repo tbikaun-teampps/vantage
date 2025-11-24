@@ -1,92 +1,61 @@
 import { FastifyInstance } from "fastify";
 import { InternalServerError } from "../../plugins/errorHandler";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
+import {
+  MeasurementIdParamsSchema,
+  GetMeasurementDefinitionsResponseSchema,
+  GetMeasurementDefinitionResponseSchema,
+} from "../../schemas/shared";
+import { Error500Schema } from "../../schemas/errors";
 
 export async function measurementsRoutes(fastify: FastifyInstance) {
-  fastify.get(
-    "/measurement-definitions",
-    {
-      schema: {
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    id: { type: "number" },
-                    name: { type: "string" },
-                    active: { type: "boolean" },
-                    calculation: { type: "string" },
-                    calculation_type: { type: "string" },
-                    description: { type: "string" },
-                    max_value: { type: "number" },
-                    min_value: { type: "number" },
-                    unit: { type: "string" },
-                    objective: { type: "string" },
-                    provider: { type: "string" },
-                    required_csv_columns: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          name: { type: "string" },
-                          data_type: { type: "string" },
-                          description: { type: "string" },
-                        },
-                        required: ["name", "data_type", "description"],
-                      },
-                    },
-                  },
-                  required: [
-                    "id",
-                    "name",
-                    "active",
-                    "calculation",
-                    "calculation_type",
-                    "description",
-                    "max_value",
-                    "min_value",
-                    "unit",
-                    "objective",
-                    "provider",
-                    "required_csv_columns",
-                  ],
-                },
-              },
-            },
-            required: ["success", "data"],
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/measurement-definitions",
+    schema: {
+      description: "Get all measurement definitions",
+      response: {
+        200: GetMeasurementDefinitionsResponseSchema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const { data, error } = await request.supabaseClient
         .from("measurement_definitions")
         .select("*");
 
-      if (error) {
+      if (error || !data || data.length === 0 || data === null) {
         throw new InternalServerError("Failed to fetch measurements");
       }
 
       return { success: true, data };
-    }
-  );
-  fastify.get("/measurement-definitions/:id", async (request) => {
-    const { id } = request.params as { id: number };
+    },
+  });
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/measurement-definitions/:id",
+    schema: {
+      description: "Get a single measurement definition by ID",
+      params: MeasurementIdParamsSchema,
+      response: {
+        200: GetMeasurementDefinitionResponseSchema,
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const { id } = request.params;
 
-    const { data, error } = await request.supabaseClient
-      .from("measurement_definitions")
-      .select("*")
-      .eq("id", id)
-      .single();
+      const { data, error } = await request.supabaseClient
+        .from("measurement_definitions")
+        .select("*")
+        .eq("id", id)
+        .single();
 
-    if (error) {
-      throw new InternalServerError("Failed to fetch measurement definition");
-    }
+      if (error) {
+        throw new InternalServerError("Failed to fetch measurement definition");
+      }
 
-    return { success: true, data };
+      return { success: true, data };
+    },
   });
 }

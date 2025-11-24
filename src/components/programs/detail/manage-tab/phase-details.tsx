@@ -1,5 +1,4 @@
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import type { ProgramPhase } from "@/types/program";
+import { Card, CardContent } from "@/components/ui/card";
 import { useUpdatePhase } from "@/hooks/useProgram";
 import { InlineFieldEditor } from "@/components/ui/inline-field-editor";
 import {
@@ -13,6 +12,10 @@ import {
   IconCircleCheckFilled,
   IconArchive,
 } from "@tabler/icons-react";
+import type {
+  ProgramPhase,
+  UpdateProgramPhaseBodyData,
+} from "@/types/api/programs";
 
 interface PhaseDetailsProps {
   phase: ProgramPhase;
@@ -47,13 +50,13 @@ export function PhaseDetails({ phase }: PhaseDetailsProps) {
   const updatePhaseMutation = useUpdatePhase();
 
   const handleUpdateField = async (
-    field: keyof ProgramPhase,
+    field: keyof UpdateProgramPhaseBodyData,
     value: string | null
   ) => {
     await updatePhaseMutation.mutateAsync({
       programId: phase.program_id,
       phaseId: phase.id,
-      updateData: { [field]: value },
+      updates: { [field]: value },
     });
   };
 

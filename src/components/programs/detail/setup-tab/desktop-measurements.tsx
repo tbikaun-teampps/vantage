@@ -86,8 +86,11 @@ export function Measurements({ programId }: MeasurementsProps) {
   };
 
   const handleRemoveMeasurementDefinition = async (
-    measurementDefinitionId: number
+    measurementDefinitionId?: number
   ) => {
+    if (!measurementDefinitionId) {
+      return;
+    }
     await removeMeasurementDefinitionMutation.mutateAsync({
       programId,
       measurementDefinitionId,
@@ -144,71 +147,59 @@ export function Measurements({ programId }: MeasurementsProps) {
                           // Then sort alphabetically by name
                           return a.name.localeCompare(b.name);
                         })
-                        .map(
-                          (measurement: {
-                            id: number;
-                            name: string;
-                            description?: string;
-                            calculation_type?: string;
-                            provider?: string;
-                            active: boolean;
-                          }) => (
-                            <div
-                              key={measurement.id}
-                              className={cn(
-                                "flex items-start space-x-3 p-3 border rounded-lg",
-                                !measurement.active && "opacity-60"
+                        .map((measurement) => (
+                          <div
+                            key={measurement.id}
+                            className={cn(
+                              "flex items-start space-x-3 p-3 border rounded-lg",
+                              !measurement.active && "opacity-60"
+                            )}
+                          >
+                            <Checkbox
+                              id={`measurement-${measurement.id}`}
+                              checked={selectedMeasurementDefinitionIds.includes(
+                                measurement.id
                               )}
-                            >
-                              <Checkbox
-                                id={`measurement-${measurement.id}`}
-                                checked={selectedMeasurementDefinitionIds.includes(
-                                  measurement.id
+                              onCheckedChange={(checked) =>
+                                handleMeasurementSelection(
+                                  measurement.id,
+                                  !!checked
+                                )
+                              }
+                            />
+                            <div className="flex-1 min-w-0">
+                              <label
+                                htmlFor={`measurement-${measurement.id}`}
+                                className={cn(
+                                  "block text-sm font-medium",
+                                  measurement.active && "cursor-pointer"
                                 )}
-                                onCheckedChange={(checked) =>
-                                  handleMeasurementSelection(
-                                    measurement.id,
-                                    !!checked
-                                  )
-                                }
-                              />
-                              <div className="flex-1 min-w-0">
-                                <label
-                                  htmlFor={`measurement-${measurement.id}`}
-                                  className={cn(
-                                    "block text-sm font-medium",
-                                    measurement.active && "cursor-pointer"
-                                  )}
-                                >
-                                  {measurement.name}
-                                </label>
-                                {measurement.description && (
-                                  <p className="text-sm text-muted-foreground mt-1">
-                                    {measurement.description}
-                                  </p>
-                                )}
-                                {measurement.calculation_type && (
-                                  <Badge variant="secondary" className="mt-2">
-                                    {measurement.calculation_type}
-                                  </Badge>
-                                )}
-                                {measurement.provider && (
-                                  <Badge className="mt-2">
-                                    {measurement.provider}
-                                  </Badge>
-                                )}
-                                {!measurement.active && (
-                                  <Badge
-                                    variant="outline"
-                                    className="mt-2 ml-2"
-                                  >
-                                    Coming Soon
-                                  </Badge>
-                                )}
-                              </div>
+                              >
+                                {measurement.name}
+                              </label>
+                              {measurement.description && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {measurement.description}
+                                </p>
+                              )}
+                              {measurement.calculation_type && (
+                                <Badge variant="secondary" className="mt-2">
+                                  {measurement.calculation_type}
+                                </Badge>
+                              )}
+                              {measurement.provider && (
+                                <Badge className="mt-2">
+                                  {measurement.provider}
+                                </Badge>
+                              )}
+                              {!measurement.active && (
+                                <Badge variant="outline" className="mt-2 ml-2">
+                                  Coming Soon
+                                </Badge>
+                              )}
                             </div>
-                          )
-                        )}
+                          </div>
+                        ))}
                     </div>
                     <div className="flex justify-end space-x-2 pt-4 border-t">
                       <Button
@@ -259,51 +250,41 @@ export function Measurements({ programId }: MeasurementsProps) {
           </div>
         ) : hasMeasurements ? (
           <div className="space-y-3 grid grid-cols-4 gap-4">
-            {programMeasurements.map(
-              (programMeasurement: {
-                id: number;
-                measurement_definition: {
-                  id: number;
-                  name: string;
-                  description?: string;
-                  calculation_type?: string;
-                  provider?: string;
-                };
-              }) => (
-                <div
-                  key={programMeasurement.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-3">
-                      <h4 className="text-sm font-medium">
-                        {programMeasurement.measurement_definition.name}
-                      </h4>
-                      {programMeasurement.measurement_definition
-                        .calculation_type && (
-                        <Badge variant="secondary">
-                          {
-                            programMeasurement.measurement_definition
-                              .calculation_type
-                          }
-                        </Badge>
-                      )}
-                    </div>
-                    {programMeasurement.measurement_definition.description && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {programMeasurement.measurement_definition.description}
-                      </p>
+            {programMeasurements.map((programMeasurement) => (
+              <div
+                key={programMeasurement.id}
+                className="flex items-center justify-between p-4 border rounded-lg"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-3">
+                    <h4 className="text-sm font-medium">
+                      {programMeasurement.measurement_definition?.name}
+                    </h4>
+                    {programMeasurement.measurement_definition
+                      ?.calculation_type && (
+                      <Badge variant="secondary">
+                        {
+                          programMeasurement.measurement_definition
+                            .calculation_type
+                        }
+                      </Badge>
                     )}
-                    <div className="flex gap-4">
-                      {programMeasurement.measurement_definition.provider && (
-                        <div className="text-sm mt-2">
-                          Data Provider:{" "}
-                          <Badge>
-                            {programMeasurement.measurement_definition.provider}
-                          </Badge>
-                        </div>
-                      )}
-                      {/* {programMeasurement.measurement_definition
+                  </div>
+                  {programMeasurement.measurement_definition?.description && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {programMeasurement.measurement_definition?.description}
+                    </p>
+                  )}
+                  <div className="flex gap-4">
+                    {programMeasurement.measurement_definition?.provider && (
+                      <div className="text-sm mt-2">
+                        Data Provider:{" "}
+                        <Badge>
+                          {programMeasurement.measurement_definition?.provider}
+                        </Badge>
+                      </div>
+                    )}
+                    {/* {programMeasurement.measurement_definition
                       .required_csv_columns && (
                       <div className="text-sm mt-2">
                         Required CSV Columns:{" "}
@@ -319,28 +300,27 @@ export function Measurements({ programId }: MeasurementsProps) {
                         </div>
                       </div>
                     )} */}
-                    </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      handleRemoveMeasurementDefinition(
-                        programMeasurement.measurement_definition.id
-                      )
-                    }
-                    disabled={removeMeasurementDefinitionMutation.isPending}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    {removeMeasurementDefinitionMutation.isPending ? (
-                      <IconLoader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <IconTrash className="h-4 w-4" />
-                    )}
-                  </Button>
                 </div>
-              )
-            )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    handleRemoveMeasurementDefinition(
+                      programMeasurement.measurement_definition?.id
+                    )
+                  }
+                  disabled={removeMeasurementDefinitionMutation.isPending}
+                  className="text-destructive hover:text-destructive"
+                >
+                  {removeMeasurementDefinitionMutation.isPending ? (
+                    <IconLoader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <IconTrash className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="text-center py-8">

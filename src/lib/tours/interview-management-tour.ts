@@ -46,5 +46,3 @@ tourManager.registerTour({
   id: 'interview-management',
   steps: interviewSteps
 });
-
-export { interviewSteps };

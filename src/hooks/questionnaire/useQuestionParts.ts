@@ -3,20 +3,21 @@ import {
   createQuestionPart,
   deleteQuestionPart,
   duplicateQuestionPart,
-  //   getRatingScales,
-  //   createRatingScale,
-  //   createRatingScalesBatch,
-  //   updateRatingScale,
-  //   deleteRatingScale,
   getQuestionParts,
   getQuestionRatingScaleMapping,
   reorderQuestionParts,
   updateQuestionPart,
   updateQuestionRatingScaleMapping,
 } from "@/lib/api/questionnaires";
+import type {
+  CreateQuestionPartBodyData,
+  GetQuestionPartsResponseData,
+  UpdateQuestionPartBodyData,
+  UpdateQuestionRatingScaleMappingBodyData,
+} from "@/types/api/questionnaire";
 
 // Query key factory for question parts
-export const questionPartsKeys = {
+const questionPartsKeys = {
   all: ["question", "parts"] as const,
   byQuestionId: (id: number) => [...questionPartsKeys.all, id] as const,
 };
@@ -25,7 +26,8 @@ export const questionPartsKeys = {
 export function useQuestionParts(questionId: number, enabled = true) {
   return useQuery({
     queryKey: questionPartsKeys.byQuestionId(questionId),
-    queryFn: (): Promise<any[]> => getQuestionParts(questionId),
+    queryFn: (): Promise<GetQuestionPartsResponseData> =>
+      getQuestionParts(questionId),
     staleTime: 10 * 60 * 1000, // 10 minutes - question parts don't change often
     enabled: enabled && !!questionId,
   });
@@ -48,12 +50,13 @@ export function useQuestionPartsActions(questionId: number) {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (partData: any) => createQuestionPart(questionId, partData),
+    mutationFn: (partData: CreateQuestionPartBodyData) =>
+      createQuestionPart(questionId, partData),
     onSuccess: (newPart) => {
       // Update the question parts cache
       queryClient.setQueryData(
         questionPartsKeys.byQuestionId(questionId),
-        (old: any[] = []) => [...old, newPart]
+        (old: GetQuestionPartsResponseData = []) => [...old, newPart]
       );
       // Invalidate rating scale mapping since server auto-creates defaults
       queryClient.invalidateQueries({
@@ -63,13 +66,18 @@ export function useQuestionPartsActions(questionId: number) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ partId, updates }: { partId: number; updates: any }) =>
-      updateQuestionPart(questionId, partId, updates),
+    mutationFn: ({
+      partId,
+      updates,
+    }: {
+      partId: number;
+      updates: UpdateQuestionPartBodyData;
+    }) => updateQuestionPart(questionId, partId, updates),
     onSuccess: (updatedQuestionPart, { partId }) => {
       // Update the question parts cache
       queryClient.setQueryData(
         questionPartsKeys.byQuestionId(questionId),
-        (old: any[] = []) =>
+        (old: GetQuestionPartsResponseData = []) =>
           old.map((part) => (part.id === partId ? updatedQuestionPart : part))
       );
       // Invalidate rating scale mapping in case answer_type or options changed
@@ -85,7 +93,8 @@ export function useQuestionPartsActions(questionId: number) {
       // Update the question parts cache
       queryClient.setQueryData(
         questionPartsKeys.byQuestionId(questionId),
-        (old: any[] = []) => old.filter((part) => part.id !== partId)
+        (old: GetQuestionPartsResponseData = []) =>
+          old.filter((part) => part.id !== partId)
       );
       // Invalidate rating scale mapping since server removes orphaned entries
       queryClient.invalidateQueries({
@@ -101,7 +110,7 @@ export function useQuestionPartsActions(questionId: number) {
       // Update the question parts cache
       queryClient.setQueryData(
         questionPartsKeys.byQuestionId(questionId),
-        (old: any[] = []) => [...old, newPart]
+        (old: GetQuestionPartsResponseData = []) => [...old, newPart]
       );
       // Invalidate rating scale mapping since server copies/creates scoring config
       queryClient.invalidateQueries({
@@ -121,16 +130,9 @@ export function useQuestionPartsActions(questionId: number) {
     },
   });
 
-  const getMappingMutation = useMutation({
-    mutationFn: () => getQuestionRatingScaleMapping(questionId),
-    onSuccess: (mapping) => {
-      console.log("Fetched rating scale mapping:", mapping);
-    },
-  });
-
   const updateMappingMutation = useMutation({
-    mutationFn: (ratingScaleMapping: Record<string, unknown>) =>
-      updateQuestionRatingScaleMapping(questionId, ratingScaleMapping),
+    mutationFn: (data: UpdateQuestionRatingScaleMappingBodyData) =>
+      updateQuestionRatingScaleMapping(questionId, data),
     onSuccess: () => {
       // Invalidate the question parts query to refetch with new mappings
       queryClient.invalidateQueries({

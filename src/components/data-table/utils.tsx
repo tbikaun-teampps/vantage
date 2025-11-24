@@ -33,9 +33,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { type StatusCellProps, type TableAction } from "./types";
+import {
+  type StatusCellProps,
+  type TableAction,
+  type ActionsCellProps,
+  type BadgeCellProps,
+  type StatusOption,
+} from "./types";
 
-export function StatusCell<T extends Record<string, any>>({
+export function StatusCell<T extends Record<string, unknown>>({
   item,
   statusKey,
   statusOptions,
@@ -77,10 +83,6 @@ export function StatusCell<T extends Record<string, any>>({
 }
 
 // Generic actions cell component
-interface ActionsCellProps {
-  actions: TableAction[];
-}
-
 export function ActionsCell({ actions }: ActionsCellProps) {
   return (
     <DropdownMenu>
@@ -114,14 +116,6 @@ export function ActionsCell({ actions }: ActionsCellProps) {
 }
 
 // Badge cell component for counts/numbers
-interface BadgeCellProps {
-  value: string | number;
-  variant?: "default" | "secondary" | "destructive" | "outline";
-  icon?: React.ComponentType<{ className?: string }>;
-  className?: string;
-  centered?: boolean;
-}
-
 export function BadgeCell({
   value,
   variant = "outline",
@@ -144,7 +138,7 @@ export function BadgeCell({
 }
 
 // Common status configurations for different entity types
-export const SURVEY_STATUS_OPTIONS = [
+export const SURVEY_STATUS_OPTIONS: StatusOption[] = [
   {
     value: "active",
     label: "Active",
@@ -171,7 +165,7 @@ export const SURVEY_STATUS_OPTIONS = [
   },
 ];
 
-export const ASSESSMENT_STATUS_OPTIONS = [
+export const ASSESSMENT_STATUS_OPTIONS: StatusOption[] = [
   {
     value: "completed",
     label: "Completed",
@@ -204,7 +198,7 @@ export const ASSESSMENT_STATUS_OPTIONS = [
   },
 ];
 
-export const INTERVIEW_STATUS_OPTIONS = [
+export const INTERVIEW_STATUS_OPTIONS: StatusOption[] = [
   {
     value: "Complete",
     label: "Complete",
@@ -388,10 +382,10 @@ export function getAssessmentStatusBadge(
 }
 
 // Generic column factory functions
-export function createStatusColumn<T>(
-  accessor: keyof T,
+export function createStatusColumn<T extends Record<string, unknown>>(
+  accessor: keyof T & string,
   header: string,
-  statusOptions: typeof SURVEY_STATUS_OPTIONS,
+  statusOptions: StatusOption[],
   onStatusChange: (item: T, newStatus: string) => Promise<void> | void
 ): ColumnDef<T> {
   return {

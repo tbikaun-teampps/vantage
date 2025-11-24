@@ -6,28 +6,9 @@ import {
   Tooltip as LeafletTooltip,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import "./map-dark-mode.css";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { BRAND_COLORS } from "@/lib/brand";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  IconChevronDown,
-  IconChevronUp,
-  IconFilter,
-  IconMaximize,
-  IconMinimize,
-} from "@tabler/icons-react";
-import { LabelWithInfo } from "@/components/ui/label-with-info";
-import { Loader2 } from "lucide-react";
 import {
   getOverallDesktopGeographicalMap,
   getOverallGeographicalMapFilters,
@@ -35,6 +16,7 @@ import {
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { LoadingSpinner } from "@/components/loader";
 import { useAnalytics } from "@/contexts/AnalyticsContext";
+import type { DesktopGeographicalMapFiltersData } from "@/types/api/analytics";
 
 // Define the location/site data structure
 interface LocationData {
@@ -51,96 +33,10 @@ interface LocationData {
   }[];
 }
 
-// Define legend item structure
-interface LegendItem {
-  label: string;
-  color: string;
-}
-
-const getScoreColor = (score: number): string => {
-  if (score >= 2.4) return BRAND_COLORS.turquoiseBlue; // Excellent
-  if (score >= 2.2) return BRAND_COLORS.malibu; // Good
-  if (score >= 2.0) return BRAND_COLORS.royalBlue; // Fair
-  return BRAND_COLORS.mediumPurple; // Poor
-};
-
-// Create a dynamic color assignment system
-const createColorMap = (items: string[]): Record<string, string> => {
-  const brandColorValues = Object.values(BRAND_COLORS);
-  const colorMap: Record<string, string> = {};
-
-  items.forEach((item, index) => {
-    if (index < brandColorValues.length) {
-      // Use brand colors first
-      colorMap[item] = brandColorValues[index];
-    } else {
-      // Generate interpolated colors if we need more than available brand colors
-      const baseColorIndex = index % brandColorValues.length;
-      const baseColor = brandColorValues[baseColorIndex];
-      // Create a slightly modified version by adjusting lightness
-      const variation =
-        Math.floor(
-          (index - brandColorValues.length) / brandColorValues.length
-        ) + 1;
-      colorMap[item] = adjustColorBrightness(baseColor, variation * 0.2);
-    }
-  });
-
-  return colorMap;
-};
-
-// Helper function to adjust color brightness
-const adjustColorBrightness = (hex: string, factor: number): string => {
-  // Remove # if present
-  const color = hex.replace("#", "");
-
-  // Parse RGB values
-  const r = parseInt(color.substr(0, 2), 16);
-  const g = parseInt(color.substr(2, 2), 16);
-  const b = parseInt(color.substr(4, 2), 16);
-
-  // Adjust brightness (factor > 0 lightens, factor < 0 darkens)
-  const newR = Math.max(0, Math.min(255, Math.round(r + (255 - r) * factor)));
-  const newG = Math.max(0, Math.min(255, Math.round(g + (255 - g) * factor)));
-  const newB = Math.max(0, Math.min(255, Math.round(b + (255 - b) * factor)));
-
-  // Convert back to hex
-  const toHex = (n: number) => n.toString(16).padStart(2, "0");
-  return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
-};
-
-const getGroupColor = (
-  location: LocationData,
-  groupBy: string,
-  colourBy: string,
-  allData: LocationData[]
-): string => {
-  if (colourBy === "Business Unit") {
-    const businessUnits = [
-      ...new Set(allData.map((d) => d.businessUnit)),
-    ].sort();
-    const colorMap = createColorMap(businessUnits);
-    return colorMap[location.businessUnit] || BRAND_COLORS.luckyPoint;
-  }
-
-  if (colourBy === "Region") {
-    const regions = [...new Set(allData.map((d) => d.region))].sort();
-    const colorMap = createColorMap(regions);
-    return colorMap[location.region] || BRAND_COLORS.luckyPoint;
-  }
-
-  // Default to score-based coloring (unless no data, then grey)
-  if (location.measurements.length === 0) {
-    return "#9CA3AF"; // Grey color for no data when using score-based coloring
-  }
-
-  return getScoreColor(location.score);
-};
-
 const getCircleRadius = (
   location: LocationData,
-  measurementType: string,
-  dataType: string
+  measurementType: string
+  // dataType: string
 ): number => {
   let value: number;
 
@@ -165,40 +61,27 @@ const getDataTypeValue = (
     return "No Data";
   }
 
-  return (
-    location.measurements.find((m) => m.name === measurementType)?.[dataType] ||
-    "N/A"
-  );
+  const measurement = location.measurements.find((m) => m.name === measurementType);
+  if (!measurement) return "N/A";
 
-  return "Coming soon!";
-
-  // switch (dataType) {
-  //   case "Average Score":
-  //     return location.score.toFixed(1);
-  //   case "Total Interviews":
-  //     return location.interviews.toString();
-  //   case "Total Actions":
-  //     return location.totalActions.toString();
-  //   case "Completion Rate":
-  //     return (location.completionRate * 100).toFixed(1) + "%";
-  //   default:
-  //     return location.score.toFixed(1);
-  // }
+  // Type assertion since we know dataType comes from aggregationMethods
+  type MeasurementKey = keyof typeof measurement;
+  return String(measurement[dataType as MeasurementKey] ?? "N/A");
 };
 
 const LeafletMap = ({
   data,
   dataType,
   measurementType,
-  groupBy,
-  colourBy,
+  // groupBy,
+  // colourBy,
   showLabels,
 }: {
   data: LocationData[];
   dataType: string;
   measurementType: string;
-  groupBy: string;
-  colourBy: string;
+  // groupBy: string;
+  // colourBy: string;
   showLabels: boolean;
 }) => {
   return (
@@ -225,7 +108,7 @@ const LeafletMap = ({
           <CircleMarker
             key={`${location.name}-${index}`}
             center={[location.lat, location.lng]}
-            radius={getCircleRadius(location, measurementType, dataType)}
+            radius={getCircleRadius(location, measurementType)} // dataType
             pathOptions={{
               // color: getGroupColor(location, groupBy, colourBy, data),
               // fillColor: getGroupColor(location, groupBy, colourBy, data),
@@ -714,22 +597,22 @@ export function DesktopMap() {
   const [dataType, setDataType] = useState<string>();
   const [measurementType, setMeasurementType] = useState<string>();
 
-  const [groupBy, setGroupBy] = useState<string>("Site");
-  const [colourBy, setColourBy] = useState<string>("Region");
-  const [showNoDataSites, setShowNoDataSites] = useState<boolean>(false);
-  const [showLabels, setShowLabels] = useState<boolean>(true);
+  // const [groupBy, setGroupBy] = useState<string>("Site");
+  // const [colourBy, setColourBy] = useState<string>("Region");
+  const [showNoDataSites] = useState<boolean>(false); // setShowNoDataSites
+  // const [showLabels, setShowLabels] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  // const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const [data, setData] = useState<LocationData[] | null>(null);
-  const [filters, setFilters] = useState<{
-    questionnaires: { id: number; name: string; assessmentIds: number[] }[];
-    assessments: { id: number; name: string; questionnaireId: number | null }[];
-  }>({ questionnaires: [], assessments: [] });
-  const [selectedAssessmentId, setSelectedAssessmentId] =
-    useState<string>("all");
+  // const [filters, setFilters] = useState<{
+  //   questionnaires: { id: number; name: string; assessmentIds: number[] }[];
+  //   assessments: { id: number; name: string; questionnaireId: number | null }[];
+  // }>({ questionnaires: [], assessments: [] });
+  // const [selectedAssessmentId, setSelectedAssessmentId] =
+  //   useState<string>("all");
   const [filtersLoading, setFiltersLoading] = useState<boolean>(true);
 
   // Compute filtered map data based on showNoDataSites
@@ -745,16 +628,25 @@ export function DesktopMap() {
       if (!companyId || !assessmentType) return;
       try {
         setFiltersLoading(true);
-        const data = await getOverallGeographicalMapFilters(
+        const { options } = await getOverallGeographicalMapFilters(
           companyId,
           assessmentType
         );
-        setFilters(data.options);
+        // setFilters(options);
         console.log("data", data);
-        // Take the first measurement as the measurementType default
-        setMeasurementType(data?.options?.measurements?.[0]?.name);
-        // Take first aggregation method as default too
-        setDataType(data?.options?.aggregationMethods?.[0] || "average");
+
+        // Type guard to narrow to desktop filters options
+        type DesktopFiltersOptions = DesktopGeographicalMapFiltersData['options'];
+        const isDesktopFilters = (opts: typeof options): opts is DesktopFiltersOptions => {
+          return 'measurements' in opts;
+        };
+
+        if (isDesktopFilters(options)) {
+          // Take the first measurement as the measurementType default
+          setMeasurementType(options.measurements?.[0]?.name);
+          // Take first aggregation method as default too
+          setDataType(options.aggregationMethods?.[0] || "average");
+        }
       } catch (err) {
         console.error("Error fetching filters:", err);
         setError("Failed to load filter options.");
@@ -773,13 +665,13 @@ export function DesktopMap() {
       try {
         setLoading(true);
         setError(null);
-        const assessmentIdParam =
-          selectedAssessmentId !== "all"
-            ? parseInt(selectedAssessmentId)
-            : undefined;
+        // const assessmentIdParam =
+        //   selectedAssessmentId !== "all"
+        //     ? parseInt(selectedAssessmentId)
+        //     : undefined;
         const response = await getOverallDesktopGeographicalMap(
-          companyId,
-          assessmentIdParam
+          companyId
+          // assessmentIdParam
         );
         setData(response);
       } catch (err) {
@@ -792,31 +684,31 @@ export function DesktopMap() {
     };
 
     fetchMapData();
-  }, [companyId, selectedAssessmentId, assessmentType]);
+  }, [companyId, assessmentType]); // selectedAssessmentId
 
   // Listen for fullscreen changes
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isInFullscreen = !!document.fullscreenElement;
-      setIsFullscreen(isInFullscreen);
-    };
+  // useEffect(() => {
+  //   const handleFullscreenChange = () => {
+  //     const isInFullscreen = !!document.fullscreenElement;
+  //     setIsFullscreen(isInFullscreen);
+  //   };
 
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
-    document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+  //   document.addEventListener("fullscreenchange", handleFullscreenChange);
+  //   document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+  //   document.addEventListener("mozfullscreenchange", handleFullscreenChange);
 
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      document.removeEventListener(
-        "webkitfullscreenchange",
-        handleFullscreenChange
-      );
-      document.removeEventListener(
-        "mozfullscreenchange",
-        handleFullscreenChange
-      );
-    };
-  }, []);
+  //   return () => {
+  //     document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  //     document.removeEventListener(
+  //       "webkitfullscreenchange",
+  //       handleFullscreenChange
+  //     );
+  //     document.removeEventListener(
+  //       "mozfullscreenchange",
+  //       handleFullscreenChange
+  //     );
+  //   };
+  // }, []);
 
   if (loading || filtersLoading) {
     return (
@@ -866,9 +758,9 @@ export function DesktopMap() {
             data={filteredMapData}
             dataType={dataType!}
             measurementType={measurementType!}
-            groupBy={groupBy}
-            colourBy={colourBy}
-            showLabels={showLabels}
+            // groupBy={groupBy}
+            // colourBy={colourBy}
+            showLabels={true} // showLabels
           />
         </div>
 

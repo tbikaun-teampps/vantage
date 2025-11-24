@@ -1,12 +1,26 @@
 import { FastifyInstance } from "fastify";
-import { commonResponseSchemas } from "../../schemas/common";
-import { dashboardSchemas } from "../../schemas/dashboard";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { NotFoundError } from "../../plugins/errorHandler";
+import { DashboardService } from "../../services/DashboardService";
 import {
-  DashboardService,
-  type CreateDashboardInput,
-  type UpdateDashboardInput,
-} from "../../services/DashboardService";
+  GetDashboardsParamsSchema,
+  GetDashboardsResponseSchema,
+  GetDashboardByIdParamsSchema,
+  GetDashboardByIdResponseSchema,
+  CreateDashboardParamsSchema,
+  CreateDashboardBodySchema,
+  CreateDashboardResponseSchema,
+  UpdateDashboardParamsSchema,
+  UpdateDashboardBodySchema,
+  UpdateDashboardResponseSchema,
+  DeleteDashboardParamsSchema,
+  DeleteDashboardResponseSchema,
+} from "../../schemas/dashboard";
+import {
+  Error401Schema,
+  Error404Schema,
+  Error500Schema,
+} from "../../schemas/errors";
 import { widgetsRoutes } from "./widgets";
 
 export async function dashboardsRoutes(fastify: FastifyInstance) {
@@ -20,28 +34,20 @@ export async function dashboardsRoutes(fastify: FastifyInstance) {
   // Register widgets sub-routes
   await fastify.register(widgetsRoutes, { prefix: "/widgets" });
 
-  // GET all dashboards for a company
-  fastify.get(
-    "/:companyId",
-    {
-      schema: {
-        description: "Get all dashboards for a company",
-        params: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-          },
-          required: ["companyId"],
-        },
-        response: {
-          200: dashboardSchemas.responses.dashboardList,
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId",
+    schema: {
+      description: "Get all dashboards for a company",
+      params: GetDashboardsParamsSchema,
+      response: {
+        200: GetDashboardsResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
+    handler: async (request) => {
+      const { companyId } = request.params;
       const dashboardService = new DashboardService(
         request.supabaseClient,
         request.user.id
@@ -52,36 +58,24 @@ export async function dashboardsRoutes(fastify: FastifyInstance) {
         success: true,
         data: dashboards,
       };
-    }
-  );
+    },
+  });
 
-  // GET a specific dashboard by ID
-  fastify.get(
-    "/:companyId/:dashboardId",
-    {
-      schema: {
-        description: "Get a specific dashboard by ID",
-        params: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-            dashboardId: { type: "number" },
-          },
-          required: ["companyId", "dashboardId"],
-        },
-        response: {
-          200: dashboardSchemas.responses.dashboardSingle,
-          404: commonResponseSchemas.responses[404],
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId/:dashboardId",
+    schema: {
+      description: "Get a specific dashboard by ID",
+      params: GetDashboardByIdParamsSchema,
+      response: {
+        200: GetDashboardByIdResponseSchema,
+        404: Error404Schema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { dashboardId } = request.params as {
-        companyId: string;
-        dashboardId: number;
-      };
+    handler: async (request) => {
+      const { dashboardId } = request.params;
       const dashboardService = new DashboardService(
         request.supabaseClient,
         request.user.id
@@ -96,33 +90,26 @@ export async function dashboardsRoutes(fastify: FastifyInstance) {
         success: true,
         data: dashboard,
       };
-    }
-  );
+    },
+  });
 
   // POST create new dashboard
-  fastify.post(
-    "/:companyId",
-    {
-      schema: {
-        description: "Create a new dashboard",
-        params: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-          },
-          required: ["companyId"],
-        },
-        body: dashboardSchemas.body.createDashboard,
-        response: {
-          200: dashboardSchemas.responses.dashboardSingle,
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/:companyId",
+    schema: {
+      description: "Create a new dashboard",
+      params: CreateDashboardParamsSchema,
+      body: CreateDashboardBodySchema,
+      response: {
+        201: CreateDashboardResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
-      const input = request.body as CreateDashboardInput;
+    handler: async (request) => {
+      const { companyId } = request.params;
+      const input = request.body;
 
       const dashboardService = new DashboardService(
         request.supabaseClient,
@@ -137,38 +124,27 @@ export async function dashboardsRoutes(fastify: FastifyInstance) {
         success: true,
         data: dashboard,
       };
-    }
-  );
+    },
+  });
 
   // PATCH update dashboard
-  fastify.patch(
-    "/:companyId/:dashboardId",
-    {
-      schema: {
-        description: "Update a dashboard",
-        params: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-            dashboardId: { type: "number" },
-          },
-          required: ["companyId", "dashboardId"],
-        },
-        body: dashboardSchemas.body.updateDashboard,
-        response: {
-          200: dashboardSchemas.responses.dashboardSingle,
-          404: commonResponseSchemas.responses[404],
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PATCH",
+    url: "/:companyId/:dashboardId",
+    schema: {
+      description: "Update a dashboard",
+      params: UpdateDashboardParamsSchema,
+      body: UpdateDashboardBodySchema,
+      response: {
+        200: UpdateDashboardResponseSchema,
+        404: Error404Schema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { dashboardId } = request.params as {
-        companyId: string;
-        dashboardId: number;
-      };
-      const updates = request.body as UpdateDashboardInput;
+    handler: async (request) => {
+      const { dashboardId } = request.params;
+      const updates = request.body;
 
       const dashboardService = new DashboardService(
         request.supabaseClient,
@@ -183,36 +159,25 @@ export async function dashboardsRoutes(fastify: FastifyInstance) {
         success: true,
         data: dashboard,
       };
-    }
-  );
+    },
+  });
 
   // DELETE soft delete dashboard
-  fastify.delete(
-    "/:companyId/:dashboardId",
-    {
-      schema: {
-        description: "Delete a dashboard (soft delete)",
-        params: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-            dashboardId: { type: "number" },
-          },
-          required: ["companyId", "dashboardId"],
-        },
-        response: {
-          200: dashboardSchemas.responses.dashboardDeleted,
-          404: commonResponseSchemas.responses[404],
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/:companyId/:dashboardId",
+    schema: {
+      description: "Delete a dashboard (soft delete)",
+      params: DeleteDashboardParamsSchema,
+      response: {
+        200: DeleteDashboardResponseSchema,
+        404: Error404Schema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { dashboardId } = request.params as {
-        companyId: string;
-        dashboardId: number;
-      };
+    handler: async (request) => {
+      const { dashboardId } = request.params;
 
       const dashboardService = new DashboardService(
         request.supabaseClient,
@@ -224,6 +189,6 @@ export async function dashboardsRoutes(fastify: FastifyInstance) {
         success: true,
         message: "Dashboard deleted successfully",
       };
-    }
-  );
+    },
+  });
 }

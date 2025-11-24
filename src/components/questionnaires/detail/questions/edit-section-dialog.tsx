@@ -8,13 +8,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { SectionWithSteps } from "@/types/assessment";
+import type { QuestionnaireSections } from "@/types/api/questionnaire";
 
 interface EditSectionDialogProps {
   open: boolean;
   onOpenChange: () => void;
-  section: SectionWithSteps | null;
-  onSectionChange: (section: SectionWithSteps) => void;
+  section: QuestionnaireSections[number] | null;
+  onSectionChange: (section: QuestionnaireSections[number]) => void;
   isProcessing: boolean;
   onSave: (sectionId: number, updates: { title: string }) => void;
 }
@@ -53,7 +53,9 @@ export function EditSectionDialog({
             Cancel
           </Button>
           <Button
-            onClick={() => section && onSave(section.id, { title: section.title })}
+            onClick={() =>
+              section && onSave(section.id, { title: section.title })
+            }
             disabled={isProcessing}
           >
             {isProcessing ? "Saving..." : "Save"}
