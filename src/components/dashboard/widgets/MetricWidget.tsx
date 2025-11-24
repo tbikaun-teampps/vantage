@@ -3,6 +3,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Settings, Loader2 } from "lucide-react";
 import type { WidgetComponentProps } from "./types";
 import { useWidgetData } from "@/hooks/widgets";
+import type { GetMetricWidgetResponseData } from "@/types/api/dashboard";
 import {
   CardAction,
   CardContent,
@@ -16,10 +17,10 @@ const MetricWidget: React.FC<WidgetComponentProps> = ({ config }) => {
   const metricConfig = config?.metric;
   const { data, isLoading, isFetching, error } = useWidgetData(
     "metric",
-    config
+    config!
   );
 
-  console.log("MetricWidget data:", data);
+  const metricData = data as GetMetricWidgetResponseData | undefined;
 
   const isLoadingData = isLoading || isFetching;
 
@@ -42,32 +43,49 @@ const MetricWidget: React.FC<WidgetComponentProps> = ({ config }) => {
     );
   }
 
+  if (!metricData || !isLoadingData) {
+    return (
+      <>
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold">-</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert className="bg-muted/30 border-muted">
+            <AlertDescription className="text-sm">
+              No data available for this metric
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </>
+    );
+  }
+
   return (
     <>
       <CardHeader>
-        <CardDescription>{data?.title}</CardDescription>
+        <CardDescription>{metricData.title}</CardDescription>
         <CardTitle className="text-2xl font-semibold">
-          {isLoadingData ? "-" : data?.value || "Key Metric"}
+          {isLoadingData ? "-" : metricData.value || "Key Metric"}
         </CardTitle>
         <CardAction className="flex items-center gap-2">
           {isLoadingData ? (
             <Loader2 className="animate-spin text-muted" />
           ) : (
             <>
-              {data?.phaseBadge && (
+              {metricData.phaseBadge && (
                 <Badge
                   className="text-xs capitalize"
                   variant="outline"
                   style={{
-                    color: data.phaseBadge.color,
-                    borderColor: data.phaseBadge.borderColor,
+                    color: metricData.phaseBadge.color,
+                    borderColor: metricData.phaseBadge.borderColor,
                   }}
                 >
-                  {data.phaseBadge.text}
+                  {metricData.phaseBadge.text}
                 </Badge>
               )}
-              {data?.badges &&
-                data.badges.map((badge, index) => (
+              {metricData.badges &&
+                metricData.badges.map((badge, index) => (
                   <Badge
                     key={index}
                     className="text-xs capitalize ml-2"

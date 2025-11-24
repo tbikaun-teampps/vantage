@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { AccessCodeForm } from "@/components/public/AccessCodeForm";
-import {InterviewDetailPage} from "@/pages/interview/InterviewDetailPage";
+import { InterviewDetailPage } from "@/pages/interview/InterviewDetailPage";
 import { authApi } from "@/lib/api/auth";
 import { toast } from "sonner";
 import { UnauthorizedPage } from "@/pages/UnauthorizedPage";
@@ -35,11 +35,13 @@ export function ExternalInterviewPage() {
 
     try {
       // Call the auth endpoint to get a token
-      const { token } = await authApi.getExternalInterviewToken(
-        Number(id),
-        emailAddress,
-        accessCode
-      );
+      const {
+        data: { token },
+      } = await authApi.getExternalInterviewToken({
+        interviewId: Number(id),
+        email: emailAddress,
+        accessCode,
+      });
 
       // Store auth in the public interview store
       setAuth(token, id, emailAddress);

@@ -17,21 +17,32 @@ import {
 import { useCompanyTree } from "@/hooks/useCompany";
 import { cn } from "@/lib/utils";
 import type {
-  AnyTreeNode,
-  TreeNodeType,
-  BusinessUnitTreeNode,
-  RegionTreeNode,
-  SiteTreeNode,
-  AssetGroupTreeNode,
-  WorkGroupTreeNode,
-  RoleTreeNode,
-} from "@/types/company";
+  BusinessUnitNode,
+  CompanyTreeNodeType,
+  CompanyTree,
+  RegionNode,
+  SiteNode,
+  AssetGroupNode,
+  WorkGroupNode,
+  RoleNode,
+  ReportingRoleNode,
+} from "@/types/api/companies";
+
+type BaseTreeNode =
+  | CompanyTree
+  | BusinessUnitNode
+  | RegionNode
+  | SiteNode
+  | AssetGroupNode
+  | WorkGroupNode
+  | RoleNode
+  | ReportingRoleNode;
 
 // Flattened node structure for easier searching and display
 export interface FlatNode {
   id: string;
   name: string;
-  type: TreeNodeType;
+  type: CompanyTreeNodeType;
   level: number;
   path: string;
   parentId?: string;
@@ -45,7 +56,11 @@ interface SimpleTreeNodeProps {
   onToggleExpanded: (nodeId: string) => void;
   isVisible: boolean;
   isSelected: boolean;
-  onNodeClick: (nodeId: string, nodeType: TreeNodeType, name: string) => void;
+  onNodeClick: (
+    nodeId: string,
+    nodeType: CompanyTreeNodeType,
+    name: string
+  ) => void;
   enableCollapse: boolean;
   renderNodeMarkers?: (node: FlatNode) => React.ReactNode;
 }
@@ -62,7 +77,7 @@ function SimpleTreeNode({
 }: SimpleTreeNodeProps) {
   if (!isVisible) return null;
 
-  const getTypeIcon = (type: TreeNodeType) => {
+  const getTypeIcon = (type: CompanyTreeNodeType) => {
     const iconMap = {
       company: <IconBuilding className="h-4 w-4 text-blue-600" />,
       business_unit: <IconWorld className="h-4 w-4 text-emerald-600" />,
@@ -135,9 +150,9 @@ function SimpleTreeNode({
 
 interface LocationTreeSelectProps {
   companyId: string;
-  value?: { id: string; type: TreeNodeType; name: string } | null;
+  value?: { id: string; type: CompanyTreeNodeType; name: string } | null;
   onChange: (
-    selection: { id: string; type: TreeNodeType; name: string } | null
+    selection: { id: string; type: CompanyTreeNodeType; name: string } | null
   ) => void;
   disabled?: boolean;
   maxHeight?: string;
@@ -166,14 +181,15 @@ export function LocationTreeSelect({
     const nodes: FlatNode[] = [];
 
     const flattenNode = (
-      item: AnyTreeNode,
-      type: TreeNodeType,
+      item: BaseTreeNode,
+      type: CompanyTreeNodeType,
       level: number,
       path: string,
       parentId?: string
     ) => {
-      const nodeId = String(item.id);
-      const itemName = "name" in item ? item.name : `${type} ${item.id}`;
+      const nodeId = item.id.toString(); //`${type}-${item.id}`;
+      const itemName: string =
+        (item as { name?: string }).name ?? `${type} ${item.id}`;
       const nodePath = path ? `${path} > ${itemName}` : itemName;
 
       // Check if node has children based on type
@@ -210,7 +226,7 @@ export function LocationTreeSelect({
         "business_units" in item &&
         item.business_units
       ) {
-        item.business_units.forEach((child: BusinessUnitTreeNode) =>
+        item.business_units.forEach((child: BusinessUnitNode) =>
           flattenNode(child, "business_unit", level + 1, nodePath, nodeId)
         );
       } else if (
@@ -218,11 +234,11 @@ export function LocationTreeSelect({
         "regions" in item &&
         item.regions
       ) {
-        item.regions.forEach((child: RegionTreeNode) =>
+        item.regions.forEach((child: RegionNode) =>
           flattenNode(child, "region", level + 1, nodePath, nodeId)
         );
       } else if (type === "region" && "sites" in item && item.sites) {
-        item.sites.forEach((child: SiteTreeNode) =>
+        item.sites.forEach((child: SiteNode) =>
           flattenNode(child, "site", level + 1, nodePath, nodeId)
         );
       } else if (
@@ -230,7 +246,7 @@ export function LocationTreeSelect({
         "asset_groups" in item &&
         item.asset_groups
       ) {
-        item.asset_groups.forEach((child: AssetGroupTreeNode) =>
+        item.asset_groups.forEach((child: AssetGroupNode) =>
           flattenNode(child, "asset_group", level + 1, nodePath, nodeId)
         );
       } else if (
@@ -238,11 +254,11 @@ export function LocationTreeSelect({
         "work_groups" in item &&
         item.work_groups
       ) {
-        item.work_groups.forEach((child: WorkGroupTreeNode) =>
+        item.work_groups.forEach((child: WorkGroupNode) =>
           flattenNode(child, "work_group", level + 1, nodePath, nodeId)
         );
       } else if (type === "work_group" && "roles" in item && item.roles) {
-        item.roles.forEach((child: RoleTreeNode) =>
+        item.roles.forEach((child: RoleNode) =>
           flattenNode(child, "role", level + 1, nodePath, nodeId)
         );
       } else if (
@@ -251,10 +267,13 @@ export function LocationTreeSelect({
         item.reporting_roles
       ) {
         // Process direct reports (reporting_roles) - only one level deep
-        item.reporting_roles.forEach((child: RoleTreeNode) => {
+        item.reporting_roles.forEach((child: ReportingRoleNode) => {
           const childId = String(child.id);
-          const childName = "name" in child ? child.name : `role ${child.id}`;
-          const childPath = nodePath ? `${nodePath} > ${childName}` : childName;
+          const childName: string =
+            (child as { name?: string }).name ?? `role ${child.id}`;
+          const childPath: string = nodePath
+            ? `${nodePath} > ${childName}`
+            : childName;
 
           // Add direct report node with hasChildren forced to false (one level only)
           nodes.push({
@@ -291,7 +310,7 @@ export function LocationTreeSelect({
 
   const handleNodeClick = (
     nodeId: string,
-    nodeType: TreeNodeType,
+    nodeType: CompanyTreeNodeType,
     name: string
   ) => {
     if (disabled) return;
@@ -299,6 +318,7 @@ export function LocationTreeSelect({
       onChange(null); // Deselect if already selected
       return;
     }
+    console.log("Node clicked:", { nodeId, nodeType, name });
     onChange({ id: nodeId, type: nodeType, name });
   };
 

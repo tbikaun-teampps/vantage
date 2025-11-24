@@ -7,7 +7,7 @@ export type AnswerType =
   | "number"
   | "labelled_scale";
 
-export interface QuestionPartOptions {
+interface QuestionPartOptions {
   // For scale/number types
   min?: number;
   max?: number;
@@ -19,13 +19,13 @@ export interface QuestionPartOptions {
 }
 
 // Mapping structure for different answer types
-export interface RangeMapping {
+interface RangeMapping {
   min: number;
   max: number;
   levels: number[]; // Array of rating scale level numbers that this range maps to
 }
 
-export interface AnswerMapping {
+interface AnswerMapping {
   // For boolean: { "true": [1,2], "false": [3,4,5] }
   // For labelled_scale: { "Basic": [1,2], "Detailed": [3,4,5] }
   // For scale/number/percentage: { "ranges": [{min:0, max:25, levels:[1]}, ...] }

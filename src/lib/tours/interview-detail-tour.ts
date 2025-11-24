@@ -142,5 +142,3 @@ tourManager.registerTour({
   id: "interview-detail",
   steps: interviewDetailSteps,
 });
-
-export { interviewDetailSteps };

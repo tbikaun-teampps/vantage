@@ -141,33 +141,3 @@ function MobileBreadCrumbs({
     </div>
   );
 }
-
-function DesktopBreadCrumbs({
-  breadcrumbs,
-  isQuestionAnswered,
-}: BreadcrumbProps) {
-  return (
-    <div className="flex items-center text-sm space-x-2 text-muted-foreground">
-      <span
-        key="breadcrumb-section"
-        className="flex items-center flex-shrink-0"
-      >
-        <span className="max-w-[48ch] truncate">{breadcrumbs.section}</span>
-      </span>
-      <IconChevronRight className="h-3 w-3 flex-shrink-0" />
-      <span key="breadcrumb-step" className="flex items-center flex-shrink-0">
-        <span className="max-w-[48ch] truncate">{breadcrumbs.step}</span>
-      </span>
-      <IconChevronRight className="h-3 w-3 flex-shrink-0" />
-      <span
-        key="breadcrumb-question"
-        className="flex items-center flex-shrink-0 gap-2"
-      >
-        <span className="max-w-[48ch] truncate">{breadcrumbs.question}</span>
-        {isQuestionAnswered() && (
-          <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
-        )}
-      </span>
-    </div>
-  );
-}

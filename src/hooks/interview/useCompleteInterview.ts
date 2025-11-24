@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { completeInterview } from "@/lib/api/interviews";
 import { toast } from "sonner";
-import type { InterviewFeedback } from "@/components/interview/detail/InterviewCompletionDialog";
+import type { InterviewFeedback } from "@/types/api/interviews";
 
 interface CompleteInterviewData {
   interviewId: number;

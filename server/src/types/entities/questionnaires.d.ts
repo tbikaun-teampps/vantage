@@ -1,4 +1,4 @@
-import type { Database } from "../database";
+import type { Database, Json } from "../database";
 
 export type Questionnaire =
   Database["public"]["Tables"]["questionnaires"]["Row"];
@@ -11,6 +11,9 @@ export type QuestionnaireQuestion =
 
 export type QuestionnaireRatingScale =
   Database["public"]["Tables"]["questionnaire_rating_scales"]["Row"];
+
+export type QuestionnaireStatus =
+  Database["public"]["Enums"]["questionnaire_statuses"];
 
 // Derive transformed types from Supabase schema
 export type QuestionnaireQuestion = Pick<
@@ -107,11 +110,7 @@ export type UpdateQuestionnaireStepData = Partial<
 
 export type CreateQuestionnaireQuestionData = Pick<
   Database["public"]["Tables"]["questionnaire_questions"]["Insert"],
-  | "questionnaire_step_id"
-  | "title"
-  | "question_text"
-  | "context"
-  | "order_index"
+  "questionnaire_step_id" | "title" | "question_text" | "context"
 >;
 
 export type UpdateQuestionnaireQuestionData = Partial<
@@ -199,6 +198,7 @@ export interface QuestionnaireStructureQuestionsData {
   context: string | null;
   questionnaire_step_id: number;
   questionnaire_id: number;
+  rating_scale_mapping: Json;
 }
 
 export type QuestionnaireStructureQuestionRatingScaleData = {
@@ -241,14 +241,12 @@ export type QuestionnaireWithStructure = QuestionnaireWithCounts & {
                 description: string;
               }>;
               question_roles?: Array<QuestionRole>;
-              question_parts?: Array<Pick<
-                QuestionPart,
-                | "id"
-                | "text"
-                | "answer_type"
-                | "options"
-                | "order_index"
-              >>;
+              question_parts?: Array<
+                Pick<
+                  QuestionPart,
+                  "id" | "text" | "answer_type" | "options" | "order_index"
+                >
+              >;
             }
           >;
         }
@@ -273,11 +271,7 @@ export interface QuestionApplicableRole extends QuestionRole {
 
 export type CreateQuestionPartData = Pick<
   Database["public"]["Tables"]["questionnaire_question_parts"]["Insert"],
-  | "questionnaire_question_id"
-  | "text"
-  | "answer_type"
-  | "options"
-  | "order_index"
+  "text" | "answer_type" | "options" | "order_index"
 >;
 
 export type UpdateQuestionPartData = Partial<
@@ -289,3 +283,6 @@ export type UpdateQuestionPartData = Partial<
 
 export type QuestionPart =
   Database["public"]["Tables"]["questionnaire_question_parts"]["Row"];
+
+export type QuestionPartAnswerType =
+  Database["public"]["Enums"]["question_part_answer_type"];

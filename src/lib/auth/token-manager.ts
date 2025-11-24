@@ -1,10 +1,10 @@
+import type { TokenData } from "@/types/api/auth";
+
 /**
  * Token Manager
  * Centralized service for managing authentication tokens
  * Stores tokens in localStorage and provides utility methods
  */
-import type { TokenData } from "@/types/auth";
-
 class TokenManager {
   private static readonly STORAGE_KEY = "vantage_auth_tokens";
 
@@ -101,4 +101,3 @@ class TokenManager {
 }
 
 export { TokenManager };
-export type { TokenData };

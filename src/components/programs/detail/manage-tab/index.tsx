@@ -10,12 +10,10 @@ import {
   IconClock,
   IconProgress,
   IconCircleCheck,
-  IconArchive,
-  IconSettings,
+  IconArchive
 } from "@tabler/icons-react";
 import { formatDistanceToNow, format, addWeeks, addMonths } from "date-fns";
 import { useCreatePhase, useDeletePhase } from "@/hooks/useProgram";
-import type { ProgramPhase } from "@/types/program";
 import { Interviews } from "./interviews";
 import { useProgramValidation } from "@/hooks/useProgramValidation";
 import { CalculatedMeasurements } from "@/components/measurements/calculated-measurements";
@@ -49,10 +47,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { ProgramDetailResponseData } from "@/types/api/programs";
+import type { GetProgramByIdResponseData, ProgramPhase } from "@/types/api/programs";
 
 interface ManageTabProps {
-  program: ProgramDetailResponseData;
+  program: GetProgramByIdResponseData;
 }
 
 const statusColors = {
@@ -78,7 +76,7 @@ const statusIcons = {
 
 interface PhaseTabContentProps {
   phase: ProgramPhase;
-  program: ProgramDetailResponseData;
+  program: GetProgramByIdResponseData;
   programValidation: ReturnType<typeof useProgramValidation>;
 }
 
@@ -343,7 +341,7 @@ export function ManageTab({ program }: ManageTabProps) {
 }
 
 interface AddPhaseSheetProps {
-  program: ProgramDetailResponseData;
+  program: GetProgramByIdResponseData;
   onPhaseAdded: (phaseId: number) => void;
 }
 
@@ -407,7 +405,7 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
     createPhaseMutation.mutate(
       {
         programId: program.id,
-        phaseData: {
+        data: {
           name: phaseName,
           activate: activatePhase,
           planned_start_date: plannedStartDate.toISOString(),

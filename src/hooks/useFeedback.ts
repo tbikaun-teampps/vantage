@@ -1,10 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
-import { submitFeedback, type FeedbackData } from "@/lib/api/feedback";
+import { submitFeedback } from "@/lib/api/feedback";
+import type { SubmitFeedbackBodyData } from "@/types/api/feedback";
 
 // Hook for feedback mutations
 export function useFeedbackActions() {
   const submitFeedbackMutation = useMutation({
-    mutationFn: (data: FeedbackData) => submitFeedback(data),
+    mutationFn: (data: SubmitFeedbackBodyData) => submitFeedback(data),
     onError: (error) => {
       console.error("Failed to submit feedback:", error);
     },

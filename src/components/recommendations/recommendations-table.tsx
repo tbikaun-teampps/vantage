@@ -8,7 +8,9 @@ import {
 import { type ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
-import type { RecommendationListItem } from "@/types/api/recommendations";
+import type {
+  GetRecommendationsResponseData,
+} from "@/types/api/recommendations";
 import { Link } from "react-router-dom";
 import { IconExternalLink } from "@tabler/icons-react";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
@@ -46,12 +48,21 @@ export function RecommendationsTable() {
     useRecommendations(companyId);
 
   // Create columns
-  const columns: ColumnDef<RecommendationListItem>[] = [
+  const columns: ColumnDef<GetRecommendationsResponseData[number]>[] = [
     {
       accessorKey: "assessment",
       header: "Assessment",
       cell: ({ row }) => {
         const assessment = row.original.assessment;
+        if (!assessment || !assessment.id) {
+          return (
+            <div className="flex-1">
+              <span className="text-xs text-muted-foreground italic">
+                No associated assessment
+              </span>
+            </div>
+          );
+        }
         return (
           <div className="flex-1">
             <Link

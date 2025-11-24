@@ -18,19 +18,28 @@ import {
   addTeamMember as addTeamMemberApi,
   updateTeamMember as updateTeamMemberApi,
   removeTeamMember as removeTeamMemberApi,
-  type TeamMember,
-  type CompanyRole,
 } from "@/lib/api/companies";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
-import type { Company, TreeNodeType } from "@/types/company";
+import type {
+  CompanyTreeNodeType,
+  CompanyUserRole,
+  CreateCompanyBodyData,
+  CreateCompanyEntityBodyData,
+  GetCompaniesResponseData,
+  UpdateCompanyBodyData,
+  UpdateCompanyEntityBodyData,
+  UpdateCompanyResponseData,
+  UpdateCompanyEntityResponseData,
+  GetCompanyTreeResponseData,
+} from "@/types/api/companies";
 
 // Helper to convert FormData to JSON object
-function formDataToJson(formData: FormData): Record<string, any> {
-  const json: Record<string, any> = {};
+function formDataToJson(formData: FormData): Record<string, string> {
+  const json: Record<string, string> = {};
   formData.forEach((value, key) => {
     // Handle file inputs - skip them or handle separately if needed
     if (value instanceof File) return;
-    json[key] = value;
+    json[key] = value.toString();
   });
   return json;
 }
@@ -82,7 +91,8 @@ export function useCompanyTree(companyId: string) {
     queryKey: companyId
       ? companyKeys.tree(companyId)
       : [...companyKeys.all, "tree", "null"],
-    queryFn: () => getCompanyTree(companyId),
+    queryFn: (): Promise<GetCompanyTreeResponseData> =>
+      getCompanyTree(companyId),
     enabled: !!companyId,
     staleTime: 2 * 60 * 1000, // 2 minutes - tree data changes more frequently
   });
@@ -139,16 +149,18 @@ export function useCompanyActions() {
   const createMutation = useMutation({
     mutationFn: (formData: FormData) => {
       const data = formDataToJson(formData);
-      return createCompany(data);
+      return createCompany(data as CreateCompanyBodyData);
     },
     onSuccess: (newCompany) => {
       // Optimistic cache update for companies list
-      queryClient.setQueryData(companyKeys.lists(), (old: Company[] = []) =>
-        [newCompany, ...old].sort(
-          (a, b) =>
-            new Date(b.created_at || "").getTime() -
-            new Date(a.created_at || "").getTime()
-        )
+      queryClient.setQueryData(
+        companyKeys.lists(),
+        (old: GetCompaniesResponseData = []) =>
+          [newCompany, ...old].sort(
+            (a, b) =>
+              new Date(b.created_at || "").getTime() -
+              new Date(a.created_at || "").getTime()
+          )
       );
     },
   });
@@ -162,12 +174,14 @@ export function useCompanyActions() {
       formData: FormData;
     }) => {
       const data = formDataToJson(formData);
-      return updateCompany(companyId, data);
+      return updateCompany(companyId, data as UpdateCompanyBodyData);
     },
     onSuccess: (updatedCompany, { companyId }) => {
       // Update companies list
-      queryClient.setQueryData(companyKeys.lists(), (old: Company[] = []) =>
-        old.map((c) => (c.id === companyId ? updatedCompany : c))
+      queryClient.setQueryData(
+        companyKeys.lists(),
+        (old: GetCompaniesResponseData = []) =>
+          old.map((c) => (c.id === companyId ? updatedCompany : c))
       );
 
       // Invalidate tree cache for updated company
@@ -179,8 +193,10 @@ export function useCompanyActions() {
     mutationFn: (companyId: string) => deleteCompany(companyId),
     onSuccess: (_, companyId) => {
       // Remove from companies list
-      queryClient.setQueryData(companyKeys.lists(), (old: Company[] = []) =>
-        old.filter((c) => c.id !== companyId)
+      queryClient.setQueryData(
+        companyKeys.lists(),
+        (old: GetCompaniesResponseData = []) =>
+          old.filter((c) => c.id !== companyId)
       );
 
       // Remove all related cache entries
@@ -217,15 +233,13 @@ export function useTreeNodeActions() {
 
   const createMutation = useMutation({
     mutationFn: ({
-      parentType,
       parentId,
       nodeType,
       formData,
       companyId,
     }: {
-      parentType: TreeNodeType;
       parentId: number;
-      nodeType: TreeNodeType;
+      nodeType: CompanyTreeNodeType;
       formData: FormData;
       companyId: string;
     }) => {
@@ -234,7 +248,7 @@ export function useTreeNodeActions() {
         throw new Error("Cannot create company node through tree node actions");
       }
 
-      const data = formDataToJson(formData);
+      const data = formDataToJson(formData) as Record<string, string | number>;
 
       // Add parent relationship based on nodeType
       const parentFieldMap: Record<string, string> = {
@@ -251,7 +265,13 @@ export function useTreeNodeActions() {
         data[parentField] = parentId;
       }
 
-      return createEntity(companyId, entityType, data);
+      console.log("createEntity data: ", data);
+
+      return createEntity(
+        companyId,
+        { type: entityType },
+        data as CreateCompanyEntityBodyData
+      );
     },
     onSuccess: (_, { companyId }) => {
       // Invalidate tree cache to reload with new node
@@ -259,22 +279,21 @@ export function useTreeNodeActions() {
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({
-      nodeType,
-      nodeId,
-      formData,
-      companyId,
-    }: {
-      nodeType: TreeNodeType;
+  const updateMutation = useMutation<
+    UpdateCompanyResponseData | UpdateCompanyEntityResponseData,
+    Error,
+    {
+      nodeType: CompanyTreeNodeType;
       nodeId: number | string;
       formData: FormData;
       companyId: string;
-    }) => {
+    }
+  >({
+    mutationFn: ({ nodeType, nodeId, formData, companyId }) => {
       const data = formDataToJson(formData);
 
       if (nodeType === "company") {
-        return updateCompany(String(nodeId), data);
+        return updateCompany(String(nodeId), data as UpdateCompanyBodyData);
       }
 
       const entityType = getEntityTypeFromTreeNodeType(nodeType);
@@ -282,13 +301,24 @@ export function useTreeNodeActions() {
         throw new Error("Invalid node type");
       }
 
-      return updateEntity(companyId, nodeId, entityType, data);
+      return updateEntity(
+        companyId,
+        nodeId,
+        { type: entityType },
+        data as UpdateCompanyEntityBodyData
+      );
     },
     onSuccess: (updatedData, { nodeType, nodeId, companyId }) => {
       // If it's a company update, update the companies list
-      if (nodeType === "company" && updatedData) {
-        queryClient.setQueryData(companyKeys.lists(), (old: Company[] = []) =>
-          old.map((c) => (c.id === nodeId ? updatedData : c))
+      if (
+        nodeType === "company" &&
+        updatedData &&
+        !Array.isArray(updatedData)
+      ) {
+        queryClient.setQueryData(
+          companyKeys.lists(),
+          (old: GetCompaniesResponseData = []) =>
+            old.map((c) => (c.id === nodeId ? updatedData : c))
         );
       }
 
@@ -303,7 +333,7 @@ export function useTreeNodeActions() {
       nodeId,
       companyId,
     }: {
-      nodeType: TreeNodeType;
+      nodeType: CompanyTreeNodeType;
       nodeId: number | string;
       companyId: string;
     }) => {
@@ -316,7 +346,7 @@ export function useTreeNodeActions() {
         throw new Error("Invalid node type");
       }
 
-      return deleteEntity(companyId, nodeId, entityType);
+      return deleteEntity(companyId, nodeId, { type: entityType });
     },
     onSuccess: (_, { companyId }) => {
       // Invalidate tree cache to reflect deletion
@@ -361,7 +391,7 @@ export function useTeamActions() {
     }: {
       companyId: string;
       email: string;
-      role: CompanyRole;
+      role: CompanyUserRole;
     }) => addTeamMemberApi(companyId, { email, role }),
     onSuccess: (_, { companyId }) => {
       // Invalidate team cache to reload with new member
@@ -377,7 +407,7 @@ export function useTeamActions() {
     }: {
       companyId: string;
       userId: string;
-      role: CompanyRole;
+      role: CompanyUserRole;
     }) => updateTeamMemberApi(companyId, userId, { role }),
     onSuccess: (_, { companyId }) => {
       // Invalidate team cache to reflect role change
@@ -413,6 +443,3 @@ export function useTeamActions() {
     removeMemberError: removeMutation.error,
   };
 }
-
-// Re-export types
-export type { TeamMember, CompanyRole };

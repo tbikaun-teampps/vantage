@@ -1,14 +1,18 @@
-import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getMeasurementDefinitions } from "@/lib/api/shared";
 import {
   getAssessmentMeasurements,
   addAssessmentMeasurement,
   updateAssessmentMeasurement,
   deleteAssessmentMeasurement,
   getAssessmentMeasurementsBarChartData,
+  getAssessmentMeasurementDefinitions,
 } from "@/lib/api/assessments";
-// import type { AssessmentMeasurement } from "@/pages/assessments/desktop/detail/types";
+import type {
+  AddAssessmentMeasurementBodyData,
+  GetAssessmentMeasurementDefinitionsByIdResponseData,
+  GetAssessmentMeasurementsResponseData,
+  UpdateAssessmentMeasurementBodyData,
+} from "@/types/api/assessments";
 
 // Query key factory for assessment measurements
 const assessmentMeasurementKeys = {
@@ -35,53 +39,22 @@ const assessmentMeasurementKeys = {
  * - Merges them to show which are uploaded vs available
  * - Provides unified loading/error states
  */
-export function useAssessmentMeasurements(assessmentId?: number) {
+export function useAssessmentMeasurements(assessmentId: number) {
   // Fetch all measurement definitions (shared across all assessments)
-  const definitionsQuery = useQuery({
+  const query = useQuery({
     queryKey: assessmentMeasurementKeys.definitions(),
-    queryFn: getMeasurementDefinitions,
-    staleTime: 15 * 60 * 1000, // 15 minutes - definitions change infrequently
-  });
-
-  // Fetch measurements specific to this assessment
-  const measurementsQuery = useQuery({
-    queryKey: assessmentMeasurementKeys.measurement(assessmentId!),
-    queryFn: () => getAssessmentMeasurements(assessmentId!),
+    queryFn: (): Promise<GetAssessmentMeasurementDefinitionsByIdResponseData> =>
+      getAssessmentMeasurementDefinitions(assessmentId),
     enabled: !!assessmentId,
-    staleTime: 5 * 60 * 1000, // 5 minutes - assessment data changes moderately
+    staleTime: 15 * 60 * 1000, // 15 minutes - definitions change infrequently (invalidated when instances change though.)
   });
-
-  // Merge definitions with assessment measurements to create unified view
-  const allMeasurements = useMemo(() => {
-    if (!definitionsQuery.data) return [];
-
-    const uploadedMeasurements = measurementsQuery.data || [];
-
-    return definitionsQuery.data.map((definition) => {
-      // Count how many instances exist for this measurement definition
-      const instances = uploadedMeasurements.filter(
-        (m) => m.measurement_definition_id === definition.id
-      );
-      const instanceCount = instances.length;
-
-      return {
-        ...definition,
-        status: definition.active ? "available" : "unavailable",
-        isInUse: instanceCount > 0,
-        instanceCount,
-      };
-    });
-  }, [definitionsQuery.data, measurementsQuery.data]);
-
-  const isLoading = definitionsQuery.isLoading || measurementsQuery.isLoading;
-  const error = definitionsQuery.error || measurementsQuery.error;
 
   return {
-    allMeasurements,
-    isLoading,
-    error,
-    refetch: measurementsQuery.refetch,
-    isRefetching: measurementsQuery.isRefetching,
+    data: query.data,
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+    isRefetching: query.isRefetching,
   };
 }
 
@@ -97,30 +70,11 @@ export function useAssessmentMeasurementActions() {
   const addMutation = useMutation({
     mutationFn: ({
       assessmentId,
-      measurementDefinitionId,
-      value,
-      location,
+      data,
     }: {
       assessmentId: number;
-      measurementDefinitionId: number;
-      value: number;
-      location?: {
-        id: number;
-        type:
-          | "business_unit"
-          | "region"
-          | "site"
-          | "asset_group"
-          | "work_group"
-          | "role";
-      };
-    }) =>
-      addAssessmentMeasurement(
-        assessmentId,
-        measurementDefinitionId,
-        value,
-        location
-      ),
+      data: AddAssessmentMeasurementBodyData;
+    }) => addAssessmentMeasurement(assessmentId, data),
     onMutate: async ({ assessmentId }) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
@@ -152,7 +106,7 @@ export function useAssessmentMeasurementActions() {
 
       return { previousMeasurements };
     },
-    onSuccess: (data, { assessmentId }) => {
+    onSuccess: (_, { assessmentId }) => {
       // Invalidate and refetch to get the real server data with correct IDs
       queryClient.invalidateQueries({
         queryKey: assessmentMeasurementKeys.measurement(assessmentId),
@@ -182,7 +136,7 @@ export function useAssessmentMeasurementActions() {
     }: {
       assessmentId: number;
       measurementId: number;
-      updates: { calculated_value?: number };
+      updates: UpdateAssessmentMeasurementBodyData;
     }) => updateAssessmentMeasurement(assessmentId, measurementId, updates),
     onMutate: async ({ assessmentId }) => {
       // Cancel outgoing refetches to prevent them from overwriting our optimistic update
@@ -242,7 +196,7 @@ export function useAssessmentMeasurementActions() {
       // Optimistically remove the measurement from cache
       queryClient.setQueryData(
         assessmentMeasurementKeys.measurement(assessmentId),
-        (old: any[] | undefined) => {
+        (old: GetAssessmentMeasurementsResponseData | undefined) => {
           if (!old) return old;
           return old.filter((m) => m.id !== measurementId);
         }
@@ -276,31 +230,16 @@ export function useAssessmentMeasurementActions() {
     // Actions
     addMeasurement: (
       assessmentId: number,
-      measurementDefinitionId: number,
-      value: number,
-      location?: {
-        id: number;
-        type:
-          | "business_unit"
-          | "region"
-          | "site"
-          | "asset_group"
-          | "work_group"
-          | "role";
-      }
+      data: AddAssessmentMeasurementBodyData
     ) =>
       addMutation.mutateAsync({
         assessmentId,
-        measurementDefinitionId,
-        value,
-        location,
+        data,
       }),
     updateMeasurement: (
       assessmentId: number,
       measurementId: number,
-      updates: {
-        calculated_value?: number;
-      }
+      updates: UpdateAssessmentMeasurementBodyData
     ) => updateMutation.mutateAsync({ assessmentId, measurementId, updates }),
     deleteMeasurement: (assessmentId: number, measurementId: number) =>
       deleteMutation.mutateAsync({ assessmentId, measurementId }),
@@ -359,7 +298,8 @@ export function useAssessmentMeasurementsBarChart(assessmentId?: number) {
 export function useAssessmentMeasurementInstances(assessmentId?: number) {
   const query = useQuery({
     queryKey: assessmentMeasurementKeys.measurement(assessmentId!),
-    queryFn: () => getAssessmentMeasurements(assessmentId!),
+    queryFn: (): Promise<GetAssessmentMeasurementsResponseData> =>
+      getAssessmentMeasurements(assessmentId!),
     enabled: !!assessmentId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

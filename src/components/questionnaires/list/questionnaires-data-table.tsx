@@ -1,5 +1,4 @@
 import {
-  IconExternalLink,
   IconPencil,
   IconClock,
   IconCircleCheckFilled,
@@ -17,21 +16,10 @@ import { formatDistanceToNow } from "date-fns";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
-
-export interface Questionnaire {
-  id: string;
-  name: string;
-  description?: string;
-  status: "draft" | "active" | "archived" | "under_review";
-  question_count: number;
-  step_count: number;
-  section_count: number;
-  created_at: string;
-  updated_at: string;
-}
+import type { GetQuestionnairesResponseData } from "@/types/api/questionnaire";
 
 interface QuestionnairesDataTableProps {
-  questionnaires: Questionnaire[];
+  questionnaires: GetQuestionnairesResponseData;
   isLoading: boolean;
   error?: string | null;
   defaultTab?: string;
@@ -66,7 +54,7 @@ export function QuestionnairesDataTable({
   };
 
   // Column definitions
-  const columns: ColumnDef<Questionnaire>[] = [
+  const columns: ColumnDef<GetQuestionnairesResponseData[number]>[] = [
     {
       accessorKey: "name",
       header: "Name",
@@ -87,7 +75,7 @@ export function QuestionnairesDataTable({
       cell: ({ row }) => (
         <div
           className="text-sm max-w-[160px] truncate"
-          title={row.original.description}
+          title={row.original.description ?? "No Description"}
         >
           {row.original.description || "No Description"}
         </div>
@@ -232,7 +220,7 @@ export function QuestionnairesDataTable({
     <SimpleDataTable
       data={allQuestionnaires}
       columns={columns}
-      getRowId={(row) => row.id}
+      getRowId={(row) => row.id.toString()}
       tabs={tabs}
       defaultTab={defaultTab}
       onTabChange={onTabChange}

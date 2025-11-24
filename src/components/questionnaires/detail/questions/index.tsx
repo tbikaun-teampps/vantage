@@ -2,10 +2,6 @@ import { useState, useMemo, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Eye, AlertTriangle } from "lucide-react";
 import { useQuestionActions } from "@/hooks/questionnaire/useQuestions";
-import type {
-  SectionWithSteps,
-  QuestionWithRatingScales,
-} from "@/types/assessment";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -16,6 +12,11 @@ import { useQuestionnaireDetail } from "@/contexts/QuestionnaireDetailContext";
 import { QuestionEditor } from "./question-editor";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { QuestionnaireTree } from "./questionnaire-tree";
+import type {
+  QuestionnaireQuestions,
+  QuestionnaireSections,
+  QuestionnaireSteps,
+} from "@/types/api/questionnaire";
 
 export function Questions() {
   const { updateQuestion } = useQuestionActions();
@@ -27,26 +28,27 @@ export function Questions() {
     type: "section" | "step" | "question";
     id: number;
   } | null>(null);
-  const [editingQuestion, setEditingQuestion] =
-    useState<QuestionWithRatingScales | null>(null);
+  const [editingQuestion, setEditingQuestion] = useState<
+    QuestionnaireQuestions[number] | null
+  >(null);
 
   // Helper functions wrapped in useCallback to prevent recreation on every render
   const getAllQuestionsFromSection = useCallback(
-    (section: SectionWithSteps): QuestionWithRatingScales[] => {
+    (section: QuestionnaireSections[number]) => {
       return section.steps.flatMap((step) => step.questions);
     },
     []
   );
 
   const getAllQuestionsFromStep = useCallback(
-    (step: any): QuestionWithRatingScales[] => {
+    (step: QuestionnaireSteps[number]) => {
       return step.questions;
     },
     []
   );
 
   // Memoize selected questions to avoid repeated iterations through sections
-  const selectedQuestions = useMemo((): QuestionWithRatingScales[] => {
+  const selectedQuestions = useMemo((): QuestionnaireQuestions[number][] => {
     if (!selectedItem) return [];
 
     if (selectedItem.type === "question") {
@@ -74,12 +76,21 @@ export function Questions() {
     }
 
     return [];
-  }, [selectedItem, sections, getAllQuestionsFromStep, getAllQuestionsFromSection]);
+  }, [
+    selectedItem,
+    sections,
+    getAllQuestionsFromStep,
+    getAllQuestionsFromSection,
+  ]);
 
   // Helper function to get question numbering for display
   const getQuestionDisplayNumber = useCallback(
     (questionId: number): string => {
-      for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+      for (
+        let sectionIndex = 0;
+        sectionIndex < sections.length;
+        sectionIndex++
+      ) {
         const section = sections[sectionIndex];
         for (let stepIndex = 0; stepIndex < section.steps.length; stepIndex++) {
           const step = section.steps[stepIndex];

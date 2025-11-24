@@ -1,7 +1,3 @@
-/**
- * Hook for action CRUD operations using React Query.
- */
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -10,6 +6,7 @@ import {
   updateInterviewResponseAction,
   deleteInterviewResponseAction,
 } from "@/lib/api/interviews";
+import type { GetInterviewResponseActionsResponseData } from "@/types/api/interviews";
 
 export function useResponseActions(responseId: number) {
   const queryClient = useQueryClient();
@@ -21,7 +18,8 @@ export function useResponseActions(responseId: number) {
     error,
   } = useQuery({
     queryKey: ["interview-response-actions", responseId],
-    queryFn: () => getInterviewResponseActions(responseId),
+    queryFn: (): Promise<GetInterviewResponseActionsResponseData> =>
+      getInterviewResponseActions(responseId),
     enabled: !!responseId,
   });
 

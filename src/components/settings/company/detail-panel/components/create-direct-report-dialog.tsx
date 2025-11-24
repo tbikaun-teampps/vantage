@@ -18,6 +18,7 @@ import { FormSelect } from "./form-fields";
 import { LEVELS } from "@/lib/library/roles";
 import { useTreeNodeActions } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import type { RoleNode } from "@/types/api/companies";
 
 // Schema for direct report creation - includes reports_to_role_id
 const createDirectReportSchema = z.object({
@@ -30,7 +31,7 @@ type CreateDirectReportFormData = z.infer<typeof createDirectReportSchema>;
 interface CreateDirectReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  parentRole: any; // The role that this direct report will report to
+  parentRole: RoleNode; // The role that this direct report will report to
   onSuccess?: () => void;
 }
 
@@ -55,8 +56,6 @@ export function CreateDirectReportDialog({
   const handleSubmit = async (data: CreateDirectReportFormData) => {
     if (!companyId || !parentRole) return;
 
-    console.log('parentRole: ', parentRole)
-
     setIsLoading(true);
     try {
       // Create FormData with role information and reports_to_role_id
@@ -68,11 +67,10 @@ export function CreateDirectReportDialog({
       // Set the reports_to_role_id to the parent role
       formData.append("reports_to_role_id", parentRole.id.toString());
       // Also include the work_group_id from the parent role
-      formData.append("work_group_id", parentRole.work_group_id);
+      formData.append("work_group_id", parentRole.work_group_id.toString());
 
       await createTreeNode({
-        parentType: "work_group", // Direct reports are still created in the same work group
-        parentId: parseInt(parentRole.work_group_id),
+        parentId: parentRole.work_group_id,
         nodeType: "role",
         formData,
         companyId,
@@ -119,6 +117,7 @@ export function CreateDirectReportDialog({
               label="Role"
               placeholder="Select a shared role..."
               selectOnly={false}
+              disabled={isLoading}
             />
 
             <FormSelect

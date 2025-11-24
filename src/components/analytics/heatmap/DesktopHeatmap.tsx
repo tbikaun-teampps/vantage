@@ -24,37 +24,17 @@ import {
 // import MultiSelect from "@/pages/questionnaires/components/questions/multi-select";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { getOverallDesktopHeatmap } from "@/lib/api/analytics";
-import { useAnalytics } from "../../../contexts/AnalyticsContext";
+import { useDesktopAnalytics } from "../../../contexts/AnalyticsContext";
 import { renderHeatmap } from "./render";
+import type {
+  DesktopHeatmapXAxisOptions,
+  GetOverallDesktopHeatmapResponseData,
+} from "@/types/api/analytics";
 
 type DesktopHeatmapAggregation = "sum" | "count" | "average";
 
-interface HeatmapDataPoint {
-  x: string;
-  y: string;
-  value: number;
-  sampleSize: number;
-  metadata: object;
-}
-
-interface HeatmapApiResponse {
-  xLabels: string[];
-  yLabels: string[];
-  aggregations: {
-    [K in DesktopHeatmapAggregation]: {
-      data: HeatmapDataPoint[];
-      values: number[];
-    };
-  };
-  config: {
-    xAxis: string;
-    yAxis: string;
-    assessmentId: number | null;
-  };
-}
-
 export default function DesktopHeatmap() {
-  const { filters, isLoadingFilters, filterError, companyId } = useAnalytics();
+  const { filters, isLoadingFilters, filterError, companyId } = useDesktopAnalytics();
   const routes = useCompanyRoutes();
 
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<
@@ -62,25 +42,28 @@ export default function DesktopHeatmap() {
   >(null);
   const [selectedAggregation, setSelectedAggregation] =
     useState<DesktopHeatmapAggregation>("average");
-  const [xAxis, setXAxis] = useState<string>("business_unit");
+  const [xAxis, setXAxis] =
+    useState<DesktopHeatmapXAxisOptions>("business_unit");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const [selectedBusinessUnits, setSelectedBusinessUnits] = useState<string[]>(
-    []
-  );
-  const [selectedSites, setSelectedSites] = useState<string[]>([]);
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  // const [selectedBusinessUnits, setSelectedBusinessUnits] = useState<string[]>(
+  //   []
+  // );
+  // const [selectedSites, setSelectedSites] = useState<string[]>([]);
+  // const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 
-  const svgRef = useRef<SVGSVGElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null) as React.RefObject<SVGSVGElement>;
+  const containerRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const cardRef = useRef<HTMLDivElement>(null);
   const [svgDimensions, setSvgDimensions] = useState({
     width: 800,
     height: 500,
   });
 
-  const [data, setData] = useState<HeatmapApiResponse | null>(null);
+  const [data, setData] = useState<GetOverallDesktopHeatmapResponseData | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -91,14 +74,13 @@ export default function DesktopHeatmap() {
       setError(null);
 
       try {
-        const response = await getOverallDesktopHeatmap(
+        const response = await getOverallDesktopHeatmap({
           companyId,
-          selectedAssessmentId ?? undefined,
-          xAxis as any
-        );
+          assessmentId: selectedAssessmentId ?? undefined,
+          xAxis,
+        });
 
         if (!response) return;
-        console.log("Heatmap response:", response);
         setData(response);
 
         // Sync UI state with config from response (in case defaults were applied)
@@ -187,7 +169,7 @@ export default function DesktopHeatmap() {
 
     // Get current metric data
     const selectedData = data.aggregations[selectedAggregation];
-    
+
     // Initial render
     renderHeatmap(
       svgRef,
@@ -196,7 +178,12 @@ export default function DesktopHeatmap() {
       selectedData.values,
       data.xLabels,
       data.yLabels,
-      (value) => value
+      (value) => {
+        if (value === null || value === undefined) {
+          return "N/A";
+        }
+        return value.toFixed(1);
+      }
     );
 
     // Cleanup
@@ -322,7 +309,7 @@ export default function DesktopHeatmap() {
                     isFullscreen ? cardRef.current || undefined : undefined
                   }
                 >
-                  {filters?.aggregationMethods?.map((m) => (
+                  {filters.aggregationMethods.map((m) => (
                     <SelectItem key={m} value={m} className="capitalize">
                       {m.replaceAll("_", " ")}
                     </SelectItem>
@@ -369,7 +356,12 @@ export default function DesktopHeatmap() {
                 isFullscreen={isFullscreen}
                 container={cardRef.current}
               />
-              <Select value={xAxis} onValueChange={setXAxis}>
+              <Select
+                value={xAxis}
+                onValueChange={(value) =>
+                  setXAxis(value as DesktopHeatmapXAxisOptions)
+                }
+              >
                 <SelectTrigger className="w-full h-8 text-xs capitalize">
                   <SelectValue />
                 </SelectTrigger>
@@ -498,7 +490,7 @@ export default function DesktopHeatmap() {
                     rel="noopener noreferrer"
                   >
                     {
-                      filters.assessments.find(
+                      filters.assessments?.find(
                         (a) => a.id === selectedAssessmentId
                       )?.name
                     }
@@ -508,24 +500,24 @@ export default function DesktopHeatmap() {
               )}
 
               {/* Organizational Filter Badges */}
-              {selectedBusinessUnits.length > 0 && (
+              {/* {selectedBusinessUnits.length > 0 && (
                 <Badge variant="outline" className="text-xs flex-shrink-0">
                   {selectedBusinessUnits.length} BU
                   {selectedBusinessUnits.length > 1 ? "s" : ""}
                 </Badge>
-              )}
-              {selectedSites.length > 0 && (
+              )} */}
+              {/* {selectedSites.length > 0 && (
                 <Badge variant="outline" className="text-xs flex-shrink-0">
                   {selectedSites.length} Site
                   {selectedSites.length > 1 ? "s" : ""}
                 </Badge>
-              )}
-              {selectedRoles.length > 0 && (
+              )} */}
+              {/* {selectedRoles.length > 0 && (
                 <Badge variant="outline" className="text-xs flex-shrink-0">
                   {selectedRoles.length} Role
                   {selectedRoles.length > 1 ? "s" : ""}
                 </Badge>
-              )}
+              )} */}
 
               <Badge
                 variant="outline"

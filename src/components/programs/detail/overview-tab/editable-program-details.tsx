@@ -20,10 +20,10 @@ import {
   IconArchive,
 } from "@tabler/icons-react";
 import { formatDistanceToNow } from "date-fns";
-import type { ProgramDetailResponseData } from "@/types/api/programs";
+import type { GetProgramByIdResponseData } from "@/types/api/programs";
 
 interface EditableProgramDetailsProps {
-  program: ProgramDetailResponseData;
+  program: GetProgramByIdResponseData;
   onUpdate: (data: {
     name?: string;
     description?: string;
@@ -186,7 +186,7 @@ export function EditableProgramDetails({
               </Label>
               <div className="flex items-center gap-2">
                 <IconClipboardList className="h-4 w-4 text-muted-foreground" />
-                {program.presite_questionnaire.name ? (
+                {program.presite_questionnaire?.name ? (
                   <p className="text-sm">
                     {program.presite_questionnaire.name}
                   </p>
@@ -204,7 +204,7 @@ export function EditableProgramDetails({
               </Label>
               <div className="flex items-center gap-2">
                 <IconClipboardList className="h-4 w-4 text-muted-foreground" />
-                {program.onsite_questionnaire.name ? (
+                {program.onsite_questionnaire?.name ? (
                   <p className="text-sm">{program.onsite_questionnaire.name}</p>
                 ) : (
                   <p className="text-sm text-muted-foreground">

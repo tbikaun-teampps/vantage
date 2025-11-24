@@ -22,15 +22,6 @@ import { useCreateProgramInterviews, useProgramById } from "@/hooks/useProgram";
 import { getContactsByRole } from "@/lib/api/contacts";
 import { validateProgramQuestionnaireRoles } from "@/lib/api/interviews";
 import { toast } from "sonner";
-import type {
-  AnyTreeNode,
-  TreeNodeType,
-  BusinessUnitTreeNode,
-  RegionTreeNode,
-  SiteTreeNode,
-  AssetGroupTreeNode,
-  WorkGroupTreeNode,
-} from "@/types/company";
 import {
   Dialog,
   DialogContent,
@@ -38,20 +29,36 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-interface Contact {
-  id: number;
-  full_name: string;
-  email: string;
-  title?: string | null;
-  phone?: string | null;
-}
+import type {
+  AssetGroupNode,
+  BusinessUnitNode,
+  CompanyTree,
+  CompanyTreeNodeType,
+  Contact,
+  RegionNode,
+  ReportingRoleNode,
+  RoleNode,
+  SiteNode,
+  WorkGroupNode,
+} from "@/types/api/companies";
 
 interface ContactWithPath extends Contact {
   roleId: number;
   roleName: string;
   organizationPath: string;
 }
+
+// Union type for base tree nodes without the type discriminator
+// These are the actual API response types before adding the discriminator
+type BaseTreeNode =
+  | CompanyTree
+  | BusinessUnitNode
+  | RegionNode
+  | SiteNode
+  | AssetGroupNode
+  | WorkGroupNode
+  | RoleNode
+  | ReportingRoleNode;
 
 // Flattened node structure for easier searching and display
 // Note: We use composite IDs (e.g., "role-123", "site-456") because different database
@@ -62,7 +69,7 @@ interface FlatNode {
   id: string; // Composite ID for UI uniqueness: "type-dbId" (e.g., "role-123")
   dbId: number; // Original database ID (e.g., 123)
   name: string;
-  type: TreeNodeType;
+  type: CompanyTreeNodeType;
   level: number;
   path: string;
   parentId?: string;
@@ -95,7 +102,7 @@ function SimpleTreeNode({
 }: SimpleTreeNodeProps) {
   if (!isVisible) return null;
 
-  const getTypeIcon = (type: TreeNodeType) => {
+  const getTypeIcon = (type: CompanyTreeNodeType) => {
     const iconMap = {
       company: <IconBuilding className="h-4 w-4 text-blue-600" />,
       business_unit: <IconWorld className="h-4 w-4 text-emerald-600" />,
@@ -232,15 +239,15 @@ export function CompanyStructureSelectionModal({
     const nodes: FlatNode[] = [];
 
     const flattenNode = (
-      item: AnyTreeNode,
-      type: TreeNodeType,
+      item: BaseTreeNode,
+      type: CompanyTreeNodeType,
       level: number,
       path: string,
       parentId?: string
     ) => {
       // Create composite ID with type to avoid collisions between different entity types
       const nodeId = `${type}-${item.id}`;
-      const itemName = "name" in item ? item.name : `${type} ${item.id}`;
+      const itemName: string = (item as {name?: string}).name ?? `${type} ${item.id}`;
       const nodePath = path ? `${path} > ${itemName}` : itemName;
 
       // Check if node has children based on type
@@ -280,7 +287,7 @@ export function CompanyStructureSelectionModal({
         "business_units" in item &&
         item.business_units
       ) {
-        item.business_units.forEach((child: BusinessUnitTreeNode) =>
+        item.business_units.forEach((child: BusinessUnitNode) =>
           flattenNode(child, "business_unit", level + 1, nodePath, nodeId)
         );
       } else if (
@@ -288,11 +295,11 @@ export function CompanyStructureSelectionModal({
         "regions" in item &&
         item.regions
       ) {
-        item.regions.forEach((child: RegionTreeNode) =>
+        item.regions.forEach((child: RegionNode) =>
           flattenNode(child, "region", level + 1, nodePath, nodeId)
         );
       } else if (type === "region" && "sites" in item && item.sites) {
-        item.sites.forEach((child: SiteTreeNode) =>
+        item.sites.forEach((child: SiteNode) =>
           flattenNode(child, "site", level + 1, nodePath, nodeId)
         );
       } else if (
@@ -300,7 +307,7 @@ export function CompanyStructureSelectionModal({
         "asset_groups" in item &&
         item.asset_groups
       ) {
-        item.asset_groups.forEach((child: AssetGroupTreeNode) =>
+        item.asset_groups.forEach((child: AssetGroupNode) =>
           flattenNode(child, "asset_group", level + 1, nodePath, nodeId)
         );
       } else if (
@@ -308,7 +315,7 @@ export function CompanyStructureSelectionModal({
         "work_groups" in item &&
         item.work_groups
       ) {
-        item.work_groups.forEach((child: WorkGroupTreeNode) =>
+        item.work_groups.forEach((child: WorkGroupNode) =>
           flattenNode(child, "work_group", level + 1, nodePath, nodeId)
         );
       } else if (type === "work_group" && "roles" in item && item.roles) {
@@ -435,7 +442,7 @@ export function CompanyStructureSelectionModal({
         // Check if questionnaire has questions applicable to the selected roles
         const result = await validateProgramQuestionnaireRoles(
           questionnaireId,
-          roleIds
+          { roleIds }
         );
 
         setHasApplicableQuestions(result.isValid);
@@ -471,7 +478,8 @@ export function CompanyStructureSelectionModal({
               companyId,
               roleNode.dbId
             );
-            roleContacts.forEach((contact) => {
+
+            roleContacts?.forEach((contact) => {
               if (!contactSet.has(contact.id)) {
                 const contactWithPath: ContactWithPath = {
                   ...contact,

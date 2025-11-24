@@ -24,8 +24,13 @@ import {
 // import MultiSelect from "@/pages/questionnaires/components/questions/multi-select";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { getOverallOnsiteHeatmap } from "@/lib/api/analytics";
-import { useAnalytics } from "../../../contexts/AnalyticsContext";
+import { useOnsiteAnalytics } from "../../../contexts/AnalyticsContext";
 import { renderHeatmap } from "./render";
+import type {
+  GetOverallOnsiteHeatmapResponseData,
+  OnsiteHeatmapXAxisOptions,
+  OnsiteHeatmapYAxisOptions,
+} from "@/types/api/analytics";
 
 type HeatmapMetric =
   | "average_score"
@@ -33,33 +38,8 @@ type HeatmapMetric =
   | "completion_rate"
   | "total_actions";
 
-interface HeatmapDataPoint {
-  x: string;
-  y: string;
-  value: number;
-  sampleSize: number;
-  metadata: any;
-}
-
-interface HeatmapApiResponse {
-  xLabels: string[];
-  yLabels: string[];
-  metrics: {
-    [K in HeatmapMetric]: {
-      data: HeatmapDataPoint[];
-      values: number[];
-    };
-  };
-  config: {
-    xAxis: string;
-    yAxis: string;
-    questionnaireId: number;
-    assessmentId: number | null;
-  };
-}
-
 export default function OnsiteHeatmap() {
-  const { filters, isLoadingFilters, filterError, companyId } = useAnalytics();
+  const { filters, isLoadingFilters, filterError, companyId } = useOnsiteAnalytics();
   const routes = useCompanyRoutes();
 
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<
@@ -67,43 +47,47 @@ export default function OnsiteHeatmap() {
   >(null);
   const [selectedMetric, setSelectedMetric] =
     useState<HeatmapMetric>("average_score");
-  const [xAxis, setXAxis] = useState<string>("business_unit");
-  const [yAxis, setYAxis] = useState<string>("role");
+  const [xAxis, setXAxis] =
+    useState<OnsiteHeatmapXAxisOptions>("business_unit");
+  const [yAxis, setYAxis] = useState<OnsiteHeatmapYAxisOptions>("role");
   const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<
     number | null
   >(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   // New organizational filtering state
-  const [selectedBusinessUnits, setSelectedBusinessUnits] = useState<string[]>(
-    []
-  );
-  const [selectedSites, setSelectedSites] = useState<string[]>([]);
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  // const [selectedBusinessUnits, setSelectedBusinessUnits] = useState<string[]>(
+  //   []
+  // );
+  // const [selectedSites, setSelectedSites] = useState<string[]>([]);
+  // const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 
-  const svgRef = useRef<SVGSVGElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null) as React.RefObject<SVGSVGElement>;
+  const containerRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const cardRef = useRef<HTMLDivElement>(null);
   const [svgDimensions, setSvgDimensions] = useState({
     width: 800,
     height: 500,
   });
 
-  const [data, setData] = useState<HeatmapApiResponse | null>(null);
+  const [data, setData] = useState<GetOverallOnsiteHeatmapResponseData | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Set default questionnaire when filters load (if assessment is 'onsite' type)
   useEffect(() => {
+    if (isLoadingFilters || !filters) return;
     if (
-      filters?.questionnaires &&
-      filters?.questionnaires?.length > 0 &&
+      filters.questionnaires &&
+      filters.questionnaires.length > 0 &&
       !selectedQuestionnaire
     ) {
-      setSelectedQuestionnaire(filters?.questionnaires[0].id);
+      setSelectedQuestionnaire(filters.questionnaires[0].id);
     }
-  }, [filters, selectedQuestionnaire]);
+  }, [isLoadingFilters, filters, selectedQuestionnaire]);
 
   // Fetch heatmap data when filters change
   useEffect(() => {
@@ -113,16 +97,15 @@ export default function OnsiteHeatmap() {
       setError(null);
 
       try {
-        const response = await getOverallOnsiteHeatmap(
+        const response = await getOverallOnsiteHeatmap({
           companyId,
-          selectedQuestionnaire,
-          selectedAssessmentId ?? undefined,
-          xAxis as any,
-          yAxis as any
-        );
+          questionnaireId: selectedQuestionnaire,
+          assessmentId: selectedAssessmentId ?? undefined,
+          xAxis,
+          yAxis,
+        });
 
         if (!response) return;
-        console.log("Heatmap response:", response);
         setData(response);
 
         // Sync UI state with config from response (in case defaults were applied)
@@ -325,7 +308,7 @@ export default function OnsiteHeatmap() {
                     isFullscreen ? cardRef.current || undefined : undefined
                   }
                 >
-                  {filters?.questionnaires?.map((q) => (
+                  {filters.questionnaires.map((q) => (
                     <SelectItem key={q.id} value={q.id.toString()}>
                       {q.name}
                     </SelectItem>
@@ -397,7 +380,7 @@ export default function OnsiteHeatmap() {
                     isFullscreen ? cardRef.current || undefined : undefined
                   }
                 >
-                  {filters?.metrics?.map((m) => (
+                  {filters.metrics.map((m) => (
                     <SelectItem key={m} value={m} className="capitalize">
                       {m.replaceAll("_", " ")}
                     </SelectItem>
@@ -446,7 +429,9 @@ export default function OnsiteHeatmap() {
               />
               <Select
                 value={xAxis}
-                onValueChange={setXAxis}
+                onValueChange={(value) =>
+                  setXAxis(value as OnsiteHeatmapXAxisOptions)
+                }
                 disabled={!selectedQuestionnaire}
               >
                 <SelectTrigger className="w-full h-8 text-xs capitalize">
@@ -500,7 +485,9 @@ export default function OnsiteHeatmap() {
               />
               <Select
                 value={yAxis}
-                onValueChange={setYAxis}
+                onValueChange={(value) =>
+                  setYAxis(value as OnsiteHeatmapYAxisOptions)
+                }
                 disabled={!selectedQuestionnaire}
               >
                 <SelectTrigger className="w-full h-8 text-xs capitalize">
@@ -608,9 +595,9 @@ export default function OnsiteHeatmap() {
               {selectedQuestionnaire && filters && (
                 <Badge variant="outline" className="text-xs flex-shrink-0">
                   {
-                    filters?.questionnaires?.find(
+                    filters.questionnaires.find(
                       (q) => q.id === selectedQuestionnaire
-                    )?.name
+                    )?.name || "Unknown"
                   }
                 </Badge>
               )}
@@ -630,7 +617,7 @@ export default function OnsiteHeatmap() {
                     {
                       filters.assessments.find(
                         (a) => a.id === selectedAssessmentId
-                      )?.name
+                      )?.name || "Unknown"
                     }
                     <IconExternalLink className="h-2 w-2" />
                   </Link>
@@ -638,7 +625,7 @@ export default function OnsiteHeatmap() {
               )}
 
               {/* Organizational Filter Badges */}
-              {selectedBusinessUnits.length > 0 && (
+              {/* {selectedBusinessUnits.length > 0 && (
                 <Badge variant="outline" className="text-xs flex-shrink-0">
                   {selectedBusinessUnits.length} BU
                   {selectedBusinessUnits.length > 1 ? "s" : ""}
@@ -655,7 +642,7 @@ export default function OnsiteHeatmap() {
                   {selectedRoles.length} Role
                   {selectedRoles.length > 1 ? "s" : ""}
                 </Badge>
-              )}
+              )} */}
 
               <Badge
                 variant="outline"

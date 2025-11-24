@@ -1,7 +1,7 @@
 import type { WidgetComponentProps } from "./types";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const ChartWidget: React.FC<WidgetComponentProps> = ({ config }) => (
+const ChartWidget: React.FC<WidgetComponentProps> = () => (
   <>
     <CardHeader>
       <CardTitle className="text-2xl font-semibold">Analytics Chart</CardTitle>

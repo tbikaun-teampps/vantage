@@ -6,35 +6,28 @@ import {
   updateRatingScale,
   deleteRatingScale,
 } from "@/lib/api/questionnaires";
-import type {
-  QuestionnaireRatingScale,
-  CreateQuestionnaireRatingScaleData,
-  UpdateQuestionnaireRatingScaleData,
-  QuestionnaireWithStructure,
-} from "@/types/assessment";
 import { questionsKeys } from "./useQuestions";
+import type {
+  BatchCreateQuestionnaireRatingScalesBodyData,
+  CreateQuestionnaireRatingScaleBodyData,
+  GetQuestionnaireByIdResponseData,
+  GetQuestionnaireRatingScalesResponseData,
+  UpdateRatingScaleBodyData,
+} from "@/types/api/questionnaire";
+import { questionnaireKeys } from "../useQuestionnaires";
+import { toast } from "sonner";
 
 // Query key factory for rating scales
-export const ratingScalesKeys = {
+const ratingScalesKeys = {
   all: ["questionnaire", "rating-scales"] as const,
   byQuestionnaire: (id: number) => [...ratingScalesKeys.all, id] as const,
 };
 
-// Import questionnaire keys for cache invalidation
-const questionnaireKeys = {
-  all: ["questionnaires"] as const,
-  details: () => [...questionnaireKeys.all, "detail"] as const,
-  detail: (id: number) => [...questionnaireKeys.details(), id] as const,
-};
-
 // Hook for rating scales with lazy loading
-export function useQuestionnaireRatingScales(
-  questionnaireId: number,
-  enabled = true
-) {
+function useQuestionnaireRatingScales(questionnaireId: number, enabled = true) {
   return useQuery({
     queryKey: ratingScalesKeys.byQuestionnaire(questionnaireId),
-    queryFn: (): Promise<QuestionnaireRatingScale[]> =>
+    queryFn: (): Promise<GetQuestionnaireRatingScalesResponseData> =>
       getRatingScales(questionnaireId),
     staleTime: 10 * 60 * 1000, // 10 minutes - rating scales don't change often
     enabled: enabled && !!questionnaireId,
@@ -51,23 +44,29 @@ export function useRatingScaleActions(questionnaireId: number) {
       ratingData,
     }: {
       questionnaireId: number;
-      ratingData: CreateQuestionnaireRatingScaleData;
+      ratingData: CreateQuestionnaireRatingScaleBodyData;
     }) => createRatingScale(questionnaireId, ratingData),
     onSuccess: (newRatingScale) => {
       // Update the rating scales cache
       queryClient.setQueryData(
         ratingScalesKeys.byQuestionnaire(questionnaireId),
-        (old: QuestionnaireRatingScale[] = []) => [...old, newRatingScale]
+        (old: GetQuestionnaireRatingScalesResponseData = []) => [
+          ...old,
+          newRatingScale,
+        ]
       );
 
       // Update questionnaire detail cache if it exists
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.details() },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData) => {
           if (!old || old.id !== questionnaireId) return old;
           return {
             ...old,
-            questionnaire_rating_scales: [...(old.questionnaire_rating_scales || []), newRatingScale],
+            questionnaire_rating_scales: [
+              ...(old.questionnaire_rating_scales || []),
+              newRatingScale,
+            ],
           };
         }
       );
@@ -85,26 +84,26 @@ export function useRatingScaleActions(questionnaireId: number) {
       updates,
     }: {
       id: number;
-      updates: UpdateQuestionnaireRatingScaleData;
+      updates: UpdateRatingScaleBodyData;
     }) => updateRatingScale(id, updates),
     onSuccess: (updatedRatingScale, { id }) => {
       // Update the rating scales cache
       queryClient.setQueryData(
         ratingScalesKeys.byQuestionnaire(questionnaireId),
-        (old: QuestionnaireRatingScale[] = []) =>
+        (old: GetQuestionnaireRatingScalesResponseData = []) =>
           old.map((scale) => (scale.id === id ? updatedRatingScale : scale))
       );
 
       // Update questionnaire detail cache if it exists
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.details() },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData) => {
           if (!old || old.id !== questionnaireId) return null;
           return {
             ...old,
-            questionnaire_rating_scales: (old.questionnaire_rating_scales || []).map((scale) =>
-              scale.id === id ? updatedRatingScale : scale
-            ),
+            questionnaire_rating_scales: (
+              old.questionnaire_rating_scales || []
+            ).map((scale) => (scale.id === id ? updatedRatingScale : scale)),
           };
         }
       );
@@ -114,6 +113,10 @@ export function useRatingScaleActions(questionnaireId: number) {
         queryKey: questionsKeys.all,
       });
     },
+    onError: (error) => {
+      console.error("Error updating rating scale:", error);
+      toast.error("Failed to update rating scale. Please try again.");
+    },
   });
 
   const deleteMutation = useMutation({
@@ -122,20 +125,20 @@ export function useRatingScaleActions(questionnaireId: number) {
       // Update the rating scales cache
       queryClient.setQueryData(
         ratingScalesKeys.byQuestionnaire(questionnaireId),
-        (old: QuestionnaireRatingScale[] = []) =>
+        (old: GetQuestionnaireRatingScalesResponseData = []) =>
           old.filter((scale) => scale.id !== id)
       );
 
       // Update questionnaire detail cache if it exists
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.details() },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData) => {
           if (!old || old.id !== questionnaireId) return null;
           return {
             ...old,
-            questionnaire_rating_scales: (old.questionnaire_rating_scales || []).filter(
-              (scale) => scale.id !== id
-            ),
+            questionnaire_rating_scales: (
+              old.questionnaire_rating_scales || []
+            ).filter((scale) => scale.id !== id),
           };
         }
       );
@@ -145,26 +148,37 @@ export function useRatingScaleActions(questionnaireId: number) {
         queryKey: questionsKeys.all,
       });
     },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data.error || "Failed to delete rating scale."
+      );
+    },
   });
 
   const createBatchMutation = useMutation({
-    mutationFn: (scales: CreateQuestionnaireRatingScaleData[]) =>
-      createRatingScalesBatch(questionnaireId, scales),
+    mutationFn: (data: BatchCreateQuestionnaireRatingScalesBodyData) =>
+      createRatingScalesBatch(questionnaireId, data),
     onSuccess: (newRatingScales) => {
       // Update the rating scales cache
       queryClient.setQueryData(
         ratingScalesKeys.byQuestionnaire(questionnaireId),
-        (old: QuestionnaireRatingScale[] = []) => [...old, ...newRatingScales]
+        (old: GetQuestionnaireRatingScalesResponseData = []) => [
+          ...old,
+          ...newRatingScales,
+        ]
       );
 
       // Update questionnaire detail cache if it exists
       queryClient.setQueriesData(
         { queryKey: questionnaireKeys.details() },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData) => {
           if (!old || old.id !== questionnaireId) return old;
           return {
             ...old,
-            questionnaire_rating_scales: [...(old.questionnaire_rating_scales || []), ...newRatingScales],
+            questionnaire_rating_scales: [
+              ...(old.questionnaire_rating_scales || []),
+              ...newRatingScales,
+            ],
           };
         }
       );

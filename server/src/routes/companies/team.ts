@@ -7,11 +7,8 @@ import {
   requireCompanyRole,
 } from "../../middleware/companyRole.js";
 import { EmailService } from "../../services/EmailService.js";
-import {
-  AddTeamMemberData,
-  UpdateTeamMemberData,
-} from "../../types/entities/companies.js";
 import { NotFoundError, ForbiddenError } from "../../plugins/errorHandler.js";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
 
 export async function teamRoutes(fastify: FastifyInstance) {
   const emailService = new EmailService(
@@ -20,25 +17,21 @@ export async function teamRoutes(fastify: FastifyInstance) {
     fastify.config.VANTAGE_PUBLIC_ASSETS_BUCKET_URL
   );
 
-  // Get all team members for a company
-  fastify.get(
-    "/:companyId/team",
-    {
-      preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
-      schema: {
-        description: "Get all team members for a company",
-        params: companySchemas.params.companyId,
-        response: {
-          200: companySchemas.responses.teamMemberList,
-          401: commonResponseSchemas.responses[401],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId/team",
+    preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
+    schema: {
+      description: "Get all team members for a company",
+      params: companySchemas.params.companyId,
+      response: {
+        200: companySchemas.responses.teamMemberList,
+        401: commonResponseSchemas.responses[401],
+        404: commonResponseSchemas.responses[404],
+        500: commonResponseSchemas.responses[500],
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
-
+    handler: async (request) => {
       const companiesService = new CompaniesService(
         request.supabaseClient,
         request.user.id,
@@ -46,35 +39,36 @@ export async function teamRoutes(fastify: FastifyInstance) {
         fastify.supabaseAdmin
       );
 
-      const teamMembers = await companiesService.getTeamMembers(companyId);
+      const teamMembers = await companiesService.getTeamMembers(
+        request.params.companyId
+      );
 
       return {
         success: true,
         data: teamMembers,
       };
-    }
-  );
+    },
+  });
 
-  // Add a team member
-  fastify.post(
-    "/:companyId/team",
-    {
-      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
-      schema: {
-        description: "Add a team member to a company",
-        params: companySchemas.params.companyId,
-        body: companySchemas.body.addTeamMember,
-        response: {
-          200: companySchemas.responses.teamMemberDetail,
-          401: commonResponseSchemas.responses[401],
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/:companyId/team",
+    preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
+    schema: {
+      description: "Add a team member to a company",
+      params: companySchemas.params.companyId,
+      body: companySchemas.body.addTeamMember,
+      response: {
+        200: companySchemas.responses.teamMemberDetail,
+        401: commonResponseSchemas.responses[401],
+        403: commonResponseSchemas.responses[403],
+        404: commonResponseSchemas.responses[404],
+        500: commonResponseSchemas.responses[500],
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
+
+    handler: async (request) => {
+      const { companyId } = request.params;
       const companiesService = new CompaniesService(
         request.supabaseClient,
         request.user.id,
@@ -85,7 +79,7 @@ export async function teamRoutes(fastify: FastifyInstance) {
       try {
         const teamMember = await companiesService.addTeamMember(
           companyId,
-          request.body as AddTeamMemberData
+          request.body
         );
 
         // Get company details to include in the email
@@ -145,33 +139,29 @@ export async function teamRoutes(fastify: FastifyInstance) {
         // Re-throw to let the error handler catch it
         throw error;
       }
-    }
-  );
+    },
+  });
 
-  // Update a team member's role
-  fastify.put(
-    "/:companyId/team/:userId",
-    {
-      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
-      schema: {
-        description: "Update a team member's role",
-        params: companySchemas.params.teamMemberParams,
-        body: companySchemas.body.updateTeamMember,
-        response: {
-          200: companySchemas.responses.teamMemberDetail,
-          401: commonResponseSchemas.responses[401],
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/:companyId/team/:userId",
+    preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
+    schema: {
+      description: "Update a team member's role",
+      params: companySchemas.params.teamMemberParams,
+      body: companySchemas.body.updateTeamMember,
+      response: {
+        200: companySchemas.responses.teamMemberDetail,
+        401: commonResponseSchemas.responses[401],
+        403: commonResponseSchemas.responses[403],
+        404: commonResponseSchemas.responses[404],
+        500: commonResponseSchemas.responses[500],
       },
     },
-    async (request) => {
-      const { companyId, userId } = request.params as {
-        companyId: string;
-        userId: string;
-      };
-      const updateData = request.body as UpdateTeamMemberData;
+
+    handler: async (request) => {
+      const { companyId, userId } = request.params;
+      const updateData = request.body;
 
       // Get the current team member data before updating to capture old role
       const { data: currentMember } = await request.supabaseClient
@@ -264,31 +254,27 @@ export async function teamRoutes(fastify: FastifyInstance) {
         // Re-throw to let the error handler catch it
         throw error;
       }
-    }
-  );
+    },
+  });
 
-  // Remove a team member
-  fastify.delete(
-    "/:companyId/team/:userId",
-    {
-      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
-      schema: {
-        description: "Remove a team member from a company",
-        params: companySchemas.params.teamMemberParams,
-        response: {
-          200: commonResponseSchemas.messageResponse,
-          401: commonResponseSchemas.responses[401],
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/:companyId/team/:userId",
+    preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
+    schema: {
+      description: "Remove a team member from a company",
+      params: companySchemas.params.teamMemberParams,
+      response: {
+        200: commonResponseSchemas.messageResponse,
+        401: commonResponseSchemas.responses[401],
+        403: commonResponseSchemas.responses[403],
+        404: commonResponseSchemas.responses[404],
+        500: commonResponseSchemas.responses[500],
       },
     },
-    async (request) => {
-      const { companyId, userId } = request.params as {
-        companyId: string;
-        userId: string;
-      };
+
+    handler: async (request) => {
+      const { companyId, userId } = request.params;
       const companiesService = new CompaniesService(
         request.supabaseClient,
         request.user.id,
@@ -322,6 +308,6 @@ export async function teamRoutes(fastify: FastifyInstance) {
         // Re-throw to let the error handler catch it
         throw error;
       }
-    }
-  );
+    },
+  });
 }

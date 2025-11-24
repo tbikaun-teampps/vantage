@@ -9,6 +9,10 @@ export function ProgramListPage() {
   const companyId = useCompanyFromUrl();
   const { data: programs, isLoading } = usePrograms(companyId);
 
+  if (!programs) {
+    return null;
+  }
+
   return (
     <DashboardPage title="Programs" description="Manage and view programs">
       <div

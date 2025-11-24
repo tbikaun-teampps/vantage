@@ -1,8 +1,23 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { QuickAddButton } from "../../quick-add-button";
-import { type EntityBadgesProps } from "../types";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import type {
+  CreateableTreeNode,
+  CreateableTreeNodeType,
+  CompanyTreeNodeType,
+  AnyTreeNode,
+  AnyTreeNodeNoType,
+} from "@/types/api/companies";
+
+interface EntityBadgesProps {
+  entities: AnyTreeNodeNoType[];
+  icon: React.ComponentType<{ className?: string }>;
+  parentItem: AnyTreeNode;
+  parentType: CompanyTreeNodeType;
+  addType: CreateableTreeNodeType;
+  onAddSuccess?: () => void;
+}
 
 export const EntityBadges: React.FC<EntityBadgesProps> = ({
   entities,
@@ -19,12 +34,12 @@ export const EntityBadges: React.FC<EntityBadgesProps> = ({
         <Badge key={entity.id} variant="outline" className="px-4 py-2 text-sm">
           <Icon className="h-3 w-3 mr-2" />
           {entity.name}
-          {entity.roles && (
+          {"roles" in entity && entity.roles && (
             <span className="ml-2 text-xs opacity-60">
               ({entity.roles.length} roles)
             </span>
           )}
-          {entity.level && (
+          {"level" in entity && entity.level && (
             <span className="ml-2 text-xs opacity-60 capitalize">
               ({entity.level})
             </span>
@@ -33,8 +48,8 @@ export const EntityBadges: React.FC<EntityBadgesProps> = ({
       ))}
       {userCanAdmin && (
         <QuickAddButton
-          parentItem={parentItem}
-          parentType={parentType}
+          parentItem={parentItem as CreateableTreeNode}
+          parentType={parentType as CreateableTreeNodeType}
           addType={addType}
           onSuccess={onAddSuccess}
         />

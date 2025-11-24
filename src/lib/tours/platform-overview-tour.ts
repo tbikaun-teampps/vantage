@@ -91,5 +91,3 @@ tourManager.registerTour({
   id: 'platform-overview',
   steps: platformOverviewSteps
 });
-
-export { platformOverviewSteps };

@@ -1,5 +1,4 @@
 import React from "react";
-import { type DetailPanelProps } from "./types";
 import { EmptyState } from "./components/empty-state";
 import {
   RHFCompanyForm,
@@ -14,6 +13,12 @@ import { useTreeNodeActions, useCompanyTree } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { toast } from "sonner";
 import type { RoleFormData } from "./schemas";
+import type { AnyTreeNode } from "@/types/api/companies";
+
+interface DetailPanelProps {
+  selectedItem: AnyTreeNode | null;
+  setSelectedItem: (item: AnyTreeNode | null) => void;
+}
 
 export const DetailPanel: React.FC<DetailPanelProps> = ({
   selectedItem,
@@ -48,7 +53,9 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
         for (const site of region.sites || []) {
           for (const assetGroup of site.asset_groups || []) {
             for (const workGroup of assetGroup.work_groups || []) {
-              if (workGroup.roles?.some((role) => role.id === roleId)) {
+              if (
+                workGroup.roles?.some((role) => role.id.toString() === roleId)
+              ) {
                 return workGroup;
               }
             }
@@ -67,16 +74,16 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
     if (!data.shared_role_id) return null;
 
     const parentWorkGroup = findParentWorkGroup(
-      currentRoleId || selectedItem.id
+      String(currentRoleId || selectedItem.id)
     );
     if (!parentWorkGroup) return null;
 
     // Check if another role in the same work group has the same shared_role_id
     const duplicateRole = parentWorkGroup.roles?.find(
       (role) =>
-        role.shared_role_id === data.shared_role_id &&
-        role.id !== currentRoleId &&
-        role.id !== selectedItem.id
+        role.shared_role_id.toString() === data.shared_role_id &&
+        role.id.toString() !== currentRoleId &&
+        role.id.toString() !== selectedItem.id
     );
 
     if (duplicateRole) {

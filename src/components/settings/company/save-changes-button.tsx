@@ -1,8 +1,16 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { type SaveChangesButtonProps } from "../../../types/domains/ui/settings/settings";
 import { Button } from "@/components/ui/button";
 import { IconEdit, IconLoader2 } from "@tabler/icons-react";
+
+
+interface SaveChangesButtonProps {
+  item: any;
+  itemType: string;
+  onSuccess: () => void; // Now required since all forms provide it
+  onError?: (error: string) => void;
+  className?: string;
+}
 
 export const SaveChangesButton: React.FC<
   SaveChangesButtonProps & {

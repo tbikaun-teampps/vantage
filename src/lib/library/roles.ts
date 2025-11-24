@@ -1,4 +1,4 @@
-import type { RoleLevelEnum } from "@/types/assessment";
+import type { RoleLevelEnum } from "@/types/api/companies";
 
 export const LEVELS: RoleLevelEnum[] = [
   "executive",

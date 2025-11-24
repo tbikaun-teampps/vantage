@@ -23,7 +23,7 @@ import { formatDistanceToNow } from "date-fns";
 import { companyRoutes } from "@/router/routes";
 import { useNavigate } from "react-router-dom";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
-import type { ActivityWidgetListItem } from "@/types/api/dashboard";
+import type { GetActivityWidgetResponseData } from "@/types/api/dashboard";
 
 /**
  * Get color classes for a given status
@@ -90,7 +90,9 @@ const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
   const isLoadingData = isLoading || isFetching;
 
   // Handle navigation to item detail pages
-  const handleItemClick = (item: ActivityWidgetListItem) => {
+  const handleItemClick = (
+    item: GetActivityWidgetResponseData["items"][number]
+  ) => {
     if (!currentEntityType) return;
 
     switch (currentEntityType) {
@@ -121,7 +123,7 @@ const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
     );
   }
 
-  if (isLoadingData) {
+  if (!data || isLoadingData) {
     return (
       <CardContent className="pt-0 flex-1 min-h-0">
         <div className="h-full flex items-center justify-center">
@@ -163,19 +165,19 @@ const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
               {currentEntityType}
             </Badge>
           </div>
-          <Badge variant="secondary">{data?.total} total</Badge>
-          {data?.scope?.assessmentName && (
+          <Badge variant="secondary">{data.total} total</Badge>
+          {data.scope.assessmentName && (
             <Badge variant="secondary" className="text-xs">
               Assessment: {data.scope.assessmentName}
             </Badge>
           )}
-          {data?.scope?.programName && (
+          {data.scope.programName && (
             <Badge variant="secondary">Program: {data.scope.programName}</Badge>
           )}
         </div>
 
         <div className="flex min-h-0 gap-2">
-          {data?.breakdown &&
+          {data.breakdown &&
             Object.entries(data.breakdown).map(([status, count], index) => (
               <TooltipProvider key={index}>
                 <Tooltip>
@@ -197,7 +199,7 @@ const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
             ))}
         </div>
         <div className="space-y-2 mt-4 flex-1 overflow-y-auto border-t border-border pt-4">
-          {data?.items.map((item) => (
+          {data.items.map((item) => (
             <div
               key={item.id}
               onClick={() => handleItemClick(item)}
@@ -230,31 +232,31 @@ const ActivityWidget: React.FC<WidgetComponentProps> = ({ config }) => {
                       addSuffix: true,
                     })}
                   </span>
-                  {item?.assessment?.name && (
+                  {item.assessment && item.assessment.name && (
                     <>
                       <span className="text-muted-foreground flex-shrink-0">
                         •
                       </span>
                       <span className="text-muted-foreground truncate min-w-0">
-                        {item?.assessment?.name}
+                        {item.assessment.name}
                       </span>
                     </>
                   )}
-                  {item?.program_phase?.name && (
+                  {item.program_phase && item.program_phase.name && (
                     <>
                       <span className="text-muted-foreground flex-shrink-0">
                         •
                       </span>
                       <span className="text-muted-foreground truncate min-w-0">
-                        {item?.program_phase?.name}
+                        {item.program_phase.name}
                       </span>
-                      {item.program_phase?.program?.name && (
+                      {item.program_phase.program.name && (
                         <>
                           <span className="text-muted-foreground flex-shrink-0">
                             •
                           </span>
                           <span className="text-muted-foreground truncate min-w-0">
-                            {item.program_phase?.program?.name}
+                            {item.program_phase.program.name}
                           </span>
                         </>
                       )}

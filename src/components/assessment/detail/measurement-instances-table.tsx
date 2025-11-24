@@ -1,15 +1,18 @@
 import { DataTable } from "@/components/data-table/data-table";
 import { createMeasurementInstancesColumns } from "./measurement-instances-table-columns";
-import type { EnrichedMeasurementInstance } from "../../../types/assessment-measurements";
 import { Loader2 } from "lucide-react";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import type {
+  AssessmentMeasurementInstance,
+  GetAssessmentMeasurementsResponseData,
+} from "@/types/api/assessments";
 
 interface MeasurementInstancesTableProps {
-  instances: EnrichedMeasurementInstance[];
+  instances: GetAssessmentMeasurementsResponseData | null;
   isLoading: boolean;
-  onEdit: (instance: EnrichedMeasurementInstance) => void;
-  onDelete: (instance: EnrichedMeasurementInstance) => void;
-  onRowClick?: (instance: EnrichedMeasurementInstance) => void;
+  onEdit: (instance: AssessmentMeasurementInstance) => void;
+  onDelete: (instance: AssessmentMeasurementInstance) => void;
+  onRowClick?: (instance: AssessmentMeasurementInstance) => void;
 }
 
 export function MeasurementInstancesTable({

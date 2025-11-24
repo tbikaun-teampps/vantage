@@ -8,14 +8,12 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import type { CreateAssessmentFormData } from "@/types/api/assessments";
 
 interface DetailsProps {
-  formData: {
-    name: string;
-    description: string;
-  };
+  formData: CreateAssessmentFormData;
   formErrors: Record<string, string>;
-  onInputChange: (field: string, value: string) => void;
+  onInputChange: (field: keyof CreateAssessmentFormData, value: string) => void;
 }
 
 export function AssessmentDetails({
@@ -61,7 +59,7 @@ export function AssessmentDetails({
             <Textarea
               id="description"
               placeholder="Provide a description for this assessment (optional)"
-              value={formData.description}
+              value={formData.description || ""}
               onChange={(e) => onInputChange("description", e.target.value)}
               rows={3}
             />

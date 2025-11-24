@@ -1,9 +1,9 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { IconLock } from "@tabler/icons-react";
-import type { QuestionnaireUsage } from "../../../pages/questionnaires/QuestionnaireDetailPage";
+import type { CheckQuestionnaireUsageResponseData } from "@/types/api/questionnaire";
 
 interface QuestionnaireUsageAlertProps {
-  questionnaireUsage: QuestionnaireUsage;
+  questionnaireUsage: CheckQuestionnaireUsageResponseData;
 }
 
 export function QuestionnaireUsageAlert({

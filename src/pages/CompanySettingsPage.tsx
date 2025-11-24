@@ -1,5 +1,5 @@
 import { useCompanyTree } from "@/hooks/useCompany";
-import { CompanyStructureContent } from "@/components/settings/company";
+import { CompanyStructureContent } from "@/components/settings/company/CompanyStructureContent";
 import { LoadingSpinner } from "@/components/loader";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 

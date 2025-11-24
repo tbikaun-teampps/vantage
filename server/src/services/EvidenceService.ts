@@ -3,7 +3,6 @@ import type { Database } from "../types/database";
 import type { MultipartFile } from "@fastify/multipart";
 import {
   CreateInterviewEvidenceBody,
-  EvidenceUploadResult,
   InterviewEvidence,
 } from "../types/entities/interviews";
 
@@ -106,10 +105,8 @@ export class EvidenceService {
   /**
    * Upload a single evidence file for an interview response
    */
-  async uploadEvidence(
-    responseId: number,
-    file: MultipartFile
-  ): Promise<EvidenceUploadResult> {
+  async uploadEvidence(responseId: number, file: MultipartFile) {
+    // : Promise<EvidenceUploadResult>
     // Validate file
     const fileBuffer = await file.toBuffer();
     const validation = this.validateFile(
@@ -168,7 +165,7 @@ export class EvidenceService {
       const { data: evidence, error: dbError } = await this.supabase
         .from("interview_evidence")
         .insert(evidenceData)
-        .select()
+        .select("id, created_at, uploaded_at, file_name, file_size, file_type")
         .single();
 
       if (dbError) {
@@ -192,12 +189,20 @@ export class EvidenceService {
    */
   async getEvidenceForResponse(
     responseId: number
-  ): Promise<InterviewEvidence[]> {
+  ): Promise<
+    Omit<
+      InterviewEvidence,
+      "company_id" | "deleted_at" | "is_deleted" | "file_path"
+    >[]
+  > {
     try {
       const { data: evidence, error } = await this.supabase
         .from("interview_evidence")
-        .select("*")
+        .select(
+          "id, created_at, file_name, file_size, file_type, interview_id, interview_response_id, uploaded_at, uploaded_by"
+        )
         .eq("interview_response_id", responseId)
+        .eq("is_deleted", false)
         .order("uploaded_at", { ascending: false });
 
       if (error) {

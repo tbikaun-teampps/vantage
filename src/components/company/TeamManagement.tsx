@@ -1,10 +1,6 @@
 import { useState } from "react";
-import {
-  useTeamMembers,
-  useTeamActions,
-  type TeamMember,
-  type CompanyRole,
-} from "@/hooks/useCompany";
+import { useTeamMembers, useTeamActions } from "@/hooks/useCompany";
+import type { CompanyUserRole, TeamMember } from "@/types/api/companies";
 import { useUserCompanyRole } from "@/hooks/useUserCompanyRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +48,7 @@ import { DashboardPage } from "../dashboard";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { useProfile } from "@/hooks/useProfile";
 
-const roleLabels: Record<CompanyRole, string> = {
+const roleLabels: Record<CompanyUserRole, string> = {
   owner: "Owner",
   admin: "Admin",
   viewer: "Viewer",
@@ -60,7 +56,7 @@ const roleLabels: Record<CompanyRole, string> = {
 };
 
 const roleBadgeVariants: Record<
-  CompanyRole,
+  CompanyUserRole,
   "default" | "secondary" | "outline" | "destructive"
 > = {
   owner: "default",
@@ -85,10 +81,10 @@ export function TeamManagement() {
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState("");
-  const [newMemberRole, setNewMemberRole] = useState<CompanyRole>("viewer");
+  const [newMemberRole, setNewMemberRole] = useState<CompanyUserRole>("viewer");
 
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
-  const [editRole, setEditRole] = useState<CompanyRole>("viewer");
+  const [editRole, setEditRole] = useState<CompanyUserRole>("viewer");
 
   // Only owners and admins can manage team
   const canManageTeam =
@@ -181,7 +177,9 @@ export function TeamManagement() {
             <Label htmlFor="role">Role</Label>
             <Select
               value={newMemberRole}
-              onValueChange={(value) => setNewMemberRole(value as CompanyRole)}
+              onValueChange={(value) =>
+                setNewMemberRole(value as CompanyUserRole)
+              }
             >
               <SelectTrigger>
                 <SelectValue />
@@ -284,7 +282,7 @@ export function TeamManagement() {
                                     <Select
                                       value={editRole}
                                       onValueChange={(value) =>
-                                        setEditRole(value as CompanyRole)
+                                        setEditRole(value as CompanyUserRole)
                                       }
                                     >
                                       <SelectTrigger>

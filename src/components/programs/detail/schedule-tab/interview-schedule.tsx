@@ -9,10 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { IconPlus, IconCalendar, IconClock, IconUser } from "@tabler/icons-react";
 
-interface InterviewScheduleProps {
-  programId: number;
-}
-
 // Mock data for demonstration
 const mockInterviews = [
   {
@@ -51,7 +47,7 @@ const statusColors = {
   completed: "bg-gray-50 text-gray-700 border-gray-200",
 };
 
-export function InterviewSchedule({ programId }: InterviewScheduleProps) {
+export function InterviewSchedule() {
   return (
     <Card>
       <CardHeader>

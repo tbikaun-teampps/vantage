@@ -4,7 +4,11 @@ import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Loader2 } from "lucide-react";
-import { IconCheck, IconFileUpload, IconDeviceFloppy } from "@tabler/icons-react";
+import {
+  IconCheck,
+  IconFileUpload,
+  IconDeviceFloppy,
+} from "@tabler/icons-react";
 import {
   useProgramPhaseMeasurementData,
   useCreateProgramPhaseMeasurementData,
@@ -60,15 +64,12 @@ export function MeasurementDataAddUploadEdit({
 
   const hasSelection = !!measurementDefinitionId && !!selectedLocation;
 
-  const {
-    data: existingMeasurement,
-    isLoading: isLoadingMeasurement,
-  } = useProgramPhaseMeasurementData(
-    programId,
-    programPhaseId,
-    measurementDefinitionId,
-    location
-  );
+  const { data: existingMeasurement, isLoading: isLoadingMeasurement } =
+    useProgramPhaseMeasurementData(programId, programPhaseId, {
+      measurementDefinitionId,
+      location_id: location?.id,
+      location_type: location?.type,
+    });
 
   // Mutation hooks
   const createMutation = useCreateProgramPhaseMeasurementData();
@@ -210,7 +211,7 @@ export function MeasurementDataAddUploadEdit({
         {hasSelection && mode === "add" && (
           <div className="space-y-4">
             <h4 className="font-medium">Add New Measurement Value</h4>
-            {isLoadingMeasurement ? (
+            {isLoadingMeasurement || !measurementDefinition ? (
               <div className="text-sm text-muted-foreground">
                 Loading existing data...
               </div>
@@ -226,8 +227,8 @@ export function MeasurementDataAddUploadEdit({
                       value={manualValue}
                       onChange={(e) => setManualValue(e.target.value)}
                       placeholder="Enter measurement value"
-                      min={measurementDefinition?.min_value}
-                      max={measurementDefinition?.max_value}
+                      min={measurementDefinition.min_value ?? undefined}
+                      max={measurementDefinition.max_value ?? undefined}
                       disabled={isSaving}
                     />
                     <Button
@@ -238,10 +239,23 @@ export function MeasurementDataAddUploadEdit({
                       {isSaving ? "Saving..." : "Save"}
                     </Button>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    No existing data. Enter a value to create new measurement
-                    data.
-                  </p>
+                  <div className="flex gap-2">
+                    <p className="text-sm text-muted-foreground">
+                      No existing data. Enter a value to create new measurement
+                      data.
+                    </p>
+                    {(measurementDefinition.min_value !== undefined ||
+                      measurementDefinition.max_value !== undefined) && (
+                      <p className="text-sm text-muted-foreground">
+                        {measurementDefinition.min_value !== undefined &&
+                        measurementDefinition.max_value !== undefined
+                          ? `Valid range: ${measurementDefinition.min_value} - ${measurementDefinition.max_value}`
+                          : measurementDefinition.min_value !== undefined
+                            ? `Minimum: ${measurementDefinition.min_value}`
+                            : `Maximum: ${measurementDefinition.max_value}`}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -252,7 +266,7 @@ export function MeasurementDataAddUploadEdit({
         {hasSelection && mode === "edit" && existingMeasurement && (
           <div className="space-y-4">
             <h4 className="font-medium">Update Measurement Value</h4>
-            {isLoadingMeasurement ? (
+            {isLoadingMeasurement || !measurementDefinition ? (
               <div className="text-sm text-muted-foreground">
                 Loading existing data...
               </div>
@@ -268,8 +282,8 @@ export function MeasurementDataAddUploadEdit({
                       value={manualValue}
                       onChange={(e) => setManualValue(e.target.value)}
                       placeholder="Enter measurement value"
-                      min={measurementDefinition?.min_value}
-                      max={measurementDefinition?.max_value}
+                      min={measurementDefinition.min_value ?? undefined}
+                      max={measurementDefinition.max_value ?? undefined}
                       disabled={isSaving}
                     />
                     <Button
@@ -281,8 +295,8 @@ export function MeasurementDataAddUploadEdit({
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Current value: {existingMeasurement.calculated_value}. Update
-                    the value above to save changes.
+                    Current value: {existingMeasurement.calculated_value}.
+                    Update the value above to save changes.
                   </p>
                 </div>
               </div>

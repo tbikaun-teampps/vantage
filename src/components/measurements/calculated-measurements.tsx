@@ -36,6 +36,7 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
+import type { ProgramCalculatedMeasurement } from "@/types/api/programs";
 
 interface CalculatedMeasurementsProps {
   programId: number;
@@ -50,18 +51,21 @@ export function CalculatedMeasurements({
   programPhaseId,
   title = "Calculated Metrics",
   description = "Current metric values for this phase",
-  showEmpty = false,
+  // showEmpty
 }: CalculatedMeasurementsProps) {
   const { data: calculatedMeasurements, isLoading } =
     useProgramPhaseCalculatedMeasurements(programId, programPhaseId);
   const deleteMutation = useDeleteProgramPhaseMeasurementData();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isAddDataDialogOpen, setIsAddDataDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [isAddDataDialogOpen, setIsAddDataDialogOpen] =
+    useState<boolean>(false);
   const [isEditMeasurementDialogOpen, setIsEditMeasurementDialogOpen] =
-    useState(false);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [measurementToDelete, setMeasurementToDelete] = useState(null);
-  const [measurementToEdit, setMeasurementToEdit] = useState(null);
+    useState<boolean>(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState<boolean>(false);
+  const [measurementToDelete, setMeasurementToDelete] =
+    useState<ProgramCalculatedMeasurement>();
+  const [measurementToEdit, setMeasurementToEdit] =
+    useState<ProgramCalculatedMeasurement>();
   const [selectedMeasurementDefinitionId, setSelectedMeasurementDefinitionId] =
     useState<number | null>(null);
 
@@ -72,12 +76,12 @@ export function CalculatedMeasurements({
     return null;
   }
 
-  const handleEditClick = (measurement) => {
+  const handleEditClick = (measurement: ProgramCalculatedMeasurement) => {
     setMeasurementToEdit(measurement);
     setIsEditMeasurementDialogOpen(true);
   };
 
-  const handleDeleteClick = (measurement) => {
+  const handleDeleteClick = (measurement: ProgramCalculatedMeasurement) => {
     setMeasurementToDelete(measurement);
     setDeleteConfirmOpen(true);
   };
@@ -91,14 +95,14 @@ export function CalculatedMeasurements({
         measurementId: measurementToDelete.id,
       });
       setDeleteConfirmOpen(false);
-      setMeasurementToDelete(null);
+      setMeasurementToDelete(undefined);
     } catch (error) {
       console.error("Failed to delete calculated measurement:", error);
     }
   };
 
   // Create column definitions with useCallback for formatValue
-  const columns: ColumnDef<CalculatedMeasurementWithDefinition>[] = [
+  const columns: ColumnDef<ProgramCalculatedMeasurement>[] = [
     {
       id: "measurement_name",
       header: "Measurement Name",
@@ -106,7 +110,7 @@ export function CalculatedMeasurements({
         const measurement = row.original;
         return (
           <div className="font-medium">
-            {measurement.measurement_definition.name}
+            {measurement.measurement_definition?.name}
           </div>
         );
       },
@@ -351,8 +355,8 @@ export function CalculatedMeasurements({
             <AlertDialogTitle>Delete Calculated Metric</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete the calculated measurement "
-              {measurementToDelete?.measurement_definition.name}"? This action
-              cannot be undone.
+              {measurementToDelete?.measurement_definition.name}
+              "? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

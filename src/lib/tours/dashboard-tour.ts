@@ -118,5 +118,3 @@ tourManager.registerTour({
   id: 'dashboard-overview',
   steps: dashboardSteps
 });
-
-export { dashboardSteps };

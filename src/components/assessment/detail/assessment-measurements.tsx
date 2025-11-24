@@ -5,10 +5,6 @@ import { createMeasurementColumns } from "./measurement-table-columns";
 import { MeasurementDetailsDialog } from "./measurement-details-dialog";
 import { EditMeasurementDialog } from "./edit-measurement-dialog";
 import { MeasurementInstancesTable } from "./measurement-instances-table";
-import type {
-  AssessmentMeasurement,
-  EnrichedMeasurementInstance,
-} from "../../../types/assessment-measurements";
 import {
   Card,
   CardHeader,
@@ -24,48 +20,57 @@ import {
 import { IconRuler } from "@tabler/icons-react";
 import { Loader2 } from "lucide-react";
 import { AssessmentCharts } from "./assessment-charts";
+import type {
+  AssessmentMeasurementDefinition,
+  AssessmentMeasurementInstance,
+  GetAssessmentMeasurementsResponseData,
+} from "@/types/api/assessments";
 
 export function MeasurementManagement({
   assessmentId,
 }: {
-  assessmentId?: number;
+  assessmentId: number;
 }) {
   const [selectedMeasurementId, setSelectedMeasurementId] = useState<
     number | null
   >(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState("browse");
 
   // State for simple edit dialog
-  const [editInstance, setEditInstance] = useState<EnrichedMeasurementInstance | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editInstance, setEditInstance] =
+    useState<AssessmentMeasurementInstance | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState<boolean>(false);
 
-  const { allMeasurements, isLoading, error } =
-    useAssessmentMeasurements(assessmentId);
+  const {
+    data: allMeasurements,
+    isLoading,
+    error,
+  } = useAssessmentMeasurements(assessmentId);
   const { instances, isLoading: isLoadingInstances } =
     useAssessmentMeasurementInstances(assessmentId);
-  const { deleteMeasurement, isDeleting } =
-    useAssessmentMeasurementActions();
+  const { deleteMeasurement, isDeleting } = useAssessmentMeasurementActions();
 
-  // Sort measurements: isInUse first, then available, then unavailable. Each group alphabetically.
-  const sortedMeasurements = useMemo(() => {
+  // Sort measurements: is_in_use first, then available, then unavailable. Each group alphabetically.
+  const sortedMeasurements: AssessmentMeasurementDefinition[] = useMemo(() => {
+    if (isLoading || !allMeasurements) return [];
     return [...allMeasurements].sort((a, b) => {
-      // Sort by isInUse first (in use comes first)
-      if (a.isInUse !== b.isInUse) {
-        return a.isInUse ? -1 : 1;
+      // Sort by is_in_use first (in use comes first)
+      if (a.is_in_use !== b.is_in_use) {
+        return a.is_in_use ? -1 : 1;
       }
-      // Within same isInUse status, sort by active status (available before unavailable)
+      // Within same is_in_use status, sort by active status (available before unavailable)
       if (a.active !== b.active) {
         return a.active ? -1 : 1;
       }
       // Within same group, sort alphabetically by name
       return a.name.localeCompare(b.name);
     });
-  }, [allMeasurements]);
+  }, [allMeasurements, isLoading]);
 
   // Derive the current measurement from allMeasurements to always have fresh data
   const selectedMeasurement = selectedMeasurementId
-    ? (allMeasurements.find((m) => m.id === selectedMeasurementId) ?? null)
+    ? (allMeasurements?.find((m) => m.id === selectedMeasurementId) ?? null)
     : null;
 
   if (!assessmentId) {
@@ -95,7 +100,7 @@ export function MeasurementManagement({
   }
 
   // Handler for selecting a measurement definition from "Browse Available" tab
-  const handleRowSelect = (measurement: AssessmentMeasurement) => {
+  const handleRowSelect = (measurement: AssessmentMeasurementDefinition) => {
     // Only allow dialog to open for measurements that are active
     if (!measurement.active) {
       toast.info(
@@ -109,14 +114,16 @@ export function MeasurementManagement({
   };
 
   // Handler for editing an existing measurement instance
-  const handleEditInstance = (instance: EnrichedMeasurementInstance) => {
+  const handleEditInstance = (
+    instance: GetAssessmentMeasurementsResponseData[number]
+  ) => {
     setEditInstance(instance);
     setIsEditDialogOpen(true);
   };
 
   // Handler for deleting a measurement instance
   const handleDeleteInstance = async (
-    instance: EnrichedMeasurementInstance
+    instance: GetAssessmentMeasurementsResponseData[number]
   ) => {
     if (!assessmentId) return;
 
@@ -129,7 +136,7 @@ export function MeasurementManagement({
     }
   };
 
-  const handleUploadData = (measurement: AssessmentMeasurement) => {
+  const handleUploadData = (measurement: AssessmentMeasurementDefinition) => {
     // TODO: Open data upload dialog
     toast.info(`Upload data for "${measurement.name}" - not implemented yet`);
   };
@@ -155,13 +162,13 @@ export function MeasurementManagement({
           <TabsList className="ml-6">
             <TabsTrigger value="browse">Browse Available</TabsTrigger>
             <TabsTrigger value="instances">
-              Instances ({instances.length})
+              Instances ({instances ? instances.length : 0})
             </TabsTrigger>
           </TabsList>
 
           {/* Browse Available Tab - Shows all measurement definitions */}
           <TabsContent value="browse" className="mt-0">
-            <DataTable
+            <DataTable<AssessmentMeasurementDefinition>
               data={sortedMeasurements}
               columns={columns}
               getRowId={(measurement) => measurement.id.toString()}
@@ -175,15 +182,15 @@ export function MeasurementManagement({
               defaultTab="all"
               getStatusCounts={(measurements) => ({
                 all: measurements.length,
-                in_use: measurements.filter((m) => m.isInUse).length,
-                available: measurements.filter((m) => !m.isInUse).length,
+                in_use: measurements.filter((m) => m.is_in_use).length,
+                available: measurements.filter((m) => !m.is_in_use).length,
               })}
               filterByStatus={(measurements, status) => {
                 if (status === "all") return measurements;
                 if (status === "in_use")
-                  return measurements.filter((m) => m.isInUse);
+                  return measurements.filter((m) => m.is_in_use);
                 if (status === "available")
-                  return measurements.filter((m) => !m.isInUse);
+                  return measurements.filter((m) => !m.is_in_use);
                 return measurements;
               }}
               getEmptyStateContent={(status) => ({
@@ -209,7 +216,7 @@ export function MeasurementManagement({
           {/* Instances Tab - Shows measurement instances */}
           <TabsContent value="instances" className="mt-0">
             <MeasurementInstancesTable
-              instances={instances}
+              instances={instances ?? []}
               isLoading={isLoadingInstances}
               onEdit={handleEditInstance}
               onDelete={handleDeleteInstance}

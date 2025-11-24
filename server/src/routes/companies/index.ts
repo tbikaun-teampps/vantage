@@ -6,22 +6,33 @@ import { NotFoundError, BadRequestError } from "../../plugins/errorHandler";
 import { AssessmentsService } from "../../services/AssessmentsService";
 import { entitiesRoutes } from "./entities";
 import { contactsRoutes } from "./contacts";
-// import { rolesRoutes } from "./roles";
 import { teamRoutes } from "./team";
 import { parse } from "csv-parse/sync";
 import {
   companyRoleMiddleware,
   requireCompanyRole,
 } from "../../middleware/companyRole";
-import type {
-  CreateCompanyData,
-  UpdateCompanyData,
-  UpdateBrandingData,
-} from "../../types/entities/companies";
-import { AssessmentFilters } from "../../types/entities/assessments";
 import { questionnaireSchemas } from "../../schemas/questionnaire";
 import { QuestionnaireService } from "../../services/QuestionnaireService";
 import { RecommendationsService } from "../../services/RecommendationsService";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
+import {
+  Error400Schema,
+  Error401Schema,
+  Error403Schema,
+  Error404Schema,
+  Error500Schema,
+} from "../../schemas/errors";
+import { z } from "zod";
+import {
+  AssessmentStatusEnum,
+  AssessmentTypeEnum,
+} from "../../schemas/assessments";
+import {
+  RecommendationPriorityEnum,
+  RecommendationStatusEnum,
+} from "../../schemas/recommendations";
+import { InterviewStatusEnum } from "../../schemas/interviews";
 
 export async function companiesRoutes(fastify: FastifyInstance) {
   // Add "Companies" tag to all routes in this router
@@ -42,97 +53,98 @@ export async function companiesRoutes(fastify: FastifyInstance) {
   //   Register sub-routers
   await fastify.register(entitiesRoutes);
   await fastify.register(contactsRoutes);
-  // await fastify.register(rolesRoutes);
   await fastify.register(teamRoutes);
-  fastify.get(
-    "",
-    {
-      // No preHandler required, RLS will handle access control
-      schema: {
-        description: "Get all companies",
-        response: {
-          200: companySchemas.responses.companyList,
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "",
+    // No preHandler required, RLS will handle access control
+    schema: {
+      description: "Get all companies",
+      response: {
+        200: companySchemas.responses.companyList,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const companies = await request.companiesService!.getCompanies();
       return {
         success: true,
         data: companies,
       };
-    }
-  );
-  fastify.get(
-    "/:companyId",
-    {
-      // No preHandler required, RLS will handle access control
-      schema: {
-        params: companySchemas.params.companyId,
-        response: {
-          200: companySchemas.responses.companyWithRoleDetail,
-          401: commonResponseSchemas.responses[401],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId",
+    // No preHandler required, RLS will handle access control
+    schema: {
+      description: "Get company by ID",
+      params: companySchemas.params.companyId,
+      response: {
+        200: companySchemas.responses.companyWithRoleDetail,
+        401: Error401Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
-      const company = await request.companiesService!.getCompanyById(companyId);
-
+    handler: async (request) => {
+      const company = await request.companiesService!.getCompanyById(
+        request.params.companyId
+      );
       return {
         success: true,
         data: company,
       };
-    }
-  );
-  fastify.post(
-    "",
-    {
-      // No prehandler required, any non-demo user can create a company.
-      schema: {
-        body: companySchemas.body.createCompany,
-        response: {
-          200: companySchemas.responses.companyWithRoleDetail,
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "",
+    // No prehandler required, any non-demo user can create a company.
+    schema: {
+      description: "Create a new company",
+      body: companySchemas.body.createCompany,
+      response: {
+        200: companySchemas.responses.companyWithRoleDetail,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const company = await request.companiesService!.createCompany(
-        request.body as CreateCompanyData
+        request.body
       );
 
       return {
         success: true,
         data: company,
       };
-    }
-  );
-  fastify.put(
-    "/:companyId",
-    {
-      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
-      schema: {
-        params: companySchemas.params.companyId,
-        body: companySchemas.body.updateCompany,
-        response: {
-          200: companySchemas.responses.companyDetail,
-          401: commonResponseSchemas.responses[401],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/:companyId",
+    preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
+    schema: {
+      description: "Update company details",
+      params: companySchemas.params.companyId,
+      body: companySchemas.body.updateCompany,
+      response: {
+        200: companySchemas.responses.companyDetail,
+        401: Error401Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
+    handler: async (request) => {
       const company = await request.companiesService!.updateCompany(
-        companyId,
-        request.body as UpdateCompanyData
+        request.params.companyId,
+        request.body
       );
 
       if (!company) {
@@ -143,25 +155,26 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         success: true,
         data: company,
       };
-    }
-  );
-  fastify.delete(
-    "/:companyId",
-    {
-      preHandler: [companyRoleMiddleware, requireCompanyRole("owner")],
-      schema: {
-        params: companySchemas.params.companyId,
-        response: {
-          200: commonResponseSchemas.messageResponse,
-          401: commonResponseSchemas.responses[401],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/:companyId",
+    preHandler: [companyRoleMiddleware, requireCompanyRole("owner")],
+    schema: {
+      params: companySchemas.params.companyId,
+      response: {
+        200: commonResponseSchemas.messageResponse,
+        401: Error401Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
-      const deleted = await request.companiesService!.deleteCompany(companyId);
+    handler: async (request) => {
+      const deleted = await request.companiesService!.deleteCompany(
+        request.params.companyId
+      );
 
       if (!deleted) {
         throw new NotFoundError("Company not found");
@@ -171,27 +184,27 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         success: true,
         message: "Company deleted successfully",
       };
-    }
-  );
-  fastify.get(
-    "/:companyId/tree",
-    {
-      preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
-      schema: {
-        description: "Get company tree structure",
-        params: companySchemas.params.companyId,
-        response: {
-          // 200: companySchemas.responses.companyTree,
-          401: commonResponseSchemas.responses[401],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId/tree",
+    preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
+    schema: {
+      description: "Get company tree structure",
+      params: companySchemas.params.companyId,
+      response: {
+        200: companySchemas.responses.companyTree,
+        401: Error401Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
-      const treeData =
-        await request.companiesService!.getCompanyTree(companyId);
+    handler: async (request) => {
+      const treeData = await request.companiesService!.getCompanyTree(
+        request.params.companyId
+      );
 
       if (!treeData) {
         throw new NotFoundError("Company not found");
@@ -201,163 +214,158 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         success: true,
         data: treeData,
       };
-    }
-  );
-  fastify.get(
-    "/:companyId/assessments",
-    {
-      preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
-      schema: {
-        description:
-          "Get all assessments for a given company with optional filters",
-        summary: "Retrieve a list of assessments",
-        querystring: {
-          type: "object",
-          properties: {
-            type: {
-              type: "string",
-              description: "Filter by assessment type",
-              enum: ["onsite", "desktop"],
-            },
-            status: {
-              type: "array",
-              items: {
-                type: "string",
-                enum: ["draft", "in_progress", "completed"],
-              },
-              description: "Filter by assessment status",
-            },
-            search: {
-              type: "string",
-              description: "Search assessments by name or description",
-            },
-          },
-        },
-        params: {
-          type: "object",
-          properties: {
-            companyId: { type: "string", description: "ID of the company" },
-          },
-          required: ["companyId"],
-        },
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId/assessments",
+    preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
+    schema: {
+      description:
+        "Get all assessments for a given company with optional filters",
+      summary: "Retrieve a list of assessments",
+      params: z.object({
+        companyId: z.string(),
+      }),
+      querystring: z.object({
+        type: z.enum(AssessmentTypeEnum).optional(),
+        status: z.array(z.enum(AssessmentStatusEnum)).optional(),
+        search: z.string().optional(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.array(
+            z.object({
+              id: z.number(),
+              name: z.string(),
+              description: z.string().nullable(),
+              status: z.enum(AssessmentStatusEnum),
+              total_responses: z.number(),
+              interview_count: z.number(),
+              completed_interview_count: z.number(),
+              completed_at: z.string().nullable(),
+              interview_overview: z.string().nullable(),
+              program_phase_id: z.number().nullable(),
+              questionnaire_id: z.number().nullable(),
+              questionnaire_name: z.string().optional(),
+              scheduled_at: z.string().nullable(),
+              type: z.enum(AssessmentTypeEnum),
+              created_at: z.string(),
+              updated_at: z.string(),
+              interviews: z
+                .array(
+                  z.object({
+                    id: z.number(),
+                    status: z.enum(InterviewStatusEnum),
+                    interview_responses: z.array(
+                      z.object({
+                        id: z.number(),
+                        rating_score: z.number().nullable(),
+                      })
+                    ),
+                  })
+                )
+                .nullable(),
+            })
+          ),
+        }),
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
-
+    handler: async (request) => {
       const assessmentsService = new AssessmentsService(
         request.supabaseClient,
         request.user.id
       );
       const assessments = await assessmentsService.getAssessments(
-        companyId,
-        request.query as AssessmentFilters
+        request.params.companyId,
+        request.query
       );
 
       return {
         success: true,
         data: assessments,
       };
-    }
-  );
-  fastify.get(
-    "/:companyId/recommendations",
-    {
-      preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
-      schema: {
-        description: "Get all recommendations for a company",
-        params: companySchemas.params.companyId,
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    id: { type: "string" },
-                    program: {
-                      type: "object",
-                      properties: {
-                        id: { type: "string" },
-                        name: { type: "string" },
-                      },
-                      required: ["id", "name"],
-                    },
-                    created_at: { type: "string", format: "date-time" },
-                    updated_at: { type: "string", format: "date-time" },
-                    content: { type: "string" },
-                    context: { type: "string" },
-                    title: { type: "string" },
-                    priority: { type: "string" },
-                    status: { type: "string" },
-                    assessment: {
-                      type: "object",
-                      properties: {
-                        id: { type: "string" },
-                        name: { type: "string" },
-                        type: { type: "string", enum: ["onsite", "desktop"] },
-                      },
-                      required: ["id", "name", "type"],
-                    },
-                  },
-                  required: [
-                    "id",
-                    "program",
-                    "created_at",
-                    "updated_at",
-                    "title",
-                    "content",
-                    "context",
-                    "priority",
-                    "status",
-                    "assessment",
-                  ],
-                },
-              },
-            },
-          },
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId/recommendations",
+    preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
+    schema: {
+      description: "Get all recommendations for a company",
+      params: companySchemas.params.companyId,
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.array(
+            z.object({
+              id: z.number(),
+              program: z
+                .object({
+                  id: z.number(),
+                  name: z.string(),
+                })
+                .nullable(),
+              created_at: z.string(),
+              updated_at: z.string(),
+              content: z.string(),
+              context: z.string(),
+              title: z.string(),
+              priority: z.enum(RecommendationPriorityEnum),
+              status: z.enum(RecommendationStatusEnum),
+              assessment: z
+                .object({
+                  id: z.number(),
+                  name: z.string(),
+                  type: z.enum(AssessmentTypeEnum),
+                })
+                .nullable(),
+            })
+          ),
+        }),
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
+    handler: async (request) => {
       const recommendationsService = new RecommendationsService(
         request.supabaseClient
       );
       const recommendations =
-        await recommendationsService.getAllRecommendations(companyId);
+        await recommendationsService.getAllRecommendations(
+          request.params.companyId
+        );
 
       return {
         success: true,
         data: recommendations,
       };
-    }
-  );
+    },
+  });
 
-  // Method for exporting company structure as JSON
-  fastify.get(
-    "/:companyId/export",
-    {
-      preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
-      schema: {
-        description: "Export company structure as JSON",
-        params: companySchemas.params.companyId,
-        response: {
-          401: commonResponseSchemas.responses[401],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId/export",
+    preHandler: [companyRoleMiddleware, requireCompanyRole("viewer")],
+    schema: {
+      description: "Export company structure as JSON",
+      params: companySchemas.params.companyId,
+      response: {
+        200: z.string(), // JSON string representing the company structure
+        401: Error401Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
-      const { companyId } = request.params as { companyId: string };
-      const exportData =
-        await request.companiesService!.exportCompanyStructure(companyId);
+    handler: async (request, reply) => {
+      const exportData = await request.companiesService!.exportCompanyStructure(
+        request.params.companyId
+      );
 
       // Set headers for file download
       const fileName = `company-structure-${exportData.name
@@ -368,21 +376,21 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       reply.header("Content-Disposition", `attachment; filename="${fileName}"`);
 
       return reply.send(JSON.stringify(exportData, null, 2));
-    }
-  );
+    },
+  });
 
-  // Method for importing a company structure
   fastify.post(
     "/:companyId/import",
     {
       preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
       schema: {
+        description: "Import company structure from a CSV file",
         consumes: ["multipart/form-data"],
         params: companySchemas.params.companyId,
         response: {
           200: companySchemas.responses.companyTree,
-          400: commonResponseSchemas.responses[400],
-          401: commonResponseSchemas.responses[401],
+          400: Error400Schema,
+          401: Error401Schema,
         },
       },
     },
@@ -913,88 +921,135 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       };
     }
   );
-  fastify.get(
-    "/:companyId/actions",
-    {
-      schema: {
-        response: {
-          // 200: {
-          //   type: "object",
-          //   properties: {
-          //     success: { type: "boolean" },
-          //     data: {
-          //       type: "array",
-          //       items: { type: "object" },
-          //     },
-          //   },
-          // },
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId/actions",
+    schema: {
+      description: "Get all actions for a given company",
+      params: companySchemas.params.companyId,
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.array(
+            z.object({
+              id: z.number(),
+              title: z.string().nullable(),
+              description: z.string(),
+              created_at: z.string(),
+              updated_at: z.string(),
+              interview_response: z.object({
+                id: z.number(),
+                questionnaire_question: z.object({
+                  id: z.number(),
+                  title: z.string(),
+                  questionnaire_step: z.object({
+                    id: z.number(),
+                    title: z.string(),
+                    questionnaire_section: z.object({
+                      id: z.number(),
+                      title: z.string(),
+                    }),
+                  }),
+                }),
+                interview: z.object({
+                  id: z.number(),
+                  interview_contact: z
+                    .object({
+                      id: z.number(),
+                      full_name: z.string(),
+                      email: z.email(),
+                    })
+                    .nullable(),
+                  assessment: z
+                    .object({
+                      id: z.number(),
+                      name: z.string(),
+                      site: z
+                        .object({
+                          id: z.number(),
+                          name: z.string(),
+                          region: z.object({
+                            id: z.number(),
+                            name: z.string(),
+                            business_unit: z.object({
+                              id: z.number(),
+                              name: z.string(),
+                            }),
+                          }),
+                        })
+                        .nullable(),
+                    })
+                    .nullable(),
+                }),
+              }),
+            })
+          ),
+        }),
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
-
-      const data =
-        await request.companiesService!.getActionsByCompanyId(companyId);
+    handler: async (request) => {
+      const data = await request.companiesService!.getActionsByCompanyId(
+        request.params.companyId
+      );
 
       return {
         success: true,
         data: data,
       };
-    }
-  );
-  fastify.get(
-    "/:companyId/questionnaires",
-    {
-      schema: {
-        response: {
-          200: questionnaireSchemas.responses.questionnaireList,
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId/questionnaires",
+    // TODO: should this have a preHandler to check company role?
+    schema: {
+      description: "Get all questionnaires for a given company",
+      params: companySchemas.params.companyId,
+      response: {
+        200: questionnaireSchemas.responses.questionnaireList,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
+    handler: async (request) => {
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
         request.user.id,
         request.subscriptionTier
       );
-      const questionnaires =
-        await questionnaireService.getQuestionnaires(companyId);
+      const questionnaires = await questionnaireService.getQuestionnaires(
+        request.params.companyId
+      );
 
       return {
         success: true,
         data: questionnaires,
       };
-    }
-  );
+    },
+  });
 
-  // Upload or replace company icon
-  fastify.post(
-    "/:companyId/icon",
-    {
-      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
-      schema: {
-        description: "Upload or replace company icon",
-        consumes: ["multipart/form-data"],
-        params: companySchemas.params.companyId,
-        response: {
-          200: companySchemas.responses.iconUpload,
-          400: commonResponseSchemas.responses[400],
-          401: commonResponseSchemas.responses[401],
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/:companyId/icon",
+    preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
+    schema: {
+      description: "Upload or replace company icon",
+      consumes: ["multipart/form-data"],
+      params: companySchemas.params.companyId,
+      response: {
+        200: companySchemas.responses.iconUpload,
+        400: Error400Schema,
+        401: Error401Schema,
+        403: Error403Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
-
+    handler: async (request) => {
       // Parse multipart form data
       const parts = request.parts();
       let fileBuffer: Buffer | null = null;
@@ -1016,7 +1071,7 @@ export async function companiesRoutes(fastify: FastifyInstance) {
 
       // Upload icon using service
       const iconUrl = await request.companiesService!.updateCompanyIcon(
-        companyId,
+        request.params.companyId,
         fileBuffer,
         fileName,
         mimeType
@@ -1028,72 +1083,68 @@ export async function companiesRoutes(fastify: FastifyInstance) {
           icon_url: iconUrl,
         },
       };
-    }
-  );
+    },
+  });
 
-  // Remove company icon
-  fastify.delete(
-    "/:companyId/icon",
-    {
-      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
-      schema: {
-        description: "Remove company icon",
-        params: companySchemas.params.companyId,
-        response: {
-          200: commonResponseSchemas.messageResponse,
-          401: commonResponseSchemas.responses[401],
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/:companyId/icon",
+    preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
+    schema: {
+      description: "Remove company icon",
+      params: companySchemas.params.companyId,
+      response: {
+        200: commonResponseSchemas.messageResponse,
+        401: Error401Schema,
+        403: Error403Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
-
-      await request.companiesService!.removeCompanyIcon(companyId);
+    handler: async (request) => {
+      await request.companiesService!.removeCompanyIcon(
+        request.params.companyId
+      );
 
       return {
         success: true,
         message: "Company icon removed successfully",
       };
-    }
-  );
+    },
+  });
 
   // Update company branding colors
-  fastify.patch(
-    "/:companyId/branding",
-    {
-      preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
-      schema: {
-        description: "Update company branding colors",
-        params: companySchemas.params.companyId,
-        body: {
-          type: "object",
-          properties: {
-            primary: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
-            secondary: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
-            accent: { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
-          },
-          additionalProperties: false,
-        },
-        response: {
-          200: companySchemas.responses.companyDetail,
-          400: commonResponseSchemas.responses[400],
-          401: commonResponseSchemas.responses[401],
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PATCH",
+    url: "/:companyId/branding",
+    preHandler: [companyRoleMiddleware, requireCompanyRole("admin")],
+    schema: {
+      description: "Update company branding colors",
+      params: companySchemas.params.companyId,
+      body: z.object({
+        primary: z
+          .string()
+          .regex(/^#[0-9A-Fa-f]{6}$/, { message: "Invalid hex color format" }),
+        secondary: z.string().regex(/^#[0-9A-Fa-f]{6}$/, {
+          message: "Invalid hex color format",
+        }),
+        accent: z.string().regex(/^#[0-9A-Fa-f]{6}$/, {
+          message: "Invalid hex color format",
+        }),
+      }),
+      response: {
+        200: companySchemas.responses.companyDetail,
+        400: Error400Schema,
+        401: Error401Schema,
+        403: Error403Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { companyId } = request.params as { companyId: string };
-      const brandingData = request.body as UpdateBrandingData;
-
+    handler: async (request) => {
       const company = await request.companiesService!.updateCompanyBranding(
-        companyId,
-        brandingData
+        request.params.companyId,
+        request.body
       );
 
       if (!company) {
@@ -1104,6 +1155,6 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         success: true,
         data: company,
       };
-    }
-  );
+    },
+  });
 }

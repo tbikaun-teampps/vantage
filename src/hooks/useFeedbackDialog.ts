@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useFeedbackActions } from "@/hooks/useFeedback";
 import { toast } from "sonner";
-import type { FeedbackType } from "@/lib/api/feedback";
+import type { FeedbackType } from "@/types/api/feedback";
 
 export function useFeedbackDialog() {
   const { submitFeedback, isSubmitting, feedbackError, resetErrors } =
     useFeedbackActions();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<string>("");
   const [type, setType] = useState<FeedbackType>("general");
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -2,41 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-
-type QuestionPart = {
-  id: number;
-  text: string;
-  order_index: number;
-  answer_type: string;
-  options?:
-    | {
-        labels: string[];
-      }
-    | {
-        max: number;
-        min: number;
-        step: number;
-      }
-    | {
-        max: number;
-        min: number;
-        decimal_places?: number;
-      };
-};
+import type { InterviewFormData } from "@/pages/interview/InterviewDetailPage";
+import type { GetInterviewQuestionByIdResponseData } from "@/types/api/interviews";
+import type { QuestionPart } from "@/types/api/questionnaire";
+import type { UseFormReturn } from "react-hook-form";
 
 interface InterviewQuestionElementsProps {
-  question: {
-    question_parts: Array<QuestionPart>;
-    response: {
-      id: number;
-      question_part_responses?: Array<{
-        id: number;
-        question_part_id: number;
-        answer_value?: string | null;
-      }>;
-    };
-  };
-  form: any; // React Hook Form instance
+  question: GetInterviewQuestionByIdResponseData;
+  form: UseFormReturn<InterviewFormData>; // React Hook Form instance
 }
 
 export function InterviewQuestionElements({
@@ -44,8 +17,14 @@ export function InterviewQuestionElements({
   form,
 }: InterviewQuestionElementsProps) {
   const isMobile = useIsMobile();
+
+  if (!question) {
+    return null;
+  }
+
   const handleSelection = (questionPartId: number, label: string) => {
-    const fieldName = `question_part_${questionPartId}`;
+    const fieldName =
+      `question_part_${questionPartId}` as `question_part_${number}`;
     const currentValue = form.watch(fieldName);
 
     // Toggle: if same option is clicked, deselect it
@@ -57,11 +36,13 @@ export function InterviewQuestionElements({
   };
 
   const renderOptions = (part: QuestionPart) => {
-    if (!part.options) return null;
-
-    const selectedValue = form.watch(`question_part_${part.id}`);
+    const selectedValue = form.watch(
+      `question_part_${part.id}` as `question_part_${number}`
+    );
 
     if (part.answer_type === "labelled_scale") {
+      if (!part.options) return null;
+
       if ("labels" in part.options) {
         return (
           <div
@@ -122,13 +103,18 @@ export function InterviewQuestionElements({
         </div>
       );
     } else if (part.answer_type === "scale") {
+      if (!part.options) return null;
       // Scale allows numeric input with min/max/step constraints
       if (
         "max" in part.options &&
         "min" in part.options &&
         "step" in part.options
       ) {
-        const scaleOptions = part.options as { max: number; min: number; step: number };
+        const scaleOptions = part.options as {
+          max: number;
+          min: number;
+          step: number;
+        };
         return (
           <div className="mt-2">
             <Input
@@ -139,24 +125,33 @@ export function InterviewQuestionElements({
               value={selectedValue ?? ""}
               onChange={(e) => {
                 const value = e.target.value;
-                form.setValue(`question_part_${part.id}`, value, { shouldDirty: true });
+                form.setValue(
+                  `question_part_${part.id}` as `question_part_${number}`,
+                  value,
+                  {
+                    shouldDirty: true,
+                  }
+                );
               }}
               placeholder={`Enter a value from ${scaleOptions.min} to ${scaleOptions.max}`}
-              className={cn(
-                "text-sm",
-                isMobile ? "h-12" : "h-16"
-              )}
+              className={cn("text-sm", isMobile ? "h-12" : "h-16")}
             />
           </div>
         );
       }
       return null;
     } else if (part.answer_type === "number") {
+      if (!part.options) return null;
       // Number type allows free-form input with min/max bounds and decimal precision
       if ("max" in part.options && "min" in part.options) {
-        const numberOptions = part.options as { max: number; min: number; decimal_places?: number };
+        const numberOptions = part.options as {
+          max: number;
+          min: number;
+          decimal_places?: number;
+        };
         const decimalPlaces = numberOptions.decimal_places ?? 0;
-        const step = decimalPlaces === 0 ? "1" : Math.pow(10, -decimalPlaces).toString();
+        const step =
+          decimalPlaces === 0 ? "1" : Math.pow(10, -decimalPlaces).toString();
 
         return (
           <div className="mt-2">
@@ -168,13 +163,16 @@ export function InterviewQuestionElements({
               value={selectedValue ?? ""}
               onChange={(e) => {
                 const value = e.target.value;
-                form.setValue(`question_part_${part.id}`, value, { shouldDirty: true });
+                form.setValue(
+                  `question_part_${part.id}` as `question_part_${number}`,
+                  value,
+                  {
+                    shouldDirty: true,
+                  }
+                );
               }}
               placeholder={`Enter a number between ${numberOptions.min} and ${numberOptions.max}`}
-              className={cn(
-                "text-sm",
-                isMobile ? "h-12" : "h-16"
-              )}
+              className={cn("text-sm", isMobile ? "h-12" : "h-16")}
             />
           </div>
         );
@@ -192,13 +190,16 @@ export function InterviewQuestionElements({
             value={selectedValue ?? ""}
             onChange={(e) => {
               const value = e.target.value;
-              form.setValue(`question_part_${part.id}`, value, { shouldDirty: true });
+              form.setValue(
+                `question_part_${part.id}` as `question_part_${number}`,
+                value,
+                {
+                  shouldDirty: true,
+                }
+              );
             }}
             placeholder="Enter a percentage (0-100)"
-            className={cn(
-              "text-sm",
-              isMobile ? "h-12" : "h-16"
-            )}
+            className={cn("text-sm", isMobile ? "h-12" : "h-16")}
           />
         </div>
       );

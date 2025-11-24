@@ -6,10 +6,11 @@ import {
   unlinkContact,
 } from "@/lib/api/contacts";
 import type {
-  Contact,
-  ContactFormData,
   ContactableEntityType,
-} from "@/types/contact";
+  GetEntityContactsResponseData,
+  LinkContactToEntityBodyData,
+  UpdateContactBodyData,
+} from "@/types/api/companies";
 
 /**
  * Query key factory for contact cache management
@@ -47,7 +48,8 @@ export function useEntityContacts(
 ) {
   return useQuery({
     queryKey: contactKeys.byEntity(companyId, entityType, entityId),
-    queryFn: () => getEntityContacts(companyId, entityType, entityId),
+    queryFn: (): Promise<GetEntityContactsResponseData> =>
+      getEntityContacts(companyId, entityType, entityId),
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!companyId && !!entityId,
   });
@@ -66,17 +68,17 @@ export function useContactActions(companyId: string) {
     mutationFn: ({
       entityType,
       entityId,
-      contactData,
+      data,
     }: {
       entityType: ContactableEntityType;
       entityId: string | number;
-      contactData: ContactFormData;
-    }) => createAndLinkContact(companyId, entityType, entityId, contactData),
+      data: LinkContactToEntityBodyData;
+    }) => createAndLinkContact(companyId, entityType, entityId, data),
     onSuccess: (newContact, { entityType, entityId }) => {
       // Optimistically add to entity contacts list
       queryClient.setQueryData(
         contactKeys.byEntity(companyId, entityType, entityId),
-        (old: Contact[] | undefined) => {
+        (old: GetEntityContactsResponseData | undefined) => {
           if (!old) return [newContact];
           return [...old, newContact];
         }
@@ -92,16 +94,16 @@ export function useContactActions(companyId: string) {
   const updateMutation = useMutation({
     mutationFn: ({
       contactId,
-      contactData,
+      updates,
     }: {
       contactId: number;
-      contactData: Partial<ContactFormData>;
-    }) => updateContact(companyId, contactId, contactData),
+      updates: UpdateContactBodyData;
+    }) => updateContact(companyId, contactId, updates),
     onSuccess: (updatedContact) => {
       // Update all queries that contain this contact
       queryClient.setQueriesData(
         { queryKey: contactKeys.all },
-        (old: Contact[] | undefined) => {
+        (old: GetEntityContactsResponseData | undefined) => {
           if (!old) return old;
           return old.map((contact) =>
             contact.id === updatedContact.id ? updatedContact : contact
@@ -131,7 +133,7 @@ export function useContactActions(companyId: string) {
       // Optimistically remove from entity contacts list
       queryClient.setQueryData(
         contactKeys.byEntity(companyId, entityType, entityId),
-        (old: Contact[] | undefined) => {
+        (old: GetEntityContactsResponseData | undefined) => {
           if (!old) return old;
           return old.filter((contact) => contact.id !== contactId);
         }

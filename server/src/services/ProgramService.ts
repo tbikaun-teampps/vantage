@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/database.js";
 import {
+  Program,
   ProgramPhaseStatus,
   ProgramStatus,
   ProgramWithRelations,
@@ -63,7 +64,12 @@ export class ProgramService {
     name: string;
     description?: string;
     company_id: string;
-  }): Promise<any> {
+  }): Promise<
+    Omit<
+      Program,
+      "is_demo" | "created_by" | "company_id" | "is_deleted" | "deleted_at"
+    >
+  > {
     const { data: program, error } = await this.supabase
       .from("programs")
       .insert({
@@ -71,7 +77,9 @@ export class ProgramService {
         description: data.description,
         company_id: data.company_id,
       })
-      .select()
+      .select(
+        "id, created_at, updated_at, name, description, status, current_sequence_number, presite_questionnaire_id, onsite_questionnaire_id"
+      )
       .single();
 
     if (error) throw error;
@@ -101,16 +109,24 @@ export class ProgramService {
    * @param programId
    * @returns
    */
-  async getProgramById(programId: number): Promise<any> {
+  async getProgramById(programId: number) {
     const { data: program, error } = await this.supabase
       .from("programs")
       .select(
         `
-        *,
+        id,
+        created_at,
+        updated_at,
+        name,
+        description,
+        status,
+        onsite_questionnaire_id,
+        presite_questionnaire_id,
         company:companies!inner(id, name),
-        program_objectives(id),
+        program_objectives(id, name, description, created_at, updated_at),
         presite_questionnaire:questionnaires!presite_questionnaire_id(id, name),
-        onsite_questionnaire:questionnaires!onsite_questionnaire_id(id, name)
+        onsite_questionnaire:questionnaires!onsite_questionnaire_id(id, name),
+        program_measurements:program_measurements(id)
       `
       )
       .eq("id", programId)
@@ -124,7 +140,23 @@ export class ProgramService {
     // Get phases
     const { data: phases, error: phasesError } = await this.supabase
       .from("program_phases")
-      .select("*")
+      .select(
+        `
+        actual_end_date,
+        actual_start_date,
+        created_at,
+        id,
+        locked_for_analysis_at,
+        name,
+        notes,
+        planned_end_date,
+        planned_start_date,
+        program_id,
+        sequence_number,
+        status,
+        updated_at
+        `
+      )
       .eq("program_id", programId)
       .eq("is_deleted", false);
 
@@ -132,8 +164,9 @@ export class ProgramService {
 
     return {
       ...program,
-      measurements_count: 0, // Placeholder, implement measurement count logic if needed
+      measurements_count: program.program_measurements.length,
       objective_count: program.program_objectives?.length || 0,
+      objectives: program.program_objectives,
       phases,
       presite_questionnaire: program.presite_questionnaire,
       onsite_questionnaire: program.onsite_questionnaire,
@@ -729,9 +762,19 @@ export class ProgramService {
     let query: any = this.supabase.from("program_measurements");
 
     if (includeDefinitions) {
-      query = query.select(`*, 
-  measurement_definition:measurement_definitions!inner(id, name, 
-  description, calculation_type, required_csv_columns, provider)`);
+      query = query.select(`
+        *,
+        measurement_definition:measurement_definitions!inner(
+          id,
+          name,
+          description,
+          calculation_type,
+          required_csv_columns,
+          provider,
+          min_value,
+          max_value,
+          unit
+        )`);
     } else {
       query = query.select("*");
     }
@@ -909,7 +952,10 @@ export class ProgramService {
           description,
           calculation_type,
           required_csv_columns,
-          provider
+          provider,
+          min_value,
+          max_value,
+          unit
         ),
         business_unit:business_units!business_unit_id(id, name),
         region:regions!region_id(id, name),
@@ -992,7 +1038,10 @@ export class ProgramService {
           description,
           calculation_type,
           required_csv_columns,
-          provider
+          provider,
+          min_value,
+          max_value,
+          unit
         )
       `
       )
@@ -1116,6 +1165,39 @@ export class ProgramService {
       assessmentId = newAssessment.id;
     }
 
+    // Fetch measurement definition to validate existence and check that the value is within the min/max value if they
+    // are defined
+
+    const { data: measurementDefinition, error: definitionError } =
+      await this.supabase
+        .from("measurement_definitions")
+        .select("id, min_value, max_value")
+        .eq("id", data.measurement_definition_id)
+        .single();
+
+    if (definitionError) throw definitionError;
+    if (!measurementDefinition)
+      throw new Error("Measurement definition not found");
+
+    if (
+      measurementDefinition.min_value !== null &&
+      data.calculated_value < measurementDefinition.min_value
+    ) {
+      throw new Error(
+        `Value ${data.calculated_value} is below the minimum allowed value of ${measurementDefinition.min_value}`
+      );
+    }
+
+    if (
+      measurementDefinition.max_value !== null &&
+      data.calculated_value > measurementDefinition.max_value
+    ) {
+      throw new Error(
+        `Value ${data.calculated_value} is above the maximum allowed value of ${measurementDefinition.max_value}`
+      );
+    }
+
+    // Insert calculated measurement
     const { data: measurement, error } = await this.supabase
       .from("measurements_calculated")
       .insert({
@@ -1141,7 +1223,10 @@ export class ProgramService {
           description,
           calculation_type,
           required_csv_columns,
-          provider
+          provider,
+          min_value,
+          max_value,
+          unit
         )
       `
       )
@@ -1155,6 +1240,49 @@ export class ProgramService {
     measurementId: number,
     calculated_value: number
   ): Promise<CalculatedMeasurementWithDefinition> {
+    // Fetch existing measurement to get its definition for validation
+    const { data: existingMeasurement, error: fetchError } = await this.supabase
+      .from("measurements_calculated")
+      .select("measurement_definition_id")
+      .eq("id", measurementId)
+      .single();
+
+    if (fetchError) throw fetchError;
+    if (!existingMeasurement)
+      throw new Error("Calculated measurement not found");
+
+    // Fetch measurement definition to validate existence and check that the value is within the min/max value if they
+    // are defined
+    const { data: measurementDefinition, error: definitionError } =
+      await this.supabase
+        .from("measurement_definitions")
+        .select("id, min_value, max_value")
+        .eq("id", existingMeasurement.measurement_definition_id)
+        .single();
+
+    if (definitionError) throw definitionError;
+    if (!measurementDefinition)
+      throw new Error("Measurement definition not found");
+
+    if (
+      measurementDefinition.min_value !== null &&
+      calculated_value < measurementDefinition.min_value
+    ) {
+      throw new Error(
+        `Value ${calculated_value} is below the minimum allowed value of ${measurementDefinition.min_value}`
+      );
+    }
+
+    if (
+      measurementDefinition.max_value !== null &&
+      calculated_value > measurementDefinition.max_value
+    ) {
+      throw new Error(
+        `Value ${calculated_value} is above the maximum allowed value of ${measurementDefinition.max_value}`
+      );
+    }
+
+    // Update calculated measurement
     const { data: measurement, error } = await this.supabase
       .from("measurements_calculated")
       .update({
@@ -1171,7 +1299,10 @@ export class ProgramService {
           description,
           calculation_type,
           required_csv_columns,
-          provider
+          provider,
+          min_value,
+          max_value,
+          unit
         )
       `
       )
@@ -1199,7 +1330,10 @@ export class ProgramService {
           id,
           name,
           description,
-          objective
+          objective,
+          min_value,
+          max_value,
+          unit
         )
       `
       )

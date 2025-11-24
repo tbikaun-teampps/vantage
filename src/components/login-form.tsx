@@ -50,9 +50,9 @@ export function LoginForm({
     }
   };
 
-  const handleResetPassword = () => {
-    navigate("/forgot-password");
-  };
+  // const handleResetPassword = () => {
+  //   navigate("/forgot-password");
+  // };
 
   return (
     <Card className={cn("w-full backdrop-blur-sm", className)} {...props}>
@@ -93,7 +93,7 @@ export function LoginForm({
             </div>
 
             <div className="grid gap-3">
-              <div className="flex items-center justify-between">
+              {/* <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
                 <Button
                   type="button"
@@ -103,7 +103,7 @@ export function LoginForm({
                 >
                   Forgot your password?
                 </Button>
-              </div>
+              </div> */}
               <Input
                 id="password"
                 type="password"

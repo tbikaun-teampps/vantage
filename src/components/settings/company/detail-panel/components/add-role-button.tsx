@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { IconPlus } from "@tabler/icons-react";
 import { CreateRoleDialog } from "./create-role-dialog";
+import type { WorkGroupNode } from "@/types/api/companies";
 
 interface AddRoleButtonProps {
-  parentWorkGroup: any;
+  parentWorkGroup: WorkGroupNode;
   onSuccess?: () => void;
   size?: "sm" | "default" | "lg";
   variant?: "default" | "outline" | "ghost";

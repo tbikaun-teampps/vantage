@@ -1,11 +1,6 @@
 import { apiClient } from "./client";
 import type { AuditLogResponseData } from "@/types/api/audit";
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-}
+import type { ApiResponse } from "./utils";
 
 export async function getAuditLogs(
   companyId: string

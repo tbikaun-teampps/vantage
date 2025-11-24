@@ -1,40 +1,40 @@
-import { Type } from "@sinclair/typebox";
+import { z } from "zod";
 
 export const commonResponseSchemas = {
-  successBoolean: Type.Object({
-    success: Type.Boolean(),
+  successBoolean: z.object({
+    success: z.boolean(),
   }),
 
-  errorResponse: Type.Object({
-    success: Type.Boolean(),
-    error: Type.String(),
+  errorResponse: z.object({
+    success: z.boolean(),
+    error: z.string(),
   }),
 
-  messageResponse: Type.Object({
-    success: Type.Boolean(),
-    message: Type.String(),
+  messageResponse: z.object({
+    success: z.boolean(),
+    message: z.string(),
   }),
 
   responses: {
-    400: Type.Object({
-      success: Type.Boolean(),
-      error: Type.String(),
+    400: z.object({
+      success: z.boolean(),
+      error: z.string(),
     }),
-    401: Type.Object({
-      success: Type.Boolean(),
-      error: Type.String(),
+    401: z.object({
+      success: z.boolean(),
+      error: z.string(),
     }),
-    403: Type.Object({
-      success: Type.Boolean(),
-      error: Type.String(),
+    403: z.object({
+      success: z.boolean(),
+      error: z.string(),
     }),
-    404: Type.Object({
-      success: Type.Boolean(),
-      error: Type.String(),
+    404: z.object({
+      success: z.boolean(),
+      error: z.string(),
     }),
-    500: Type.Object({
-      success: Type.Boolean(),
-      error: Type.String(),
+    500: z.object({
+      success: z.boolean(),
+      error: z.string(),
     }),
   },
 };

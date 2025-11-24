@@ -7,14 +7,11 @@ import {
 } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import type { QuestionRatingScaleOptions } from "@/types/api/interviews";
 import { IconCircleCheckFilled } from "@tabler/icons-react";
 
 interface InterviewRatingSectionProps {
-  options: Array<{
-    id: string;
-    value: number;
-    name: string;
-  }>;
+  options: QuestionRatingScaleOptions;
   form: any;
   isMobile: boolean;
 }
@@ -155,12 +152,7 @@ export function InterviewRatingSection({
 }
 
 interface OptionButtonProps {
-  rating: {
-    id: string;
-    value: number;
-    name: string;
-    description?: string;
-  };
+  rating: QuestionRatingScaleOptions[number];
   isSelected: boolean;
   isMobile: boolean;
   field: any;

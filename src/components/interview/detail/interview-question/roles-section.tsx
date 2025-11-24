@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import type { QuestionApplicableRoleOptions } from "@/types/api/interviews";
 import {
   IconAlertCircle,
   IconCircle,
@@ -15,15 +16,15 @@ import {
 } from "@tabler/icons-react";
 
 interface InterviewRolesSectionProps {
+  options: QuestionApplicableRoleOptions;
   form: any;
   isMobile: boolean;
-  options: any[];
 }
 
 export function InterviewRolesSection({
+  options,
   form,
   isMobile,
-  options,
 }: InterviewRolesSectionProps) {
   const optionsFlat = Object.values(options).flat();
 

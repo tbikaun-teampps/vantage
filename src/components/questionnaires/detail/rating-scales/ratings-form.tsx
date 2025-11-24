@@ -33,14 +33,17 @@ import {
   IconCheck,
 } from "@tabler/icons-react";
 import { useRatingScaleActions } from "@/hooks/questionnaire/useRatingScales";
-import type { QuestionnaireRatingScale } from "@/types/assessment";
 import { ratingScaleSets } from "@/lib/library/rating-scales";
 import { toast } from "sonner";
 import { formatDistance } from "date-fns";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import type {
+  BatchCreateQuestionnaireRatingScalesBodyData,
+  GetQuestionnaireRatingScalesResponseData,
+} from "@/types/api/questionnaire";
 
 interface RatingsFormProps {
-  ratings: QuestionnaireRatingScale[];
+  ratings: GetQuestionnaireRatingScalesResponseData;
   questionnaireId: number;
   isLoading?: boolean;
   onAddRating?: () => void;
@@ -69,8 +72,9 @@ export default function RatingsForm({
   } = useRatingScaleActions(questionnaireId);
 
   const [showAddDialog, setShowAddDialog] = useState<boolean>(false);
-  const [editingRating, setEditingRating] =
-    useState<QuestionnaireRatingScale | null>(null);
+  const [editingRating, setEditingRating] = useState<
+    GetQuestionnaireRatingScalesResponseData[number] | null
+  >(null);
   const [formData, setFormData] = useState({
     value: "",
     name: "",
@@ -82,7 +86,7 @@ export default function RatingsForm({
   const isProcessing =
     isCreatingRatingScale || isUpdatingRatingScale || isDeletingRatingScale;
   const [deleteRating, setDeleteRating] =
-    useState<QuestionnaireRatingScale | null>(null);
+    useState<GetQuestionnaireRatingScalesResponseData[number] | null>(null);
 
   // Rating scale library state
   const [selectedTab, setSelectedTab] = useState("create");
@@ -189,7 +193,9 @@ export default function RatingsForm({
     setEditingRating(null);
   };
 
-  const handleEdit = (rating: QuestionnaireRatingScale) => {
+  const handleEdit = (
+    rating: GetQuestionnaireRatingScalesResponseData[number]
+  ) => {
     setFormData({
       value: rating.value.toString(),
       name: rating.name,
@@ -198,7 +204,9 @@ export default function RatingsForm({
     setEditingRating(rating);
   };
 
-  const handleDelete = (rating: QuestionnaireRatingScale) => {
+  const handleDelete = (
+    rating: GetQuestionnaireRatingScalesResponseData[number]
+  ) => {
     setDeleteRating(rating);
     // Close the edit dialog if open
     setEditingRating(null);
@@ -217,24 +225,10 @@ export default function RatingsForm({
     setSelectedTab("create");
   };
 
-  const handleUseRatingSet = async (ratingSet: {
-    id: number;
-    name: string;
-    scales: Array<{
-      value: number;
-      name: string;
-      description: string;
-      order_index: number;
-    }>;
-  }) => {
-    await createRatingScalesBatch(
-      ratingSet.scales.map((scale) => ({
-        value: scale.value,
-        name: scale.name,
-        description: scale.description,
-        order_index: scale.order_index,
-      }))
-    );
+  const handleUseRatingSet = async (
+    data: BatchCreateQuestionnaireRatingScalesBodyData
+  ) => {
+    await createRatingScalesBatch(data);
 
     setShowAddDialog(false);
     setSelectedTab("create");
@@ -495,9 +489,9 @@ export default function RatingsForm({
               <TabsContent value="library" className="space-y-4">
                 <ScrollArea className="h-[400px] w-full rounded-md border p-4">
                   <div className="space-y-4">
-                    {ratingScaleSets.map((scaleSet) => (
+                    {ratingScaleSets.map((scaleSet, index) => (
                       <Card
-                        key={scaleSet.id}
+                        key={index}
                         className="cursor-pointer hover:bg-accent transition-colors"
                       >
                         <CardContent className="p-4">
@@ -549,7 +543,11 @@ export default function RatingsForm({
                             <div className="flex justify-end pt-2">
                               <Button
                                 size="sm"
-                                onClick={() => handleUseRatingSet(scaleSet)}
+                                onClick={() =>
+                                  handleUseRatingSet({
+                                    scales: scaleSet.scales,
+                                  })
+                                }
                                 disabled={isProcessing || disabled}
                               >
                                 Use This Scale Set

@@ -32,7 +32,7 @@ import { DemoBanner } from "@/components/demo-banner";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useProfile } from "@/hooks/useProfile";
 import { AddCompanyForm } from "@/components/forms/add-company-form";
-import { DeleteDialog } from "@/components/settings/company";
+import { DeleteDialog } from "@/components/settings/company/delete-company-dialog";
 import { toast } from "sonner";
 import { SelectCompanyUserMenu } from "@/components/select-company-user-menu";
 import { getCompanies } from "@/lib/api/companies";

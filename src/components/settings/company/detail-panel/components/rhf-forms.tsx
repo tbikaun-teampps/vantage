@@ -36,30 +36,40 @@ import { EntityBadges } from "../shared/entity-badges";
 import { LEVELS } from "@/lib/library/roles";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import type {
+  AnyTreeNode,
+  AssetGroupNode,
+  BusinessUnitNode,
+  CompanyTree,
+  RegionNode,
+  RoleNode,
+  SiteNode,
+  WorkGroupNode,
+} from "@/types/api/companies";
 
-interface BaseFormProps<TFormData = any> {
-  selectedItem: any;
-  setSelectedItem: (item: any) => void;
+interface BaseFormProps<
+  TFormData = unknown,
+  TNode extends AnyTreeNode = AnyTreeNode,
+> {
+  selectedItem: TNode;
+  setSelectedItem: (item: TNode | null) => void;
   onSave: (data: TFormData) => void;
   onDelete?: () => void;
 }
 
 // Company Form
-export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
-  selectedItem,
-  setSelectedItem,
-  onSave,
-  onDelete,
-}) => {
+export const RHFCompanyForm: React.FC<
+  BaseFormProps<CompanyFormData, CompanyTree & { type: "company" }>
+> = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
   const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<CompanyFormData>({
     resolver: zodResolver(companySchema),
     defaultValues: {
-      id: selectedItem?.id,
-      name: selectedItem?.name || "",
-      code: selectedItem?.code || "",
-      description: selectedItem?.description || "",
+      id: selectedItem.id,
+      name: selectedItem.name || "",
+      code: selectedItem.code || "",
+      description: selectedItem.description || "",
     },
   });
 
@@ -72,7 +82,7 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
         description: selectedItem.description || "",
       });
     }
-  }, [selectedItem?.id, form]);
+  }, [selectedItem, form]);
 
   const handleSave = async (data: CompanyFormData) => {
     onSave(data);
@@ -140,14 +150,14 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
             <FormSection title="Contacts">
               <ContactCRUD
                 entityType="company"
-                entityId={selectedItem?.id}
+                entityId={selectedItem.id}
                 companyId={companyId}
               />
             </FormSection>
 
             <FormSection title="Business Units">
               <EntityBadges
-                entities={selectedItem?.business_units || []}
+                entities={selectedItem.business_units || []}
                 icon={IconWorld}
                 parentItem={selectedItem}
                 parentType="company"
@@ -163,17 +173,20 @@ export const RHFCompanyForm: React.FC<BaseFormProps<CompanyFormData>> = ({
 
 // Business Unit Form
 export const RHFBusinessUnitForm: React.FC<
-  BaseFormProps<BusinessUnitFormData>
+  BaseFormProps<
+    BusinessUnitFormData,
+    BusinessUnitNode & { type: "business_unit" }
+  >
 > = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
   const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<BusinessUnitFormData>({
     resolver: zodResolver(businessUnitSchema),
     defaultValues: {
-      id: selectedItem?.id,
+      id: selectedItem.id,
       code: selectedItem.code || "",
-      name: selectedItem?.name || "",
-      description: selectedItem?.description || "",
+      name: selectedItem.name || "",
+      description: selectedItem.description || "",
     },
   });
 
@@ -186,7 +199,7 @@ export const RHFBusinessUnitForm: React.FC<
         description: selectedItem.description || "",
       });
     }
-  }, [selectedItem?.id, form]);
+  }, [selectedItem, form]);
 
   const handleSave = async (data: BusinessUnitFormData) => {
     onSave(data);
@@ -251,14 +264,14 @@ export const RHFBusinessUnitForm: React.FC<
             <FormSection title="Contacts">
               <ContactCRUD
                 entityType="business_unit"
-                entityId={selectedItem?.id}
+                entityId={selectedItem.id}
                 companyId={companyId}
               />
             </FormSection>
 
             <FormSection title="Regions">
               <EntityBadges
-                entities={selectedItem?.regions || []}
+                entities={selectedItem.regions || []}
                 icon={IconMapPin}
                 parentItem={selectedItem}
                 parentType="business_unit"
@@ -273,21 +286,18 @@ export const RHFBusinessUnitForm: React.FC<
 };
 
 // Region Form
-export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
-  selectedItem,
-  setSelectedItem,
-  onSave,
-  onDelete,
-}) => {
+export const RHFRegionForm: React.FC<
+  BaseFormProps<RegionFormData, RegionNode & { type: "region" }>
+> = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
   const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<RegionFormData>({
     resolver: zodResolver(regionSchema),
     defaultValues: {
-      id: selectedItem?.id,
-      name: selectedItem?.name || "",
-      description: selectedItem?.description || "",
-      code: selectedItem?.code || "",
+      id: selectedItem.id,
+      name: selectedItem.name || "",
+      description: selectedItem.description || "",
+      code: selectedItem.code || "",
     },
   });
 
@@ -297,10 +307,10 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
         id: selectedItem.id,
         name: selectedItem.name || "",
         description: selectedItem.description || "",
-        code: selectedItem?.code || "",
+        code: selectedItem.code || "",
       });
     }
-  }, [selectedItem?.id, form]);
+  }, [selectedItem, form]);
 
   const handleSave = async (data: RegionFormData) => {
     onSave(data);
@@ -365,14 +375,14 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
             <FormSection title="Contacts">
               <ContactCRUD
                 entityType="region"
-                entityId={selectedItem?.id}
+                entityId={selectedItem.id}
                 companyId={companyId}
               />
             </FormSection>
 
             <FormSection title="Sites">
               <EntityBadges
-                entities={selectedItem?.sites || []}
+                entities={selectedItem.sites || []}
                 icon={IconBuildingFactory2}
                 parentItem={selectedItem}
                 parentType="region"
@@ -387,23 +397,20 @@ export const RHFRegionForm: React.FC<BaseFormProps<RegionFormData>> = ({
 };
 
 // Site Form
-export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
-  selectedItem,
-  setSelectedItem,
-  onSave,
-  onDelete,
-}) => {
+export const RHFSiteForm: React.FC<
+  BaseFormProps<SiteFormData, SiteNode & { type: "site" }>
+> = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
   const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<SiteFormData>({
     resolver: zodResolver(siteSchema),
     defaultValues: {
-      id: selectedItem?.id,
-      name: selectedItem?.name || "",
-      description: selectedItem?.description || "",
-      lat: selectedItem?.lat || undefined,
-      lng: selectedItem?.lng || undefined,
-      code: selectedItem?.code || "",
+      id: selectedItem.id,
+      name: selectedItem.name || "",
+      description: selectedItem.description || "",
+      lat: selectedItem.lat || undefined,
+      lng: selectedItem.lng || undefined,
+      code: selectedItem.code || "",
     },
   });
 
@@ -415,10 +422,10 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
         description: selectedItem.description || "",
         lat: selectedItem.lat || undefined,
         lng: selectedItem.lng || undefined,
-        code: selectedItem?.code || "",
+        code: selectedItem.code || "",
       });
     }
-  }, [selectedItem?.id, form]);
+  }, [selectedItem, form]);
 
   const handleSave = useCallback(
     async (data: SiteFormData) => {
@@ -486,7 +493,7 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
             <FormSection title="Contacts">
               <ContactCRUD
                 entityType="site"
-                entityId={selectedItem?.id}
+                entityId={selectedItem.id}
                 companyId={companyId}
               />
             </FormSection>
@@ -498,13 +505,13 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
                 lngName="lng"
                 label="Site Location"
                 height="400px"
-                siteName={selectedItem?.name || "Site"}
+                siteName={selectedItem.name || "Site"}
               />
             </FormSection>
 
             <FormSection title="Asset Groups / Processes">
               <EntityBadges
-                entities={selectedItem?.asset_groups || []}
+                entities={selectedItem.asset_groups || []}
                 icon={IconCube}
                 parentItem={selectedItem}
                 parentType="site"
@@ -519,21 +526,18 @@ export const RHFSiteForm: React.FC<BaseFormProps<SiteFormData>> = ({
 };
 
 // Asset Group Form
-export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
-  selectedItem,
-  setSelectedItem,
-  onSave,
-  onDelete,
-}) => {
+export const RHFAssetGroupForm: React.FC<
+  BaseFormProps<AssetGroupFormData, AssetGroupNode & { type: "asset_group" }>
+> = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
   const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<AssetGroupFormData>({
     resolver: zodResolver(assetGroupSchema),
     defaultValues: {
-      id: selectedItem?.id,
-      name: selectedItem?.name || "",
-      description: selectedItem?.description || "",
-      code: selectedItem?.code || "",
+      id: selectedItem.id,
+      name: selectedItem.name || "",
+      description: selectedItem.description || "",
+      code: selectedItem.code || "",
     },
   });
 
@@ -543,10 +547,10 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
         id: selectedItem.id,
         name: selectedItem.name || "",
         description: selectedItem.description || "",
-        code: selectedItem?.code || "",
+        code: selectedItem.code || "",
       });
     }
-  }, [selectedItem?.id, form]);
+  }, [selectedItem, form]);
 
   const handleSave = async (data: AssetGroupFormData) => {
     onSave(data);
@@ -611,14 +615,14 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
             <FormSection title="Contacts">
               <ContactCRUD
                 entityType="asset_group"
-                entityId={selectedItem?.id}
+                entityId={selectedItem.id}
                 companyId={companyId}
               />
             </FormSection>
 
             <FormSection title="Work Groups / Functions">
               <EntityBadges
-                entities={selectedItem?.work_groups || []}
+                entities={selectedItem.work_groups || []}
                 icon={IconUsersGroup}
                 parentItem={selectedItem}
                 parentType="asset_group"
@@ -633,21 +637,18 @@ export const RHFAssetGroupForm: React.FC<BaseFormProps<AssetGroupFormData>> = ({
 };
 
 // Work Group Form
-export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
-  selectedItem,
-  setSelectedItem,
-  onSave,
-  onDelete,
-}) => {
+export const RHFWorkGroupForm: React.FC<
+  BaseFormProps<WorkGroupFormData, WorkGroupNode & { type: "work_group" }>
+> = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
   const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<WorkGroupFormData>({
     resolver: zodResolver(workGroupSchema),
     defaultValues: {
-      id: selectedItem?.id,
-      name: selectedItem?.name || "",
-      description: selectedItem?.description || "",
-      code: selectedItem?.code || "",
+      id: selectedItem.id,
+      name: selectedItem.name || "",
+      description: selectedItem.description || "",
+      code: selectedItem.code || "",
     },
   });
 
@@ -657,10 +658,10 @@ export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
         id: selectedItem.id,
         name: selectedItem.name || "",
         description: selectedItem.description || "",
-        code: selectedItem?.code || "",
+        code: selectedItem.code || "",
       });
     }
-  }, [selectedItem?.id, form]);
+  }, [selectedItem, form]);
 
   const handleSave = async (data: WorkGroupFormData) => {
     onSave(data);
@@ -725,14 +726,14 @@ export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
             <FormSection title="Contacts">
               <ContactCRUD
                 entityType="work_group"
-                entityId={selectedItem?.id}
+                entityId={selectedItem.id}
                 companyId={companyId}
               />
             </FormSection>
 
             <FormSection title="Roles">
               <EntityBadges
-                entities={selectedItem?.roles || []}
+                entities={selectedItem.roles || []}
                 icon={IconUser}
                 parentItem={selectedItem}
                 parentType="work_group"
@@ -747,23 +748,19 @@ export const RHFWorkGroupForm: React.FC<BaseFormProps<WorkGroupFormData>> = ({
 };
 
 // Role Form
-export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
-  selectedItem,
-  setSelectedItem,
-  onSave,
-  onDelete,
-}) => {
+export const RHFRoleForm: React.FC<
+  BaseFormProps<RoleFormData, RoleNode & { type: "role" }>
+> = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
   const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<RoleFormData>({
     resolver: zodResolver(roleSchema),
     defaultValues: {
-      id: selectedItem?.id,
-      level: selectedItem?.level || undefined,
-      description: selectedItem?.description || "",
-      shared_role_id: selectedItem?.shared_role_id?.toString() || undefined,
-      reports_to_role_id:
-        selectedItem?.reports_to_role_id?.toString() || "null",
+      id: selectedItem.id,
+      level: selectedItem.level || undefined,
+      description: selectedItem.description || "",
+      shared_role_id: selectedItem.shared_role_id?.toString() || undefined,
+      reports_to_role_id: selectedItem.reports_to_role_id?.toString() || "null",
     },
   });
 
@@ -778,7 +775,7 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
           selectedItem.reports_to_role_id?.toString() || "null",
       });
     }
-  }, [selectedItem?.id, form]);
+  }, [selectedItem, form]);
 
   const handleSave = async (data: RoleFormData) => {
     onSave(data);
@@ -856,14 +853,14 @@ export const RHFRoleForm: React.FC<BaseFormProps<RoleFormData>> = ({
             <FormSection title="Contacts">
               <ContactCRUD
                 entityType="role"
-                entityId={selectedItem?.id}
+                entityId={selectedItem.id}
                 companyId={companyId}
               />
             </FormSection>
 
             <FormSection title="Direct Reports">
               <EntityBadges
-                entities={selectedItem?.reporting_roles || []}
+                entities={selectedItem.reporting_roles || []}
                 icon={IconUser}
                 parentItem={selectedItem}
                 parentType="role"
