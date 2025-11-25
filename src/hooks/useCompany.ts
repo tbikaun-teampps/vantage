@@ -307,7 +307,7 @@ export function useTreeNodeActions() {
         companyId,
         nodeId,
         { type: entityType },
-        data as UpdateCompanyEntityBodyData
+        data as unknown as UpdateCompanyEntityBodyData
       );
     },
     onSuccess: (updatedData, { nodeType, nodeId, companyId }) => {

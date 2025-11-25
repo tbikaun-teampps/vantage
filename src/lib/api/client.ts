@@ -187,6 +187,11 @@ apiClient.interceptors.response.use(
       console.error("Server error:", error.response.data);
     }
 
+    // If the API returned an error message in response.data.error, use it as the error message
+    if (error.response?.data?.error) {
+      error.message = error.response.data.error;
+    }
+
     return Promise.reject(error);
   }
 );
