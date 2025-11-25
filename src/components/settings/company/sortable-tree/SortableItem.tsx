@@ -97,7 +97,6 @@ export function SortableItem({
         "flex items-center gap-2 py-2 px-3 rounded transition-all cursor-pointer",
         "hover:bg-accent/50",
         isThisItemDragging && "opacity-50",
-        isCompany && "font-semibold",
         isSelected && "bg-accent",
         // Highlight valid drop targets during drag
         isAnyItemDragging &&

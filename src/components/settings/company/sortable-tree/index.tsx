@@ -1,5 +1,5 @@
-import {useState, useMemo} from 'react';
-import type {UniqueIdentifier} from '@dnd-kit/core';
+import { useState, useMemo } from "react";
+import type { UniqueIdentifier } from "@dnd-kit/core";
 import {
   DndContext,
   closestCenter,
@@ -8,23 +8,27 @@ import {
   useSensor,
   useSensors,
   DragOverlay,
-} from '@dnd-kit/core';
-import type {DragStartEvent, DragOverEvent, DragEndEvent} from '@dnd-kit/core';
+} from "@dnd-kit/core";
+import type {
+  DragStartEvent,
+  DragOverEvent,
+  DragEndEvent,
+} from "@dnd-kit/core";
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import type {CompanyTree} from '@/types/api/companies';
-import type {TreeItems} from './types';
-import {SortableItem} from './SortableItem';
-import {companyTreeToTreeItems, type CompanyTreeItem} from './adapters';
+} from "@dnd-kit/sortable";
+import type { CompanyTree } from "@/types/api/companies";
+import type { TreeItems } from "./types";
+import { SortableItem } from "./SortableItem";
+import { companyTreeToTreeItems, type CompanyTreeItem } from "./adapters";
 import {
   flattenTree,
   findItemDeep,
   getProjection,
   removeItem,
-} from './utilities';
+} from "./utilities";
 
 const INDENTATION_WIDTH = 24; // pixels per depth level
 
@@ -32,8 +36,10 @@ interface SortableTreeProps {
   companyTree: CompanyTree;
   expandedItems?: Set<UniqueIdentifier>;
   onToggleCollapsed?: (id: UniqueIdentifier) => void;
-  onSelectItem?: (item: import('@/types/api/companies').AnyTreeNode | null) => void;
-  selectedItem?: import('@/types/api/companies').AnyTreeNode | null;
+  onSelectItem?: (
+    item: import("@/types/api/companies").AnyTreeNode | null
+  ) => void;
+  selectedItem?: import("@/types/api/companies").AnyTreeNode | null;
 }
 
 export function SortableTree({
@@ -66,11 +72,11 @@ export function SortableTree({
     const flattened = flattenTree(items);
 
     // Helper to check if all ancestors of an item are expanded
-    const areAncestorsExpanded = (item: typeof flattened[0]): boolean => {
+    const areAncestorsExpanded = (item: (typeof flattened)[0]): boolean => {
       if (!item.parentId) return true; // Root has no parent
 
       // Find parent in flattened list
-      const parent = flattened.find(i => i.id === item.parentId);
+      const parent = flattened.find((i) => i.id === item.parentId);
       if (!parent) return true; // Shouldn't happen, but safe fallback
 
       // Parent must be expanded
@@ -81,7 +87,7 @@ export function SortableTree({
     };
 
     // Only show items whose all ancestors are expanded
-    return flattened.filter(item => areAncestorsExpanded(item));
+    return flattened.filter((item) => areAncestorsExpanded(item));
   }, [items, expandedItems]);
 
   // Get sorted IDs for SortableContext
@@ -90,7 +96,7 @@ export function SortableTree({
     [flattenedItems]
   );
 
-  function handleDragStart({active}: DragStartEvent) {
+  function handleDragStart({ active }: DragStartEvent) {
     setActiveId(active.id);
 
     // Collapse the dragged item's children during drag for better visual feedback
@@ -100,22 +106,24 @@ export function SortableTree({
     }
   }
 
-  function handleDragMove({delta}: DragOverEvent) {
+  function handleDragMove({ delta }: DragOverEvent) {
     setOffsetLeft(delta.x);
   }
 
-  function handleDragOver({over}: DragOverEvent) {
+  function handleDragOver({ over }: DragOverEvent) {
     setOverId(over?.id ?? null);
   }
 
-  function handleDragEnd({active, over}: DragEndEvent) {
+  function handleDragEnd({ active, over }: DragEndEvent) {
     resetState();
 
     if (!over || active.id === over.id) {
       return;
     }
 
-    const activeIndex = flattenedItems.findIndex((item) => item.id === active.id);
+    const activeIndex = flattenedItems.findIndex(
+      (item) => item.id === active.id
+    );
     const overIndex = flattenedItems.findIndex((item) => item.id === over.id);
 
     if (activeIndex === -1 || overIndex === -1) {
@@ -123,7 +131,9 @@ export function SortableTree({
     }
 
     // Find the active item in the FULL tree (not flattenedItems) to preserve its children
-    const activeItem = findItemDeep(items, active.id) as CompanyTreeItem | undefined;
+    const activeItem = findItemDeep(items, active.id) as
+      | CompanyTreeItem
+      | undefined;
 
     if (!activeItem) {
       return;
@@ -151,7 +161,7 @@ export function SortableTree({
     );
 
     // Apply depth constraints
-    let {depth, parentId} = projection;
+    let { depth, parentId } = projection;
 
     if (depth > maxAllowedDepth) {
       depth = maxAllowedDepth;
@@ -171,7 +181,10 @@ export function SortableTree({
       ? (findItemDeep(items, parentId) as CompanyTreeItem | undefined)
       : null;
 
-    const validParent = validateParentChild(activeItem.entityType, parentItem?.entityType);
+    const validParent = validateParentChild(
+      activeItem.entityType,
+      parentItem?.entityType
+    );
 
     if (!validParent) {
       window.alert("Invalid parent-child relationship detected");
@@ -182,11 +195,16 @@ export function SortableTree({
     const itemsWithoutActive = removeItem(items, active.id);
 
     // Step 2: Create a deep clone of the active item with all its children preserved
-    const clonedActiveItem = JSON.parse(JSON.stringify(activeItem)) as CompanyTreeItem;
+    const clonedActiveItem = JSON.parse(
+      JSON.stringify(activeItem)
+    ) as CompanyTreeItem;
 
     // Step 3: Insert the item at its new location
     // We need to recursively update the depth of the moved item and all its descendants
-    function updateDepthRecursively(item: CompanyTreeItem, newDepth: number): CompanyTreeItem {
+    function updateDepthRecursively(
+      item: CompanyTreeItem,
+      newDepth: number
+    ): CompanyTreeItem {
       return {
         ...item,
         depth: newDepth,
@@ -217,41 +235,148 @@ export function SortableTree({
       return tree.map((item) => {
         if (item.id === newParentId) {
           // Find the position to insert relative to the target
-          const targetIndex = item.children.findIndex((child) => child.id === targetId);
+          const targetIndex = item.children.findIndex(
+            (child) => child.id === targetId
+          );
           const newChildren = [...item.children];
           if (targetIndex !== -1) {
             newChildren.splice(targetIndex, 0, itemToInsert);
           } else {
             newChildren.push(itemToInsert);
           }
-          return {...item, children: newChildren};
+          return { ...item, children: newChildren };
         }
 
         if (item.children.length) {
-          return {...item, children: insertItemIntoTree(item.children, newParentId, itemToInsert, targetId)};
+          return {
+            ...item,
+            children: insertItemIntoTree(
+              item.children,
+              newParentId,
+              itemToInsert,
+              targetId
+            ),
+          };
         }
 
         return item;
       });
     }
 
-    const newTree = insertItemIntoTree(itemsWithoutActive, parentId, updatedActiveItem, over.id);
+    const newTree = insertItemIntoTree(
+      itemsWithoutActive,
+      parentId,
+      updatedActiveItem,
+      over.id
+    );
     setItems(newTree);
+
+    // Build the payload for the reorder API
+    // We need to update: 1) the moved item, 2) new parent's siblings, 3) old parent's siblings (if parent changed)
+    const reorderPayload: Array<{
+      id: number;
+      type: string;
+      order_index: number;
+      parent_id?: number;
+    }> = [];
+
+    // Get the numeric ID from the tree item ID (e.g., "region_5" -> 5)
+    const getNumericId = (treeItemId: string): number => {
+      const parts = String(treeItemId).split('_');
+      return parseInt(parts[parts.length - 1], 10);
+    };
+
+    // Get old parent ID from the flattened items (since nested items don't have parentId)
+    const flattenedActiveItem = flattenedItems.find((item) => item.id === activeItem.id);
+    const oldParentId = flattenedActiveItem?.parentId;
+    const parentChanged = oldParentId !== parentId;
+
+    // Add the moved item
+    const movedItemPayload: {
+      id: number;
+      type: string;
+      order_index: number;
+      parent_id?: number;
+    } = {
+      id: getNumericId(String(activeItem.id)),
+      type: activeItem.entityType,
+      order_index: 0, // Will be updated below
+    };
+
+    // Only include parent_id if it changed
+    if (parentChanged && parentId) {
+      movedItemPayload.parent_id = getNumericId(String(parentId));
+    }
+
+    reorderPayload.push(movedItemPayload);
+
+    // Find siblings in the NEW parent and update their order_index
+    const newParent = parentId ? findItemDeep(newTree, parentId) : null;
+    const newSiblings = parentId ? (newParent?.children || []) : newTree;
+
+    newSiblings.forEach((sibling, index) => {
+      if (sibling.id === activeItem.id) {
+        // Update the moved item's order_index to its actual position
+        reorderPayload[0].order_index = index;
+        return;
+      }
+
+      const siblingItem = sibling as CompanyTreeItem;
+      reorderPayload.push({
+        id: getNumericId(String(sibling.id)),
+        type: siblingItem.entityType,
+        order_index: index,
+      });
+    });
+
+    // If parent changed, also update siblings in the OLD parent
+    if (parentChanged && oldParentId) {
+      const oldParent = findItemDeep(newTree, oldParentId);
+      const oldSiblings = oldParent?.children || [];
+
+      oldSiblings.forEach((sibling, index) => {
+        const siblingItem = sibling as CompanyTreeItem;
+        reorderPayload.push({
+          id: getNumericId(String(sibling.id)),
+          type: siblingItem.entityType,
+          order_index: index,
+        });
+      });
+    }
+
+    // TODO: Replace with actual API call
+    console.log('🔄 Reorder API Payload:', { updates: reorderPayload });
   }
 
   // Helper function to validate parent-child relationships
   function validateParentChild(
-    childType: 'company' | 'business_unit' | 'region' | 'site' | 'asset_group' | 'work_group' | 'role' | 'reporting_role',
-    parentType?: 'company' | 'business_unit' | 'region' | 'site' | 'asset_group' | 'work_group' | 'role' | 'reporting_role'
+    childType:
+      | "company"
+      | "business_unit"
+      | "region"
+      | "site"
+      | "asset_group"
+      | "work_group"
+      | "role"
+      | "reporting_role",
+    parentType?:
+      | "company"
+      | "business_unit"
+      | "region"
+      | "site"
+      | "asset_group"
+      | "work_group"
+      | "role"
+      | "reporting_role"
   ): boolean {
-    if (childType === 'company') return false; // Company cannot be moved
-    if (childType === 'business_unit') return parentType === 'company';
-    if (childType === 'region') return parentType === 'business_unit';
-    if (childType === 'site') return parentType === 'region';
-    if (childType === 'asset_group') return parentType === 'site';
-    if (childType === 'work_group') return parentType === 'asset_group';
-    if (childType === 'role') return parentType === 'work_group';
-    if (childType === 'reporting_role') return parentType === 'role';
+    if (childType === "company") return false; // Company cannot be moved
+    if (childType === "business_unit") return parentType === "company";
+    if (childType === "region") return parentType === "business_unit";
+    if (childType === "site") return parentType === "region";
+    if (childType === "asset_group") return parentType === "site";
+    if (childType === "work_group") return parentType === "asset_group";
+    if (childType === "role") return parentType === "work_group";
+    if (childType === "reporting_role") return parentType === "role";
     return false;
   }
 
@@ -292,8 +417,12 @@ export function SortableTree({
   const getIsValidDropTarget = (itemId: UniqueIdentifier): boolean => {
     if (!activeId || !overId) return false;
 
-    const draggedItem = findItemDeep(items, activeId) as CompanyTreeItem | undefined;
-    const targetItem = findItemDeep(items, itemId) as CompanyTreeItem | undefined;
+    const draggedItem = findItemDeep(items, activeId) as
+      | CompanyTreeItem
+      | undefined;
+    const targetItem = findItemDeep(items, itemId) as
+      | CompanyTreeItem
+      | undefined;
 
     if (!draggedItem || !targetItem) return false;
 
@@ -301,17 +430,17 @@ export function SortableTree({
     if (draggedItem.id === targetItem.id) return false;
 
     // Company cannot be moved
-    if (draggedItem.entityType === 'company') return false;
+    if (draggedItem.entityType === "company") return false;
 
     // Get the valid parent type for the dragged item
     const validParentType: Record<string, string> = {
-      business_unit: 'company',
-      region: 'business_unit',
-      site: 'region',
-      asset_group: 'site',
-      work_group: 'asset_group',
-      role: 'work_group',
-      reporting_role: 'role',
+      business_unit: "company",
+      region: "business_unit",
+      site: "region",
+      asset_group: "site",
+      work_group: "asset_group",
+      role: "work_group",
+      reporting_role: "role",
     };
 
     const expectedParentType = validParentType[draggedItem.entityType];
@@ -330,7 +459,9 @@ export function SortableTree({
   };
 
   const activeItem = activeId
-    ? (flattenedItems.find((item) => item.id === activeId) as unknown as CompanyTreeItem | undefined)
+    ? (flattenedItems.find((item) => item.id === activeId) as unknown as
+        | CompanyTreeItem
+        | undefined)
     : null;
 
   return (
@@ -343,10 +474,7 @@ export function SortableTree({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <SortableContext
-        items={sortedIds}
-        strategy={verticalListSortingStrategy}
-      >
+      <SortableContext items={sortedIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-1">
           {flattenedItems.map((item) => (
             <SortableItem
