@@ -149,9 +149,7 @@ export function useRatingScaleActions(questionnaireId: number) {
       });
     },
     onError: (error) => {
-      toast.error(
-        error?.response?.data.error || "Failed to delete rating scale."
-      );
+      toast.error(error.message || "Failed to delete rating scale.");
     },
   });
 

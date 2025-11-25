@@ -49,8 +49,7 @@ export function ExternalInterviewPage() {
       toast.success("Access granted! Loading your interview...");
     } catch (error) {
       const errorMessage =
-        (error as { response?: { data?: { error?: string } } })?.response?.data
-          ?.error ?? "Failed to validate access";
+        (error as Error).message || "Failed to validate access";
 
       setValidationError(errorMessage);
       toast.error(errorMessage);
