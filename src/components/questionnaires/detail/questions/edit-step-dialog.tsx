@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,7 +15,6 @@ interface EditStepDialogProps {
   open: boolean;
   onOpenChange: () => void;
   step: QuestionnaireSteps[number] | null;
-  onStepChange: (step: QuestionnaireSteps[number]) => void;
   isProcessing: boolean;
   onSave: (stepId: number, updates: { title: string }) => void;
 }
@@ -23,10 +23,25 @@ export function EditStepDialog({
   open,
   onOpenChange,
   step,
-  onStepChange,
   isProcessing,
   onSave,
 }: EditStepDialogProps) {
+  // Local state for smoother input handling
+  const [title, setTitle] = useState(step?.title ?? "");
+
+  // Sync local state when step changes (dialog opens with new step)
+  useEffect(() => {
+    if (step) {
+      setTitle(step.title);
+    }
+  }, [step]);
+
+  const handleSave = () => {
+    if (step && title.trim()) {
+      onSave(step.id, { title: title.trim() });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -37,11 +52,10 @@ export function EditStepDialog({
           <Label htmlFor="stepTitle">Step Title</Label>
           <Input
             id="stepTitle"
-            value={step?.title ?? ""}
-            onChange={(e) =>
-              step && onStepChange({ ...step, title: e.target.value })
-            }
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             disabled={isProcessing}
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
           />
         </div>
         <DialogFooter>
@@ -53,8 +67,8 @@ export function EditStepDialog({
             Cancel
           </Button>
           <Button
-            onClick={() => step && onSave(step.id, { title: step.title })}
-            disabled={isProcessing}
+            onClick={handleSave}
+            disabled={isProcessing || !title.trim()}
           >
             {isProcessing ? "Saving..." : "Save"}
           </Button>

@@ -319,7 +319,6 @@ export function QuestionnaireTree({
         open={!!editingSection}
         onOpenChange={() => setEditingSection(null)}
         section={editingSection}
-        onSectionChange={setEditingSection}
         isProcessing={isProcessing}
         onSave={handleUpdateSection}
       />
@@ -328,7 +327,6 @@ export function QuestionnaireTree({
         open={!!editingStep}
         onOpenChange={() => setEditingStep(null)}
         step={editingStep}
-        onStepChange={setEditingStep}
         isProcessing={isProcessing}
         onSave={handleUpdateStep}
       />
