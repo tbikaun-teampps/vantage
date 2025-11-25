@@ -116,10 +116,29 @@ function findNodeInTree(
 
 export function CompanyStructureContent() {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [hasInitializedExpanded, setHasInitializedExpanded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const pageRef = useRef<HTMLDivElement>(null);
   const companyId = useCompanyFromUrl();
   const { data: tree } = useCompanyTree(companyId);
+
+  // Expand tree down to site level on initial load
+  useEffect(() => {
+    if (tree && !hasInitializedExpanded) {
+      const initialExpanded = new Set<string>();
+      // Expand company
+      initialExpanded.add(`company_${tree.id}`);
+      // Expand all business units and regions (so sites are visible)
+      tree.business_units.forEach((bu) => {
+        initialExpanded.add(`business_unit_${bu.id}`);
+        bu.regions.forEach((region) => {
+          initialExpanded.add(`region_${region.id}`);
+        });
+      });
+      setExpandedNodes(initialExpanded);
+      setHasInitializedExpanded(true);
+    }
+  }, [tree, hasInitializedExpanded]);
 
   // Store only the ID and type, derive the full item from tree
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(
