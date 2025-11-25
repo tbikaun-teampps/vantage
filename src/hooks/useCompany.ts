@@ -378,6 +378,10 @@ export function useReorderTree(companyId: string) {
   const reorderMutation = useMutation({
     mutationFn: (updates: ReorderCompanyTreeBodyData) =>
       reorderCompanyTree(companyId, updates),
+    onSuccess: () => {
+      // Invalidate tree cache so reorder changes persist after navigation
+      queryClient.invalidateQueries({ queryKey: companyKeys.tree(companyId) });
+    },
     onError: () => {
       // Refetch tree data on error to restore correct state
       queryClient.invalidateQueries({ queryKey: companyKeys.tree(companyId) });

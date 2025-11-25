@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { UniqueIdentifier } from "@dnd-kit/core";
 import {
   DndContext,
@@ -60,6 +60,11 @@ export function SortableTree({
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [offsetLeft, setOffsetLeft] = useState(0);
   const [overId, setOverId] = useState<UniqueIdentifier | null>(null);
+
+  // Sync local state when companyTree changes (e.g., after add/delete via detail panel)
+  useEffect(() => {
+    setItems(companyTreeToTreeItems(companyTree));
+  }, [companyTree]);
 
   // Use the reorder tree mutation hook
   const { reorderTree } = useReorderTree(companyTree.id);
