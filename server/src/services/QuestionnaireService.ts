@@ -2667,8 +2667,8 @@ export class QuestionnaireService {
 
   /**
    * Reorder questionnaire items (sections, steps, questions)
-   * @param questionnaireId 
-   * @param updates 
+   * @param questionnaireId - The ID of the questionnaire to reorder
+   * @param updates - Array of items with updated positions and optional parent IDs
    */
   async reorderQuestionnaire(
     questionnaireId: number,
