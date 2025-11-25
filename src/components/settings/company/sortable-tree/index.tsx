@@ -297,6 +297,18 @@ export function SortableTree({
       return parseInt(parts[parts.length - 1], 10);
     };
 
+    // Get entity type from tree item ID (e.g., "region_5" -> "region")
+    const getEntityType = (treeItemId: string): string => {
+      const idStr = String(treeItemId);
+      const entityTypes = ['business_unit', 'asset_group', 'work_group', 'company', 'region', 'site', 'role'];
+      for (const type of entityTypes) {
+        if (idStr.startsWith(type + '_')) {
+          return type;
+        }
+      }
+      return '';
+    };
+
     // Get old parent ID from the flattened items (since nested items don't have parentId)
     const flattenedActiveItem = flattenedItems.find((item) => item.id === activeItem.id);
     const oldParentId = flattenedActiveItem?.parentId;
@@ -309,9 +321,11 @@ export function SortableTree({
       order_index: 0, // Will be updated below
     };
 
-    // Only include parent_id if it changed
+    // Include parent_id and parent_type if parent changed
     if (parentChanged && parentId) {
       movedItemPayload.parent_id = getNumericId(String(parentId));
+      // parent_type is needed to disambiguate role parents (work_group vs role)
+      movedItemPayload.parent_type = getEntityType(String(parentId)) as ReorderCompanyTreeBodyData[number]["type"];
     }
 
     reorderPayload.push(movedItemPayload);

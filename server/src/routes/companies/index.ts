@@ -225,15 +225,17 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       params: z.object({
         companyId: z.string(),
       }),
-      // When reording within the same parent:
+      // When reordering within the same parent:
       // only type and order_index are required for each item.
-      // When moving to a different parent, parent_id is also required for that item.
+      // When moving to a different parent, parent_id and parent_type are also required for that item.
+      // parent_type is needed to disambiguate role parents (work_group vs another role)
       body: z.array(
         z.object({
           id: z.number(),
           type: z.enum(LocationTypeEnum),
           order_index: z.number(),
           parent_id: z.number().optional(),
+          parent_type: z.enum(LocationTypeEnum).optional(),
         })
       ),
     },

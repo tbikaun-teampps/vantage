@@ -775,7 +775,7 @@ export class CompaniesService {
   /**
    * Reorder company tree nodes
    * @param companyId ID of the company
-   * @param updates Array of updates containing id, type, order_index, and optional parent_id
+   * @param updates Array of updates containing id, type, order_index, and optional parent_id/parent_type
    * @return void
    */
   async reorderCompanyTree(
@@ -785,6 +785,7 @@ export class CompaniesService {
       type: LocationType;
       order_index: number;
       parent_id?: number;
+      parent_type?: LocationType;
     }>
   ): Promise<void> {
     // Implementation for reordering the company tree nodes
@@ -793,32 +794,25 @@ export class CompaniesService {
 
       for (const update of updates) {
         let tableName: string;
-        let parentColName: string | null;
 
         switch (update.type) {
           case "business_unit":
             tableName = "business_units";
-            parentColName = null;
             break;
           case "region":
             tableName = "regions";
-            parentColName = "business_unit_id";
             break;
           case "site":
             tableName = "sites";
-            parentColName = "region_id";
             break;
           case "asset_group":
             tableName = "asset_groups";
-            parentColName = "site_id";
             break;
           case "work_group":
             tableName = "work_groups";
-            parentColName = "asset_group_id";
             break;
           case "role":
             tableName = "roles";
-            parentColName = "work_group_id";
             break;
           default:
             throw new Error(`Invalid type: ${update.type}`);
@@ -828,8 +822,34 @@ export class CompaniesService {
           order_index: update.order_index,
         };
 
-        if (parentColName && "parent_id" in update) {
-          updateData[parentColName] = update.parent_id;
+        // Handle parent_id updates based on parent_type
+        if ("parent_id" in update && update.parent_id !== undefined) {
+          // For roles, we need to know if the parent is a work_group or another role
+          if (update.type === "role") {
+            if (update.parent_type === "work_group") {
+              updateData["work_group_id"] = update.parent_id;
+              updateData["reports_to_role_id"] = null; // Clear the role parent
+            } else if (update.parent_type === "role") {
+              updateData["reports_to_role_id"] = update.parent_id;
+              // work_group_id stays the same (inherited from the parent role's work_group)
+            } else {
+              throw new Error(
+                `Invalid parent_type for role: ${update.parent_type}`
+              );
+            }
+          } else {
+            // For non-role entities, determine parent column from type
+            const parentColMap: Record<string, string> = {
+              region: "business_unit_id",
+              site: "region_id",
+              asset_group: "site_id",
+              work_group: "asset_group_id",
+            };
+            const parentColName = parentColMap[update.type];
+            if (parentColName) {
+              updateData[parentColName] = update.parent_id;
+            }
+          }
         }
 
         const { error } = await this.supabase

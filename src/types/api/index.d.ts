@@ -4711,6 +4711,14 @@ export interface paths {
               | "role";
             order_index: number;
             parent_id?: number;
+            /** @enum {string} */
+            parent_type?:
+              | "business_unit"
+              | "region"
+              | "site"
+              | "asset_group"
+              | "work_group"
+              | "role";
           }[];
         };
       };
