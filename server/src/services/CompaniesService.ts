@@ -18,7 +18,8 @@ import type {
   UpdateBrandingData,
   CompanyBranding,
 } from "../types/entities/companies.js";
-import { NotFoundError } from "../plugins/errorHandler.js";
+import { InternalServerError, NotFoundError } from "../plugins/errorHandler.js";
+import { LocationType } from "../schemas/company.js";
 
 type JunctionTableName =
   | "company_contacts"
@@ -125,9 +126,9 @@ export class CompaniesService {
 
     // Using type-unsafe .from() for dynamic table names
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (this.supabase.from as unknown as (tableName: string) => any)(
-      metadata.tableName
-    )
+    const result = await (
+      this.supabase.from as unknown as (tableName: string) => any
+    )(metadata.tableName)
       .select(metadata.selectFields)
       .eq("is_deleted", false)
       .eq("company_id", companyId);
@@ -156,9 +157,9 @@ export class CompaniesService {
 
     // Using type-unsafe .from() for dynamic table names
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (this.supabase.from as unknown as (tableName: string) => any)(
-      metadata.tableName
-    )
+    const result = await (
+      this.supabase.from as unknown as (tableName: string) => any
+    )(metadata.tableName)
       .insert([
         {
           ...entityData,
@@ -192,9 +193,9 @@ export class CompaniesService {
 
     // Using type-unsafe .from() for dynamic table names
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (this.supabase.from as unknown as (tableName: string) => any)(
-      metadata.tableName
-    )
+    const result = await (
+      this.supabase.from as unknown as (tableName: string) => any
+    )(metadata.tableName)
       .update(entityData)
       .eq("id", parseInt(entityId))
       .eq("company_id", companyId)
@@ -206,7 +207,9 @@ export class CompaniesService {
 
     // Add entity_type discriminator
     const typedData = result.data as Record<string, unknown> | null;
-    return typedData ? { ...typedData, entity_type: metadata.discriminator } : null;
+    return typedData
+      ? { ...typedData, entity_type: metadata.discriminator }
+      : null;
   }
 
   /**
@@ -223,9 +226,9 @@ export class CompaniesService {
 
     // Using type-unsafe .from() for dynamic table names
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (this.supabase.from as unknown as (tableName: string) => any)(
-      metadata.tableName
-    )
+    const result = await (
+      this.supabase.from as unknown as (tableName: string) => any
+    )(metadata.tableName)
       .update({ is_deleted: true, deleted_at: new Date().toISOString() })
       .eq("id", parseInt(entityId))
       .eq("company_id", companyId);
@@ -762,6 +765,86 @@ export class CompaniesService {
       }
     });
   }
+
+  /**
+   * Reorder company tree nodes
+   * @param companyId ID of the company
+   * @param updates Array of updates containing id, type, order_index, and optional parent_id
+   * @return void
+   */
+  async reorderCompanyTree(
+    companyId: string,
+    updates: Array<{
+      id: number;
+      type: LocationType;
+      order_index: number;
+      parent_id?: number;
+    }>
+  ): Promise<void> {
+    // Implementation for reordering the company tree nodes
+    try {
+      console.log("Reorder updates received:", updates);
+
+      for (const update of updates) {
+        let tableName: string;
+        let parentColName: string | null;
+
+        switch (update.type) {
+          case "business_unit":
+            tableName = "business_units";
+            parentColName = null;
+            break;
+          case "region":
+            tableName = "regions";
+            parentColName = "business_unit_id";
+            break;
+          case "site":
+            tableName = "sites";
+            parentColName = "region_id";
+            break;
+          case "asset_group":
+            tableName = "asset_groups";
+            parentColName = "site_id";
+            break;
+          case "work_group":
+            tableName = "work_groups";
+            parentColName = "asset_group_id";
+            break;
+          case "role":
+            tableName = "roles";
+            parentColName = "work_group_id";
+            break;
+          default:
+            throw new Error(`Invalid type: ${update.type}`);
+        }
+
+        const updateData: Record<string, unknown> = {
+          order_index: update.order_index,
+        };
+
+        if (parentColName && "parent_id" in update) {
+          updateData[parentColName] = update.parent_id;
+        }
+
+        const { error } = await this.supabase
+          .from(tableName)
+          .update(updateData)
+          .eq("id", update.id)
+          .eq("is_deleted", false)
+          .eq("company_id", companyId);
+
+        if (error) {
+          throw new Error(
+            `Failed to update ${update.type} with id ${update.id}: ${error.message}`
+          );
+        }
+      }
+    } catch {
+      throw new InternalServerError("Failed to reorder company tree");
+    }
+  }
+
+  // Export and import logic
 
   async exportCompanyStructure(companyId: string): Promise<any> {
     // Get the full company tree

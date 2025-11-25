@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { companySchemas } from "../../schemas/company";
+import { companySchemas, LocationTypeEnum } from "../../schemas/company";
 import { commonResponseSchemas } from "../../schemas/common";
 import { CompaniesService } from "../../services/CompaniesService";
 import { NotFoundError, BadRequestError } from "../../plugins/errorHandler";
@@ -213,6 +213,37 @@ export async function companiesRoutes(fastify: FastifyInstance) {
       return {
         success: true,
         data: treeData,
+      };
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PATCH",
+    url: "/:companyId/tree/reorder",
+    schema: {
+      description: "Reorder company tree",
+      params: z.object({
+        companyId: z.string(),
+      }),
+      // When reording within the same parent:
+      // only type and order_index are required for each item.
+      // When moving to a different parent, parent_id is also required for that item.
+      body: z.array(
+        z.object({
+          id: z.number(),
+          type: z.enum(LocationTypeEnum),
+          order_index: z.number(),
+          parent_id: z.number().optional(),
+        })
+      ),
+    },
+    handler: async (request) => {
+      await request.companiesService!.reorderCompanyTree(
+        request.params.companyId,
+        request.body
+      );
+      return {
+        success: true,
       };
     },
   });
@@ -1113,7 +1144,6 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     },
   });
 
-  // Update company branding colors
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "PATCH",
     url: "/:companyId/branding",
