@@ -19,7 +19,10 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import type { CompanyTree, ReorderCompanyTreeBodyData } from "@/types/api/companies";
+import type {
+  CompanyTree,
+  ReorderCompanyTreeBodyData,
+} from "@/types/api/companies";
 import type { TreeItems } from "./types";
 import { SortableItem } from "./SortableItem";
 import { companyTreeToTreeItems, type CompanyTreeItem } from "./adapters";
@@ -30,9 +33,19 @@ import {
   removeItem,
 } from "./utilities";
 import { useReorderTree } from "@/hooks/useCompany";
+import { toast } from "sonner";
 
 const INDENTATION_WIDTH = 24; // pixels per depth level
 
+// Define valid parent entities for error messages
+const validParentEntities: Record<string, string> = {
+  business_unit: "Company",
+  region: "Business Unit",
+  site: "Region",
+  asset_group: "Site",
+  work_group: "Asset Group",
+  role: "Work Group or Role",
+};
 interface SortableTreeProps {
   companyTree: CompanyTree;
   expandedItems?: Set<UniqueIdentifier>;
@@ -199,7 +212,9 @@ export function SortableTree({
     );
 
     if (!validParent) {
-      window.alert("Invalid parent-child relationship detected");
+      toast.error(
+        `Cannot move ${activeItem.entityType} to the selected location. This item can only be moved under a ${validParentEntities[activeItem.entityType]}.`
+      );
       return;
     }
 
@@ -298,24 +313,34 @@ export function SortableTree({
 
     // Get the numeric ID from the tree item ID (e.g., "region_5" -> 5)
     const getNumericId = (treeItemId: string): number => {
-      const parts = String(treeItemId).split('_');
+      const parts = String(treeItemId).split("_");
       return parseInt(parts[parts.length - 1], 10);
     };
 
     // Get entity type from tree item ID (e.g., "region_5" -> "region")
     const getEntityType = (treeItemId: string): string => {
       const idStr = String(treeItemId);
-      const entityTypes = ['business_unit', 'asset_group', 'work_group', 'company', 'region', 'site', 'role'];
+      const entityTypes = [
+        "business_unit",
+        "asset_group",
+        "work_group",
+        "company",
+        "region",
+        "site",
+        "role",
+      ];
       for (const type of entityTypes) {
-        if (idStr.startsWith(type + '_')) {
+        if (idStr.startsWith(type + "_")) {
           return type;
         }
       }
-      return '';
+      return "";
     };
 
     // Get old parent ID from the flattened items (since nested items don't have parentId)
-    const flattenedActiveItem = flattenedItems.find((item) => item.id === activeItem.id);
+    const flattenedActiveItem = flattenedItems.find(
+      (item) => item.id === activeItem.id
+    );
     const oldParentId = flattenedActiveItem?.parentId;
     const parentChanged = oldParentId !== parentId;
 
@@ -330,14 +355,16 @@ export function SortableTree({
     if (parentChanged && parentId) {
       movedItemPayload.parent_id = getNumericId(String(parentId));
       // parent_type is needed to disambiguate role parents (work_group vs role)
-      movedItemPayload.parent_type = getEntityType(String(parentId)) as ReorderCompanyTreeBodyData[number]["type"];
+      movedItemPayload.parent_type = getEntityType(
+        String(parentId)
+      ) as ReorderCompanyTreeBodyData[number]["type"];
     }
 
     reorderPayload.push(movedItemPayload);
 
     // Find siblings in the NEW parent and update their order_index
     const newParent = parentId ? findItemDeep(newTree, parentId) : null;
-    const newSiblings = parentId ? (newParent?.children || []) : newTree;
+    const newSiblings = parentId ? newParent?.children || [] : newTree;
 
     newSiblings.forEach((sibling, index) => {
       if (sibling.id === activeItem.id) {
@@ -371,7 +398,7 @@ export function SortableTree({
 
     // Call the reorder API
     reorderTree(reorderPayload).catch((error) => {
-      console.error('Failed to reorder tree:', error);
+      console.error("Failed to reorder tree:", error);
     });
   }
 
@@ -419,7 +446,11 @@ export function SortableTree({
         // Check if the target parent role is already a reporting role (has a reports_to_role_id)
         // If so, we can't add another level of nesting
         const parentEntity = parentItem?.entity;
-        if (parentEntity && 'reports_to_role_id' in parentEntity && parentEntity.reports_to_role_id) {
+        if (
+          parentEntity &&
+          "reports_to_role_id" in parentEntity &&
+          parentEntity.reports_to_role_id
+        ) {
           return false; // Can't nest under a role that is already a reporting role
         }
 
