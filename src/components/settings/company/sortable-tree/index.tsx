@@ -224,17 +224,20 @@ export function SortableTree({
     const updatedActiveItem = updateDepthRecursively(clonedActiveItem, depth);
 
     // Step 4: Insert the item into the new parent
+    // insertAfter determines if we insert before or after the target (based on drag direction)
     function insertItemIntoTree(
       tree: TreeItems,
       newParentId: UniqueIdentifier | null,
       itemToInsert: CompanyTreeItem,
-      targetId: UniqueIdentifier
+      targetId: UniqueIdentifier,
+      insertAfter: boolean
     ): TreeItems {
       // If inserting at root level
       if (newParentId === null) {
         const targetIndex = tree.findIndex((item) => item.id === targetId);
         const newTree = [...tree];
-        newTree.splice(targetIndex, 0, itemToInsert);
+        const insertIndex = insertAfter ? targetIndex + 1 : targetIndex;
+        newTree.splice(insertIndex, 0, itemToInsert);
         return newTree;
       }
 
@@ -247,7 +250,8 @@ export function SortableTree({
           );
           const newChildren = [...item.children];
           if (targetIndex !== -1) {
-            newChildren.splice(targetIndex, 0, itemToInsert);
+            const insertIndex = insertAfter ? targetIndex + 1 : targetIndex;
+            newChildren.splice(insertIndex, 0, itemToInsert);
           } else {
             newChildren.push(itemToInsert);
           }
@@ -261,7 +265,8 @@ export function SortableTree({
               item.children,
               newParentId,
               itemToInsert,
-              targetId
+              targetId,
+              insertAfter
             ),
           };
         }
@@ -270,11 +275,15 @@ export function SortableTree({
       });
     }
 
+    // Determine if we should insert after the target based on drag direction
+    const insertAfter = overIndex > activeIndex;
+
     const newTree = insertItemIntoTree(
       itemsWithoutActive,
       parentId,
       updatedActiveItem,
-      over.id
+      over.id,
+      insertAfter
     );
     setItems(newTree);
 
