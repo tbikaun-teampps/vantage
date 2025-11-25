@@ -102,6 +102,7 @@ export const GetQuestionnaireByIdResponseSchema = z.object({
                             min: z.number(),
                             decimal_places: z.number().optional(),
                           }),
+                          z.object({})
                         ])
                         .nullable(),
                       order_index: z.number(),
