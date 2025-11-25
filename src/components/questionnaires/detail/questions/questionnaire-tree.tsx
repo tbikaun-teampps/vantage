@@ -138,6 +138,8 @@ export function QuestionnaireTree({
           questionnaire_section_id: showAddDialog.parentId,
           title: data.title,
         });
+        // Auto-expand the parent section
+        setExpandedNodes((prev) => new Set(prev).add(`section_${showAddDialog.parentId}`));
         toast.success("Step created");
       } else if (showAddDialog.type === "question" && showAddDialog.parentId) {
         await createQuestion({
@@ -146,6 +148,8 @@ export function QuestionnaireTree({
           question_text: data.question_text || "",
           context: data.context,
         });
+        // Auto-expand the parent step
+        setExpandedNodes((prev) => new Set(prev).add(`step_${showAddDialog.parentId}`));
         toast.success("Question created");
       }
       setShowAddDialog(null);
