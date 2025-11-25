@@ -43,6 +43,7 @@ import type {
   AssetGroupNode,
   BusinessUnitNode,
   CompanyTree,
+  CompanyTreeNodeType,
   RegionNode,
   RoleNode,
   SiteNode,
@@ -57,12 +58,16 @@ interface BaseFormProps<
   setSelectedItem: (item: TNode | null) => void;
   onSave: (data: TFormData) => void;
   onDelete?: () => void;
+  onExpandParentNode?: (
+    parentType: CompanyTreeNodeType,
+    parentId: string | number
+  ) => void;
 }
 
 // Company Form
 export const RHFCompanyForm: React.FC<
   BaseFormProps<CompanyFormData, CompanyTree & { type: "company" }>
-> = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
+> = ({ selectedItem, setSelectedItem, onSave, onDelete, onExpandParentNode }) => {
   const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<CompanyFormData>({
@@ -164,6 +169,7 @@ export const RHFCompanyForm: React.FC<
                 parentItem={selectedItem}
                 parentType="company"
                 addType="business_unit"
+                onExpandParentNode={onExpandParentNode}
               />
             </FormSection>
           </div>
@@ -179,7 +185,7 @@ export const RHFBusinessUnitForm: React.FC<
     BusinessUnitFormData,
     BusinessUnitNode & { type: "business_unit" }
   >
-> = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
+> = ({ selectedItem, setSelectedItem, onSave, onDelete, onExpandParentNode }) => {
   const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<BusinessUnitFormData>({
@@ -278,6 +284,7 @@ export const RHFBusinessUnitForm: React.FC<
                 parentItem={selectedItem}
                 parentType="business_unit"
                 addType="region"
+                onExpandParentNode={onExpandParentNode}
               />
             </FormSection>
           </div>
@@ -290,7 +297,7 @@ export const RHFBusinessUnitForm: React.FC<
 // Region Form
 export const RHFRegionForm: React.FC<
   BaseFormProps<RegionFormData, RegionNode & { type: "region" }>
-> = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
+> = ({ selectedItem, setSelectedItem, onSave, onDelete, onExpandParentNode }) => {
   const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<RegionFormData>({
@@ -389,6 +396,7 @@ export const RHFRegionForm: React.FC<
                 parentItem={selectedItem}
                 parentType="region"
                 addType="site"
+                onExpandParentNode={onExpandParentNode}
               />
             </FormSection>
           </div>
@@ -401,7 +409,7 @@ export const RHFRegionForm: React.FC<
 // Site Form
 export const RHFSiteForm: React.FC<
   BaseFormProps<SiteFormData, SiteNode & { type: "site" }>
-> = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
+> = ({ selectedItem, setSelectedItem, onSave, onDelete, onExpandParentNode }) => {
   const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<SiteFormData>({
@@ -518,6 +526,7 @@ export const RHFSiteForm: React.FC<
                 parentItem={selectedItem}
                 parentType="site"
                 addType="asset_group"
+                onExpandParentNode={onExpandParentNode}
               />
             </FormSection>
           </div>
@@ -530,7 +539,7 @@ export const RHFSiteForm: React.FC<
 // Asset Group Form
 export const RHFAssetGroupForm: React.FC<
   BaseFormProps<AssetGroupFormData, AssetGroupNode & { type: "asset_group" }>
-> = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
+> = ({ selectedItem, setSelectedItem, onSave, onDelete, onExpandParentNode }) => {
   const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<AssetGroupFormData>({
@@ -629,6 +638,7 @@ export const RHFAssetGroupForm: React.FC<
                 parentItem={selectedItem}
                 parentType="asset_group"
                 addType="work_group"
+                onExpandParentNode={onExpandParentNode}
               />
             </FormSection>
           </div>
@@ -641,7 +651,7 @@ export const RHFAssetGroupForm: React.FC<
 // Work Group Form
 export const RHFWorkGroupForm: React.FC<
   BaseFormProps<WorkGroupFormData, WorkGroupNode & { type: "work_group" }>
-> = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
+> = ({ selectedItem, setSelectedItem, onSave, onDelete, onExpandParentNode }) => {
   const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<WorkGroupFormData>({
@@ -740,6 +750,7 @@ export const RHFWorkGroupForm: React.FC<
                 parentItem={selectedItem}
                 parentType="work_group"
                 addType="role"
+                onExpandParentNode={onExpandParentNode}
               />
             </FormSection>
           </div>
@@ -752,7 +763,7 @@ export const RHFWorkGroupForm: React.FC<
 // Role Form
 export const RHFRoleForm: React.FC<
   BaseFormProps<RoleFormData, RoleNode & { type: "role" }>
-> = ({ selectedItem, setSelectedItem, onSave, onDelete }) => {
+> = ({ selectedItem, setSelectedItem, onSave, onDelete, onExpandParentNode }) => {
   const userCanAdmin = useCanAdmin();
   const companyId = useCompanyFromUrl();
   const form = useForm<RoleFormData>({
@@ -870,6 +881,7 @@ export const RHFRoleForm: React.FC<
                 parentItem={selectedItem}
                 parentType="role"
                 addType="role"
+                onExpandParentNode={onExpandParentNode}
               />
             </FormSection>
           </div>

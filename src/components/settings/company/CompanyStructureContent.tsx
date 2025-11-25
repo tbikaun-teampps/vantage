@@ -191,6 +191,15 @@ export function CompanyStructureContent() {
     }
   };
 
+  // Expand a parent node when a child is added from the detail panel
+  const expandParentNode = (
+    parentType: CompanyTreeNodeType,
+    parentId: string | number
+  ) => {
+    const nodeKey = `${parentType}_${parentId}`;
+    setExpandedNodes((prev) => new Set([...prev, nodeKey]));
+  };
+
   // Fullscreen functionality
   const toggleFullscreen = async () => {
     try {
@@ -254,6 +263,7 @@ export function CompanyStructureContent() {
             <DetailPanel
               selectedItem={selectedItem}
               setSelectedItem={handleSelectItem}
+              onExpandParentNode={expandParentNode}
             />
           </ResizablePanel>
         </ResizablePanelGroup>
