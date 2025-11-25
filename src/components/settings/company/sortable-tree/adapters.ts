@@ -16,14 +16,14 @@ import type { TreeItem, TreeItems } from './types';
 export interface CompanyTreeItem extends TreeItem {
   entity: AnyTreeNode;
   name: string;
-  entityType: 'company' | 'business_unit' | 'region' | 'site' | 'asset_group' | 'work_group' | 'role' | 'reporting_role';
+  entityType: 'company' | 'business_unit' | 'region' | 'site' | 'asset_group' | 'work_group' | 'role';
 }
 
 /**
  * Generates a unique ID for dnd-kit from entity type and ID
  */
 export function generateTreeItemId(
-  entityType: 'company' | 'business_unit' | 'region' | 'site' | 'asset_group' | 'work_group' | 'role' | 'reporting_role',
+  entityType: 'company' | 'business_unit' | 'region' | 'site' | 'asset_group' | 'work_group' | 'role',
   entityId: string | number
 ): UniqueIdentifier {
   return `${entityType}_${entityId}`;
@@ -33,14 +33,14 @@ export function generateTreeItemId(
  * Parses a tree item ID back into entity type and ID
  */
 export function parseTreeItemId(id: UniqueIdentifier): {
-  entityType: 'company' | 'business_unit' | 'region' | 'site' | 'asset_group' | 'work_group' | 'role' | 'reporting_role';
+  entityType: 'company' | 'business_unit' | 'region' | 'site' | 'asset_group' | 'work_group' | 'role';
   entityId: string | number;
 } {
   const idStr = String(id);
 
   // Match against known entity types (which may contain underscores)
   // Order matters: check longer names first
-  const entityTypes = ['reporting_role', 'business_unit', 'asset_group', 'work_group', 'company', 'region', 'site', 'role'] as const;
+  const entityTypes = ['business_unit', 'asset_group', 'work_group', 'company', 'region', 'site', 'role'] as const;
 
   for (const type of entityTypes) {
     if (idStr.startsWith(type + '_')) {
@@ -58,15 +58,17 @@ export function parseTreeItemId(id: UniqueIdentifier): {
 
 /**
  * Transforms API Reporting Roles into TreeItems
+ * Note: Reporting roles are just roles with a reports_to_role_id, so we use 'role' as the entityType.
+ * The system only allows one level of nesting (role > reporting_role), not deeper.
  */
-function transformReportingRoles(reportingRoles: ReportingRoleNode[]): CompanyTreeItem[] {
+function transformReportingRoles(reportingRoles: ReportingRoleNode[], parentRoleId: number): CompanyTreeItem[] {
   return reportingRoles.map((rr) => ({
-    id: generateTreeItemId('reporting_role', rr.id),
-    // Reporting roles don't have a type in AnyTreeNode, so we cast to any for now
-    entity: { ...rr, type: 'role' as const, reporting_roles: [] } as any,
+    id: generateTreeItemId('role', rr.id),
+    // Reporting roles are roles in the database - they have reports_to_role_id pointing to their parent
+    entity: { ...rr, type: 'role' as const, reporting_roles: [], reports_to_role_id: parentRoleId } as AnyTreeNode,
     name: rr.name,
-    entityType: 'reporting_role' as const,
-    children: [], // Reporting Roles are leaf nodes (max depth)
+    entityType: 'role' as const,
+    children: [], // Reporting roles are leaf nodes (only one level of nesting allowed)
     collapsed: false,
   }));
 }
@@ -80,7 +82,7 @@ function transformRoles(roles: RoleNode[]): CompanyTreeItem[] {
     entity: { ...role, type: 'role' as const },
     name: role.name,
     entityType: 'role' as const,
-    children: role.reporting_roles ? transformReportingRoles(role.reporting_roles) : [],
+    children: role.reporting_roles ? transformReportingRoles(role.reporting_roles, role.id) : [],
     collapsed: false,
   }));
 }

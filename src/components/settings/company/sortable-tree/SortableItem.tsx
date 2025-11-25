@@ -74,9 +74,6 @@ export function SortableItem({
       <IconUsersGroup className="h-4 w-4 text-teal-600 flex-shrink-0" />
     ),
     role: <IconUserCircle className="h-4 w-4 text-indigo-600 flex-shrink-0" />,
-    reporting_role: (
-      <IconUserCircle className="h-4 w-4 text-indigo-600 flex-shrink-0" />
-    ),
   }[item.entityType];
 
   const handleToggle = (e: React.MouseEvent) => {

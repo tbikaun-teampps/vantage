@@ -144,6 +144,8 @@ export function SortableTree({
     }
 
     // Enforce depth constraints based on entity type
+    // Roles can be at depth 6 (under work_group) or depth 7 (reporting to another role)
+    // Only one level of role nesting is allowed (role > reporting_role, not deeper)
     const maxAllowedDepth = {
       company: 0, // Company cannot be moved
       business_unit: 1, // Business Units can only be children of Company
@@ -151,8 +153,7 @@ export function SortableTree({
       site: 3, // Sites can only be children of Regions
       asset_group: 4, // Asset Groups can only be children of Sites
       work_group: 5, // Work Groups can only be children of Asset Groups
-      role: 6, // Roles can only be children of Work Groups
-      reporting_role: 7, // Reporting Roles can only be children of Roles (max depth)
+      role: 7, // Roles can be children of Work Groups (depth 6) or other Roles (depth 7, max)
     }[activeItem.entityType];
 
     // Use getProjection to calculate new position
@@ -187,7 +188,9 @@ export function SortableTree({
 
     const validParent = validateParentChild(
       activeItem.entityType,
-      parentItem?.entityType
+      parentItem?.entityType,
+      activeItem,
+      parentItem
     );
 
     if (!validParent) {
@@ -353,9 +356,8 @@ export function SortableTree({
       | "site"
       | "asset_group"
       | "work_group"
-      | "role"
-      | "reporting_role",
-    parentType?:
+      | "role",
+    parentType:
       | "company"
       | "business_unit"
       | "region"
@@ -363,7 +365,9 @@ export function SortableTree({
       | "asset_group"
       | "work_group"
       | "role"
-      | "reporting_role"
+      | undefined,
+    childItem: CompanyTreeItem,
+    parentItem: CompanyTreeItem | null | undefined
   ): boolean {
     if (childType === "company") return false; // Company cannot be moved
     if (childType === "business_unit") return parentType === "company";
@@ -371,8 +375,29 @@ export function SortableTree({
     if (childType === "site") return parentType === "region";
     if (childType === "asset_group") return parentType === "site";
     if (childType === "work_group") return parentType === "asset_group";
-    if (childType === "role") return parentType === "work_group";
-    if (childType === "reporting_role") return parentType === "role";
+
+    // Roles can be children of work_groups (top-level roles) or other roles (reporting roles)
+    // But only one level of role nesting is allowed
+    if (childType === "role") {
+      if (parentType === "work_group") return true;
+
+      if (parentType === "role") {
+        // Check if the child role has children (it's a parent role itself)
+        // If so, it cannot become a reporting role under another role
+        if (childItem.children.length > 0) {
+          return false; // Can't nest a role that has reporting roles under another role
+        }
+
+        // Check if the target parent role is already a reporting role (has a reports_to_role_id)
+        // If so, we can't add another level of nesting
+        const parentEntity = parentItem?.entity;
+        if (parentEntity && 'reports_to_role_id' in parentEntity && parentEntity.reports_to_role_id) {
+          return false; // Can't nest under a role that is already a reporting role
+        }
+
+        return true;
+      }
+    }
     return false;
   }
 
@@ -428,21 +453,21 @@ export function SortableTree({
     // Company cannot be moved
     if (draggedItem.entityType === "company") return false;
 
-    // Get the valid parent type for the dragged item
-    const validParentType: Record<string, string> = {
-      business_unit: "company",
-      region: "business_unit",
-      site: "region",
-      asset_group: "site",
-      work_group: "asset_group",
-      role: "work_group",
-      reporting_role: "role",
+    // Get the valid parent types for the dragged item
+    // Roles can be children of work_groups OR other roles
+    const validParentTypes: Record<string, string[]> = {
+      business_unit: ["company"],
+      region: ["business_unit"],
+      site: ["region"],
+      asset_group: ["site"],
+      work_group: ["asset_group"],
+      role: ["work_group", "role"], // Roles can be under work_groups or other roles
     };
 
-    const expectedParentType = validParentType[draggedItem.entityType];
+    const expectedParentTypes = validParentTypes[draggedItem.entityType] || [];
 
-    // Highlight items of the valid parent type
-    if (expectedParentType && targetItem.entityType === expectedParentType) {
+    // Highlight items of valid parent types
+    if (expectedParentTypes.includes(targetItem.entityType)) {
       return true;
     }
 
