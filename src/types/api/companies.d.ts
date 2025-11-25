@@ -106,6 +106,10 @@ export type UpdateContactResponseData =
 export type GetContactsByRoleResponseData =
   paths["/companies/{companyId}/contacts/roles/{roleId}"]["get"]["responses"][200]["content"]["application/json"]["data"];
 
+export type ReorderCompanyTreeBodyData = NonNullable<
+  paths["/companies/{companyId}/tree/reorder"]["patch"]["requestBody"]
+>["content"]["application/json"];
+
 // --- DERIVED ---
 export type CompanyUserRole = GetCompaniesResponseData[number]["role"];
 export type TeamMember = GetTeamResponseData[number];
@@ -177,8 +181,7 @@ export type EntityId<T extends ContactableEntityType> = T extends "company"
   ? string
   : number;
 
-
-export type RoleLevelEnum = NonNullable<RoleNode['level']>
+export type RoleLevelEnum = NonNullable<RoleNode["level"]>;
 
 // Entity type aliases derived from the discriminated union
 // These are automatically generated from the server's Zod schema via OpenAPI

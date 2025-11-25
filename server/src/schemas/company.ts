@@ -55,6 +55,7 @@ const roleTreeNodeNested = z.object({
   name: z.string(),
   description: z.string().nullable(),
   shared_role_id: z.number(),
+  order_index: z.number(),
 });
 
 const roleTreeNode = roleTreeNodeNested.extend({
@@ -396,18 +397,21 @@ export const companySchemas = {
         name: z.string(),
         code: z.string().nullable(),
         description: z.string().nullable(),
+        // No order_index for root (company) node
         business_units: z.array(
           z.object({
             id: z.number(),
             name: z.string(),
             code: z.string().nullable(),
             description: z.string().nullable(),
+            order_index: z.number(),
             regions: z.array(
               z.object({
                 id: z.number(),
                 name: z.string(),
                 code: z.string().nullable(),
                 description: z.string().nullable(),
+                order_index: z.number(),
                 sites: z.array(
                   z.object({
                     id: z.number(),
@@ -416,18 +420,21 @@ export const companySchemas = {
                     description: z.string().nullable(),
                     lat: z.number().nullable(),
                     lng: z.number().nullable(),
+                    order_index: z.number(),
                     asset_groups: z.array(
                       z.object({
                         id: z.number(),
                         name: z.string(),
                         code: z.string().nullable(),
                         description: z.string().nullable(),
+                        order_index: z.number(),
                         work_groups: z.array(
                           z.object({
                             id: z.number(),
                             name: z.string(),
                             code: z.string().nullable(),
                             description: z.string().nullable(),
+                            order_index: z.number(),
                             roles: z.array(roleTreeNode),
                           })
                         ),

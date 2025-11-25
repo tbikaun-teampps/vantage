@@ -18,7 +18,8 @@ import type {
   UpdateBrandingData,
   CompanyBranding,
 } from "../types/entities/companies.js";
-import { NotFoundError } from "../plugins/errorHandler.js";
+import { InternalServerError, NotFoundError } from "../plugins/errorHandler.js";
+import { LocationType } from "../schemas/company.js";
 
 type JunctionTableName =
   | "company_contacts"
@@ -125,9 +126,9 @@ export class CompaniesService {
 
     // Using type-unsafe .from() for dynamic table names
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (this.supabase.from as unknown as (tableName: string) => any)(
-      metadata.tableName
-    )
+    const result = await (
+      this.supabase.from as unknown as (tableName: string) => any
+    )(metadata.tableName)
       .select(metadata.selectFields)
       .eq("is_deleted", false)
       .eq("company_id", companyId);
@@ -156,9 +157,9 @@ export class CompaniesService {
 
     // Using type-unsafe .from() for dynamic table names
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (this.supabase.from as unknown as (tableName: string) => any)(
-      metadata.tableName
-    )
+    const result = await (
+      this.supabase.from as unknown as (tableName: string) => any
+    )(metadata.tableName)
       .insert([
         {
           ...entityData,
@@ -192,9 +193,9 @@ export class CompaniesService {
 
     // Using type-unsafe .from() for dynamic table names
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (this.supabase.from as unknown as (tableName: string) => any)(
-      metadata.tableName
-    )
+    const result = await (
+      this.supabase.from as unknown as (tableName: string) => any
+    )(metadata.tableName)
       .update(entityData)
       .eq("id", parseInt(entityId))
       .eq("company_id", companyId)
@@ -206,7 +207,9 @@ export class CompaniesService {
 
     // Add entity_type discriminator
     const typedData = result.data as Record<string, unknown> | null;
-    return typedData ? { ...typedData, entity_type: metadata.discriminator } : null;
+    return typedData
+      ? { ...typedData, entity_type: metadata.discriminator }
+      : null;
   }
 
   /**
@@ -223,9 +226,9 @@ export class CompaniesService {
 
     // Using type-unsafe .from() for dynamic table names
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (this.supabase.from as unknown as (tableName: string) => any)(
-      metadata.tableName
-    )
+    const result = await (
+      this.supabase.from as unknown as (tableName: string) => any
+    )(metadata.tableName)
       .update({ is_deleted: true, deleted_at: new Date().toISOString() })
       .eq("id", parseInt(entityId))
       .eq("company_id", companyId);
@@ -394,24 +397,26 @@ export class CompaniesService {
   }
 
   async getCompanyTree(companyId: string) {
-    // : Promise<CompanyTree | null>
     const { data, error } = await this.supabase
       .from("companies")
       .select(
         `
-        id,name,code,description,
+        id,
+        name,
+        code,
+        description,
         business_units(
-          id,name,code,description,
+          id,name,code,description,order_index,
           regions(
-            id,name,code,description,
+            id,name,code,description,order_index,
             sites(
-              id,name,code,description,lat,lng,
+              id,name,code,description,lat,lng,order_index,
               asset_groups(
-                id,name,code,description,
+                id,name,code,description,order_index,
                 work_groups(
-                  id,name,code,description,
+                  id,name,code,description,order_index,
                   roles(
-                    id,code,level,reports_to_role_id,
+                    id,code,level,reports_to_role_id,order_index,
                     shared_roles(
                       id,name,description
                     )
@@ -441,6 +446,12 @@ export class CompaniesService {
         "business_units.regions.sites.asset_groups.work_groups.roles.shared_roles.is_deleted",
         false
       )
+      .order("order_index", { referencedTable: "business_units", ascending: true })
+      .order("order_index", { referencedTable: "business_units.regions", ascending: true })
+      .order("order_index", { referencedTable: "business_units.regions.sites", ascending: true })
+      .order("order_index", { referencedTable: "business_units.regions.sites.asset_groups", ascending: true })
+      .order("order_index", { referencedTable: "business_units.regions.sites.asset_groups.work_groups", ascending: true })
+      .order("order_index", { referencedTable: "business_units.regions.sites.asset_groups.work_groups.roles", ascending: true })
       .single();
 
     if (error) throw error;
@@ -760,6 +771,106 @@ export class CompaniesService {
       }
     });
   }
+
+  /**
+   * Reorder company tree nodes
+   * @param companyId ID of the company
+   * @param updates Array of updates containing id, type, order_index, and optional parent_id/parent_type
+   * @return void
+   */
+  async reorderCompanyTree(
+    companyId: string,
+    updates: Array<{
+      id: number;
+      type: LocationType;
+      order_index: number;
+      parent_id?: number;
+      parent_type?: LocationType;
+    }>
+  ): Promise<void> {
+    // Implementation for reordering the company tree nodes
+    try {
+      console.log("Reorder updates received:", updates);
+
+      for (const update of updates) {
+        let tableName: string;
+
+        switch (update.type) {
+          case "business_unit":
+            tableName = "business_units";
+            break;
+          case "region":
+            tableName = "regions";
+            break;
+          case "site":
+            tableName = "sites";
+            break;
+          case "asset_group":
+            tableName = "asset_groups";
+            break;
+          case "work_group":
+            tableName = "work_groups";
+            break;
+          case "role":
+            tableName = "roles";
+            break;
+          default:
+            throw new Error(`Invalid type: ${update.type}`);
+        }
+
+        const updateData: Record<string, unknown> = {
+          order_index: update.order_index,
+        };
+
+        // Handle parent_id updates based on parent_type
+        if ("parent_id" in update && update.parent_id !== undefined) {
+          // For roles, we need to know if the parent is a work_group or another role
+          if (update.type === "role") {
+            if (update.parent_type === "work_group") {
+              updateData["work_group_id"] = update.parent_id;
+              updateData["reports_to_role_id"] = null; // Clear the role parent
+            } else if (update.parent_type === "role") {
+              updateData["reports_to_role_id"] = update.parent_id;
+              // work_group_id stays the same (inherited from the parent role's work_group)
+            } else {
+              throw new Error(
+                `Invalid parent_type for role: ${update.parent_type}`
+              );
+            }
+          } else {
+            // For non-role entities, determine parent column from type
+            const parentColMap: Record<string, string> = {
+              region: "business_unit_id",
+              site: "region_id",
+              asset_group: "site_id",
+              work_group: "asset_group_id",
+            };
+            const parentColName = parentColMap[update.type];
+            if (parentColName) {
+              updateData[parentColName] = update.parent_id;
+            }
+          }
+        }
+
+        const { error } = await this.supabase
+          .from(tableName)
+          .update(updateData)
+          .eq("id", update.id)
+          .eq("is_deleted", false)
+          .eq("company_id", companyId);
+
+        if (error) {
+          throw new Error(
+            `Failed to update ${update.type} with id ${update.id}: ${error.message}`
+          );
+        }
+      }
+    } catch {
+      throw new InternalServerError("Failed to reorder company tree");
+    }
+  }
+
+  // Export and import logic
 
   async exportCompanyStructure(companyId: string): Promise<any> {
     // Get the full company tree

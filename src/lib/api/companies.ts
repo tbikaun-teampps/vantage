@@ -29,6 +29,7 @@ import type {
   RegionEntity,
   SiteEntity,
   AssetGroupEntity,
+  ReorderCompanyTreeBodyData,
 } from "@/types/api/companies";
 import type { TreeNodeType } from "@/types/company";
 import { apiClient } from "./client";
@@ -413,4 +414,18 @@ export async function updateCompanyBranding(
   }
 
   return response.data.data;
+}
+
+export async function reorderCompanyTree(
+  companyId: string,
+  data: ReorderCompanyTreeBodyData
+): Promise<void> {
+  const response = await apiClient.patch<ApiResponse<void>>(
+    `/companies/${companyId}/tree/reorder`,
+    data
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to reorder company tree");
+  }
 }

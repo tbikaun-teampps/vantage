@@ -4544,11 +4544,13 @@ export interface paths {
                   name: string;
                   code: string | null;
                   description: string | null;
+                  order_index: number;
                   regions: {
                     id: number;
                     name: string;
                     code: string | null;
                     description: string | null;
+                    order_index: number;
                     sites: {
                       id: number;
                       name: string;
@@ -4556,16 +4558,19 @@ export interface paths {
                       description: string | null;
                       lat: number | null;
                       lng: number | null;
+                      order_index: number;
                       asset_groups: {
                         id: number;
                         name: string;
                         code: string | null;
                         description: string | null;
+                        order_index: number;
                         work_groups: {
                           id: number;
                           name: string;
                           code: string | null;
                           description: string | null;
+                          order_index: number;
                           roles: {
                             id: number;
                             work_group_id: number;
@@ -4585,6 +4590,7 @@ export interface paths {
                             name: string;
                             description: string | null;
                             shared_role_id: number;
+                            order_index: number;
                             reporting_roles: {
                               id: number;
                               work_group_id: number;
@@ -4604,6 +4610,7 @@ export interface paths {
                               name: string;
                               description: string | null;
                               shared_role_id: number;
+                              order_index: number;
                             }[];
                           }[];
                         }[];
@@ -4665,6 +4672,66 @@ export interface paths {
     options?: never;
     head?: never;
     patch?: never;
+    trace?: never;
+  };
+  "/companies/{companyId}/tree/reorder": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** @description Reorder company tree */
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          companyId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            id: number;
+            /** @enum {string} */
+            type:
+              | "business_unit"
+              | "region"
+              | "site"
+              | "asset_group"
+              | "work_group"
+              | "role";
+            order_index: number;
+            parent_id?: number;
+            /** @enum {string} */
+            parent_type?:
+              | "business_unit"
+              | "region"
+              | "site"
+              | "asset_group"
+              | "work_group"
+              | "role";
+          }[];
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
     trace?: never;
   };
   "/companies/{companyId}/assessments": {
@@ -4997,11 +5064,13 @@ export interface paths {
                   name: string;
                   code: string | null;
                   description: string | null;
+                  order_index: number;
                   regions: {
                     id: number;
                     name: string;
                     code: string | null;
                     description: string | null;
+                    order_index: number;
                     sites: {
                       id: number;
                       name: string;
@@ -5009,16 +5078,19 @@ export interface paths {
                       description: string | null;
                       lat: number | null;
                       lng: number | null;
+                      order_index: number;
                       asset_groups: {
                         id: number;
                         name: string;
                         code: string | null;
                         description: string | null;
+                        order_index: number;
                         work_groups: {
                           id: number;
                           name: string;
                           code: string | null;
                           description: string | null;
+                          order_index: number;
                           roles: {
                             id: number;
                             work_group_id: number;
@@ -5038,6 +5110,7 @@ export interface paths {
                             name: string;
                             description: string | null;
                             shared_role_id: number;
+                            order_index: number;
                             reporting_roles: {
                               id: number;
                               work_group_id: number;
@@ -5057,6 +5130,7 @@ export interface paths {
                               name: string;
                               description: string | null;
                               shared_role_id: number;
+                              order_index: number;
                             }[];
                           }[];
                         }[];
@@ -7641,6 +7715,7 @@ export interface paths {
                           min: number;
                           decimal_places?: number;
                         }
+                      | Record<string, never>
                     )
                   | null;
                 order_index: number;
@@ -8022,6 +8097,7 @@ export interface paths {
                           min: number;
                           decimal_places?: number;
                         }
+                      | Record<string, never>
                     )
                   | null;
                 order_index: number;
@@ -8423,7 +8499,7 @@ export interface paths {
                                 level: number;
                               }[];
                         };
-                      };
+                      } | null;
                       question_rating_scales: {
                         id: number;
                         name: string;
@@ -8431,35 +8507,37 @@ export interface paths {
                         questionnaire_rating_scale_id: number;
                         value: number;
                       }[];
-                      question_parts: {
-                        id: number;
-                        text: string;
-                        /** @enum {string} */
-                        answer_type:
-                          | "number"
-                          | "boolean"
-                          | "scale"
-                          | "labelled_scale"
-                          | "percentage";
-                        options:
-                          | (
-                              | {
-                                  labels: string[];
-                                }
-                              | {
-                                  max: number;
-                                  min: number;
-                                  step: number;
-                                }
-                              | {
-                                  max: number;
-                                  min: number;
-                                  decimal_places?: number;
-                                }
-                            )
-                          | null;
-                        order_index: number;
-                      }[];
+                      question_parts:
+                        | {
+                            id: number;
+                            text: string;
+                            /** @enum {string} */
+                            answer_type:
+                              | "number"
+                              | "boolean"
+                              | "scale"
+                              | "labelled_scale"
+                              | "percentage";
+                            options:
+                              | (
+                                  | {
+                                      labels: string[];
+                                    }
+                                  | {
+                                      max: number;
+                                      min: number;
+                                      step: number;
+                                    }
+                                  | {
+                                      max: number;
+                                      min: number;
+                                      decimal_places?: number;
+                                    }
+                                )
+                              | null;
+                            order_index: number;
+                          }[]
+                        | null;
                     }[];
                   }[];
                 }[];
@@ -11224,19 +11302,24 @@ export interface paths {
                 breakdown: {
                   [key: string]: number;
                 };
-                scope: {
-                  assessmentName?: string;
-                  programName?: string;
-                };
                 items: {
                   id: number;
-                  /** @enum {string} */
                   status:
-                    | "draft"
-                    | "active"
-                    | "under_review"
-                    | "completed"
-                    | "archived";
+                    | (
+                        | "draft"
+                        | "active"
+                        | "under_review"
+                        | "completed"
+                        | "archived"
+                      )
+                    | (
+                        | "draft"
+                        | "active"
+                        | "under_review"
+                        | "completed"
+                        | "archived"
+                      )
+                    | ("pending" | "in_progress" | "completed" | "cancelled");
                   created_at: string;
                   updated_at: string;
                   name: string;
@@ -11254,7 +11337,7 @@ export interface paths {
                       id: number;
                       name: string;
                     };
-                  };
+                  } | null;
                 }[];
               };
             };
@@ -13578,6 +13661,7 @@ export interface paths {
                             min: number;
                             decimal_places?: number;
                           }
+                        | Record<string, never>
                       )
                     | null;
                 }[];

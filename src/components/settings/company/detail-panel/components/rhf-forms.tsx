@@ -846,7 +846,7 @@ export const RHFRoleForm: React.FC<
                     <Input
                       id="role-description"
                       value={selectedItem.description || ""}
-                      // disabled
+                      disabled
                       placeholder="Role description and responsibilities"
                       className="h-10 cursor-not-allowed"
                     />
