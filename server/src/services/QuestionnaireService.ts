@@ -41,8 +41,10 @@ import { SubscriptionTier } from "../types/entities/profiles.js";
 import {
   BadRequestError,
   ForbiddenError,
+  InternalServerError,
   NotFoundError,
 } from "../plugins/errorHandler.js";
+import { QuestionnaireItemType } from "../schemas/questionnaires/index.js";
 
 export class QuestionnaireService {
   private supabase: SupabaseClient<Database>;
@@ -63,7 +65,9 @@ export class QuestionnaireService {
     // : Promise<QuestionnaireWithCounts[]>
     const { data, error } = await this.supabase
       .from("questionnaires")
-      .select("id, name, description, guidelines, status, created_at, updated_at")
+      .select(
+        "id, name, description, guidelines, status, created_at, updated_at"
+      )
       .eq("is_deleted", false)
       .eq("company_id", companyId)
       .order("updated_at", { ascending: false })
@@ -112,9 +116,8 @@ export class QuestionnaireService {
     }));
   }
 
-  async getQuestionnaireById(
-    questionnaireId: number
-  ) { // : Promise<QuestionnaireWithStructure | null>
+  async getQuestionnaireById(questionnaireId: number) {
+    // : Promise<QuestionnaireWithStructure | null>
     const { data, error } = await this.supabase
       .from("questionnaires")
       .select("*")
@@ -1343,12 +1346,13 @@ export class QuestionnaireService {
   async updateQuestionRatingScale(
     questionRatingScaleId: number,
     description: string
-  ) { // Promise<QuestionnaireQuestionRatingScale>
+  ) {
+    // Promise<QuestionnaireQuestionRatingScale>
     const { data, error } = await this.supabase
       .from("questionnaire_question_rating_scales")
       .update({ description, updated_at: new Date().toISOString() })
       .eq("id", questionRatingScaleId)
-      .select('id, description, updated_at')
+      .select("id, description, updated_at")
       .single();
 
     if (error) throw error;
@@ -2658,6 +2662,72 @@ export class QuestionnaireService {
       default:
         // Unknown or unscorable type (e.g., text)
         return null;
+    }
+  }
+
+  /**
+   * Reorder questionnaire items (sections, steps, questions)
+   * @param questionnaireId 
+   * @param updates 
+   */
+  async reorderQuestionnaire(
+    questionnaireId: number,
+    updates: Array<{
+      id: number;
+      type: QuestionnaireItemType;
+      order_index: number;
+      parent_id?: number;
+    }>
+  ) {
+    // Check if questionnaire is in use
+    await this.checkQuestionnaireInUse(questionnaireId);
+
+    try {
+      for (const item of updates) {
+        let tableName: string;
+        let idField: string;
+
+        switch (item.type) {
+          case "section":
+            tableName = "questionnaire_sections";
+            idField = "id";
+            break;
+          case "step":
+            tableName = "questionnaire_steps";
+            idField = "id";
+            break;
+          case "question":
+            tableName = "questionnaire_questions";
+            idField = "id";
+            break;
+          default:
+            throw new BadRequestError(`Invalid item type: ${item.type}`);
+        }
+
+        const updateData: any = {
+          order_index: item.order_index,
+          updated_at: new Date().toISOString(),
+        };
+
+        // For steps, we might need to update the parent section
+        if (item.type === "step" && item.parent_id !== undefined) {
+          updateData.questionnaire_section_id = item.parent_id;
+        }
+
+        // For questions, we might need to update the parent step
+        if (item.type === "question" && item.parent_id !== undefined) {
+          updateData.questionnaire_step_id = item.parent_id;
+        }
+
+        const { error } = await this.supabase
+          .from(tableName)
+          .update(updateData)
+          .eq(idField, item.id);
+
+        if (error) throw error;
+      }
+    } catch {
+      throw new InternalServerError("Failed to reorder questionnaire items");
     }
   }
 }
