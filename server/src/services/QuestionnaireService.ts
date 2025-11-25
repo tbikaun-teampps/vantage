@@ -2704,6 +2704,20 @@ export class QuestionnaireService {
             throw new BadRequestError(`Invalid item type: ${item.type}`);
         }
 
+        // Validate that the item belonds to the specified questionnaire
+        const { data: itemData, error: fetchError } = await this.supabase
+          .from(tableName)
+          .select(`id, questionnaire_id`)
+          .eq(idField, item.id)
+          .eq("is_deleted", false)
+          .eq("questionnaire_id", questionnaireId)
+          .single();
+
+        if (fetchError) throw fetchError;
+        if (!itemData) {
+          throw new NotFoundError("Questionnaire item not found");
+        }
+
         const updateData: any = {
           order_index: item.order_index,
           updated_at: new Date().toISOString(),
