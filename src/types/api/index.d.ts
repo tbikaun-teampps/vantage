@@ -8973,6 +8973,70 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/questionnaires/{questionnaireId}/reorder": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          questionnaireId: number;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            id: number;
+            /** @enum {string} */
+            type: "section" | "step" | "question";
+            order_index: number;
+            parent_id?: number;
+          }[];
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              success: boolean;
+              message: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
   "/users/me": {
     parameters: {
       query?: never;

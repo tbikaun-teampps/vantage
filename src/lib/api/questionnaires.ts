@@ -24,6 +24,7 @@ import type {
   GetQuestionnairesResponseData,
   GetQuestionPartsResponseData,
   GetQuestionRatingScaleMappingResponseData,
+  ReorderQuestionnaireBodyData,
   ReorderQuestionPartsResponse,
   UpdateQuestionApplicableRolesBodyData,
   UpdateQuestionApplicableRolesResponseData,
@@ -620,4 +621,18 @@ export async function updateQuestionRatingScaleMapping(
     );
   }
   return response.data.data;
+}
+
+export async function reorderQuestionnaire(
+  questionnaireId: number,
+  data: ReorderQuestionnaireBodyData
+): Promise<void> {
+  const response = await apiClient.patch<ApiResponse<void>>(
+    `/questionnaires/${questionnaireId}/reorder`,
+    data
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to reorder questionnaire");
+  }
 }

@@ -16,11 +16,13 @@ import {
   deleteQuestionRatingScale,
   addAllQuestionnaireRatingScales,
   updateQuestionRoles,
+  reorderQuestionnaire,
 } from "@/lib/api/questionnaires";
 import type {
   CreateQuestionnaireQuestionBodyData,
   CreateQuestionnaireStepBodyData,
   GetQuestionnaireByIdResponseData,
+  ReorderQuestionnaireBodyData,
   UpdateQuestionnaireQuestionBodyData,
   UpdateQuestionnaireQuestionResponseData,
   UpdateQuestionnaireSectionBodyData,
@@ -500,5 +502,27 @@ export function useQuestionActions() {
     updateQuestionRoles: updateRolesMutation.mutateAsync,
     isUpdatingRoles: updateRolesMutation.isPending,
     updateRolesError: updateRolesMutation.error,
+  };
+}
+
+// Reorder questionnaire tree (sections, steps, questions)
+export function useReorderQuestionnaireTree(questionnaireId: number) {
+  const queryClient = useQueryClient();
+
+  const reorderMutation = useMutation({
+    mutationFn: (updates: ReorderQuestionnaireBodyData) =>
+      reorderQuestionnaire(questionnaireId, updates),
+    onSuccess: () => {
+      // Invalidate questionnaire structure cache to refetch with new order
+      queryClient.invalidateQueries({
+        queryKey: questionsKeys.structure(questionnaireId),
+      });
+    },
+  });
+
+  return {
+    reorderTree: reorderMutation.mutateAsync,
+    isReordering: reorderMutation.isPending,
+    reorderError: reorderMutation.error,
   };
 }

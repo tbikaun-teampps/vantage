@@ -10,6 +10,13 @@ const QuestionnaireStatusEnum: QuestionnaireStatus[] = [
   "archived",
 ];
 
+export type QuestionnaireItemType = "section" | "step" | "question";
+export const QuestionnaireItemTypeEnum: QuestionnaireItemType[] = [
+  "section",
+  "step",
+  "question",
+];
+
 // Params and response schema for getting a questionnaire by ID
 export const GetQuestionnaireByIdParamsSchema = z.object({
   questionnaireId: z.coerce.number(),
@@ -74,31 +81,33 @@ export const GetQuestionnaireByIdResponseSchema = z.object({
                     value: z.number(),
                   })
                 ),
-                question_parts: z.array(
-                  z.object({
-                    id: z.number(),
-                    text: z.string(),
-                    answer_type: z.enum(QuestionPartAnswerTypeEnum),
-                    options: z
-                      .union([
-                        z.object({
-                          labels: z.array(z.string()),
-                        }),
-                        z.object({
-                          max: z.number(),
-                          min: z.number(),
-                          step: z.number(),
-                        }),
-                        z.object({
-                          max: z.number(),
-                          min: z.number(),
-                          decimal_places: z.number().optional(),
-                        }),
-                      ])
-                      .nullable(),
-                    order_index: z.number(),
-                  })
-                ).nullable(),
+                question_parts: z
+                  .array(
+                    z.object({
+                      id: z.number(),
+                      text: z.string(),
+                      answer_type: z.enum(QuestionPartAnswerTypeEnum),
+                      options: z
+                        .union([
+                          z.object({
+                            labels: z.array(z.string()),
+                          }),
+                          z.object({
+                            max: z.number(),
+                            min: z.number(),
+                            step: z.number(),
+                          }),
+                          z.object({
+                            max: z.number(),
+                            min: z.number(),
+                            decimal_places: z.number().optional(),
+                          }),
+                        ])
+                        .nullable(),
+                      order_index: z.number(),
+                    })
+                  )
+                  .nullable(),
               })
             ),
           })

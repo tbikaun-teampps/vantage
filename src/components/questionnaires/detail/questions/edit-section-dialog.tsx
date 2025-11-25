@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,7 +15,6 @@ interface EditSectionDialogProps {
   open: boolean;
   onOpenChange: () => void;
   section: QuestionnaireSections[number] | null;
-  onSectionChange: (section: QuestionnaireSections[number]) => void;
   isProcessing: boolean;
   onSave: (sectionId: number, updates: { title: string }) => void;
 }
@@ -23,10 +23,25 @@ export function EditSectionDialog({
   open,
   onOpenChange,
   section,
-  onSectionChange,
   isProcessing,
   onSave,
 }: EditSectionDialogProps) {
+  // Local state for smoother input handling
+  const [title, setTitle] = useState(section?.title ?? "");
+
+  // Sync local state when section changes (dialog opens with new section)
+  useEffect(() => {
+    if (section) {
+      setTitle(section.title);
+    }
+  }, [section]);
+
+  const handleSave = () => {
+    if (section && title.trim()) {
+      onSave(section.id, { title: title.trim() });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -37,11 +52,10 @@ export function EditSectionDialog({
           <Label htmlFor="sectionTitle">Section Title</Label>
           <Input
             id="sectionTitle"
-            value={section?.title ?? ""}
-            onChange={(e) =>
-              section && onSectionChange({ ...section, title: e.target.value })
-            }
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             disabled={isProcessing}
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
           />
         </div>
         <DialogFooter>
@@ -53,10 +67,8 @@ export function EditSectionDialog({
             Cancel
           </Button>
           <Button
-            onClick={() =>
-              section && onSave(section.id, { title: section.title })
-            }
-            disabled={isProcessing}
+            onClick={handleSave}
+            disabled={isProcessing || !title.trim()}
           >
             {isProcessing ? "Saving..." : "Save"}
           </Button>
