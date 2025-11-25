@@ -143,6 +143,11 @@ export type UpdateQuestionRatingScaleBodyData = NonNullable<
 
 export type UpdateQuestionnaireRatingScaleResponseData =
   paths["/questionnaires/questions/{questionId}/rating-scales/{questionRatingScaleId}"]["put"]["responses"]["200"]["content"]["application/json"]["data"];
+
+export type ReorderQuestionnaireBodyData = NonNullable<
+  paths["/questionnaires/{questionnaireId}/reorder"]["patch"]["requestBody"]
+>["content"]["application/json"];
+
 // --- DERIVED ---
 
 export type QuestionnaireSections =
@@ -163,4 +168,5 @@ export type QuestionRoles = QuestionnaireQuestions[number]["question_roles"];
 export type QuestionPart = GetQuestionPartsResponseData[number];
 export type QuestionPartAnswerType = QuestionPart["answer_type"];
 
-export type QuestionnaireStatusEnum = GetQuestionnaireByIdResponseData['status']
+export type QuestionnaireStatusEnum =
+  GetQuestionnaireByIdResponseData["status"];

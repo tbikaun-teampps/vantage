@@ -22,6 +22,7 @@ import {
   DuplicateQuestionnaireResponseSchema,
   GetQuestionnaireByIdParamsSchema,
   GetQuestionnaireByIdResponseSchema,
+  QuestionnaireItemTypeEnum,
   UpdateQuestionnaireBodySchema,
   UpdateQuestionnaireParamsSchema,
   UpdateQuestionnaireResponseSchema,
@@ -31,6 +32,7 @@ import {
   Error404Schema,
   Error500Schema,
 } from "../../schemas/errors.js";
+import { z } from "zod";
 
 export async function questionnairesRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -647,4 +649,45 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
       };
     }
   );
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PATCH",
+    url: "/:questionnaireId/reorder",
+    schema: {
+      params: z.object({
+        questionnaireId: z.coerce.number(),
+      }),
+      body: z.array(
+        z.object({
+          id: z.number(),
+          type: z.enum(QuestionnaireItemTypeEnum),
+          order_index: z.number(),
+          parent_id: z.number().optional(),
+        })
+      ),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          message: z.string(),
+        }),
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+
+      await questionnaireService.reorderQuestionnaire(
+        request.params.questionnaireId,
+        request.body
+      );
+
+      return {
+        success: true,
+        message: "Questionnaire reordered successfully",
+      };
+    },
+  });
 }
