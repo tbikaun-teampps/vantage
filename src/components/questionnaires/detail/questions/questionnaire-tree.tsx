@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { UniqueIdentifier } from "@dnd-kit/core";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -125,54 +126,76 @@ export function QuestionnaireTree({
     context?: string;
   }) => {
     if (!data.title.trim() || !showAddDialog) return;
-    if (showAddDialog.type === "section") {
-      await createSection({
-        questionnaireId: questionnaire.id,
-        title: data.title,
-      });
-    } else if (showAddDialog.type === "step" && showAddDialog.parentId) {
-      await createStep({
-        questionnaire_section_id: showAddDialog.parentId,
-        title: data.title,
-      });
-    } else if (showAddDialog.type === "question" && showAddDialog.parentId) {
-      await createQuestion({
-        questionnaire_step_id: showAddDialog.parentId,
-        title: data.title,
-        question_text: data.question_text || "",
-        context: data.context,
-      });
+    try {
+      if (showAddDialog.type === "section") {
+        await createSection({
+          questionnaireId: questionnaire.id,
+          title: data.title,
+        });
+        toast.success("Section created");
+      } else if (showAddDialog.type === "step" && showAddDialog.parentId) {
+        await createStep({
+          questionnaire_section_id: showAddDialog.parentId,
+          title: data.title,
+        });
+        toast.success("Step created");
+      } else if (showAddDialog.type === "question" && showAddDialog.parentId) {
+        await createQuestion({
+          questionnaire_step_id: showAddDialog.parentId,
+          title: data.title,
+          question_text: data.question_text || "",
+          context: data.context,
+        });
+        toast.success("Question created");
+      }
+      setShowAddDialog(null);
+    } catch {
+      toast.error(`Failed to create ${showAddDialog.type}`);
     }
-    setShowAddDialog(null);
   };
 
   const handleUpdateSection = async (
     sectionId: number,
     updates: UpdateQuestionnaireSectionBodyData
   ) => {
-    await updateSection({ id: sectionId, updates });
-    setEditingSection(null);
+    try {
+      await updateSection({ id: sectionId, updates });
+      toast.success("Section updated");
+      setEditingSection(null);
+    } catch {
+      toast.error("Failed to update section");
+    }
   };
 
   const handleUpdateStep = async (
     stepId: number,
     updates: UpdateQuestionnaireStepBodyData
   ) => {
-    await updateStep({ id: stepId, updates });
-    setEditingStep(null);
+    try {
+      await updateStep({ id: stepId, updates });
+      toast.success("Step updated");
+      setEditingStep(null);
+    } catch {
+      toast.error("Failed to update step");
+    }
   };
 
   const handleDeleteItem = async () => {
     if (!deleteTarget) return;
-    if (deleteTarget.type === "section") {
-      await deleteSection(deleteTarget.id);
-    } else if (deleteTarget.type === "step") {
-      await deleteStep(deleteTarget.id);
-    } else if (deleteTarget.type === "question") {
-      await deleteQuestion(deleteTarget.id);
+    try {
+      if (deleteTarget.type === "section") {
+        await deleteSection(deleteTarget.id);
+      } else if (deleteTarget.type === "step") {
+        await deleteStep(deleteTarget.id);
+      } else if (deleteTarget.type === "question") {
+        await deleteQuestion(deleteTarget.id);
+      }
+      toast.success(`${deleteTarget.type.charAt(0).toUpperCase() + deleteTarget.type.slice(1)} deleted`);
+      setDeleteTarget(null);
+      setSelectedItem(null);
+    } catch {
+      toast.error(`Failed to delete ${deleteTarget.type}`);
     }
-    setDeleteTarget(null);
-    setSelectedItem(null);
   };
 
   return (
