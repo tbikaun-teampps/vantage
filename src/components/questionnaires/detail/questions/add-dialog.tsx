@@ -45,9 +45,19 @@ export function AddDialog({
   const [libraryQuestionText, setLibraryQuestionText] = useState("");
   const [libraryContext, setLibraryContext] = useState("");
 
+  const isQuestion = type === "question";
+  const capitalizedType = type
+    ? type.charAt(0).toUpperCase() + type.slice(1)
+    : "";
+
+  const canSubmit = isQuestion
+    ? (libraryTitle ? libraryTitle.trim() : title.trim()) && !isProcessing
+    : title.trim() && !isProcessing;
+
   const handleAdd = () => {
+    if (!canSubmit) return;
+
     const trimmedTitle = libraryTitle || title;
-    if (!trimmedTitle.trim()) return;
 
     onAdd({
       title: trimmedTitle.trim(),
@@ -61,6 +71,16 @@ export function AddDialog({
     setLibraryQuestionText("");
     setLibraryContext("");
     setSelectedTab("create");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Don't submit if Enter is pressed in a textarea (allow newlines)
+    if (e.target instanceof HTMLTextAreaElement) return;
+
+    if (e.key === "Enter" && canSubmit) {
+      e.preventDefault();
+      handleAdd();
+    }
   };
 
   const handleDialogClose = () => {
@@ -80,14 +100,12 @@ export function AddDialog({
     setSelectedTab("create");
   };
 
-  const isQuestion = type === "question";
-  const capitalizedType = type
-    ? type.charAt(0).toUpperCase() + type.slice(1)
-    : "";
-
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
-      <DialogContent className={isQuestion ? "max-w-4xl" : undefined}>
+      <DialogContent
+        className={isQuestion ? "max-w-4xl" : undefined}
+        onKeyDown={handleKeyDown}
+      >
         <DialogHeader>
           <DialogTitle>Add New {capitalizedType}</DialogTitle>
           <DialogDescription>
@@ -224,15 +242,7 @@ export function AddDialog({
           >
             Cancel
           </Button>
-          <Button
-            onClick={handleAdd}
-            disabled={
-              isQuestion
-                ? (libraryTitle ? !libraryTitle.trim() : !title.trim()) ||
-                  isProcessing
-                : !title.trim() || isProcessing
-            }
-          >
+          <Button onClick={handleAdd} disabled={!canSubmit}>
             {isProcessing ? "Adding..." : `Add ${capitalizedType}`}
           </Button>
         </DialogFooter>
