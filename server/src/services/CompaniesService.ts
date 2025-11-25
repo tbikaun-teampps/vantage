@@ -446,6 +446,12 @@ export class CompaniesService {
         "business_units.regions.sites.asset_groups.work_groups.roles.shared_roles.is_deleted",
         false
       )
+      .order("order_index", { referencedTable: "business_units", ascending: true })
+      .order("order_index", { referencedTable: "business_units.regions", ascending: true })
+      .order("order_index", { referencedTable: "business_units.regions.sites", ascending: true })
+      .order("order_index", { referencedTable: "business_units.regions.sites.asset_groups", ascending: true })
+      .order("order_index", { referencedTable: "business_units.regions.sites.asset_groups.work_groups", ascending: true })
+      .order("order_index", { referencedTable: "business_units.regions.sites.asset_groups.work_groups.roles", ascending: true })
       .single();
 
     if (error) throw error;
