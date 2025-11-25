@@ -167,7 +167,6 @@ export type CreateableTreeNode = Exclude<
 >;
 
 // Tree structure interfaces
-// TODO: change this to hyphen variant derived from api?
 export type CompanyTreeNodeType = AnyTreeNode["type"];
 
 // We don't want to allow "company" type creation

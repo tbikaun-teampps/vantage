@@ -175,7 +175,7 @@ export function AppRouter() {
                 {/* Reports */}
                 <Route
                   path="reports"
-                  element={<div>Reports Page (TODO)</div>}
+                  element={<div>Reports Page</div>}
                 />
 
                 {/* Company Settings */}
