@@ -394,24 +394,26 @@ export class CompaniesService {
   }
 
   async getCompanyTree(companyId: string) {
-    // : Promise<CompanyTree | null>
     const { data, error } = await this.supabase
       .from("companies")
       .select(
         `
-        id,name,code,description,
+        id,
+        name,
+        code,
+        description,
         business_units(
-          id,name,code,description,
+          id,name,code,description,order_index,
           regions(
-            id,name,code,description,
+            id,name,code,description,order_index,
             sites(
-              id,name,code,description,lat,lng,
+              id,name,code,description,lat,lng,order_index,
               asset_groups(
-                id,name,code,description,
+                id,name,code,description,order_index,
                 work_groups(
-                  id,name,code,description,
+                  id,name,code,description,order_index,
                   roles(
-                    id,code,level,reports_to_role_id,
+                    id,code,level,reports_to_role_id,order_index,
                     shared_roles(
                       id,name,description
                     )
