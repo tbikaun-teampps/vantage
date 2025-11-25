@@ -18,6 +18,7 @@ import {
   addTeamMember as addTeamMemberApi,
   updateTeamMember as updateTeamMemberApi,
   removeTeamMember as removeTeamMemberApi,
+  reorderCompanyTree,
 } from "@/lib/api/companies";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import type {
@@ -31,6 +32,7 @@ import type {
   UpdateCompanyResponseData,
   UpdateCompanyEntityResponseData,
   GetCompanyTreeResponseData,
+  ReorderCompanyTreeBodyData,
 } from "@/types/api/companies";
 
 // Helper to convert FormData to JSON object
@@ -366,6 +368,26 @@ export function useTreeNodeActions() {
     deleteTreeNode: deleteMutation.mutateAsync,
     isDeletingNode: deleteMutation.isPending,
     deleteNodeError: deleteMutation.error,
+  };
+}
+
+// Tree reordering hook for drag-and-drop operations
+export function useReorderTree(companyId: string) {
+  const queryClient = useQueryClient();
+
+  const reorderMutation = useMutation({
+    mutationFn: (updates: ReorderCompanyTreeBodyData) =>
+      reorderCompanyTree(companyId, updates),
+    onError: () => {
+      // Refetch tree data on error to restore correct state
+      queryClient.invalidateQueries({ queryKey: companyKeys.tree(companyId) });
+    },
+  });
+
+  return {
+    reorderTree: reorderMutation.mutateAsync,
+    isReordering: reorderMutation.isPending,
+    reorderError: reorderMutation.error,
   };
 }
 

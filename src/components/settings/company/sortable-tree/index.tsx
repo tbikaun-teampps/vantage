@@ -19,7 +19,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import type { CompanyTree } from "@/types/api/companies";
+import type { CompanyTree, ReorderCompanyTreeBodyData } from "@/types/api/companies";
 import type { TreeItems } from "./types";
 import { SortableItem } from "./SortableItem";
 import { companyTreeToTreeItems, type CompanyTreeItem } from "./adapters";
@@ -29,6 +29,7 @@ import {
   getProjection,
   removeItem,
 } from "./utilities";
+import { useReorderTree } from "@/hooks/useCompany";
 
 const INDENTATION_WIDTH = 24; // pixels per depth level
 
@@ -59,6 +60,9 @@ export function SortableTree({
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [offsetLeft, setOffsetLeft] = useState(0);
   const [overId, setOverId] = useState<UniqueIdentifier | null>(null);
+
+  // Use the reorder tree mutation hook
+  const { reorderTree } = useReorderTree(companyTree.id);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -273,12 +277,7 @@ export function SortableTree({
 
     // Build the payload for the reorder API
     // We need to update: 1) the moved item, 2) new parent's siblings, 3) old parent's siblings (if parent changed)
-    const reorderPayload: Array<{
-      id: number;
-      type: string;
-      order_index: number;
-      parent_id?: number;
-    }> = [];
+    const reorderPayload: ReorderCompanyTreeBodyData = [];
 
     // Get the numeric ID from the tree item ID (e.g., "region_5" -> 5)
     const getNumericId = (treeItemId: string): number => {
@@ -292,14 +291,9 @@ export function SortableTree({
     const parentChanged = oldParentId !== parentId;
 
     // Add the moved item
-    const movedItemPayload: {
-      id: number;
-      type: string;
-      order_index: number;
-      parent_id?: number;
-    } = {
+    const movedItemPayload: ReorderCompanyTreeBodyData[number] = {
       id: getNumericId(String(activeItem.id)),
-      type: activeItem.entityType,
+      type: activeItem.entityType as ReorderCompanyTreeBodyData[number]["type"],
       order_index: 0, // Will be updated below
     };
 
@@ -324,7 +318,7 @@ export function SortableTree({
       const siblingItem = sibling as CompanyTreeItem;
       reorderPayload.push({
         id: getNumericId(String(sibling.id)),
-        type: siblingItem.entityType,
+        type: siblingItem.entityType as ReorderCompanyTreeBodyData[number]["type"],
         order_index: index,
       });
     });
@@ -338,14 +332,16 @@ export function SortableTree({
         const siblingItem = sibling as CompanyTreeItem;
         reorderPayload.push({
           id: getNumericId(String(sibling.id)),
-          type: siblingItem.entityType,
+          type: siblingItem.entityType as ReorderCompanyTreeBodyData[number]["type"],
           order_index: index,
         });
       });
     }
 
-    // TODO: Replace with actual API call
-    console.log('🔄 Reorder API Payload:', { updates: reorderPayload });
+    // Call the reorder API
+    reorderTree(reorderPayload).catch((error) => {
+      console.error('Failed to reorder tree:', error);
+    });
   }
 
   // Helper function to validate parent-child relationships

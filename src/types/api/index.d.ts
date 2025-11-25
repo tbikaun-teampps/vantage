@@ -4544,11 +4544,13 @@ export interface paths {
                   name: string;
                   code: string | null;
                   description: string | null;
+                  order_index: number;
                   regions: {
                     id: number;
                     name: string;
                     code: string | null;
                     description: string | null;
+                    order_index: number;
                     sites: {
                       id: number;
                       name: string;
@@ -4556,16 +4558,19 @@ export interface paths {
                       description: string | null;
                       lat: number | null;
                       lng: number | null;
+                      order_index: number;
                       asset_groups: {
                         id: number;
                         name: string;
                         code: string | null;
                         description: string | null;
+                        order_index: number;
                         work_groups: {
                           id: number;
                           name: string;
                           code: string | null;
                           description: string | null;
+                          order_index: number;
                           roles: {
                             id: number;
                             work_group_id: number;
@@ -4585,6 +4590,7 @@ export interface paths {
                             name: string;
                             description: string | null;
                             shared_role_id: number;
+                            order_index: number;
                             reporting_roles: {
                               id: number;
                               work_group_id: number;
@@ -4604,6 +4610,7 @@ export interface paths {
                               name: string;
                               description: string | null;
                               shared_role_id: number;
+                              order_index: number;
                             }[];
                           }[];
                         }[];
@@ -4665,6 +4672,58 @@ export interface paths {
     options?: never;
     head?: never;
     patch?: never;
+    trace?: never;
+  };
+  "/companies/{companyId}/tree/reorder": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** @description Reorder company tree */
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          companyId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            id: number;
+            /** @enum {string} */
+            type:
+              | "business_unit"
+              | "region"
+              | "site"
+              | "asset_group"
+              | "work_group"
+              | "role";
+            order_index: number;
+            parent_id?: number;
+          }[];
+        };
+      };
+      responses: {
+        /** @description Default Response */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+      };
+    };
     trace?: never;
   };
   "/companies/{companyId}/assessments": {
@@ -4997,11 +5056,13 @@ export interface paths {
                   name: string;
                   code: string | null;
                   description: string | null;
+                  order_index: number;
                   regions: {
                     id: number;
                     name: string;
                     code: string | null;
                     description: string | null;
+                    order_index: number;
                     sites: {
                       id: number;
                       name: string;
@@ -5009,16 +5070,19 @@ export interface paths {
                       description: string | null;
                       lat: number | null;
                       lng: number | null;
+                      order_index: number;
                       asset_groups: {
                         id: number;
                         name: string;
                         code: string | null;
                         description: string | null;
+                        order_index: number;
                         work_groups: {
                           id: number;
                           name: string;
                           code: string | null;
                           description: string | null;
+                          order_index: number;
                           roles: {
                             id: number;
                             work_group_id: number;
@@ -5038,6 +5102,7 @@ export interface paths {
                             name: string;
                             description: string | null;
                             shared_role_id: number;
+                            order_index: number;
                             reporting_roles: {
                               id: number;
                               work_group_id: number;
@@ -5057,6 +5122,7 @@ export interface paths {
                               name: string;
                               description: string | null;
                               shared_role_id: number;
+                              order_index: number;
                             }[];
                           }[];
                         }[];
