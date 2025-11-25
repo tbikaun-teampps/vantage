@@ -27,6 +27,7 @@ import type {
 import type { TreeItems } from "./types";
 import { SortableItem } from "./SortableItem";
 import { companyTreeToTreeItems, type CompanyTreeItem } from "./adapters";
+export type { CompanyTreeItem } from "./adapters";
 import {
   flattenTree,
   findItemDeep,
@@ -55,6 +56,8 @@ interface SortableTreeProps {
     item: import("@/types/api/companies").AnyTreeNode | null
   ) => void;
   selectedItem?: import("@/types/api/companies").AnyTreeNode | null;
+  onAddChild?: (parentItem: CompanyTreeItem) => void;
+  onDeleteItem?: (item: CompanyTreeItem) => void;
 }
 
 export function SortableTree({
@@ -63,6 +66,8 @@ export function SortableTree({
   onToggleCollapsed,
   onSelectItem,
   selectedItem,
+  onAddChild,
+  onDeleteItem,
 }: SortableTreeProps) {
   // Transform company tree to TreeItems format
   const initialItems = useMemo(
@@ -687,6 +692,8 @@ export function SortableTree({
               isSelected={getIsSelected(item.id)}
               isValidDropTarget={getIsValidDropTarget(item.id)}
               isDragging={activeId !== null}
+              onAddChild={onAddChild}
+              onDeleteItem={onDeleteItem}
             />
           ))}
         </div>
