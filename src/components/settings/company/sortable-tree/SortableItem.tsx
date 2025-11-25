@@ -2,7 +2,7 @@ import React from "react";
 import type { UniqueIdentifier } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronRight, GripVertical } from "lucide-react";
+import { ChevronRight, GripVertical, MoreVertical, Plus, Trash2 } from "lucide-react";
 import type { CompanyTreeItem } from "./adapters";
 import { cn } from "@/lib/utils";
 import {
@@ -14,6 +14,24 @@ import {
   IconUsersGroup,
   IconWorld,
 } from "@tabler/icons-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+
+// Maps entity type to the child type it can create
+const CHILD_TYPE_MAP: Record<string, { type: string; label: string }> = {
+  company: { type: "business_unit", label: "Business Unit" },
+  business_unit: { type: "region", label: "Region" },
+  region: { type: "site", label: "Site" },
+  site: { type: "asset_group", label: "Asset Group" },
+  asset_group: { type: "work_group", label: "Work Group" },
+  work_group: { type: "role", label: "Role" },
+  role: { type: "role", label: "Reporting Role" },
+};
 
 interface SortableItemProps {
   item: CompanyTreeItem;
@@ -25,6 +43,8 @@ interface SortableItemProps {
   isSelected?: boolean;
   isValidDropTarget?: boolean;
   isDragging?: boolean;
+  onAddChild?: (parentItem: CompanyTreeItem) => void;
+  onDeleteItem?: (item: CompanyTreeItem) => void;
 }
 
 export function SortableItem({
@@ -37,6 +57,8 @@ export function SortableItem({
   isSelected = false,
   isValidDropTarget = false,
   isDragging: isAnyItemDragging = false,
+  onAddChild,
+  onDeleteItem,
 }: SortableItemProps) {
   const {
     attributes,
@@ -134,6 +156,47 @@ export function SortableItem({
       <span className="text-xs text-muted-foreground capitalize">
         {item.entityType.replace("_", " ")}
       </span>
+
+      {/* Actions Dropdown Menu */}
+      {(onAddChild || onDeleteItem) && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {onAddChild && CHILD_TYPE_MAP[item.entityType] && (
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddChild(item);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add {CHILD_TYPE_MAP[item.entityType].label}
+              </DropdownMenuItem>
+            )}
+            {onDeleteItem && !isCompany && (
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteItem(item);
+                }}
+                className="text-red-600 dark:text-red-400"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete {item.entityType.replace("_", " ")}
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
       {/* Drag Handle - hidden for company root, positioned on the right */}
       {!isCompany ? (
