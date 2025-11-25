@@ -14,7 +14,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
-import type { TreeNodeType } from "@/types/company";
+import type { CompanyTreeNodeType } from "@/types/api/companies";
 import type {
   AssessmentMeasurementDefinition,
   AssessmentMeasurementInstance,
@@ -41,7 +41,7 @@ export function AddEditTab({
   const [manualValue, setManualValue] = useState<string>("");
   const [selectedLocation, setSelectedLocation] = useState<{
     id: string;
-    type: TreeNodeType;
+    type: CompanyTreeNodeType;
     name: string;
   } | null>(null);
   const {

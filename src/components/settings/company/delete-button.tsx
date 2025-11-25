@@ -16,11 +16,11 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { useTreeNodeActions } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
-import type { TreeNodeType } from "@/types/company";
+import type { CompanyTreeNodeType } from "@/types/api/companies";
 
 interface DeleteButtonProps {
   item: any;
-  itemType: TreeNodeType;
+  itemType: CompanyTreeNodeType;
   onSuccess?: () => void;
   onError?: (error: string) => void;
   onClearSelection?: () => void;

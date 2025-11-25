@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import type { TreeNodeType } from "@/types/company";
+import type { CompanyTreeNodeType } from "@/types/api/companies";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -35,7 +35,7 @@ export function MeasurementDataAddUploadEdit({
   const [manualValue, setManualValue] = useState<string>("");
   const [selectedLocation, setSelectedLocation] = useState<{
     id: string;
-    type: TreeNodeType;
+    type: CompanyTreeNodeType;
     name: string;
   } | null>(null);
   const [mode, setMode] = useState<"add" | "edit">("add");
@@ -170,7 +170,10 @@ export function MeasurementDataAddUploadEdit({
     return locations;
   }, [instances]);
 
-  const handleNodeMarkers = (node: { id: string; type: TreeNodeType }) => {
+  const handleNodeMarkers = (node: {
+    id: string;
+    type: CompanyTreeNodeType;
+  }) => {
     const key = `${node.type}:${node.id}`;
     return instanceLocations.has(key) ? (
       <IconCheck className="h-4 w-4 text-green-500" />

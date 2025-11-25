@@ -10,7 +10,7 @@ import type { TreeItem, TreeItems } from "./types";
 export type QuestionnaireEntityType = "section" | "step" | "question";
 
 // Union type for all questionnaire tree entities
-export type QuestionnaireEntity =
+type QuestionnaireEntity =
   | QuestionnaireSections[number]
   | QuestionnaireSteps[number]
   | QuestionnaireQuestions[number];
@@ -28,7 +28,7 @@ export interface QuestionnaireTreeItem extends TreeItem {
 /**
  * Generates a unique ID for dnd-kit from entity type and ID
  */
-export function generateTreeItemId(
+function generateTreeItemId(
   entityType: QuestionnaireEntityType,
   entityId: number
 ): UniqueIdentifier {
@@ -106,18 +106,4 @@ export function sectionsToTreeItems(
     children: transformSteps(section.steps),
     collapsed: false,
   }));
-}
-
-/**
- * Updates the tree structure after a drag operation
- * Preserves entity data while allowing structural changes
- */
-export function updateTreeItemChildren(
-  item: QuestionnaireTreeItem,
-  newChildren: QuestionnaireTreeItem[]
-): QuestionnaireTreeItem {
-  return {
-    ...item,
-    children: newChildren,
-  };
 }

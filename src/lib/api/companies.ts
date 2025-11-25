@@ -31,7 +31,7 @@ import type {
   AssetGroupEntity,
   ReorderCompanyTreeBodyData,
 } from "@/types/api/companies";
-import type { TreeNodeType } from "@/types/company";
+import type { CompanyTreeNodeType } from "@/types/api/companies";
 import { apiClient } from "./client";
 import type { ApiResponse } from "./utils";
 
@@ -45,7 +45,7 @@ type EntityType =
   | "roles";
 
 const treeNodeTypeToEntityType: Record<
-  Exclude<TreeNodeType, "company">,
+  Exclude<CompanyTreeNodeType, "company">,
   EntityType
 > = {
   business_unit: "business-units",
@@ -242,7 +242,7 @@ export async function getAssetGroups(
 
 // Tree node operations helper
 export function getEntityTypeFromTreeNodeType(
-  nodeType: TreeNodeType
+  nodeType: CompanyTreeNodeType
 ): EntityType | null {
   if (nodeType === "company") return null;
   return treeNodeTypeToEntityType[nodeType];

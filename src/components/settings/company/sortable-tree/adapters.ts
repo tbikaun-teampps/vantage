@@ -22,38 +22,11 @@ export interface CompanyTreeItem extends TreeItem {
 /**
  * Generates a unique ID for dnd-kit from entity type and ID
  */
-export function generateTreeItemId(
+function generateTreeItemId(
   entityType: 'company' | 'business_unit' | 'region' | 'site' | 'asset_group' | 'work_group' | 'role',
   entityId: string | number
 ): UniqueIdentifier {
   return `${entityType}_${entityId}`;
-}
-
-/**
- * Parses a tree item ID back into entity type and ID
- */
-export function parseTreeItemId(id: UniqueIdentifier): {
-  entityType: 'company' | 'business_unit' | 'region' | 'site' | 'asset_group' | 'work_group' | 'role';
-  entityId: string | number;
-} {
-  const idStr = String(id);
-
-  // Match against known entity types (which may contain underscores)
-  // Order matters: check longer names first
-  const entityTypes = ['business_unit', 'asset_group', 'work_group', 'company', 'region', 'site', 'role'] as const;
-
-  for (const type of entityTypes) {
-    if (idStr.startsWith(type + '_')) {
-      const entityId = idStr.slice(type.length + 1); // +1 for the underscore
-      return {
-        entityType: type,
-        entityId: type === 'company' ? entityId : Number(entityId),
-      };
-    }
-  }
-
-  // Fallback (shouldn't happen with valid IDs)
-  throw new Error(`Invalid tree item ID format: ${idStr}`);
 }
 
 /**
@@ -174,18 +147,4 @@ export function companyTreeToTreeItems(companyTree: CompanyTree): TreeItems {
 
   // Return array with single company root
   return [companyItem];
-}
-
-/**
- * Updates the tree structure after a drag operation
- * Preserves entity data while allowing structural changes
- */
-export function updateTreeItemChildren(
-  item: CompanyTreeItem,
-  newChildren: CompanyTreeItem[]
-): CompanyTreeItem {
-  return {
-    ...item,
-    children: newChildren,
-  };
 }
