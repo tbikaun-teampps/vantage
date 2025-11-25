@@ -874,16 +874,18 @@ export const RHFRoleForm: React.FC<
               />
             </FormSection>
 
-            <FormSection title="Direct Reports">
-              <EntityBadges
-                entities={selectedItem.reporting_roles || []}
-                icon={IconUser}
-                parentItem={selectedItem}
-                parentType="role"
-                addType="role"
-                onExpandParentNode={onExpandParentNode}
-              />
-            </FormSection>
+            {!selectedItem.reports_to_role_id && (
+              <FormSection title="Direct Reports">
+                <EntityBadges
+                  entities={selectedItem.reporting_roles || []}
+                  icon={IconUser}
+                  parentItem={selectedItem}
+                  parentType="role"
+                  addType="role"
+                  onExpandParentNode={onExpandParentNode}
+                />
+              </FormSection>
+            )}
           </div>
         </form>
       </div>
