@@ -13,16 +13,21 @@ import { useTreeNodeActions, useCompanyTree } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { toast } from "sonner";
 import type { RoleFormData } from "./schemas";
-import type { AnyTreeNode } from "@/types/api/companies";
+import type { AnyTreeNode, CompanyTreeNodeType } from "@/types/api/companies";
 
 interface DetailPanelProps {
   selectedItem: AnyTreeNode | null;
   setSelectedItem: (item: AnyTreeNode | null) => void;
+  onExpandParentNode?: (
+    parentType: CompanyTreeNodeType,
+    parentId: string | number
+  ) => void;
 }
 
 export const DetailPanel: React.FC<DetailPanelProps> = ({
   selectedItem,
   setSelectedItem,
+  onExpandParentNode,
 }) => {
   const companyId = useCompanyFromUrl();
   const { updateTreeNode } = useTreeNodeActions();
@@ -163,6 +168,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
             selectedItem={selectedItem}
             setSelectedItem={setSelectedItem}
             onSave={handleSave}
+            onExpandParentNode={onExpandParentNode}
           />
         );
 
@@ -174,6 +180,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
             setSelectedItem={setSelectedItem}
             onSave={handleSave}
             onDelete={() => console.log("Business Unit deleted!")}
+            onExpandParentNode={onExpandParentNode}
           />
         );
 
@@ -185,6 +192,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
             setSelectedItem={setSelectedItem}
             onSave={handleSave}
             onDelete={() => console.log("Region deleted!")}
+            onExpandParentNode={onExpandParentNode}
           />
         );
 
@@ -196,6 +204,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
             setSelectedItem={setSelectedItem}
             onSave={handleSave}
             onDelete={() => console.log("Site deleted!")}
+            onExpandParentNode={onExpandParentNode}
           />
         );
 
@@ -207,6 +216,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
             setSelectedItem={setSelectedItem}
             onSave={handleSave}
             onDelete={() => console.log("Asset Group deleted!")}
+            onExpandParentNode={onExpandParentNode}
           />
         );
 
@@ -218,6 +228,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
             setSelectedItem={setSelectedItem}
             onSave={handleSave}
             onDelete={() => console.log("Work Group deleted!")}
+            onExpandParentNode={onExpandParentNode}
           />
         );
 
@@ -229,6 +240,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
             setSelectedItem={setSelectedItem}
             onSave={handleRoleSave}
             onDelete={() => console.log("Role deleted!")}
+            onExpandParentNode={onExpandParentNode}
           />
         );
 

@@ -17,6 +17,10 @@ interface EntityBadgesProps {
   parentType: CompanyTreeNodeType;
   addType: CreateableTreeNodeType;
   onAddSuccess?: () => void;
+  onExpandParentNode?: (
+    parentType: CompanyTreeNodeType,
+    parentId: string | number
+  ) => void;
 }
 
 export const EntityBadges: React.FC<EntityBadgesProps> = ({
@@ -26,6 +30,7 @@ export const EntityBadges: React.FC<EntityBadgesProps> = ({
   parentType,
   addType,
   onAddSuccess,
+  onExpandParentNode,
 }) => {
   const userCanAdmin = useCanAdmin();
   return (
@@ -51,7 +56,11 @@ export const EntityBadges: React.FC<EntityBadgesProps> = ({
           parentItem={parentItem as CreateableTreeNode}
           parentType={parentType as CreateableTreeNodeType}
           addType={addType}
-          onSuccess={onAddSuccess}
+          onSuccess={() => {
+            // Expand the parent node to show the newly added child
+            onExpandParentNode?.(parentType, parentItem.id);
+            onAddSuccess?.();
+          }}
         />
       )}
     </div>
