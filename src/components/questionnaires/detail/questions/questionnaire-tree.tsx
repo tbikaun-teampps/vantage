@@ -139,7 +139,9 @@ export function QuestionnaireTree({
           title: data.title,
         });
         // Auto-expand the parent section
-        setExpandedNodes((prev) => new Set(prev).add(`section_${showAddDialog.parentId}`));
+        setExpandedNodes((prev) =>
+          new Set(prev).add(`section_${showAddDialog.parentId}`)
+        );
         toast.success("Step created");
       } else if (showAddDialog.type === "question" && showAddDialog.parentId) {
         await createQuestion({
@@ -149,7 +151,9 @@ export function QuestionnaireTree({
           context: data.context,
         });
         // Auto-expand the parent step
-        setExpandedNodes((prev) => new Set(prev).add(`step_${showAddDialog.parentId}`));
+        setExpandedNodes((prev) =>
+          new Set(prev).add(`step_${showAddDialog.parentId}`)
+        );
         toast.success("Question created");
       }
       setShowAddDialog(null);
@@ -194,7 +198,9 @@ export function QuestionnaireTree({
       } else if (deleteTarget.type === "question") {
         await deleteQuestion(deleteTarget.id);
       }
-      toast.success(`${deleteTarget.type.charAt(0).toUpperCase() + deleteTarget.type.slice(1)} deleted`);
+      toast.success(
+        `${deleteTarget.type.charAt(0).toUpperCase() + deleteTarget.type.slice(1)} deleted`
+      );
       setDeleteTarget(null);
       setSelectedItem(null);
     } catch {
@@ -245,33 +251,7 @@ export function QuestionnaireTree({
           </div>
         )}
       </div>
-      {/* {userCanAdmin && (
-        <div className="flex items-center justify-between mb-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="w-full">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAddSectionDialog(true)}
-                  disabled={isProcessing || !hasRatingScales}
-                  className="w-full border-dashed h-8"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Section
-                </Button>
-              </div>
-            </TooltipTrigger>
-            {!hasRatingScales && (
-              <TooltipContent>
-                <p>Add rating scales first in the Rating Scales tab</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </div>
-      )} */}
-
-      <ScrollArea className="flex-1 min-h-0">
+      <ScrollArea className="flex-1 min-h-0 mb-4">
         {sections.length > 0 ? (
           <SortableTree
             questionnaireId={questionnaire.id}
