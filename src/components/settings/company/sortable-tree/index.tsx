@@ -22,6 +22,7 @@ import {
 import type {
   CompanyTree,
   ReorderCompanyTreeBodyData,
+  RoleNode,
 } from "@/types/api/companies";
 import type { TreeItems } from "./types";
 import { SortableItem } from "./SortableItem";
@@ -216,6 +217,27 @@ export function SortableTree({
         `Cannot move ${activeItem.entityType} to the selected location. This item can only be moved under a ${validParentEntities[activeItem.entityType]}.`
       );
       return;
+    }
+
+    // Check for duplicate shared_role_id within the target work group
+    if (activeItem.entityType === "role") {
+      const targetWorkGroup = findParentWorkGroup(parentId);
+      if (targetWorkGroup) {
+        const draggedSharedRoleId = (activeItem.entity as RoleNode)
+          .shared_role_id;
+        const duplicate = findDuplicateRoleInWorkGroup(
+          targetWorkGroup,
+          draggedSharedRoleId,
+          activeItem.id
+        );
+
+        if (duplicate) {
+          toast.error(
+            `Cannot move role here. "${duplicate.name}" already exists in this work group.`
+          );
+          return;
+        }
+      }
     }
 
     // Step 1: Remove the item from its current location (preserving its children)
@@ -460,6 +482,76 @@ export function SortableTree({
     return false;
   }
 
+  // Helper to find the parent work group for a given target parent ID
+  function findParentWorkGroup(
+    targetParentId: UniqueIdentifier | null
+  ): CompanyTreeItem | null {
+    if (!targetParentId) return null;
+
+    const parent = findItemDeep(items, targetParentId) as
+      | CompanyTreeItem
+      | undefined;
+    if (!parent) return null;
+
+    // If dropping directly under a work_group, return it
+    if (parent.entityType === "work_group") return parent;
+
+    // If dropping under a role, find its parent work_group
+    if (parent.entityType === "role") {
+      const findWorkGroupContaining = (
+        nodes: TreeItems,
+        roleId: UniqueIdentifier
+      ): CompanyTreeItem | null => {
+        for (const node of nodes) {
+          const item = node as CompanyTreeItem;
+          if (item.entityType === "work_group") {
+            const containsRole = item.children.some(
+              (child) =>
+                child.id === roleId ||
+                child.children?.some((grandchild) => grandchild.id === roleId)
+            );
+            if (containsRole) return item;
+          }
+          const found = findWorkGroupContaining(item.children, roleId);
+          if (found) return found;
+        }
+        return null;
+      };
+      return findWorkGroupContaining(items, parent.id);
+    }
+
+    return null;
+  }
+
+  // Helper to check for duplicate shared_role_id in a work group
+  function findDuplicateRoleInWorkGroup(
+    workGroup: CompanyTreeItem,
+    sharedRoleId: number,
+    excludeRoleId: UniqueIdentifier
+  ): CompanyTreeItem | null {
+    for (const child of workGroup.children) {
+      const childItem = child as CompanyTreeItem;
+      if (childItem.entityType !== "role") continue;
+      if (childItem.id === excludeRoleId) continue;
+
+      if ((childItem.entity as RoleNode).shared_role_id === sharedRoleId) {
+        return childItem;
+      }
+
+      // Check reporting roles (children of this role)
+      for (const grandchild of childItem.children) {
+        const grandchildItem = grandchild as CompanyTreeItem;
+        if (grandchildItem.id === excludeRoleId) continue;
+        if (
+          (grandchildItem.entity as RoleNode).shared_role_id === sharedRoleId
+        ) {
+          return grandchildItem;
+        }
+      }
+    }
+    return null;
+  }
+
   function handleDragCancel() {
     resetState();
   }
@@ -524,6 +616,33 @@ export function SortableTree({
     };
 
     const expectedParentTypes = validParentTypes[draggedItem.entityType] || [];
+
+    // For roles, check if dropping would create a duplicate in the target work group
+    if (draggedItem.entityType === "role") {
+      // Determine the target work group based on where we're trying to drop
+      let targetWorkGroup: CompanyTreeItem | null = null;
+
+      if (targetItem.entityType === "work_group") {
+        targetWorkGroup = targetItem;
+      } else if (targetItem.entityType === "role") {
+        // Find the work group containing this role
+        targetWorkGroup = findParentWorkGroup(targetItem.id);
+      }
+
+      if (targetWorkGroup) {
+        const draggedSharedRoleId = (draggedItem.entity as RoleNode)
+          .shared_role_id;
+        const duplicate = findDuplicateRoleInWorkGroup(
+          targetWorkGroup,
+          draggedSharedRoleId,
+          draggedItem.id
+        );
+
+        if (duplicate) {
+          return false; // Invalid - would create duplicate
+        }
+      }
+    }
 
     // Highlight items of valid parent types
     if (expectedParentTypes.includes(targetItem.entityType)) {
