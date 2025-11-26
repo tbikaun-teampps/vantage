@@ -3,9 +3,9 @@ import { QuestionPartAnswerTypeEnum } from "./questions";
 import { QuestionnaireStatus } from "../../types/entities/questionnaires";
 import { WeightedScoringConfigSchema } from "../../validation/weighted-scoring-schema";
 
-const QuestionnaireStatusEnum: QuestionnaireStatus[] = [
+export const QuestionnaireStatusEnum: QuestionnaireStatus[] = [
   "draft",
-  "active",
+  "published",
   "under_review",
   "archived",
 ];

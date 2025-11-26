@@ -1,6 +1,5 @@
 import {
   IconPencil,
-  IconClock,
   IconCircleCheckFilled,
   IconEye,
   IconArchive,
@@ -40,9 +39,9 @@ export function QuestionnairesDataTable({
   // Status icons helper
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "active":
-        return <IconClock className="h-3 w-3 text-blue-500" />;
-      case "completed":
+      case "draft":
+        return <IconPencil className="h-3 w-3 text-blue-500" />;
+      case "published":
         return <IconCircleCheckFilled className="h-3 w-3 text-green-500" />;
       case "under_review":
         return <IconEye className="h-3 w-3 text-yellow-500" />;
@@ -148,8 +147,8 @@ export function QuestionnairesDataTable({
 
   // Filter data by status for tabs
   const allQuestionnaires = questionnaires;
-  const activeQuestionnaires = questionnaires.filter(
-    (q) => q.status === "active"
+  const publishedQuestionnaires = questionnaires.filter(
+    (q) => q.status === "published"
   );
   const draftQuestionnaires = questionnaires.filter(
     (q) => q.status === "draft"
@@ -171,11 +170,11 @@ export function QuestionnairesDataTable({
       emptyStateDescription: "Create your first questionnaire to get started.",
     },
     {
-      value: "active",
-      label: "Active",
-      data: activeQuestionnaires,
-      emptyStateTitle: "No active questionnaires",
-      emptyStateDescription: "No active questionnaires at the moment.",
+      value: "published",
+      label: "Published",
+      data: publishedQuestionnaires,
+      emptyStateTitle: "No published questionnaires",
+      emptyStateDescription: "No published questionnaires at the moment.",
     },
     {
       value: "under_review",

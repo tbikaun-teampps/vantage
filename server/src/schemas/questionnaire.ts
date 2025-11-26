@@ -5,7 +5,7 @@ import { QuestionnaireStatus } from "../types/entities/questionnaires.js";
 // Enum schemas
 const QuestionnaireStatusEnum: QuestionnaireStatus[] = [
   "draft",
-  "active",
+  "published",
   "under_review",
   "archived",
 ];

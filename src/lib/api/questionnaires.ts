@@ -21,6 +21,7 @@ import type {
   DuplicateQuestionPartResponseData,
   GetQuestionnaireByIdResponseData,
   GetQuestionnaireRatingScalesResponseData,
+  GetQuestionnairesParams,
   GetQuestionnairesResponseData,
   GetQuestionPartsResponseData,
   GetQuestionRatingScaleMappingResponseData,
@@ -51,11 +52,12 @@ import type {
 // ============================================================================
 
 export async function getQuestionnaires(
-  companyId: string
+  companyId: string,
+  params: GetQuestionnairesParams = {}
 ): Promise<GetQuestionnairesResponseData> {
   const response = await apiClient.get<
     ApiResponse<GetQuestionnairesResponseData>
-  >(`/companies/${companyId}/questionnaires`);
+  >(`/companies/${companyId}/questionnaires`, { params });
 
   if (!response.data.success) {
     throw new Error(

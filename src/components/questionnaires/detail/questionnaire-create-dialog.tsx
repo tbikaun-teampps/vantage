@@ -176,7 +176,7 @@ export default function QuestionnaireCreateDialog({
               <SelectContent>
                 <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="under_review">Under Review</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
               </SelectContent>
             </Select>
           </div>
