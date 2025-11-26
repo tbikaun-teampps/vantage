@@ -128,7 +128,7 @@ jobs:
         run: |
           if [ -f "supabase/seed.sql" ]; then
             echo "🔄 Resetting staging database (migrations + seed)..."
-            supabase db reset --linked
+            supabase db reset --linked --yes
           fi
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
