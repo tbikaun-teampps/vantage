@@ -5303,7 +5303,9 @@ export interface paths {
     /** @description Get all questionnaires for a given company */
     get: {
       parameters: {
-        query?: never;
+        query?: {
+          status?: "draft" | "published" | "under_review" | "archived";
+        };
         header?: never;
         path: {
           companyId: string;
@@ -5326,7 +5328,7 @@ export interface paths {
                 description: string | null;
                 guidelines: string | null;
                 /** @enum {string} */
-                status: "draft" | "active" | "under_review" | "archived";
+                status: "draft" | "published" | "under_review" | "archived";
                 created_at: string;
                 updated_at: string;
                 section_count: number;
@@ -7777,7 +7779,8 @@ export interface paths {
               | "scale"
               | "labelled_scale"
               | "percentage";
-            options: unknown;
+            /** @default {} */
+            options?: unknown;
           };
         };
       };
@@ -8446,7 +8449,7 @@ export interface paths {
                 description: string | null;
                 guidelines: string | null;
                 /** @enum {string} */
-                status: "draft" | "active" | "under_review" | "archived";
+                status: "draft" | "published" | "under_review" | "archived";
                 created_at: string;
                 updated_at: string;
                 section_count: number;
@@ -8533,6 +8536,7 @@ export interface paths {
                                       min: number;
                                       decimal_places?: number;
                                     }
+                                  | Record<string, never>
                                 )
                               | null;
                             order_index: number;
@@ -8592,7 +8596,7 @@ export interface paths {
             description?: string;
             guidelines?: string;
             /** @enum {string} */
-            status?: "draft" | "active" | "under_review" | "archived";
+            status?: "draft" | "published" | "under_review" | "archived";
           };
         };
       };
@@ -8611,7 +8615,7 @@ export interface paths {
                 description: string | null;
                 guidelines: string | null;
                 /** @enum {string} */
-                status: "draft" | "active" | "under_review" | "archived";
+                status: "draft" | "published" | "under_review" | "archived";
                 created_at: string;
                 updated_at: string;
               };
@@ -8747,7 +8751,7 @@ export interface paths {
             guidelines?: string;
             company_id: string;
             /** @enum {string} */
-            status?: "draft" | "active" | "under_review" | "archived";
+            status?: "draft" | "published" | "under_review" | "archived";
           };
         };
       };
@@ -8766,7 +8770,7 @@ export interface paths {
                 description: string | null;
                 guidelines: string | null;
                 /** @enum {string} */
-                status: "draft" | "active" | "under_review" | "archived";
+                status: "draft" | "published" | "under_review" | "archived";
                 created_at: string;
                 updated_at: string;
               };
@@ -8830,7 +8834,7 @@ export interface paths {
                 description: string | null;
                 guidelines: string | null;
                 /** @enum {string} */
-                status: "draft" | "active" | "under_review" | "archived";
+                status: "draft" | "published" | "under_review" | "archived";
                 created_at: string;
                 updated_at: string;
               };

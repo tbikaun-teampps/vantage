@@ -14,6 +14,10 @@ import type {
   GetAssessmentsResponseData,
   UpdateAssessmentBodyData,
 } from "@/types/api/assessments";
+import type {
+  GetQuestionnairesParams,
+  GetQuestionnairesResponseData,
+} from "@/types/api/questionnaire";
 
 // Query key factory for assessments
 const assessmentKeys = {
@@ -53,10 +57,15 @@ export function useAssessmentById(id: number) {
 }
 
 // Hook to fetch questionnaires for assessment creation
-export function useQuestionnaires(companyId: string, enabled: boolean = true) {
+export function useQuestionnaires(
+  companyId: string,
+  params: GetQuestionnairesParams = {},
+  enabled: boolean = true
+) {
   return useQuery({
     queryKey: assessmentKeys.questionnaires(companyId),
-    queryFn: () => getQuestionnaires(companyId),
+    queryFn: (): Promise<GetQuestionnairesResponseData> =>
+      getQuestionnaires(companyId, params),
     staleTime: 15 * 60 * 1000, // 15 minutes - questionnaires change infrequently
     enabled,
   });

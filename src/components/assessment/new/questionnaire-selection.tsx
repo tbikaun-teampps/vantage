@@ -91,7 +91,7 @@ export function QuestionnaireSelection({
             </p>
           )}
           <p className="text-xs text-muted-foreground">
-            Only active questionnaires are shown. Under review, draft and
+            Only published questionnaires are shown. Draft, under review and
             archived questionnaires are hidden from this list.
           </p>
           {questionnaires.length === 0 && (
