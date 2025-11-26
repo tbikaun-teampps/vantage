@@ -193,6 +193,20 @@ export const DuplicateQuestionnaireResponseSchema = z.object({
   }),
 });
 
+// Response schema for importing a questionnaire
+export const ImportQuestionnaireResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.object({
+    id: z.number(),
+    name: z.string(),
+    description: z.string().nullable(),
+    guidelines: z.string().nullable(),
+    status: z.enum(QuestionnaireStatusEnum),
+    created_at: z.string(),
+    updated_at: z.string(),
+  }),
+});
+
 // Param and response schema for checking questionnaire usage
 export const CheckQuestionnaireUsageParamsSchema = z.object({
   questionnaireId: z.coerce.number(),

@@ -107,8 +107,8 @@ export type UpdateQuestionApplicableRolesResponseData =
 // export type ImportQuestionnnaireBodyData =
 //   paths["/questionnaires/import"]["post"]["requestBody"]["content"]["application/json"];
 
-// export type ImportQuestionnaireResponseData =
-//   paths["/questionnaires/import"]["post"]["responses"]["201"]["content"]["application/json"]["data"];
+export type ImportQuestionnaireResponseData =
+  paths["/questionnaires/import"]["post"]["responses"]["201"]["content"]["application/json"]["data"];
 
 export type GetQuestionPartsResponseData =
   paths["/questionnaires/questions/{questionId}/parts"]["get"]["responses"]["200"]["content"]["application/json"]["data"];

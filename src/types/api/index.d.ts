@@ -7522,8 +7522,8 @@ export interface paths {
         query?: never;
         header?: never;
         path: {
-          question_id: number;
-          question_rating_scale_id: number;
+          questionId: number;
+          questionRatingScaleId: number;
         };
         cookie?: never;
       };
@@ -8977,6 +8977,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** @description Import a questionnaire from a CSV file */
     post: {
       parameters: {
         query?: never;
@@ -8987,11 +8988,53 @@ export interface paths {
       requestBody?: never;
       responses: {
         /** @description Default Response */
-        200: {
+        201: {
           headers: {
             [name: string]: unknown;
           };
-          content?: never;
+          content: {
+            "application/json": {
+              success: boolean;
+              data: {
+                id: number;
+                name: string;
+                description: string | null;
+                guidelines: string | null;
+                /** @enum {string} */
+                status: "draft" | "published" | "under_review" | "archived";
+                created_at: string;
+                updated_at: string;
+              };
+            };
+          };
+        };
+        /** @description Default Response */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
+        };
+        /** @description Default Response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              success: false;
+              error: string;
+              message?: string;
+            };
+          };
         };
       };
     };

@@ -478,7 +478,7 @@ export async function importQuestionnaire(data: {
   companyId: string;
   description?: string;
   guidelines?: string;
-}): Promise<any> {
+}): Promise<CreateQuestionnaireResponseData> {
   const formData = new FormData();
   formData.append("file", data.file);
   formData.append("name", data.name);
@@ -490,7 +490,7 @@ export async function importQuestionnaire(data: {
     formData.append("guidelines", data.guidelines);
   }
 
-  const response = await apiClient.post<ApiResponse<any>>(
+  const response = await apiClient.post<ApiResponse<CreateQuestionnaireResponseData>>(
     `/questionnaires/import`,
     formData,
     {
@@ -501,7 +501,12 @@ export async function importQuestionnaire(data: {
   );
 
   if (!response.data.success) {
-    throw new Error(response.data.error || "Failed to import questionnaire");
+    const error = new Error(response.data.error || "Failed to import questionnaire");
+    // Attach validation errors to the error object for the caller to handle
+    (error as Error & { validationErrors?: string[] }).validationErrors = (
+      response.data as ApiResponse<CreateQuestionnaireResponseData> & { errors?: string[] }
+    ).errors;
+    throw error;
   }
 
   return response.data.data;

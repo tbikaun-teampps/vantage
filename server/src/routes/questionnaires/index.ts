@@ -22,6 +22,7 @@ import {
   DuplicateQuestionnaireResponseSchema,
   GetQuestionnaireByIdParamsSchema,
   GetQuestionnaireByIdResponseSchema,
+  ImportQuestionnaireResponseSchema,
   QuestionnaireItemTypeEnum,
   UpdateQuestionnaireBodySchema,
   UpdateQuestionnaireParamsSchema,
@@ -31,6 +32,7 @@ import {
   Error403Schema,
   Error404Schema,
   Error500Schema,
+  ValidationErrorSchema,
 } from "../../schemas/errors.js";
 import { z } from "zod";
 
@@ -248,14 +250,19 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
    * Import questionnaire - to be implemented
    * This endpoint will handle importing a questionnaire from a CSV file.
    */
-  fastify.post(
-    "/import",
-    {
-      schema: {
-        consumes: ["multipart/form-data"],
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/import",
+    schema: {
+      description: "Import a questionnaire from a CSV file",
+      consumes: ["multipart/form-data"],
+      response: {
+        201: ImportQuestionnaireResponseSchema,
+        400: ValidationErrorSchema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const userId = request.user.id;
 
       // Parse multipart form data using parts()
@@ -643,12 +650,16 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
         );
       }
 
+      if (!questionnaire) {
+        throw new BadRequestError("Failed to import questionnaire");
+      }
+
       return {
         success: true,
         data: questionnaire,
       };
-    }
-  );
+    },
+  });
 
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "PATCH",
