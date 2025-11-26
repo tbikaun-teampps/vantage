@@ -191,6 +191,10 @@ apiClient.interceptors.response.use(
     if (error.response?.data?.error) {
       error.message = error.response.data.error;
     }
+    // Attach validation errors array if present (for CSV import validation, etc.)
+    if (error.response?.data?.errors) {
+      error.validationErrors = error.response.data.errors;
+    }
 
     return Promise.reject(error);
   }
