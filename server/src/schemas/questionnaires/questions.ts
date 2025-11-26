@@ -160,7 +160,7 @@ export const CreateQuestionPartBodySchema = z.object({
   text: z.string(),
   order_index: z.number(),
   answer_type: z.enum(QuestionPartAnswerTypeEnum),
-  options: z.any(),
+  options: z.any().default({}),
 });
 
 export const CreateQuestionPartResponseSchema = z.object({
