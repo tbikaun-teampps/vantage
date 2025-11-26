@@ -54,8 +54,10 @@ export function MeasurementDataAddUploadEdit({
   );
 
   // Convert selected location to API format for querying existing measurements
+  // Note: company-level queries are not supported by the API
   const location = useMemo(() => {
     if (!selectedLocation) return undefined;
+    if (selectedLocation.type === "company") return undefined;
     return {
       id: parseInt(selectedLocation.id),
       type: selectedLocation.type,

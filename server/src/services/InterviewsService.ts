@@ -513,7 +513,7 @@ export class InterviewsService {
       `
       )
       .eq("id", interviewData.assessment_id)
-      .single()) as { data: AssessmentWithQuestionnaire | null; error };
+      .single()) as { data: AssessmentWithQuestionnaire | null; error: Error | null };
 
     if (assessmentError) throw assessmentError;
     if (!assessment) throw new Error("Assessment not found");

@@ -1667,6 +1667,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get measurements for a program */
     get: {
       parameters: {
         query?: {
@@ -1756,6 +1757,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get allowed measurement definitions for a program */
     get: {
       parameters: {
         query?: never;
@@ -1829,6 +1831,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get available measurements for a program */
     get: {
       parameters: {
         query?: never;
@@ -1915,6 +1918,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** @description Add measurement definitions to a program */
     post: {
       parameters: {
         query?: never;
@@ -1997,6 +2001,7 @@ export interface paths {
     get?: never;
     put?: never;
     post?: never;
+    /** @description Remove a measurement definition from a program */
     delete: {
       parameters: {
         query?: never;
@@ -2063,6 +2068,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get calculated measurements for a program phase */
     get: {
       parameters: {
         query?: {
@@ -2193,13 +2199,20 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    /** @description Get calculated measurement for a program phase */
     get: {
       parameters: {
         query?: {
           measurementId?: number;
           measurementDefinitionId?: number;
           location_id?: number;
-          location_type?: string;
+          location_type?:
+            | "business_unit"
+            | "region"
+            | "site"
+            | "asset_group"
+            | "work_group"
+            | "role";
         };
         header?: never;
         path: {
@@ -2298,6 +2311,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
+    /** @description Create new calculated measurement data */
     post: {
       parameters: {
         query?: never;
@@ -2419,6 +2433,7 @@ export interface paths {
       cookie?: never;
     };
     get?: never;
+    /** @description Update existing calculated measurement data */
     put: {
       parameters: {
         query?: never;
@@ -2510,6 +2525,7 @@ export interface paths {
       };
     };
     post?: never;
+    /** @description Delete calculated measurement data */
     delete: {
       parameters: {
         query?: never;
@@ -7722,6 +7738,9 @@ export interface paths {
                   | null;
                 order_index: number;
                 text: string;
+                questionnaire_question_id: number;
+                created_at: string;
+                updated_at: string;
               }[];
             };
           };
@@ -7795,7 +7814,6 @@ export interface paths {
               success: boolean;
               data: {
                 id: number;
-                questionnaire_question_id: number;
                 /** @enum {string} */
                 answer_type:
                   | "number"
@@ -7803,7 +7821,6 @@ export interface paths {
                   | "scale"
                   | "labelled_scale"
                   | "percentage";
-                text: string;
                 options:
                   | (
                       | {
@@ -7819,9 +7836,12 @@ export interface paths {
                           min: number;
                           decimal_places?: number;
                         }
+                      | Record<string, never>
                     )
                   | null;
                 order_index: number;
+                text: string;
+                questionnaire_question_id: number;
                 created_at: string;
                 updated_at: string;
               };
@@ -7922,7 +7942,6 @@ export interface paths {
               success: boolean;
               data: {
                 id: number;
-                questionnaire_question_id: number;
                 /** @enum {string} */
                 answer_type:
                   | "number"
@@ -7930,7 +7949,6 @@ export interface paths {
                   | "scale"
                   | "labelled_scale"
                   | "percentage";
-                text: string;
                 options:
                   | (
                       | {
@@ -7946,9 +7964,12 @@ export interface paths {
                           min: number;
                           decimal_places?: number;
                         }
+                      | Record<string, never>
                     )
                   | null;
                 order_index: number;
+                text: string;
+                questionnaire_question_id: number;
                 created_at: string;
                 updated_at: string;
               };
@@ -8105,6 +8126,9 @@ export interface paths {
                   | null;
                 order_index: number;
                 text: string;
+                questionnaire_question_id: number;
+                created_at: string;
+                updated_at: string;
               };
             };
           };
@@ -13029,7 +13053,7 @@ export interface paths {
             assessment_id: number;
             name: string;
             interviewer_id: string | null;
-            interviewee_id?: string;
+            interviewee_id: string | null;
             notes?: string;
             /** @default false */
             is_individual?: boolean;
@@ -13143,29 +13167,16 @@ export interface paths {
                   full_name: string;
                   email: string;
                 };
-                access_code: string | null;
-                assessment_id: number | null;
-                assigned_role_id: number | null;
-                company_id: string;
-                completed_at: string | null;
-                created_at: string;
-                created_by: string;
-                deleted_at: string | null;
-                due_at: string | null;
-                enabled: boolean;
                 id: number;
-                interview_contact_id: number | null;
-                interviewee_id: string | null;
-                interviewer_id: string | null;
-                is_deleted: boolean;
-                is_individual: boolean;
+                questionnaire_id: number | null;
                 name: string;
                 notes: string | null;
-                program_id: number | null;
-                program_phase_id: number | null;
-                questionnaire_id: number | null;
                 /** @enum {string} */
                 status: "pending" | "in_progress" | "completed" | "cancelled";
+                is_individual: boolean;
+                enabled: boolean;
+                assessment_id: number | null;
+                created_at: string;
                 updated_at: string;
               }[];
             };

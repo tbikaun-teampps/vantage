@@ -20,6 +20,7 @@ import type {
 } from "../types/entities/companies.js";
 import { InternalServerError, NotFoundError } from "../plugins/errorHandler.js";
 import { LocationType } from "../schemas/company.js";
+import { TableNames } from "../types/utils.js";
 
 type JunctionTableName =
   | "company_contacts"
@@ -790,10 +791,8 @@ export class CompaniesService {
   ): Promise<void> {
     // Implementation for reordering the company tree nodes
     try {
-      console.log("Reorder updates received:", updates);
-
       for (const update of updates) {
-        let tableName: string;
+        let tableName: TableNames;
 
         switch (update.type) {
           case "business_unit":

@@ -1,4 +1,5 @@
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { companySchemas, query2tableMap } from "../../schemas/company";
 import { commonResponseSchemas } from "../../schemas/common";
 import {
@@ -7,6 +8,9 @@ import {
 } from "../../middleware/companyRole";
 import { NotFoundError, BadRequestError } from "../../plugins/errorHandler";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
+
+// Type alias for entity list data
+type EntityListData = z.infer<typeof companySchemas.responses.entityList>["data"];
 
 export async function entitiesRoutes(fastify: FastifyInstance) {
   fastify.withTypeProvider<ZodTypeProvider>().route({
@@ -36,9 +40,10 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
         type
       );
 
+      // Type assertion is safe: data is validated by Zod schema at runtime
       return {
         success: true,
-        data: entities,
+        data: entities as EntityListData,
       };
     },
   });
@@ -71,9 +76,10 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
         request.body
       );
 
+      // Type assertion is safe: data is validated by Zod schema at runtime
       return {
         success: true,
-        data: [entity],
+        data: [entity] as EntityListData,
       };
     },
   });
@@ -115,9 +121,10 @@ export async function entitiesRoutes(fastify: FastifyInstance) {
         throw new NotFoundError("Entity not found");
       }
 
+      // Type assertion is safe: data is validated by Zod schema at runtime
       return {
         success: true,
-        data: [entity],
+        data: [entity] as EntityListData,
       };
     },
   });

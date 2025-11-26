@@ -257,6 +257,7 @@ export function CreateInterviewDialog({
         const interviewData: CreateInterviewBodyData = {
           assessment_id: selectedAssessmentId,
           interviewer_id: isIndividualInterview ? null : user.id,
+          interviewee_id: null,
           name: interviewName,
           notes: interviewNotes,
           is_individual: isIndividualInterview && showIndividualOptions,

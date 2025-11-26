@@ -6,7 +6,7 @@ import {
   ProgramStatus,
   ProgramWithRelations,
 } from "../types/entities/programs.js";
-import { CalculatedMeasurementWithDefinition } from "../types/entities/assessments.js";
+// import { CalculatedMeasurementWithDefinition } from "../types/entities/assessments.js";
 import { NotFoundError } from "../plugins/errorHandler.js";
 import { InterviewsService } from "./InterviewsService.js";
 import { CreateInterviewData } from "../types/entities/interviews.js";
@@ -982,7 +982,7 @@ export class ProgramService {
 
     // Add context by concatenating location names
     if (measurements) {
-      for (const measurement of measurements) {
+      return measurements.map((measurement) => {
         const locationParts: string[] = [];
         if (measurement.business_unit)
           locationParts.push(measurement.business_unit.name);
@@ -995,11 +995,14 @@ export class ProgramService {
         if (measurement.role && measurement.role.shared_role)
           locationParts.push(measurement.role.shared_role.name);
 
-        measurement.location_context = locationParts.join(" > ");
-      }
+        return {
+          ...measurement,
+          location_context: locationParts.join(" > "),
+        };
+      });
     }
 
-    return measurements || [];
+    return [];
   }
 
   async getCalculatedMeasurementForProgramPhase(
@@ -1093,8 +1096,8 @@ export class ProgramService {
     program_phase_id: number;
     measurement_definition_id: number;
     calculated_value: number;
-    location: { id: number; type: LocationNodeType };
-  }): Promise<CalculatedMeasurementWithDefinition> {
+    location?: { id: number; type: LocationNodeType };
+  }) { // : Promise<CalculatedMeasurementWithDefinition>
     // Check phase exists and get company_id and sequence_number from it
     const { data: phase } = await this.supabase
       .from("program_phases")
@@ -1239,7 +1242,7 @@ export class ProgramService {
   async updateCalculatedMeasurement(
     measurementId: number,
     calculated_value: number
-  ): Promise<CalculatedMeasurementWithDefinition> {
+  ) { // : Promise<CalculatedMeasurementWithDefinition>
     // Fetch existing measurement to get its definition for validation
     const { data: existingMeasurement, error: fetchError } = await this.supabase
       .from("measurements_calculated")

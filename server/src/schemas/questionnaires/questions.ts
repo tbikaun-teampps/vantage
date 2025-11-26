@@ -121,7 +121,7 @@ export const GetQuestionPartsParamsSchema = z.object({
   questionId: z.coerce.number(),
 });
 
-const QuestionPart = z.object({
+export const QuestionPart = z.object({
   id: z.number(),
   answer_type: z.enum(QuestionPartAnswerTypeEnum),
   options: z
@@ -144,6 +144,9 @@ const QuestionPart = z.object({
     .nullable(),
   order_index: z.number(),
   text: z.string(),
+  questionnaire_question_id: z.number(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export const GetQuestionPartsResponseSchema = z.object({
@@ -165,32 +168,7 @@ export const CreateQuestionPartBodySchema = z.object({
 
 export const CreateQuestionPartResponseSchema = z.object({
   success: z.boolean(),
-  data: z.object({
-    id: z.number(),
-    questionnaire_question_id: z.number(),
-    answer_type: z.enum(QuestionPartAnswerTypeEnum),
-    text: z.string(),
-    options: z
-      .union([
-        z.object({
-          labels: z.array(z.string()),
-        }),
-        z.object({
-          max: z.number(),
-          min: z.number(),
-          step: z.number(),
-        }),
-        z.object({
-          max: z.number(),
-          min: z.number(),
-          decimal_places: z.number().optional(),
-        }),
-      ])
-      .nullable(),
-    order_index: z.number(),
-    created_at: z.string(),
-    updated_at: z.string(),
-  }),
+  data: QuestionPart,
 });
 
 // Param, body and response schemas for updating a question part (element)
@@ -224,32 +202,7 @@ export const UpdateQuestionPartBodySchema = z.object({
 
 export const UpdateQuestionPartResponseSchema = z.object({
   success: z.boolean(),
-  data: z.object({
-    id: z.number(),
-    questionnaire_question_id: z.number(),
-    answer_type: z.enum(QuestionPartAnswerTypeEnum),
-    text: z.string(),
-    options: z
-      .union([
-        z.object({
-          labels: z.array(z.string()),
-        }),
-        z.object({
-          max: z.number(),
-          min: z.number(),
-          step: z.number(),
-        }),
-        z.object({
-          max: z.number(),
-          min: z.number(),
-          decimal_places: z.number().optional(),
-        }),
-      ])
-      .nullable(),
-    order_index: z.number(),
-    created_at: z.string(),
-    updated_at: z.string(),
-  }),
+  data: QuestionPart,
 });
 
 // Param and response schemas for deleting a question part (element)

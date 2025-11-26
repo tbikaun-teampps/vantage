@@ -46,6 +46,7 @@ import {
   NotFoundError,
 } from "../plugins/errorHandler.js";
 import { QuestionnaireItemType } from "../schemas/questionnaires/index.js";
+import { TableNames } from "../types/utils.js";
 
 export class QuestionnaireService {
   private supabase: SupabaseClient<Database>;
@@ -2664,7 +2665,7 @@ export class QuestionnaireService {
    */
   private createDefaultPartScoring(
     answerType: string,
-    options: Json,
+    options: Json | undefined,
     maxLevel: number
   ): WeightedScoringConfig["partScoring"][string] | null {
     const opts = (options ?? {}) as {
@@ -2748,7 +2749,7 @@ export class QuestionnaireService {
 
     try {
       for (const item of updates) {
-        let tableName: string;
+        let tableName: TableNames;
         let idField: string;
 
         switch (item.type) {

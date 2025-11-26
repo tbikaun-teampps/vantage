@@ -71,7 +71,7 @@ export const MeasurementIdParamsSchema = z.object({
 });
 
 // Schema for measurement definition object
-const MeasurementDefinitionSchema = z.object({
+export const MeasurementDefinitionSchema = z.object({
   id: z.number(),
   name: z.string(),
   active: z.boolean(),
