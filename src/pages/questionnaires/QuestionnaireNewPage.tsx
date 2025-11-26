@@ -91,7 +91,7 @@ export function QuestionnaireNewPage() {
   return (
     <DashboardPage
       title="Create New Questionnaire"
-      description="Create a new questionnaire template for your company"
+      description="Create a new questionnaire for this company"
       showBack
       backHref="/questionnaires"
     >

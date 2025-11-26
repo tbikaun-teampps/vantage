@@ -1,5 +1,8 @@
 import type { paths } from ".";
 
+export type GetQuestionnairesParams =
+  paths["/companies/{companyId}/questionnaires"]["get"]["parameters"]["query"];
+
 export type GetQuestionnairesResponseData =
   paths["/companies/{companyId}/questionnaires"]["get"]["responses"]["200"]["content"]["application/json"]["data"];
 
