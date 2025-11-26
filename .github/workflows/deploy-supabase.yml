@@ -94,7 +94,7 @@ jobs:
           ls -la supabase/migrations/
           echo ""
           echo "📊 Currently applied migrations on ${{ steps.set-env.outputs.ENVIRONMENT }}:"
-          supabase migration list --project-ref ${{ steps.set-env.outputs.PROJECT_REF }}
+          supabase migration list
           echo ""
           if [[ "${{ inputs.debug_mode }}" == "true" ]]; then
             echo "🔍 DEBUG MODE: Migrations will NOT be applied"
