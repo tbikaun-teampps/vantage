@@ -266,8 +266,8 @@ export async function questionsRoutes(fastify: FastifyInstance) {
     schema: {
       description: "Update a question rating scale",
       params: z.object({
-        question_id: z.coerce.number(),
-        question_rating_scale_id: z.coerce.number(),
+        questionId: z.coerce.number(),
+        questionRatingScaleId: z.coerce.number(),
       }),
       body: z.object({
         description: z.string(),
@@ -291,7 +291,7 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         request.user.id
       );
       const ratingScale = await questionnaireService.updateQuestionRatingScale(
-        request.params.question_rating_scale_id,
+        request.params.questionRatingScaleId,
         request.body.description
       );
 
