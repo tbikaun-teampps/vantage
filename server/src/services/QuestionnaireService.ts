@@ -30,6 +30,7 @@ import {
   UpdateQuestionnaireQuestionData,
   UpdateQuestionnaireSectionData,
   UpdateQuestionnaireStepData,
+  QuestionnaireStatus,
 } from "../types/entities/questionnaires.js";
 import type { WeightedScoringConfig } from "../types/entities/weighted-scoring.js";
 import {
@@ -61,13 +62,21 @@ export class QuestionnaireService {
     this.userSubscriptionTier = userSubscriptionTier;
   }
 
-  async getQuestionnaires(companyId: string) {
+  async getQuestionnaires(
+    companyId: string,
+    filters: { status?: QuestionnaireStatus } = {}
+  ) {
     // : Promise<QuestionnaireWithCounts[]>
-    const { data, error } = await this.supabase
+    let query = this.supabase
       .from("questionnaires")
       .select(
         "id, name, description, guidelines, status, created_at, updated_at"
-      )
+      );
+
+    if (filters.status) {
+      query = query.eq("status", filters.status);
+    }
+    const { data, error } = await query
       .eq("is_deleted", false)
       .eq("company_id", companyId)
       .order("updated_at", { ascending: false })
@@ -210,6 +219,9 @@ export class QuestionnaireService {
 
     if (fetchError) throw fetchError;
     if (!existingData) return null;
+
+    // Need to check whether the user is trying to update the status of the questionnaire.
+    // If the status is 'published'.
 
     const { data: questionnaire, error } = await this.supabase
       .from("questionnaires")
@@ -2607,7 +2619,11 @@ export class QuestionnaireService {
     options: Json,
     maxLevel: number
   ): WeightedScoringConfig["partScoring"][string] | null {
-    const opts = (options ?? {}) as { min?: number; max?: number; labels?: string[] };
+    const opts = (options ?? {}) as {
+      min?: number;
+      max?: number;
+      labels?: string[];
+    };
 
     switch (answerType) {
       case "boolean":

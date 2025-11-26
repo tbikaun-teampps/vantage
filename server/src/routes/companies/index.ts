@@ -33,6 +33,7 @@ import {
   RecommendationStatusEnum,
 } from "../../schemas/recommendations";
 import { InterviewStatusEnum } from "../../schemas/interviews";
+import { QuestionnaireStatusEnum } from "../../schemas/questionnaires";
 
 export async function companiesRoutes(fastify: FastifyInstance) {
   // Add "Companies" tag to all routes in this router
@@ -1042,6 +1043,9 @@ export async function companiesRoutes(fastify: FastifyInstance) {
     schema: {
       description: "Get all questionnaires for a given company",
       params: companySchemas.params.companyId,
+      querystring: z.object({
+        status: z.enum(QuestionnaireStatusEnum).optional(),
+      }),
       response: {
         200: questionnaireSchemas.responses.questionnaireList,
         401: Error401Schema,
@@ -1055,7 +1059,8 @@ export async function companiesRoutes(fastify: FastifyInstance) {
         request.subscriptionTier
       );
       const questionnaires = await questionnaireService.getQuestionnaires(
-        request.params.companyId
+        request.params.companyId,
+        { status: request.query.status }
       );
 
       return {

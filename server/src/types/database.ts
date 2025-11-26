@@ -3377,7 +3377,11 @@ export type Database = {
         | "labelled_scale"
         | "percentage"
         | "number";
-      questionnaire_statuses: "draft" | "active" | "under_review" | "archived";
+      questionnaire_statuses:
+        | "draft"
+        | "published"
+        | "archived"
+        | "under_review";
       rating_score_source: "direct" | "calculated" | "override";
       recommendation_status: "not_started" | "in_progress" | "completed";
       role_levels:
@@ -3567,7 +3571,12 @@ export const Constants = {
         "percentage",
         "number",
       ],
-      questionnaire_statuses: ["draft", "active", "under_review", "archived"],
+      questionnaire_statuses: [
+        "draft",
+        "published",
+        "archived",
+        "under_review",
+      ],
       rating_score_source: ["direct", "calculated", "override"],
       recommendation_status: ["not_started", "in_progress", "completed"],
       role_levels: [
