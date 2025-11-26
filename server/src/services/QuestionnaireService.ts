@@ -222,6 +222,54 @@ export class QuestionnaireService {
 
     // Need to check whether the user is trying to update the status of the questionnaire.
     // If the status is 'published'.
+    if (data.status && data.status === "published") {
+      // Check that the questionnaire is valid for publishing
+      // All sections must have steps, all steps must have at least one question.
+
+      const { data: sections, error: sectionsError } = await this.supabase
+        .from("questionnaire_sections")
+        .select("id")
+        .eq("questionnaire_id", questionnaireId)
+        .eq("is_deleted", false);
+      if (sectionsError) throw sectionsError;
+
+      const { data: steps, error: stepsError } = await this.supabase
+        .from("questionnaire_steps")
+        .select("id, questionnaire_section_id")
+        .eq("questionnaire_id", questionnaireId)
+        .eq("is_deleted", false);
+      if (stepsError) throw stepsError;
+
+      const { data: questions, error: questionsError } = await this.supabase
+        .from("questionnaire_questions")
+        .select("id, questionnaire_step_id")
+        .eq("questionnaire_id", questionnaireId)
+        .eq("is_deleted", false);
+      if (questionsError) throw questionsError;
+
+      const sectionIdsWithSteps = new Set(
+        steps.map((step) => step.questionnaire_section_id)
+      );
+      const stepIdsWithQuestions = new Set(
+        questions.map((question) => question.questionnaire_step_id)
+      );
+      const invalidSections = sections.filter(
+        (section) => !sectionIdsWithSteps.has(section.id)
+      );
+      const invalidSteps = steps.filter(
+        (step) => !stepIdsWithQuestions.has(step.id)
+      );
+      if (invalidSections.length > 0 || invalidSteps.length > 0) {
+        let errorMessage = "Cannot publish questionnaire due to the following:";
+        if (invalidSections.length > 0) {
+          errorMessage += `\n- ${invalidSections.length} section(s) have no steps.`;
+        }
+        if (invalidSteps.length > 0) {
+          errorMessage += `\n- ${invalidSteps.length} step(s) have no questions.`;
+        }
+        throw new Error(errorMessage);
+      }
+    }
 
     const { data: questionnaire, error } = await this.supabase
       .from("questionnaires")
