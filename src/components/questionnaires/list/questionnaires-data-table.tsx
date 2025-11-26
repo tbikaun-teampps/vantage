@@ -1,6 +1,5 @@
 import {
   IconPencil,
-  IconClock,
   IconCircleCheckFilled,
   IconEye,
   IconArchive,
@@ -41,7 +40,7 @@ export function QuestionnairesDataTable({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "draft":
-        return <IconClock className="h-3 w-3 text-blue-500" />;
+        return <IconPencil className="h-3 w-3 text-blue-500" />;
       case "published":
         return <IconCircleCheckFilled className="h-3 w-3 text-green-500" />;
       case "under_review":

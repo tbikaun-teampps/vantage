@@ -63,7 +63,7 @@ export function useQuestionnaires(
   enabled: boolean = true
 ) {
   return useQuery({
-    queryKey: assessmentKeys.questionnaires(companyId),
+    queryKey: [...assessmentKeys.questionnaires(companyId), params],
     queryFn: (): Promise<GetQuestionnairesResponseData> =>
       getQuestionnaires(companyId, params),
     staleTime: 15 * 60 * 1000, // 15 minutes - questionnaires change infrequently
