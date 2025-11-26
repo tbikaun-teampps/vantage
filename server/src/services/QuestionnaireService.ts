@@ -2607,7 +2607,7 @@ export class QuestionnaireService {
     options: Json,
     maxLevel: number
   ): WeightedScoringConfig["partScoring"][string] | null {
-    const opts = options as { min?: number; max?: number; labels?: string[] };
+    const opts = (options ?? {}) as { min?: number; max?: number; labels?: string[] };
 
     switch (answerType) {
       case "boolean":
