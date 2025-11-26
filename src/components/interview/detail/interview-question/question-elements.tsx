@@ -4,14 +4,29 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import type { InterviewFormData } from "@/pages/interview/InterviewDetailPage";
 import type { GetInterviewQuestionByIdResponseData } from "@/types/api/interviews";
-import type { QuestionPart } from "@/types/api/questionnaire";
 import type { UseFormReturn } from "react-hook-form";
+
 import {
   FormField,
   FormItem,
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
+
+// Type for question parts in the interview context
+// Defined inline since the question_parts property is optional on the response type
+type InterviewQuestionPart = {
+  id: number;
+  text: string;
+  order_index: number;
+  answer_type: "number" | "boolean" | "scale" | "labelled_scale" | "percentage";
+  options:
+    | { labels: string[] }
+    | { max: number; min: number; step: number }
+    | { max: number; min: number; decimal_places?: number }
+    | Record<string, never>
+    | null;
+};
 
 interface InterviewQuestionElementsProps {
   question: GetInterviewQuestionByIdResponseData;
@@ -41,7 +56,7 @@ export function InterviewQuestionElements({
     }
   };
 
-  const renderOptions = (part: QuestionPart) => {
+  const renderOptions = (part: InterviewQuestionPart) => {
     const selectedValue = form.watch(
       `question_part_${part.id}` as `question_part_${number}`
     );

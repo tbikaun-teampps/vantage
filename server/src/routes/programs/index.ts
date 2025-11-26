@@ -493,7 +493,6 @@ export async function programRoutes(fastify: FastifyInstance) {
     },
   });
 
-  // GET /programs/:programId/objectives/count - Get objective count
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "GET",
     url: "/:programId/objectives/count",
@@ -523,6 +522,7 @@ export async function programRoutes(fastify: FastifyInstance) {
     method: "GET",
     url: "/:programId/measurements",
     schema: {
+      description: "Get measurements for a program",
       params: GetMeasurementsParamsSchema,
       querystring: GetMeasurementsQuerySchema,
       response: {
@@ -540,9 +540,6 @@ export async function programRoutes(fastify: FastifyInstance) {
         programId,
         includeDefinitions
       );
-
-      console.log("measurements:", measurements);
-
       return {
         success: true,
         data: measurements,
@@ -556,6 +553,7 @@ export async function programRoutes(fastify: FastifyInstance) {
     method: "GET",
     url: "/:programId/measurement-definitions/allowed",
     schema: {
+      description: "Get allowed measurement definitions for a program",
       params: GetAllowedMeasurementDefinitionsParamsSchema,
       response: {
         200: GetAllowedMeasurementDefinitionsResponseSchema,
@@ -581,6 +579,7 @@ export async function programRoutes(fastify: FastifyInstance) {
     method: "GET",
     url: "/:programId/measurements/available",
     schema: {
+      description: "Get available measurements for a program",
       params: GetAvailableMeasurementsParamsSchema,
       response: {
         200: GetAvailableMeasurementsResponseSchema,
@@ -606,6 +605,7 @@ export async function programRoutes(fastify: FastifyInstance) {
     method: "POST",
     url: "/:programId/measurement-definitions",
     schema: {
+      description: "Add measurement definitions to a program",
       params: AddMeasurementDefinitionsParamsSchema,
       body: AddMeasurementDefinitionsBodySchema,
       response: {
@@ -635,6 +635,7 @@ export async function programRoutes(fastify: FastifyInstance) {
     method: "DELETE",
     url: "/:programId/measurement-definitions/:measurementDefinitionId",
     schema: {
+      description: "Remove a measurement definition from a program",
       params: RemoveMeasurementDefinitionParamsSchema,
       response: {
         200: RemoveMeasurementDefinitionResponseSchema,
@@ -662,6 +663,7 @@ export async function programRoutes(fastify: FastifyInstance) {
     method: "GET",
     url: "/:programId/phases/:phaseId/calculated-measurements",
     schema: {
+      description: "Get calculated measurements for a program phase",
       params: GetCalculatedMeasurementsParamsSchema,
       querystring: GetCalculatedMeasurementsQuerySchema,
       response: {
@@ -687,12 +689,11 @@ export async function programRoutes(fastify: FastifyInstance) {
     },
   });
 
-  // GET endpoint to fetch calculated measurement for a program phase
-  // Supports both old format (separate location fields) and new format (location object with id + type)
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "GET",
     url: "/:programId/phases/:phaseId/calculated-measurement",
     schema: {
+      description: "Get calculated measurement for a program phase",
       params: GetCalculatedMeasurementParamsSchema,
       querystring: GetCalculatedMeasurementQuerySchema,
       response: {
@@ -713,7 +714,7 @@ export async function programRoutes(fastify: FastifyInstance) {
       // Reconstruct location object if both parts are provided
       const location =
         location_id && location_type
-          ? { id: location_id, type: location_type as any }
+          ? { id: location_id, type: location_type }
           : undefined;
 
       const programService = new ProgramService(request.supabaseClient);
@@ -733,12 +734,11 @@ export async function programRoutes(fastify: FastifyInstance) {
     },
   });
 
-  // POST endpoint to create a new measurement data
-  // Supports both old format (separate location fields) and new format (location object with id + type)
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "POST",
     url: "/:programId/phases/:phaseId/measurement-data",
     schema: {
+      description: "Create new calculated measurement data",
       params: CreateMeasurementDataParamsSchema,
       body: CreateMeasurementDataBodySchema,
       response: {
@@ -757,7 +757,7 @@ export async function programRoutes(fastify: FastifyInstance) {
       const measurement = await programService.createCalculatedMeasurement({
         program_phase_id: phaseId,
         ...body,
-      } as any);
+      });
 
       return {
         success: true,
@@ -766,11 +766,11 @@ export async function programRoutes(fastify: FastifyInstance) {
     },
   });
 
-  // PUT endpoint to update an existing measurement data
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "PUT",
     url: "/:programId/phases/:phaseId/measurement-data/:measurementId",
     schema: {
+      description: "Update existing calculated measurement data",
       params: UpdateMeasurementDataParamsSchema,
       body: UpdateMeasurementDataBodySchema,
       response: {
@@ -796,11 +796,11 @@ export async function programRoutes(fastify: FastifyInstance) {
     },
   });
 
-  // DELETE endpoint to remove a measurement data
   fastify.withTypeProvider<ZodTypeProvider>().route({
     method: "DELETE",
     url: "/:programId/phases/:phaseId/measurement-data/:measurementId",
     schema: {
+      description: "Delete calculated measurement data",
       params: DeleteMeasurementDataParamsSchema,
       response: {
         200: DeleteMeasurementDataResponseSchema,

@@ -3,6 +3,7 @@ import {
   DesktopHeatmapAxisType,
   FlattenedOverallHeatmapData,
   HeatmapAxisType,
+  HeatmapCompanyAxisType,
   HeatmapMetric,
   HeatmapMetricResult,
   OverallDesktopHeatmapFilters,
@@ -258,7 +259,7 @@ export class HeatmapService {
         },
       },
       config: {
-        xAxis: this.xAxis,
+        xAxis: this.xAxis as HeatmapCompanyAxisType,
         yAxis: this.yAxis,
         assessmentId: this.assessmentId ?? null,
       },
@@ -435,8 +436,8 @@ export class HeatmapService {
     return {
       ...heatmapData,
       config: {
-        xAxis: this.xAxis,
-        yAxis: this.yAxis,
+        xAxis: this.xAxis as HeatmapAxisType,
+        yAxis: this.yAxis as HeatmapAxisType,
         questionnaireId: this.questionnaireId,
         assessmentId: this.assessmentId ?? null,
       },
@@ -1186,7 +1187,15 @@ export async function getProgramInterviewsHeatmap(
   });
 
   if (!program || program.phases.length < 2 || responses.length === 0) {
-    return { data: [], measurements: [], transitions: [] };
+    return {
+      data: [],
+      transitions: [],
+      sections: [],
+      metadata: {
+        totalResponses: 0,
+        totalInterviews: 0,
+      },
+    };
   }
 
   const phases = program.phases;

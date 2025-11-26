@@ -8,6 +8,15 @@ import {
   CalculatedMeasurementWithDefinitionSchema,
 } from "./index.js";
 
+const LocationTypeEnum = [
+  "business_unit",
+  "region",
+  "site",
+  "asset_group",
+  "work_group",
+  "role",
+] as const;
+
 // GET measurements for a program
 export const GetMeasurementsParamsSchema = z.object({
   programId: z.coerce.number(),
@@ -94,7 +103,7 @@ export const GetCalculatedMeasurementQuerySchema = z.object({
   measurementId: z.coerce.number().optional(),
   measurementDefinitionId: z.coerce.number().optional(),
   location_id: z.coerce.number().optional(),
-  location_type: z.string().optional(),
+  location_type: z.enum(LocationTypeEnum).optional(),
 });
 
 export const GetCalculatedMeasurementResponseSchema = z.object({
@@ -109,18 +118,9 @@ export const CreateMeasurementDataParamsSchema = z.object({
   phaseId: z.coerce.number(),
 });
 
-const LocationTypeEnum = z.enum([
-  "business_unit",
-  "region",
-  "site",
-  "asset_group",
-  "work_group",
-  "role",
-]);
-
 const LocationObjectSchema = z.object({
   id: z.number(),
-  type: LocationTypeEnum,
+  type: z.enum(LocationTypeEnum),
 });
 
 export const CreateMeasurementDataBodySchema = z.object({

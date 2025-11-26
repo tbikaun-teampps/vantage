@@ -289,7 +289,7 @@ export type Database = {
           id: number;
           is_deleted: boolean | null;
           name: string;
-          order_index: number | null;
+          order_index: number;
           site_id: number;
           updated_at: string;
         };
@@ -304,7 +304,7 @@ export type Database = {
           id?: number;
           is_deleted?: boolean | null;
           name: string;
-          order_index?: number | null;
+          order_index?: number;
           site_id: number;
           updated_at?: string;
         };
@@ -319,7 +319,7 @@ export type Database = {
           id?: number;
           is_deleted?: boolean | null;
           name?: string;
-          order_index?: number | null;
+          order_index?: number;
           site_id?: number;
           updated_at?: string;
         };
@@ -486,7 +486,7 @@ export type Database = {
           id: number;
           is_deleted: boolean;
           name: string;
-          order_index: number | null;
+          order_index: number;
           updated_at: string;
         };
         Insert: {
@@ -499,7 +499,7 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           name: string;
-          order_index?: number | null;
+          order_index?: number;
           updated_at?: string;
         };
         Update: {
@@ -512,7 +512,7 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           name?: string;
-          order_index?: number | null;
+          order_index?: number;
           updated_at?: string;
         };
         Relationships: [
@@ -2762,7 +2762,7 @@ export type Database = {
           id: number;
           is_deleted: boolean;
           name: string;
-          order_index: number | null;
+          order_index: number;
           updated_at: string;
         };
         Insert: {
@@ -2776,7 +2776,7 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           name: string;
-          order_index?: number | null;
+          order_index?: number;
           updated_at?: string;
         };
         Update: {
@@ -2790,7 +2790,7 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           name?: string;
-          order_index?: number | null;
+          order_index?: number;
           updated_at?: string;
         };
         Relationships: [
@@ -2880,7 +2880,7 @@ export type Database = {
           id: number;
           is_deleted: boolean;
           level: Database["public"]["Enums"]["role_levels"] | null;
-          order_index: number | null;
+          order_index: number;
           reports_to_role_id: number | null;
           shared_role_id: number | null;
           updated_at: string;
@@ -2895,7 +2895,7 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           level?: Database["public"]["Enums"]["role_levels"] | null;
-          order_index?: number | null;
+          order_index?: number;
           reports_to_role_id?: number | null;
           shared_role_id?: number | null;
           updated_at?: string;
@@ -2910,7 +2910,7 @@ export type Database = {
           id?: number;
           is_deleted?: boolean;
           level?: Database["public"]["Enums"]["role_levels"] | null;
-          order_index?: number | null;
+          order_index?: number;
           reports_to_role_id?: number | null;
           shared_role_id?: number | null;
           updated_at?: string;
@@ -3071,7 +3071,7 @@ export type Database = {
           lat: number | null;
           lng: number | null;
           name: string;
-          order_index: number | null;
+          order_index: number;
           region_id: number;
           updated_at: string;
         };
@@ -3087,7 +3087,7 @@ export type Database = {
           lat?: number | null;
           lng?: number | null;
           name: string;
-          order_index?: number | null;
+          order_index?: number;
           region_id: number;
           updated_at?: string;
         };
@@ -3103,7 +3103,7 @@ export type Database = {
           lat?: number | null;
           lng?: number | null;
           name?: string;
-          order_index?: number | null;
+          order_index?: number;
           region_id?: number;
           updated_at?: string;
         };
@@ -3248,7 +3248,7 @@ export type Database = {
           id: number;
           is_deleted: boolean | null;
           name: string;
-          order_index: number | null;
+          order_index: number;
           updated_at: string;
         };
         Insert: {
@@ -3262,7 +3262,7 @@ export type Database = {
           id?: number;
           is_deleted?: boolean | null;
           name: string;
-          order_index?: number | null;
+          order_index?: number;
           updated_at?: string;
         };
         Update: {
@@ -3276,7 +3276,7 @@ export type Database = {
           id?: number;
           is_deleted?: boolean | null;
           name?: string;
-          order_index?: number | null;
+          order_index?: number;
           updated_at?: string;
         };
         Relationships: [

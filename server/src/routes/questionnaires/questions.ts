@@ -19,6 +19,7 @@ import {
   GetQuestionPartsResponseSchema,
   GetQuestionRatingScaleMappingParamsSchema,
   GetQuestionRatingScaleMappingResponseSchema,
+  QuestionPart,
   ReorderQuestionPartsBodySchema,
   ReorderQuestionPartsParamsSchema,
   ReorderQuestionPartsResponseSchema,
@@ -480,10 +481,10 @@ export async function questionsRoutes(fastify: FastifyInstance) {
       );
 
       const parts = await questionnaireService.getQuestionParts(questionId);
-
+      const parsedParts = parts.map((part) => QuestionPart.parse(part));
       return {
         success: true,
-        data: parts,
+        data: parsedParts,
       };
     },
   });
@@ -514,9 +515,11 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         request.body
       );
 
+      const parsedData = QuestionPart.parse(part);
+
       return {
         success: true,
-        data: part,
+        data: parsedData,
       };
     },
   });
@@ -544,9 +547,10 @@ export async function questionsRoutes(fastify: FastifyInstance) {
         request.body
       );
 
+      const parsedData = QuestionPart.parse(part);
       return {
         success: true,
-        data: part,
+        data: parsedData,
       };
     },
   });
@@ -600,9 +604,10 @@ export async function questionsRoutes(fastify: FastifyInstance) {
 
       const newPart = await questionnaireService.duplicateQuestionPart(partId);
 
+      const parsedData = QuestionPart.parse(newPart);
       return {
         success: true,
-        data: newPart,
+        data: parsedData,
       };
     },
   });

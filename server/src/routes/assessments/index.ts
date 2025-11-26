@@ -10,7 +10,8 @@ import {
   Error500Schema,
 } from "../../schemas/errors.js";
 import {
-  AssessmentMeasurementDefinitionStatusEnum,
+  AssessmentMeasurementDefinition,
+  AssessmentMeasurementDefinitionsSchema,
   AssessmentStatusEnum,
   AssessmentTypeEnum,
 } from "../../schemas/assessments.js";
@@ -638,39 +639,7 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
         assessmentId: z.coerce.number(),
       }),
       response: {
-        200: z.object({
-          success: z.boolean(),
-          data: z.array(
-            z.object({
-              id: z.number(),
-              name: z.string(),
-              description: z.string().nullable(),
-              objective: z.string().nullable(),
-              active: z.boolean(),
-              is_in_use: z.boolean(),
-              instance_count: z.number(),
-              created_at: z.string(),
-              updated_at: z.string(),
-              status: z.enum(AssessmentMeasurementDefinitionStatusEnum),
-              // Details
-              calculation: z.string().nullable(),
-              calculation_type: z.string().nullable(),
-              provider: z.string().nullable(),
-              unit: z.string().nullable(),
-              min_value: z.number().nullable(),
-              max_value: z.number().nullable(),
-              required_csv_columns: z
-                .array(
-                  z.object({
-                    name: z.string(),
-                    data_type: z.string(),
-                    description: z.string().nullable(),
-                  })
-                )
-                .nullable(),
-            })
-          ),
-        }),
+        200: AssessmentMeasurementDefinitionsSchema,
         500: Error500Schema,
       },
     },
@@ -679,8 +648,10 @@ export async function assessmentsRouter(fastify: FastifyInstance) {
         await request.assessmentsService!.getMeasurmentsDefinitionsByAssessmentId(
           request.params.assessmentId
         );
-
-      return { success: true, data };
+      const parsedData = data.map((d) =>
+        AssessmentMeasurementDefinition.parse(d)
+      );
+      return { success: true, data: parsedData };
     },
   });
 

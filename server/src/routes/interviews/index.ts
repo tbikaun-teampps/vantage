@@ -3,7 +3,12 @@ import { InterviewsService } from "../../services/InterviewsService.js";
 import { EvidenceService } from "../../services/EvidenceService.js";
 import { EmailService } from "../../services/EmailService.js";
 import { NotFoundError } from "../../plugins/errorHandler.js";
-import { InterviewSummarySchema } from "../../schemas/interviews.js";
+import {
+  IndividualInterviewSchema,
+  InterviewQuestion,
+  InterviewQuestionSchema,
+  InterviewSummarySchema,
+} from "../../schemas/interviews.js";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import {
@@ -13,7 +18,6 @@ import {
   Error500Schema,
 } from "../../schemas/errors.js";
 import { InterviewStatusEnum } from "../../schemas/interviews.js";
-import { QuestionPartAnswerTypeEnum } from "../../schemas/questionnaires/questions.js";
 
 export async function interviewsRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -136,7 +140,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         assessment_id: z.number(),
         name: z.string(),
         interviewer_id: z.string().nullable(),
-        interviewee_id: z.string().optional(),
+        interviewee_id: z.string().nullable(),
         notes: z.string().optional(),
         is_individual: z.boolean().default(false),
         enabled: z.boolean().default(true),
@@ -205,41 +209,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         name: z.string(),
       }),
       response: {
-        200: z.object({
-          success: z.boolean(),
-          data: z.array(
-            z.object({
-              contact: z.object({
-                id: z.number(),
-                full_name: z.string(),
-                email: z.string(),
-              }),
-              access_code: z.string().nullable(),
-              assessment_id: z.number().nullable(),
-              assigned_role_id: z.number().nullable(),
-              company_id: z.string(),
-              completed_at: z.string().nullable(),
-              created_at: z.string(),
-              created_by: z.string(),
-              deleted_at: z.string().nullable(),
-              due_at: z.string().nullable(),
-              enabled: z.boolean(),
-              id: z.number(),
-              interview_contact_id: z.number().nullable(),
-              interviewee_id: z.string().nullable(),
-              interviewer_id: z.string().nullable(),
-              is_deleted: z.boolean(),
-              is_individual: z.boolean(),
-              name: z.string(),
-              notes: z.string().nullable(),
-              program_id: z.number().nullable(),
-              program_phase_id: z.number().nullable(),
-              questionnaire_id: z.number().nullable(),
-              status: z.enum(InterviewStatusEnum),
-              updated_at: z.string(),
-            })
-          ),
-        }),
+        200: IndividualInterviewSchema,
         400: Error400Schema,
         500: Error500Schema,
       },
@@ -517,98 +487,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         questionId: z.coerce.number(),
       }),
       response: {
-        200: z.object({
-          success: z.boolean(),
-          data: z
-            .object({
-              id: z.number(),
-              title: z.string(),
-              context: z.string(),
-              breadcrumbs: z.object({
-                section: z.string(),
-                step: z.string(),
-                question: z.string(),
-              }),
-              question_text: z.string(),
-              question_parts: z
-                .array(
-                  z.object({
-                    id: z.number(),
-                    text: z.string(),
-                    order_index: z.number(),
-                    answer_type: z.enum(QuestionPartAnswerTypeEnum),
-                    options: z
-                      .union([
-                        z.object({
-                          labels: z.array(z.string()),
-                        }),
-                        z.object({
-                          max: z.number(),
-                          min: z.number(),
-                          step: z.number(),
-                        }),
-                        z.object({
-                          max: z.number(),
-                          min: z.number(),
-                          decimal_places: z.number().optional(),
-                        }),
-                        z.object({}), // Empty object for answer types that don't require options (e.g., boolean)
-                      ])
-                      .nullable(),
-                  })
-                )
-                .optional(),
-              response: z
-                .object({
-                  id: z.number(),
-                  rating_score: z.number().nullable(),
-                  is_unknown: z.boolean(),
-                  question_part_responses: z
-                    .array(
-                      z.object({
-                        id: z.number(),
-                        answer_value: z.string(),
-                        question_part_id: z.number(),
-                      })
-                    )
-                    .optional(),
-                  response_roles: z.array(
-                    z.object({
-                      id: z.number(),
-                      role: z.object({
-                        id: z.number(),
-                      }),
-                    })
-                  ),
-                })
-                .nullable(),
-              options: z
-                .object({
-                  applicable_roles: z.record(
-                    z.string(),
-                    z.array(
-                      z.object({
-                        id: z.number(),
-                        shared_role_id: z.number(),
-                        name: z.string(),
-                        description: z.string().nullable(),
-                        path: z.string(),
-                      })
-                    )
-                  ),
-                  rating_scales: z.array(
-                    z.object({
-                      id: z.number(),
-                      name: z.string(),
-                      value: z.number(),
-                      description: z.string(),
-                    })
-                  ),
-                })
-                .optional(),
-            })
-            .nullable(),
-        }),
+        200: InterviewQuestionSchema,
       },
     },
     handler: async (request) => {
@@ -617,8 +496,8 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         interviewId,
         questionId
       );
-
-      return { success: true, data };
+      const parsedData = InterviewQuestion.parse(data);
+      return { success: true, data: parsedData };
     },
   });
 

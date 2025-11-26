@@ -5,6 +5,7 @@ import {
   MeasurementIdParamsSchema,
   GetMeasurementDefinitionsResponseSchema,
   GetMeasurementDefinitionResponseSchema,
+  MeasurementDefinitionSchema,
 } from "../../schemas/shared";
 import { Error500Schema } from "../../schemas/errors";
 
@@ -28,7 +29,10 @@ export async function measurementsRoutes(fastify: FastifyInstance) {
         throw new InternalServerError("Failed to fetch measurements");
       }
 
-      return { success: true, data };
+      const parsedData = data.map((item) =>
+        MeasurementDefinitionSchema.parse(item)
+      );
+      return { success: true, data: parsedData };
     },
   });
   fastify.withTypeProvider<ZodTypeProvider>().route({
@@ -54,8 +58,8 @@ export async function measurementsRoutes(fastify: FastifyInstance) {
       if (error) {
         throw new InternalServerError("Failed to fetch measurement definition");
       }
-
-      return { success: true, data };
+      const parsedData = MeasurementDefinitionSchema.parse(data);
+      return { success: true, data: parsedData };
     },
   });
 }
