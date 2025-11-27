@@ -127,6 +127,8 @@ jobs:
         if: steps.set-env.outputs.ENVIRONMENT == 'staging' && inputs.debug_mode != true
         run: |
           if [ -f "supabase/seed_staging.sql" ]; then
+            echo "🔄 Configuring staging seed file..."
+            sed -i 's|sql_paths = "./seed.sql"|sql_paths = "./seed_staging.sql"|' supabase/config.toml
             echo "🔄 Resetting staging database (migrations + seed)..."
             supabase db reset --linked --yes
           fi
