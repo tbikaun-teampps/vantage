@@ -44,7 +44,7 @@ export function InterviewQuestionHeader({
   }
 
   return (
-    <div>
+    <div className={cn(isMobile ? "px-6 mt-4" : "")}>
       <div
         className="w-full flex justify-center"
         data-tour="interview-progress"
@@ -61,34 +61,33 @@ export function InterviewQuestionHeader({
           </div>
         </div>
       </div>
-      <div className={`flex-shrink-0 ${isMobile ? "py-4" : "p-6"}`}>
+      <div className={`flex-shrink-0 ${isMobile ? "py-4" : "p-4"}`}>
         <div className="max-w-[1600px] mx-auto w-full">
           <div
             className={`flex items-start justify-between ${
               isMobile ? "flex-col space-y-3" : ""
             }`}
           >
-            <div className="w-full" data-tour="interview-question-breadcrumbs">
-              {breadcrumbs &&
-                (isMobile ? (
+            {/* Breadcrumbs - Only show on mobile, desktop uses sidebar instead */}
+            {isMobile && (
+              <div className="w-full" data-tour="interview-question-breadcrumbs">
+                {breadcrumbs && (
                   <MobileBreadCrumbs
                     breadcrumbs={breadcrumbs}
                     isQuestionAnswered={isQuestionAnswered}
                   />
-                ) : (
-                  <DesktopBreadCrumbs
-                    breadcrumbs={breadcrumbs}
-                    isQuestionAnswered={isQuestionAnswered}
-                  />
-                ))}
-            </div>
+                )}
+              </div>
+            )}
 
             {/* Comments, Evidence + Actions Buttons */}
             {!isMobile && (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 ml-auto">
                 <InterviewComments responseId={responseId} />
                 <InterviewEvidence responseId={responseId} />
-                {!isIndividualInterview && <InterviewActions responseId={responseId} />}
+                {!isIndividualInterview && (
+                  <InterviewActions responseId={responseId} />
+                )}
               </div>
             )}
           </div>
@@ -135,36 +134,6 @@ function MobileBreadCrumbs({
         <Badge variant="secondary">
           <span className="max-w-[48ch] truncate">{breadcrumbs.question}</span>
         </Badge>
-        {isQuestionAnswered() && (
-          <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
-        )}
-      </span>
-    </div>
-  );
-}
-
-function DesktopBreadCrumbs({
-  breadcrumbs,
-  isQuestionAnswered,
-}: BreadcrumbProps) {
-  return (
-    <div className="flex items-center text-sm space-x-2 text-muted-foreground">
-      <span
-        key="breadcrumb-section"
-        className="flex items-center flex-shrink-0"
-      >
-        <span className="max-w-[48ch] truncate">{breadcrumbs.section}</span>
-      </span>
-      <IconChevronRight className="h-3 w-3 flex-shrink-0" />
-      <span key="breadcrumb-step" className="flex items-center flex-shrink-0">
-        <span className="max-w-[48ch] truncate">{breadcrumbs.step}</span>
-      </span>
-      <IconChevronRight className="h-3 w-3 flex-shrink-0" />
-      <span
-        key="breadcrumb-question"
-        className="flex items-center flex-shrink-0 gap-2"
-      >
-        <span className="max-w-[48ch] truncate">{breadcrumbs.question}</span>
         {isQuestionAnswered() && (
           <IconCircleCheckFilled className="h-5 w-5 text-green-600" />
         )}

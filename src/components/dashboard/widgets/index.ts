@@ -3,7 +3,8 @@ import MetricWidget from "./MetricWidget";
 import ChartWidget from "./ChartWidget";
 import ActivityWidget from "./ActivityWidget";
 import ActionsWidget from "./ActionsWidget";
-import type { Widget, WidgetType } from "./types";
+import type { Widget } from "./types";
+import type { WidgetType } from "@/types/api/dashboard";
 import TableWidget from "./TableWidget";
 
 export const availableWidgets: Widget[] = [
@@ -40,7 +41,7 @@ export const availableWidgets: Widget[] = [
     title: "Activity",
     category: "Monitoring",
     component: ActivityWidget,
-    defaultSize: { w: 3, h: 4, maxW: 4, maxH: 5, minW: 2, minH: 3 },
+    defaultSize: { w: 3, h: 4, maxW: 4, maxH: 5, minW: 3, minH: 4 },
     description: "Show recent system activity",
     icon: Clock,
   },
@@ -49,7 +50,7 @@ export const availableWidgets: Widget[] = [
     title: "Quick Actions",
     category: "Actions",
     component: ActionsWidget,
-    defaultSize: { w: 4, h: 3, maxW: 4, maxH: 3, minW: 2, minH: 3 },
+    defaultSize: { w: 4, h: 3, maxW: 4, maxH: 3, minW: 2, minH: 2 },
     description: "Common action shortcuts",
     icon: Zap,
   },

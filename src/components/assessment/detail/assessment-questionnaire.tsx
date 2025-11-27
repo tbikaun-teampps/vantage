@@ -13,10 +13,10 @@ import {
   IconChevronUp,
   IconListTree,
 } from "@tabler/icons-react";
-import type { QuestionnaireWithSections } from "@/types/assessment";
+import type { AssessmentQuestionnaire } from "@/types/api/assessments";
 
 interface QuestionnaireStructureProps {
-  questionnaire: QuestionnaireWithSections;
+  questionnaire: AssessmentQuestionnaire;
 }
 
 export function QuestionnaireStructure({

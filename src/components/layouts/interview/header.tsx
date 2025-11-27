@@ -16,8 +16,6 @@ import { cn } from "@/lib/utils";
 import {
   IconBuilding,
   IconCalendar,
-  IconEye,
-  IconEyeOff,
   IconMenu2,
   IconQuestionMark,
   IconUser,
@@ -30,35 +28,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { tourManager, useTourManager, type TourId } from "@/lib/tours";
-import { Badge } from "@/components/ui/badge";
 import {
   FeedbackButton,
   FeedbackDropdownMenuItem,
 } from "@/components/feedback/feedback-button";
 import { FeedbackDialogProvider } from "@/contexts/FeedbackDialogContext";
 import { formatDistance } from "date-fns";
+import type { GetInterviewSummaryResponseData } from "@/types/api/interviews";
 
 interface InterviewLayoutHeaderProps {
-  interviewData?: {
-    name: string;
-    assessment: {
-      name: string;
-    };
-    due_at: string | null;
-    is_individual: boolean;
-    interviewer: {
-      full_name: string;
-      email: string;
-    } | null;
-    interviewee: {
-      full_name: string;
-      email: string;
-    } | null;
-    company: {
-      name: string;
-      icon_url: string | null;
-    };
-  };
+  interviewData: GetInterviewSummaryResponseData;
   showExitDialog: () => void;
 }
 
@@ -85,7 +64,6 @@ export function InterviewLayoutHeader({
     }
   };
 
-
   if (!interviewData) {
     return null;
   }
@@ -100,38 +78,22 @@ export function InterviewLayoutHeader({
 
   return (
     <FeedbackDialogProvider>
-      <header className="sticky top-[var(--demo-banner-height)] z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 max-w-[1600px] mx-auto w-full">
-        <div className="mx-auto px-6">
+      <header className="sticky top-[var(--demo-banner-height)] z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 w-full">
+        <div className="mx-auto px-6 max-w-[1600px]">
           <div className={`flex items-center justify-between h-16`}>
-            {/* Left side - Logo and title */}
-            <div className="flex items-center space-x-4 min-w-0 flex-1">
-              <img
-                src="/assets/logos/vantage-logo.svg"
-                height={isMobile ? 30 : 40}
-                width={isMobile ? 30 : 40}
-                alt="Vantage logo"
-                className="flex-shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <h1
-                  className={cn(
-                    "font-semibold",
-                    isMobile ? "truncate text-md" : "text-lg"
-                  )}
-                >
-                  {interviewData.name || "Interview"}
-                </h1>
-                <p
-                  className={cn(
-                    "text-muted-foreground",
-                    isMobile ? "truncate text-xs" : "text-sm"
-                  )}
-                >
-                  {interviewData.assessment?.name || "Unknown"}
-                </p>
-              </div>
-            </div>
-
+            {/* Left side - Logo */}
+            {/* Square logo for very small screens (< 200px width) */}
+            <img
+              src="/assets/logos/vantage-logo.svg"
+              alt="Vantage logo"
+              className="flex-shrink-0 h-[30px] w-[30px] min-[200px]:hidden"
+            />
+            {/* Full rectangular logo for wider screens (>= 200px width) */}
+            <img
+              src="/assets/logos/vantage-logo-full.svg"
+              alt="Vantage logo"
+              className={cn("flex-shrink-0 hidden min-[200px]:block h-[30px]")}
+            />
             {/* Right side - User info and actions */}
             {isMobile ? (
               <div data-tour="interview-menu-mobile">
@@ -149,20 +111,21 @@ export function InterviewLayoutHeader({
                         {username}
                       </DropdownMenuItem>
                       <DropdownMenuItem>
-                        {interviewData.company.name && (
-                          <div className="flex items-center gap-4">
-                            {interviewData.company.icon_url ? (
-                              <img
-                                src={interviewData.company.icon_url}
-                                alt="Company Icon"
-                                className="h-3 w-3 mr-1 rounded-sm object-cover"
-                              />
-                            ) : (
-                              <IconBuilding className="h-3 w-3 mr-1" />
-                            )}
-                            {interviewData.company.name || "Company"}
-                          </div>
-                        )}
+                        {interviewData.company &&
+                          interviewData.company.name && (
+                            <div className="flex items-center gap-4">
+                              {interviewData.company.icon_url ? (
+                                <img
+                                  src={interviewData.company.icon_url}
+                                  alt="Company Icon"
+                                  className="h-3 w-3 mr-1 rounded-sm object-cover"
+                                />
+                              ) : (
+                                <IconBuilding className="h-3 w-3 mr-1" />
+                              )}
+                              {interviewData.company.name || "Company"}
+                            </div>
+                          )}
                       </DropdownMenuItem>
                       <DropdownMenuItem>
                         <IconCalendar className="h-3 w-3 mr-2" />
@@ -198,35 +161,7 @@ export function InterviewLayoutHeader({
               </div>
             ) : (
               <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline" className="text-xs">
-                    {interviewData.is_individual ? (
-                      <IconEye className="h-3 w-3 mr-1" />
-                    ) : (
-                      <IconEyeOff className="h-3 w-3 mr-1" />
-                    )}
-
-                    {interviewData.is_individual ? "Individual" : "Group"}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    <IconUser className="h-3 w-3 mr-1" />
-                    {username}
-                  </Badge>
-                  {interviewData.company?.name && (
-                    <Badge variant="outline" className="text-xs">
-                      {interviewData.company.icon_url ? (
-                        <img
-                          src={interviewData.company.icon_url}
-                          alt="Company Icon"
-                          className="h-3 w-3 mr-1 rounded-sm object-cover"
-                        />
-                      ) : (
-                        <IconBuilding className="h-3 w-3 mr-1" />
-                      )}
-                      {interviewData.company.name || "Company"}
-                    </Badge>
-                  )}
-                </div>
+                {/* Badges moved to sidebar footer - desktop only shows action buttons */}
                 <div className="flex items-center space-x-2">
                   {showTourButton && (
                     <TooltipProvider>

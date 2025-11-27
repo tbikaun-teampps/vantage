@@ -1,13 +1,10 @@
-/**
- * Hook for action CRUD operations using React Query.
- */
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   getInterviewResponseComments,
   updateInterviewResponseComments,
 } from "@/lib/api/interviews";
+import type { UpdateInterviewResponseCommentBodyData } from "@/types/api/interviews";
 
 export function useComments(responseId: number) {
   const queryClient = useQueryClient();
@@ -25,8 +22,8 @@ export function useComments(responseId: number) {
 
   // Update comment mutation
   const updateMutation = useMutation({
-    mutationFn: ({ comments }: { comments: string }) =>
-      updateInterviewResponseComments(responseId, comments),
+    mutationFn: (update: UpdateInterviewResponseCommentBodyData) =>
+      updateInterviewResponseComments(responseId, update),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["interview-response-comments", responseId],

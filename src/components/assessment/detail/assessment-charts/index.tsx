@@ -1,3 +1,4 @@
+import { IconChartBar } from "@tabler/icons-react";
 import { ChartBar } from "./bar-chart";
 import { useAssessmentMeasurementsBarChart } from "@/hooks/use-assessment-measurements";
 
@@ -18,7 +19,19 @@ export function AssessmentCharts({ assessmentId }: { assessmentId: number }) {
   }
 
   if (!data || data.length === 0) {
-    return <div>No chart data available</div>;
+    return (
+      <div className="shadow-none text-center border-dashed border-2 border-border rounded-lg bg-background">
+        <div className="p-8">
+          <div className="text-center py-8">
+            <IconChartBar className="mx-auto mb-4 h-8 w-8 text-muted-foreground" />
+            <div className="text-muted-foreground text-sm">
+              Assessment measurement charts will be available once measurements
+              have been added to this assessment.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const lgGridCols = Math.min(data.length, 4);

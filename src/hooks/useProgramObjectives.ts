@@ -7,9 +7,9 @@ import {
   deleteProgramObjective,
 } from "@/lib/api/programs";
 import type {
-  CreateObjectiveData,
-  UpdateObjectiveData,
-} from "@/lib/api/programs";
+  CreateProgramObjectiveBodyData,
+  UpdateProgramObjectiveBodyData,
+} from "@/types/api/programs";
 
 export function useProgramObjectives(programId: number) {
   return useQuery({
@@ -23,14 +23,20 @@ export function useCreateObjective() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateObjectiveData) => createProgramObjective(data),
+    mutationFn: ({
+      programId,
+      data,
+    }: {
+      programId: number;
+      data: CreateProgramObjectiveBodyData;
+    }) => createProgramObjective(programId, data),
     onSuccess: (_, variables) => {
       toast.success("Objective created successfully");
       queryClient.invalidateQueries({
-        queryKey: ["program-objectives", variables.program_id],
+        queryKey: ["program-objectives", variables.programId],
       });
       queryClient.invalidateQueries({
-        queryKey: ["program", variables.program_id],
+        queryKey: ["program", variables.programId],
       });
     },
     onError: (error: Error) => {
@@ -52,7 +58,7 @@ export function useUpdateObjective() {
     }: {
       id: number;
       programId: number;
-      data: UpdateObjectiveData;
+      data: UpdateProgramObjectiveBodyData;
     }) => updateProgramObjective(programId, id, data),
     onSuccess: (objective) => {
       toast.success("Objective updated successfully");

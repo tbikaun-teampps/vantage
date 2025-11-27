@@ -101,18 +101,19 @@ export function ProgramDetailPage() {
         <TabSwitcher activeTab={activeTab} onTabChange={handleTabChange} />
       }
     >
-      <div
-        className="mx-auto h-full overflow-auto px-6 pt-4"
-        data-tour="program-detail-main"
-      >
+      <div className="mx-auto h-full" data-tour="program-detail-main">
         {activeTab === "overview" ? (
-          <DetailsTab program={program} />
+          <div className="h-full overflow-y-auto">
+            <DetailsTab program={program} />
+          </div>
         ) : activeTab === "setup" ? (
-          <SetupTab program={program} />
+          <div className="h-full overflow-y-auto">
+            <SetupTab program={program} />
+          </div>
         ) : activeTab === "manage" ? (
           <ManageTab program={program} />
         ) : activeTab === "schedule" ? (
-          <ScheduleTab programId={program.id} />
+          <ScheduleTab />
         ) : null}
       </div>
     </DashboardPage>

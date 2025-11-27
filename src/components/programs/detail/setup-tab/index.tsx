@@ -5,11 +5,11 @@ import {
 import { ProgramObjectivesManager } from "@/components/programs/detail/setup-tab/program-objectives-manager";
 import { OnsiteQuestionnaireSelection } from "@/components/programs/detail/setup-tab/onsite-questionnaire-selection";
 import { PresiteQuestionnaireSelection } from "@/components/programs/detail/setup-tab/presite-questionnaire-selection";
-import type { ProgramDetailResponseData } from "@/types/api/programs";
 import { Measurements } from "@/components/programs/detail/setup-tab/desktop-measurements";
+import type { GetProgramByIdResponseData } from "@/types/api/programs";
 
 interface SetupTabProps {
-  program: ProgramDetailResponseData;
+  program: GetProgramByIdResponseData;
 }
 
 export function SetupTab({ program }: SetupTabProps) {

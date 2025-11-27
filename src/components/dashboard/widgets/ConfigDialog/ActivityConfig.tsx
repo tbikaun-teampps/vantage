@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import type {
-  EntityConfig,
+  EntityWidgetConfig,
   ScopeConfig,
   WidgetConfig,
-} from "@/hooks/useDashboardLayouts";
+} from "@/types/api/dashboard";
 import { useWidgetConfigOptions } from "@/hooks/useWidgetConfigOptions";
 import { Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
@@ -15,10 +15,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type EntityType = "interviews" | "assessments" | "programs";
+type EntityType = NonNullable<EntityWidgetConfig>["entityType"];
 
 interface ActivityWidgetConfigProps {
-  config?: EntityConfig;
+  config?: EntityWidgetConfig;
   currentScope?: ScopeConfig;
   onConfigChange: (config: WidgetConfig) => void;
 }

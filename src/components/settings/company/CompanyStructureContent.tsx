@@ -2,40 +2,39 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useCompanyTree } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { DashboardPage } from "@/components/dashboard";
-import {
-  CompanySettingsTree,
-  HeaderActions,
-  DetailPanel,
-} from "@/components/settings/company";
+import { CompanySettingsTree } from "./CompanySettingsTree";
+import { HeaderActions } from "./HeaderActions";
+import { DetailPanel } from "./detail-panel";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import type { TreeNodeType, Company } from "@/types/company";
+import type {
+  CompanyTree,
+  CompanyTreeNodeType,
+  AnyTreeNode,
+} from "@/types/api/companies";
 
 // Helper function to find a node in the tree by ID and type
 function findNodeInTree(
-  tree: Company | null,
+  tree: CompanyTree | null,
   nodeId: string,
-  nodeType: TreeNodeType
-): any {
+  nodeType: CompanyTreeNodeType
+): AnyTreeNode | null {
   if (!tree) return null;
 
   // If we're looking for the company itself
-  if (nodeType === "company" && tree.id === nodeId) {
+  if (nodeType === "company" && tree.id.toString() === nodeId) {
     return { ...tree, type: "company" };
   }
 
   // Helper to search through an array of nodes
-  const searchArray = (
-    items: any[] | undefined,
-    childrenKey?: string
-  ): any => {
+  const searchArray = (items: any[] | undefined, childrenKey?: string): any => {
     if (!items) return null;
 
     for (const item of items) {
-      if (item.id === nodeId) {
+      if (item.id.toString() === nodeId) {
         return item;
       }
       // Recursively search children if they exist
@@ -49,13 +48,15 @@ function findNodeInTree(
 
   // Search through the tree hierarchy based on node type
   switch (nodeType) {
-    case "business_unit":
-      return searchArray(tree.business_units);
+    case "business_unit": {
+      const buFound = searchArray(tree.business_units);
+      return buFound ? { ...buFound, type: "business_unit" } : null;
+    }
 
     case "region":
       for (const bu of tree.business_units || []) {
         const found = searchArray(bu.regions);
-        if (found) return found;
+        if (found) return { ...found, type: "region" };
       }
       return null;
 
@@ -63,7 +64,7 @@ function findNodeInTree(
       for (const bu of tree.business_units || []) {
         for (const region of bu.regions || []) {
           const found = searchArray(region.sites);
-          if (found) return found;
+          if (found) return { ...found, type: "site" };
         }
       }
       return null;
@@ -73,7 +74,7 @@ function findNodeInTree(
         for (const region of bu.regions || []) {
           for (const site of region.sites || []) {
             const found = searchArray(site.asset_groups);
-            if (found) return found;
+            if (found) return { ...found, type: "asset_group" };
           }
         }
       }
@@ -85,7 +86,7 @@ function findNodeInTree(
           for (const site of region.sites || []) {
             for (const ag of site.asset_groups || []) {
               const found = searchArray(ag.work_groups);
-              if (found) return found;
+              if (found) return { ...found, type: "work_group" };
             }
           }
         }
@@ -100,7 +101,7 @@ function findNodeInTree(
               for (const wg of ag.work_groups || []) {
                 // Recursively search through roles and their reporting_roles (direct reports)
                 const found = searchArray(wg.roles, "reporting_roles");
-                if (found) return found;
+                if (found) return { ...found, type: "role" };
               }
             }
           }
@@ -115,19 +116,41 @@ function findNodeInTree(
 
 export function CompanyStructureContent() {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [hasInitializedExpanded, setHasInitializedExpanded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const pageRef = useRef<HTMLDivElement>(null);
   const companyId = useCompanyFromUrl();
   const { data: tree } = useCompanyTree(companyId);
 
+  // Expand tree down to site level on initial load
+  useEffect(() => {
+    if (tree && !hasInitializedExpanded) {
+      const initialExpanded = new Set<string>();
+      // Expand company
+      initialExpanded.add(`company_${tree.id}`);
+      // Expand all business units and regions (so sites are visible)
+      tree.business_units.forEach((bu) => {
+        initialExpanded.add(`business_unit_${bu.id}`);
+        bu.regions.forEach((region) => {
+          initialExpanded.add(`region_${region.id}`);
+        });
+      });
+      setExpandedNodes(initialExpanded);
+      setHasInitializedExpanded(true);
+    }
+  }, [tree, hasInitializedExpanded]);
+
   // Store only the ID and type, derive the full item from tree
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [selectedItemType, setSelectedItemType] = useState<TreeNodeType | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | number | null>(
+    null
+  );
+  const [selectedItemType, setSelectedItemType] =
+    useState<CompanyTreeNodeType | null>(null);
 
   // Derive selectedItem from tree data - this automatically updates when tree changes
   const selectedItem = useMemo(() => {
     if (!selectedItemId || !selectedItemType || !tree) return null;
-    return findNodeInTree(tree, selectedItemId, selectedItemType);
+    return findNodeInTree(tree, selectedItemId.toString(), selectedItemType);
   }, [tree, selectedItemId, selectedItemType]);
 
   const toggleExpanded = (nodeId: string) => {
@@ -158,7 +181,7 @@ export function CompanyStructureContent() {
     });
   };
 
-  const handleSelectItem = (item: any) => {
+  const handleSelectItem = (item: AnyTreeNode | null) => {
     if (item) {
       setSelectedItemId(item.id);
       setSelectedItemType(item.type);
@@ -168,9 +191,13 @@ export function CompanyStructureContent() {
     }
   };
 
-  const handleClearSelection = () => {
-    setSelectedItemId(null);
-    setSelectedItemType(null);
+  // Expand a parent node when a child is added from the detail panel
+  const expandParentNode = (
+    parentType: CompanyTreeNodeType,
+    parentId: string | number
+  ) => {
+    const nodeKey = `${parentType}_${parentId}`;
+    setExpandedNodes((prev) => new Set([...prev, nodeKey]));
   };
 
   // Fullscreen functionality
@@ -235,7 +262,8 @@ export function CompanyStructureContent() {
           <ResizablePanel>
             <DetailPanel
               selectedItem={selectedItem}
-              setSelectedItem={handleClearSelection}
+              setSelectedItem={handleSelectItem}
+              onExpandParentNode={expandParentNode}
             />
           </ResizablePanel>
         </ResizablePanelGroup>

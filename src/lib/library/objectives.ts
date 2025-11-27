@@ -1,16 +1,16 @@
 // lib/library/objectives.ts
 
-export interface Objective {
+interface Objective {
   title: string;
-  description: string;
+  description?: string;
 }
 
-export interface ObjectiveCategory {
+interface ObjectiveCategory {
   category: string;
   objectives: Objective[];
 }
 
-export type Objectives = ObjectiveCategory[];
+type Objectives = ObjectiveCategory[];
 
 export const OBJECTIVES: Objectives = [
   {

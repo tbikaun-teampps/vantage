@@ -14,6 +14,7 @@ import { useQuestionnaireDetail } from "@/contexts/QuestionnaireDetailContext";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
 import AddRatingDialog from "./add-rating-dialog";
 import { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function RatingScales() {
   const userCanAdmin = useCanAdmin();
@@ -76,6 +77,16 @@ export function RatingScales() {
           </div>
         </CardHeader>
         <CardContent className="flex-1 overflow-auto">
+          {ratingScales.length > 0 && (
+            <Alert variant="default" className="mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Rating scales cannot be modified or deleted once assigned to
+                questions. To make changes, you must first remove the rating
+                scale from all questions that use it.
+              </AlertDescription>
+            </Alert>
+          )}
           <RatingsForm
             ratings={ratingScales}
             questionnaireId={questionnaire.id}

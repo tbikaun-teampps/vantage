@@ -1,7 +1,5 @@
 import {
-  IconExternalLink,
   IconPencil,
-  IconClock,
   IconCircleCheckFilled,
   IconEye,
   IconArchive,
@@ -17,21 +15,10 @@ import { formatDistanceToNow } from "date-fns";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
-
-export interface Questionnaire {
-  id: string;
-  name: string;
-  description?: string;
-  status: "draft" | "active" | "archived" | "under_review";
-  question_count: number;
-  step_count: number;
-  section_count: number;
-  created_at: string;
-  updated_at: string;
-}
+import type { GetQuestionnairesResponseData } from "@/types/api/questionnaire";
 
 interface QuestionnairesDataTableProps {
-  questionnaires: Questionnaire[];
+  questionnaires: GetQuestionnairesResponseData;
   isLoading: boolean;
   error?: string | null;
   defaultTab?: string;
@@ -52,9 +39,9 @@ export function QuestionnairesDataTable({
   // Status icons helper
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "active":
-        return <IconClock className="h-3 w-3 text-blue-500" />;
-      case "completed":
+      case "draft":
+        return <IconPencil className="h-3 w-3 text-blue-500" />;
+      case "published":
         return <IconCircleCheckFilled className="h-3 w-3 text-green-500" />;
       case "under_review":
         return <IconEye className="h-3 w-3 text-yellow-500" />;
@@ -66,7 +53,7 @@ export function QuestionnairesDataTable({
   };
 
   // Column definitions
-  const columns: ColumnDef<Questionnaire>[] = [
+  const columns: ColumnDef<GetQuestionnairesResponseData[number]>[] = [
     {
       accessorKey: "name",
       header: "Name",
@@ -87,7 +74,7 @@ export function QuestionnairesDataTable({
       cell: ({ row }) => (
         <div
           className="text-sm max-w-[160px] truncate"
-          title={row.original.description}
+          title={row.original.description ?? "No Description"}
         >
           {row.original.description || "No Description"}
         </div>
@@ -160,8 +147,8 @@ export function QuestionnairesDataTable({
 
   // Filter data by status for tabs
   const allQuestionnaires = questionnaires;
-  const activeQuestionnaires = questionnaires.filter(
-    (q) => q.status === "active"
+  const publishedQuestionnaires = questionnaires.filter(
+    (q) => q.status === "published"
   );
   const draftQuestionnaires = questionnaires.filter(
     (q) => q.status === "draft"
@@ -183,11 +170,11 @@ export function QuestionnairesDataTable({
       emptyStateDescription: "Create your first questionnaire to get started.",
     },
     {
-      value: "active",
-      label: "Active",
-      data: activeQuestionnaires,
-      emptyStateTitle: "No active questionnaires",
-      emptyStateDescription: "No active questionnaires at the moment.",
+      value: "published",
+      label: "Published",
+      data: publishedQuestionnaires,
+      emptyStateTitle: "No published questionnaires",
+      emptyStateDescription: "No published questionnaires at the moment.",
     },
     {
       value: "under_review",
@@ -232,7 +219,7 @@ export function QuestionnairesDataTable({
     <SimpleDataTable
       data={allQuestionnaires}
       columns={columns}
-      getRowId={(row) => row.id}
+      getRowId={(row) => row.id.toString()}
       tabs={tabs}
       defaultTab={defaultTab}
       onTabChange={onTabChange}

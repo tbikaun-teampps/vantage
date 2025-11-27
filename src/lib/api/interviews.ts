@@ -1,25 +1,43 @@
-import type { InterviewFeedback } from "@/components/interview/detail/InterviewCompletionDialog";
 import { apiClient } from "./client";
 import type {
-  Interview,
-  CreateInterviewData,
-  InterviewFilters,
-} from "@/types/assessment";
-import type { InterviewSummaryResponseData } from "@/types/api/interviews";
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-}
+  InterviewSummaryResponseData,
+  CreateInterviewBodyData,
+  CreateInterviewResponseData,
+  CreateIndividualInterviewsBodyData,
+  CreateIndividualInterviewsResponseData,
+  GetInterviewsResponseData,
+  GetInterviewsParams,
+  UpdateInterviewResponseData,
+  UpdateInterviewBodyData,
+  GetInterviewResponseActionsResponseData,
+  AddInterviewResponseActionBodyData,
+  AddInterviewResponseActionResponseData,
+  UpdateInterviewResponseActionResponseData,
+  UpdateInterviewResponseActionBodyData,
+  GetInterviewResponseCommentsResponseData,
+  UpdateInterviewResponseCommentResponseData,
+  UpdateInterviewResponseCommentBodyData,
+  UpdateInterviewResponseBodyData,
+  UpdateInterviewResponseResponseData,
+  GetInterviewResponseEvidenceResponseData,
+  UploadInterviewResponseEvidenceResponseData,
+  GetInterviewAssessmentRolesResponseData,
+  ValidateAssessmentRolesForQuestionnaireResponseData,
+  ValidateAssessmentRolesForQuestionnaireBodyData,
+  ValidateProgramQuestionnaireRolesBodyData,
+  ValidateProgramQuestionnaireRolesResponseData,
+  CompleteInterviewResponseData,
+  CompleteInterviewBodyData,
+  GetInterviewQuestionByIdResponseData,
+} from "@/types/api/interviews";
+import type { ApiResponse } from "./utils";
 
 export async function createInterview(
-  data: CreateInterviewData
-): Promise<Interview> {
-  const response = await apiClient.post<ApiResponse<Interview>>(
-    "/interviews",
-    data
-  );
+  data: CreateInterviewBodyData
+): Promise<CreateInterviewResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateInterviewResponseData>
+  >("/interviews", data);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to create interview");
@@ -32,12 +50,11 @@ export async function createInterview(
  * Creates one or more individual interviews scoped to individual contacts via email and access code.
  */
 export async function createIndividualInterviews(
-  data: CreateInterviewData
-): Promise<Interview[]> {
-  const response = await apiClient.post<ApiResponse<Interview[]>>(
-    "/interviews/individual",
-    data
-  );
+  data: CreateIndividualInterviewsBodyData
+): Promise<CreateIndividualInterviewsResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateIndividualInterviewsResponseData>
+  >("/interviews/individual", data);
 
   if (!response.data.success) {
     throw new Error(
@@ -49,19 +66,12 @@ export async function createIndividualInterviews(
 }
 
 export async function getInterviews(
-  companyId: string,
-  filters?: InterviewFilters
-): Promise<Interview[]> {
-  const response = await apiClient.get<ApiResponse<Interview[]>>(
+  params: GetInterviewsParams
+): Promise<GetInterviewsResponseData> {
+  const response = await apiClient.get<ApiResponse<GetInterviewsResponseData>>(
     "/interviews",
     {
-      params: {
-        company_id: companyId,
-        assessment_id: filters?.assessmentId,
-        status: filters?.status,
-        program_phase_id: filters?.programPhaseId,
-        questionnaire_id: filters?.questionnaireId,
-      },
+      params,
     }
   );
 
@@ -88,12 +98,11 @@ export async function getInterviewSummary(
 
 export async function updateInterview(
   interviewId: number,
-  updates: { name?: string; status?: string; notes?: string }
-): Promise<any> {
-  const response = await apiClient.put<ApiResponse<any>>(
-    `/interviews/${interviewId}`,
-    updates
-  );
+  updates: UpdateInterviewBodyData
+): Promise<UpdateInterviewResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateInterviewResponseData>
+  >(`/interviews/${interviewId}`, updates);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to update interview");
@@ -103,7 +112,7 @@ export async function updateInterview(
 }
 
 export async function deleteInterview(interviewId: number): Promise<void> {
-  const response = await apiClient.delete<ApiResponse<any>>(
+  const response = await apiClient.delete<ApiResponse<void>>(
     `/interviews/${interviewId}`
   );
 
@@ -115,10 +124,10 @@ export async function deleteInterview(interviewId: number): Promise<void> {
 export async function getInterviewQuestionById(
   interviewId: number,
   questionId: number
-): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/interviews/${interviewId}/questions/${questionId}`
-  );
+): Promise<GetInterviewQuestionByIdResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetInterviewQuestionByIdResponseData>
+  >(`/interviews/${interviewId}/questions/${questionId}`);
 
   if (!response.data.success) {
     throw new Error(
@@ -133,10 +142,10 @@ export async function getInterviewQuestionById(
 
 export async function getInterviewResponseActions(
   responseId: number
-): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/interviews/responses/${responseId}/actions`
-  );
+): Promise<GetInterviewResponseActionsResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetInterviewResponseActionsResponseData>
+  >(`/interviews/responses/${responseId}/actions`);
 
   if (!response.data.success) {
     throw new Error(
@@ -149,12 +158,11 @@ export async function getInterviewResponseActions(
 
 export async function addInterviewResponseAction(
   responseId: number,
-  action: { title?: string; description: string }
-): Promise<any> {
-  const response = await apiClient.post<ApiResponse<any>>(
-    `/interviews/responses/${responseId}/actions`,
-    action
-  );
+  action: AddInterviewResponseActionBodyData
+): Promise<AddInterviewResponseActionResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<AddInterviewResponseActionResponseData>
+  >(`/interviews/responses/${responseId}/actions`, action);
 
   if (!response.data.success) {
     throw new Error(
@@ -168,12 +176,11 @@ export async function addInterviewResponseAction(
 export async function updateInterviewResponseAction(
   responseId: number,
   actionId: number,
-  action: { title?: string; description?: string }
-): Promise<any> {
-  const response = await apiClient.put<ApiResponse<any>>(
-    `/interviews/responses/${responseId}/actions/${actionId}`,
-    action
-  );
+  action: UpdateInterviewResponseActionBodyData
+): Promise<UpdateInterviewResponseActionResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateInterviewResponseActionResponseData>
+  >(`/interviews/responses/${responseId}/actions/${actionId}`, action);
 
   if (!response.data.success) {
     throw new Error(
@@ -187,8 +194,8 @@ export async function updateInterviewResponseAction(
 export async function deleteInterviewResponseAction(
   responseId: number,
   actionId: number
-): Promise<any> {
-  const response = await apiClient.delete<ApiResponse<any>>(
+): Promise<void> {
+  const response = await apiClient.delete<ApiResponse<void>>(
     `/interviews/responses/${responseId}/actions/${actionId}`
   );
 
@@ -197,18 +204,16 @@ export async function deleteInterviewResponseAction(
       response.data.error || "Failed to delete interview response action"
     );
   }
-
-  return response.data.data;
 }
 
 // ====== Interview Response Comments ======
 
 export async function getInterviewResponseComments(
   responseId: number
-): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/interviews/responses/${responseId}/comments`
-  );
+): Promise<GetInterviewResponseCommentsResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetInterviewResponseCommentsResponseData>
+  >(`/interviews/responses/${responseId}/comments`);
 
   if (!response.data.success) {
     throw new Error(
@@ -221,12 +226,11 @@ export async function getInterviewResponseComments(
 
 export async function updateInterviewResponseComments(
   responseId: number,
-  comments: string
-): Promise<any> {
-  const response = await apiClient.put<ApiResponse<any>>(
-    `/interviews/responses/${responseId}/comments`,
-    { comments }
-  );
+  update: UpdateInterviewResponseCommentBodyData
+): Promise<UpdateInterviewResponseCommentResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateInterviewResponseCommentResponseData>
+  >(`/interviews/responses/${responseId}/comments`, update);
 
   if (!response.data.success) {
     throw new Error(
@@ -239,16 +243,11 @@ export async function updateInterviewResponseComments(
 
 export async function updateInterviewResponse(
   responseId: number,
-  data: {
-    rating_score?: number | null;
-    role_ids?: number[] | null;
-    is_unknown?: boolean | null;
-  }
-): Promise<any> {
-  const response = await apiClient.put<ApiResponse<any>>(
-    `/interviews/responses/${responseId}`,
-    data
-  );
+  data: UpdateInterviewResponseBodyData
+): Promise<UpdateInterviewResponseResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateInterviewResponseResponseData>
+  >(`/interviews/responses/${responseId}`, data);
 
   if (!response.data.success) {
     throw new Error(
@@ -263,10 +262,10 @@ export async function updateInterviewResponse(
 
 export async function getInterviewResponseEvidence(
   responseId: number
-): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/interviews/responses/${responseId}/evidence`
-  );
+): Promise<GetInterviewResponseEvidenceResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetInterviewResponseEvidenceResponseData>
+  >(`/interviews/responses/${responseId}/evidence`);
 
   if (!response.data.success) {
     throw new Error(
@@ -280,19 +279,17 @@ export async function getInterviewResponseEvidence(
 export async function uploadInterviewResponseEvidence(
   responseId: number,
   file: File
-): Promise<any> {
+): Promise<UploadInterviewResponseEvidenceResponseData> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await apiClient.post<ApiResponse<any>>(
-    `/interviews/responses/${responseId}/evidence`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+  const response = await apiClient.post<
+    ApiResponse<UploadInterviewResponseEvidenceResponseData>
+  >(`/interviews/responses/${responseId}/evidence`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 
   if (!response.data.success) {
     throw new Error(
@@ -306,8 +303,8 @@ export async function uploadInterviewResponseEvidence(
 export async function deleteInterviewResponseEvidence(
   responseId: number,
   evidenceId: number
-): Promise<any> {
-  const response = await apiClient.delete<ApiResponse<any>>(
+): Promise<void> {
+  const response = await apiClient.delete<ApiResponse<void>>(
     `/interviews/responses/${responseId}/evidence/${evidenceId}`
   );
 
@@ -316,18 +313,16 @@ export async function deleteInterviewResponseEvidence(
       response.data.error || "Failed to delete interview response evidence"
     );
   }
-
-  return response.data.data;
 }
 
 // ====== Interview Creation Helpers ======
 
 export async function getRolesAssociatedWithAssessment(
   assessmentId: number
-): Promise<any> {
-  const response = await apiClient.get<ApiResponse<any>>(
-    `/interviews/assessment-roles/${assessmentId}`
-  );
+): Promise<GetInterviewAssessmentRolesResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetInterviewAssessmentRolesResponseData>
+  >(`/interviews/assessment-roles/${assessmentId}`);
 
   if (!response.data.success) {
     throw new Error(
@@ -342,17 +337,11 @@ export async function getRolesAssociatedWithAssessment(
  * Validate that an assessment's questionnaire has applicable questions for given role IDs
  */
 export async function validateAssessmentRolesForQuestionnaire(
-  assessmentId: number,
-  roleIds: number[]
-): Promise<{ isValid: boolean; hasUniversalQuestions: boolean }> {
+  data: ValidateAssessmentRolesForQuestionnaireBodyData
+): Promise<ValidateAssessmentRolesForQuestionnaireResponseData> {
   const response = await apiClient.post<
-    ApiResponse<{
-      isValid: { isValid: boolean; hasUniversalQuestions: boolean };
-    }>
-  >("/interviews/assessment-roles/validate", {
-    assessmentId,
-    roleIds,
-  });
+    ApiResponse<ValidateAssessmentRolesForQuestionnaireResponseData>
+  >("/interviews/assessment-roles/validate", data);
 
   if (!response.data.success) {
     throw new Error(
@@ -361,7 +350,7 @@ export async function validateAssessmentRolesForQuestionnaire(
     );
   }
 
-  return response.data.data.isValid;
+  return response.data.data;
 }
 
 /**
@@ -369,15 +358,11 @@ export async function validateAssessmentRolesForQuestionnaire(
  */
 export async function validateProgramQuestionnaireRoles(
   questionnaireId: number,
-  roleIds: number[]
-): Promise<{ isValid: boolean; hasUniversalQuestions: boolean }> {
+  data: ValidateProgramQuestionnaireRolesBodyData
+): Promise<ValidateProgramQuestionnaireRolesResponseData> {
   const response = await apiClient.post<
-    ApiResponse<{
-      isValid: { isValid: boolean; hasUniversalQuestions: boolean };
-    }>
-  >(`/interviews/questionnaires/${questionnaireId}/validate-roles`, {
-    roleIds,
-  });
+    ApiResponse<ValidateProgramQuestionnaireRolesResponseData>
+  >(`/interviews/questionnaires/${questionnaireId}/validate-roles`, data);
 
   if (!response.data.success) {
     throw new Error(
@@ -386,7 +371,7 @@ export async function validateProgramQuestionnaireRoles(
     );
   }
 
-  return response.data.data.isValid;
+  return response.data.data;
 }
 
 /**
@@ -394,12 +379,11 @@ export async function validateProgramQuestionnaireRoles(
  */
 export async function completeInterview(
   interviewId: number,
-  feedback: InterviewFeedback
-): Promise<any> {
-  const response = await apiClient.post<ApiResponse<any>>(
-    `/interviews/${interviewId}/complete`,
-    { feedback }
-  );
+  data: CompleteInterviewBodyData
+): Promise<CompleteInterviewResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CompleteInterviewResponseData>
+  >(`/interviews/${interviewId}/complete`, data);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to complete interview");

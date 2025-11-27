@@ -31,7 +31,6 @@ import type {
   NavSectionProps,
 } from "@/types/sidebar";
 import CompanySelector from "@/components/company-selector";
-import { NavData } from "./nav-data";
 import showDisabledToast from "@/components/disabled-toast";
 import { getVersionInfo } from "@/lib/version";
 import { useCurrentCompany } from "@/components/CompanyRoute";
@@ -344,9 +343,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <div data-sidebar-section="settings">
           <NavSection title="Settings" items={sidebarData.navSettings} />
         </div>
-        <div data-sidebar-section="data">
+        {/* <div data-sidebar-section="data">
           <NavData title="Data" items={sidebarData.navData} />
-        </div>
+        </div> */}
         <NavSecondary items={sidebarData.navSecondary} className="mt-auto" />
       </SidebarContent>
 

@@ -1,112 +1,90 @@
 import { useState, useMemo, useEffect } from "react";
-import { CompanyStructureSelectionTree } from "../company-structure-selection-tree";
-import type { TreeNodeType } from "@/types/company";
+import type { CompanyTreeNodeType } from "@/types/api/companies";
 import { Label } from "../ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { Loader2 } from "lucide-react";
 import {
-  useProgramMeasurements,
+  IconCheck,
+  IconFileUpload,
+  IconDeviceFloppy,
+} from "@tabler/icons-react";
+import {
   useProgramPhaseMeasurementData,
   useCreateProgramPhaseMeasurementData,
   useUpdateProgramPhaseMeasurementData,
   useDeleteProgramPhaseMeasurementData,
+  useMeasurementDefinition,
+  useProgramPhaseCalculatedMeasurements,
 } from "@/hooks/useProgram";
-import type { LocationParams } from "@/lib/api/programs";
+import { LocationTreeSelect } from "../location-tree-select";
+import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 
 interface MeasurementDataAddUploadEditProps {
   programId: number;
   programPhaseId: number;
-}
-
-// Helper function to convert selected tree nodes to location params
-function convertNodesToLocation(
-  selectedNodes: Map<string, TreeNodeType>
-): LocationParams {
-  const location: LocationParams = {};
-
-  selectedNodes.forEach((type, id) => {
-    const nodeId = parseInt(id);
-    switch (type) {
-      case "business_unit":
-        location.business_unit_id = nodeId;
-        break;
-      case "region":
-        location.region_id = nodeId;
-        break;
-      case "site":
-        location.site_id = nodeId;
-        break;
-      case "asset_group":
-        location.asset_group_id = nodeId;
-        break;
-      case "work_group":
-        location.work_group_id = nodeId;
-        break;
-      case "role":
-        location.role_id = nodeId;
-        break;
-    }
-  });
-
-  return location;
+  measurementDefinitionId: number;
 }
 
 export function MeasurementDataAddUploadEdit({
   programId,
   programPhaseId,
+  measurementDefinitionId,
 }: MeasurementDataAddUploadEditProps) {
+  const companyId = useCompanyFromUrl();
   const [manualValue, setManualValue] = useState<string>("");
-  const [selectedMeasurementDefinitionId, setSelectedMeasurementDefinitionId] =
-    useState<string>("");
-  const [selectedNodes, setSelectedNodes] = useState<Map<string, TreeNodeType>>(
-    new Map()
-  );
+  const [selectedLocation, setSelectedLocation] = useState<{
+    id: string;
+    type: CompanyTreeNodeType;
+    name: string;
+  } | null>(null);
+  const [mode, setMode] = useState<"add" | "edit">("add");
 
-  const { data: programMeasurements, isLoading: isLoadingProgramMeasurements } =
-    useProgramMeasurements(programId, true);
-
-  // Convert selected nodes to location params
-  const location = useMemo(
-    () => convertNodesToLocation(selectedNodes),
-    [selectedNodes]
-  );
-
-  // Fetch existing measurement data when both measurement and location are selected
-  const measurementDefinitionId = selectedMeasurementDefinitionId
-    ? parseInt(selectedMeasurementDefinitionId)
-    : undefined;
-
-  const hasSelection =
-    !!measurementDefinitionId && selectedNodes.size > 0;
-
+  // Fetch measurement definition details
   const {
-    data: existingMeasurement,
-    isLoading: isLoadingMeasurement,
-    error: measurementError,
-  } = useProgramPhaseMeasurementData(
+    data: measurementDefinition,
+    isLoading: isLoadingMeasurementDefinition,
+  } = useMeasurementDefinition(measurementDefinitionId);
+
+  // Fetch instances of this measurement for this program phase
+  const { data: instances } = useProgramPhaseCalculatedMeasurements(
     programId,
     programPhaseId,
-    measurementDefinitionId,
-    location
+    measurementDefinitionId ? { measurementDefinitionId } : undefined
   );
+
+  // Convert selected location to API format for querying existing measurements
+  // Note: company-level queries are not supported by the API
+  const location = useMemo(() => {
+    if (!selectedLocation) return undefined;
+    if (selectedLocation.type === "company") return undefined;
+    return {
+      id: parseInt(selectedLocation.id),
+      type: selectedLocation.type,
+    };
+  }, [selectedLocation]);
+
+  const hasSelection = !!measurementDefinitionId && !!selectedLocation;
+
+  const { data: existingMeasurement, isLoading: isLoadingMeasurement } =
+    useProgramPhaseMeasurementData(programId, programPhaseId, {
+      measurementDefinitionId,
+      location_id: location?.id,
+      location_type: location?.type,
+    });
 
   // Mutation hooks
   const createMutation = useCreateProgramPhaseMeasurementData();
   const updateMutation = useUpdateProgramPhaseMeasurementData();
   const deleteMutation = useDeleteProgramPhaseMeasurementData();
 
-  // Update input value when existing measurement is loaded
+  // Update input value and mode when existing measurement is loaded
   useEffect(() => {
     if (existingMeasurement) {
+      setMode("edit");
       setManualValue(existingMeasurement.calculated_value.toString());
     } else {
+      setMode("add");
       setManualValue("");
     }
   }, [existingMeasurement]);
@@ -117,7 +95,12 @@ export function MeasurementDataAddUploadEdit({
       return;
     }
 
-    if (!measurementDefinitionId) {
+    if (!measurementDefinitionId || !selectedLocation) {
+      return;
+    }
+
+    // Cannot add measurement at company level
+    if (selectedLocation.type === "company") {
       return;
     }
 
@@ -130,14 +113,17 @@ export function MeasurementDataAddUploadEdit({
         calculated_value: value,
       });
     } else {
-      // Create new measurement
+      // Create new measurement with new location format
       createMutation.mutate({
         programId,
         programPhaseId,
         data: {
           measurement_definition_id: measurementDefinitionId,
           calculated_value: value,
-          ...location,
+          location: {
+            id: parseInt(selectedLocation.id),
+            type: selectedLocation.type,
+          },
         },
       });
     }
@@ -153,111 +139,229 @@ export function MeasurementDataAddUploadEdit({
     }
   };
 
-  if (isLoadingProgramMeasurements) {
-    return <div>Loading...</div>;
-  }
-
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const isDeleting = deleteMutation.isPending;
+
+  // Convert instances into a set of location identifiers for easy lookup
+  const instanceLocations = useMemo(() => {
+    const locations = new Set<string>();
+    instances?.forEach(
+      (i: {
+        role_id?: number | null;
+        work_group_id?: number | null;
+        asset_group_id?: number | null;
+        site_id?: number | null;
+        region_id?: number | null;
+        business_unit_id?: number | null;
+      }) => {
+        if (i.role_id) {
+          locations.add(`role:${i.role_id}`);
+        } else if (i.work_group_id) {
+          locations.add(`work_group:${i.work_group_id}`);
+        } else if (i.asset_group_id) {
+          locations.add(`asset_group:${i.asset_group_id}`);
+        } else if (i.site_id) {
+          locations.add(`site:${i.site_id}`);
+        } else if (i.region_id) {
+          locations.add(`region:${i.region_id}`);
+        } else if (i.business_unit_id) {
+          locations.add(`business_unit:${i.business_unit_id}`);
+        }
+      }
+    );
+    return locations;
+  }, [instances]);
+
+  const handleNodeMarkers = (node: {
+    id: string;
+    type: CompanyTreeNodeType;
+  }) => {
+    const key = `${node.type}:${node.id}`;
+    return instanceLocations.has(key) ? (
+      <IconCheck className="h-4 w-4 text-green-500" />
+    ) : null;
+  };
 
   return (
     <div className="grid grid-cols-2 gap-6">
       {/* Left Column: Company Structure */}
       <div>
-        <CompanyStructureSelectionTree
-          selectionMode="branches"
+        <LocationTreeSelect
+          companyId={companyId}
+          value={selectedLocation}
+          onChange={setSelectedLocation}
           enableCollapse={false}
-          onSelectionChange={setSelectedNodes}
+          maxHeight="400px"
+          renderNodeMarkers={handleNodeMarkers}
         />
       </div>
       <div className="space-y-6">
-        {/* Measurement Selection */}
-        <div className="space-y-2">
-          <Label htmlFor="measurement-select">Select Measurement</Label>
-          <Select
-            value={selectedMeasurementDefinitionId}
-            onValueChange={setSelectedMeasurementDefinitionId}
-          >
-            <SelectTrigger id="measurement-select">
-              <SelectValue placeholder="Choose a measurement to enter or upload data for..." />
-            </SelectTrigger>
-            <SelectContent>
-              {programMeasurements?.map((pmf: {
-                id: number;
-                measurement_definition_id: number;
-                measurement_definition?: { name: string };
-              }) => (
-                <SelectItem
-                  key={pmf.id}
-                  value={pmf.measurement_definition_id.toString()}
-                >
-                  {pmf.measurement_definition?.name || `Measurement ${pmf.id}`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Measurement Details */}
+        <div>
+          <h2 className="text-lg font-medium">
+            {measurementDefinition
+              ? measurementDefinition.name
+              : isLoadingMeasurementDefinition
+                ? "Loading measurement..."
+                : "Select a measurement"}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {measurementDefinition
+              ? measurementDefinition.description
+              : "Please select a measurement to see details."}
+          </p>
         </div>
 
-        {/* Measurement Value Input */}
+        {/* Add Mode Section */}
+        {hasSelection && mode === "add" && (
+          <div className="space-y-4">
+            <h4 className="font-medium">Add New Measurement Value</h4>
+            {isLoadingMeasurement || !measurementDefinition ? (
+              <div className="text-sm text-muted-foreground">
+                Loading existing data...
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="measurement-value">Measurement Value</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="measurement-value"
+                      type="number"
+                      step="any"
+                      value={manualValue}
+                      onChange={(e) => setManualValue(e.target.value)}
+                      placeholder="Enter measurement value"
+                      min={measurementDefinition.min_value ?? undefined}
+                      max={measurementDefinition.max_value ?? undefined}
+                      disabled={isSaving}
+                    />
+                    <Button
+                      onClick={handleSave}
+                      disabled={!manualValue || isSaving}
+                    >
+                      <IconDeviceFloppy className="h-4 w-4 mr-2" />
+                      {isSaving ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <p className="text-sm text-muted-foreground">
+                      No existing data. Enter a value to create new measurement
+                      data.
+                    </p>
+                    {(measurementDefinition.min_value !== undefined ||
+                      measurementDefinition.max_value !== undefined) && (
+                      <p className="text-sm text-muted-foreground">
+                        {measurementDefinition.min_value !== undefined &&
+                        measurementDefinition.max_value !== undefined
+                          ? `Valid range: ${measurementDefinition.min_value} - ${measurementDefinition.max_value}`
+                          : measurementDefinition.min_value !== undefined
+                            ? `Minimum: ${measurementDefinition.min_value}`
+                            : `Maximum: ${measurementDefinition.max_value}`}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Edit Mode Section */}
+        {hasSelection && mode === "edit" && existingMeasurement && (
+          <div className="space-y-4">
+            <h4 className="font-medium">Update Measurement Value</h4>
+            {isLoadingMeasurement || !measurementDefinition ? (
+              <div className="text-sm text-muted-foreground">
+                Loading existing data...
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="measurement-value">Measurement Value</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="measurement-value"
+                      type="number"
+                      step="any"
+                      value={manualValue}
+                      onChange={(e) => setManualValue(e.target.value)}
+                      placeholder="Enter measurement value"
+                      min={measurementDefinition.min_value ?? undefined}
+                      max={measurementDefinition.max_value ?? undefined}
+                      disabled={isSaving}
+                    />
+                    <Button
+                      onClick={handleSave}
+                      disabled={!manualValue || isSaving}
+                    >
+                      <IconDeviceFloppy className="h-4 w-4 mr-2" />
+                      {isSaving ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Current value: {existingMeasurement.calculated_value}.
+                    Update the value above to save changes.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Danger Zone - Delete Section */}
+        {hasSelection && mode === "edit" && existingMeasurement && (
+          <div className="space-y-4">
+            <h4 className="font-medium text-red-600">Danger Zone</h4>
+            <div className="border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-muted-foreground mb-3">
+                Delete this measurement instance. This will remove the
+                measurement and its value from this specific location.
+              </p>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                className="w-full sm:w-auto"
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>Delete Measurement</>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Upload Data Placeholder */}
         {hasSelection && (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="measurement-value">Measurement Value</Label>
-              {isLoadingMeasurement ? (
-                <div className="text-sm text-muted-foreground">
-                  Loading existing data...
+            <h4 className="font-medium">Upload Data</h4>
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="flex items-center gap-3">
+                <div>
+                  <div className="text-sm font-medium">No Data Uploaded</div>
+                  <div className="text-xs text-muted-foreground">
+                    Upload your data file to begin analysis
+                  </div>
                 </div>
-              ) : (
-                <>
-                  <Input
-                    id="measurement-value"
-                    type="number"
-                    step="any"
-                    value={manualValue}
-                    onChange={(e) => setManualValue(e.target.value)}
-                    placeholder="Enter measurement value"
-                  />
-                  {existingMeasurement ? (
-                    <p className="text-sm text-muted-foreground">
-                      Existing value found. Update the value above to save changes.
-                    </p>
-                  ) : measurementError ? (
-                    <p className="text-sm text-muted-foreground">
-                      No existing data. Enter a value to create new measurement data.
-                    </p>
-                  ) : null}
-                </>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSave}
-                disabled={!manualValue || isSaving || isLoadingMeasurement}
-              >
-                {isSaving
-                  ? "Saving..."
-                  : existingMeasurement
-                    ? "Update"
-                    : "Save"}
+              </div>
+              <Button variant="outline" size="sm" disabled>
+                <IconFileUpload className="h-4 w-4 mr-2" />
+                Upload
               </Button>
-              {existingMeasurement && (
-                <Button
-                  variant="destructive"
-                  onClick={handleDelete}
-                  disabled={isDeleting || isLoadingMeasurement}
-                >
-                  {isDeleting ? "Deleting..." : "Delete"}
-                </Button>
-              )}
             </div>
           </div>
         )}
 
         {!hasSelection && (
           <div className="text-sm text-muted-foreground">
-            Please select a location from the tree and a measurement to view or enter data.
+            Please select a location from the tree and a measurement to view or
+            enter data.
           </div>
         )}
       </div>

@@ -1,34 +1,26 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge";
 import { IconMessageCircle, IconExternalLink } from "@tabler/icons-react";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { getCommentsByAssessmentId } from "@/lib/api/assessments";
 import { SimpleDataTable } from "@/components/simple-data-table";
 import { type ColumnDef } from "@tanstack/react-table";
+import type { GetCommentsByAssessmentIdResponseData } from "@/types/api/assessments";
 
 interface AssessmentCommentsProps {
   assessmentId: number;
 }
 
-interface CommentItem {
-  id: number;
-  comments: string;
-  // answered_at: string | null;
-  created_at: string;
-  updated_at: string | null;
-  interview_id: number;
-  interview_name: string;
-  question_id: number;
-  question_title: string;
-  domain_name: string;
-  subdomain_name: string;
-  created_by: string | null;
-}
-
 export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
-  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [comments, setComments] =
+    useState<GetCommentsByAssessmentIdResponseData>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const companyId = useCompanyFromUrl();
@@ -77,7 +69,7 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
   };
 
   // Column definitions
-  const columns: ColumnDef<CommentItem>[] = [
+  const columns: ColumnDef<GetCommentsByAssessmentIdResponseData[number]>[] = [
     {
       accessorKey: "interview_name",
       header: "Interview",
@@ -110,18 +102,28 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
     {
       accessorKey: "comments",
       header: "Comment",
-      cell: ({ row }) => (
-        <div className="text-sm max-w-md">
-          <div className="bg-muted/50 p-2 rounded border">
-            {truncateText(row.original.comments, 150)}
-            {row.original.comments.length > 150 && (
-              <span className="text-muted-foreground text-xs ml-1">
-                (truncated)
-              </span>
-            )}
+      cell: ({ row }) => {
+        const comments = row.original.comments;
+
+        if (typeof comments !== "string" || comments.trim() === "") {
+          return (
+            <div className="text-sm text-muted-foreground">No comment</div>
+          );
+        }
+
+        return (
+          <div className="text-sm max-w-md">
+            <div className="bg-muted/50 p-2 rounded border">
+              {truncateText(comments, 150)}
+              {comments.length > 150 && (
+                <span className="text-muted-foreground text-xs ml-1">
+                  (truncated)
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     // {
     //   accessorKey: "answered_at",
@@ -157,7 +159,7 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
             variant="outline"
             onClick={() =>
               window.open(
-                `/${companyId}/assessments/onsite/interviews/${row.original.interview_id}?question=${row.original.question_id}`,
+                `/${companyId}/interviews/${row.original.interview_id}?question=${row.original.question_id}`,
                 "_blank"
               )
             }
@@ -218,7 +220,8 @@ export function AssessmentComments({ assessmentId }: AssessmentCommentsProps) {
           Comments
           {comments.length > 0 && (
             <span className="text-sm font-normal text-muted-foreground">
-              ({comments.length} {comments.length === 1 ? "comment" : "comments"})
+              ({comments.length}{" "}
+              {comments.length === 1 ? "comment" : "comments"})
             </span>
           )}
         </CardTitle>

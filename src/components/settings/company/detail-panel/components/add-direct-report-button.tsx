@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { IconPlus } from "@tabler/icons-react";
 import { CreateDirectReportDialog } from "./create-direct-report-dialog";
+import type { RoleNode } from "@/types/api/companies";
 
 interface AddDirectReportButtonProps {
-  parentRole: any;
+  parentRole: RoleNode;
   onSuccess?: () => void;
   size?: "sm" | "default" | "lg";
   variant?: "default" | "outline" | "ghost";

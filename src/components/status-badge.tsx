@@ -1,11 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-type QuestionnaireStatus = "draft" | "under_review" | "active" | "archived";
+import type { QuestionnaireStatusEnum } from "@/types/api/questionnaire";
 
 interface StatusBadgeProps {
-  status: QuestionnaireStatus;
+  status: QuestionnaireStatusEnum;
   onClick?: () => void;
   disabled?: boolean;
   className?: string;
@@ -22,8 +21,8 @@ const statusConfig = {
     variant: "secondary" as const,
     className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-900/30",
   },
-  active: {
-    label: "Active",
+  published: {
+    label: "Published",
     variant: "secondary" as const,
     className: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/30",
   },
@@ -69,8 +68,8 @@ export function StatusBadge({ status, onClick, disabled, className }: StatusBadg
   );
 }
 
-export function getStatusTransitions(currentStatus: QuestionnaireStatus): Array<{
-  status: QuestionnaireStatus;
+export function getStatusTransitions(currentStatus: QuestionnaireStatusEnum): Array<{
+  status: QuestionnaireStatusEnum;
   label: string;
   description: string;
 }> {
@@ -83,9 +82,9 @@ export function getStatusTransitions(currentStatus: QuestionnaireStatus): Array<
           description: "Send questionnaire for review and approval",
         },
         {
-          status: "active",
+          status: "published",
           label: "Publish Directly",
-          description: "Make questionnaire active and available for use",
+          description: "Make questionnaire published and available for use",
         },
       ];
     case "under_review":
@@ -96,12 +95,12 @@ export function getStatusTransitions(currentStatus: QuestionnaireStatus): Array<
           description: "Move back to draft for further editing",
         },
         {
-          status: "active",
+          status: "published",
           label: "Approve & Publish",
-          description: "Approve and make questionnaire active",
+          description: "Approve and make questionnaire published",
         },
       ];
-    case "active":
+    case "published":
       return [
         {
           status: "archived",
@@ -112,9 +111,9 @@ export function getStatusTransitions(currentStatus: QuestionnaireStatus): Array<
     case "archived":
       return [
         {
-          status: "active",
+          status: "published",
           label: "Reactivate",
-          description: "Make questionnaire active again",
+          description: "Make questionnaire published again",
         },
       ];
     default:

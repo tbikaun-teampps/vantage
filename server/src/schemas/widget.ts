@@ -1,168 +1,184 @@
-import { Type } from "@sinclair/typebox";
+import { z } from "zod";
+import { AssessmentStatusEnum, AssessmentTypeEnum } from "./assessments";
+import { ProgramStatusEnum } from "./programs";
+import { InterviewStatusEnum } from "./interviews";
 
-export const widgetSchemas = {
-  querystring: {
-    activity: Type.Object({
-      entityType: Type.Union(
-        [
-          Type.Literal("interviews"),
-          Type.Literal("assessments"),
-          Type.Literal("programs"),
-        ],
-        { description: "The type of entity to fetch activity data for" }
-      ),
-    }),
+// Common params schema for all widget routes
+const WidgetParamsSchema = z.object({
+  companyId: z.string(),
+});
 
-    metrics: Type.Object({
-      metricType: Type.Union(
-        [
-          Type.Literal("generated-actions"),
-          Type.Literal("generated-recommendations"),
-          Type.Literal("worst-performing-domain"),
-          Type.Literal("high-risk-areas"),
-          Type.Literal("assessment-activity"),
-        ],
-        { description: "The type of metric to fetch" }
-      ),
-      title: Type.Optional(
-        Type.String({ description: "Optional custom title for the metric" })
-      ),
-    }),
+// GET config options for widget configuration
+export const GetConfigOptionsParamsSchema = WidgetParamsSchema;
 
-    table: Type.Object({
-      entityType: Type.Union(
-        [
-          Type.Literal("actions"),
-          Type.Literal("recommendations"),
-          Type.Literal("comments"),
-        ],
-        { description: "The type of table data to fetch" }
-      ),
-      assessmentId: Type.Optional(
-        Type.Number({ description: "Optional assessment ID for filtering" })
-      ),
-      programId: Type.Optional(
-        Type.Number({ description: "Optional program ID for filtering" })
-      ),
-    }),
+export const GetConfigOptionsResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.object({
+    assessments: z.array(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+        status: z.enum(AssessmentStatusEnum),
+      })
+    ),
+    programs: z.array(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+        status: z.enum(ProgramStatusEnum),
+      })
+    ),
+    interviews: z.array(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+        status: z.enum(InterviewStatusEnum),
+      })
+    ),
+  }),
+});
 
-    actions: Type.Object({
-      entityType: Type.String({ description: "The entity type for actions" }),
-    }),
-  },
+// GET activity data for widgets
+export const GetActivityDataParamsSchema = WidgetParamsSchema;
 
-  responses: {
-    configOptions: Type.Object({
-      success: Type.Boolean(),
-      data: Type.Object({
-        assessments: Type.Array(
-          Type.Object({
-            id: Type.Number(),
-            name: Type.String(),
-            status: Type.String(),
+export const GetActivityDataQuerySchema = z.object({
+  entityType: z.enum(["interviews", "assessments", "programs"]),
+});
+
+export const GetActivityDataResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.object({
+    total: z.number(),
+    breakdown: z.record(z.string(), z.number()),
+    // TODO: re-add scope once implemented in service
+    // scope: z.object({
+    //   assessmentName: z.string().optional(),
+    //   programName: z.string().optional(),
+    // }),
+    items: z.array(
+      z.object({
+        id: z.number(),
+        status: z.union([
+          z.enum(AssessmentStatusEnum),
+          z.enum(ProgramStatusEnum),
+          z.enum(InterviewStatusEnum),
+        ]),
+        created_at: z.string(),
+        updated_at: z.string(),
+        name: z.string(),
+        type: z.enum(AssessmentTypeEnum).optional(),
+        is_individual: z.boolean().optional(),
+        assessment: z
+          .object({
+            id: z.number(),
+            name: z.string(),
           })
-        ),
-        programs: Type.Array(
-          Type.Object({
-            id: Type.Number(),
-            name: Type.String(),
-            status: Type.String(),
+          .optional(),
+        program_phase: z
+          .object({
+            id: z.number(),
+            name: z.string(),
+            program: z.object({
+              id: z.number(),
+              name: z.string(),
+            }),
           })
-        ),
-        interviews: Type.Array(
-          Type.Object({
-            id: Type.Number(),
-            name: Type.String(),
-            status: Type.String(),
-          })
-        ),
-      }),
-    }),
+          .nullable()
+          .optional(),
+      })
+    ),
+  }),
+});
 
-    activityData: Type.Object({
-      success: Type.Boolean(),
-      data: Type.Object({
-        total: Type.Number({ description: "Total count of entities" }),
-        breakdown: Type.Record(
-          Type.String(),
-          Type.Number(),
-          {
-            description:
-              "Status breakdown with status names as keys and counts as values",
-          }
-        ),
-      }),
-    }),
+// GET metric data for widgets
+export const GetMetricDataParamsSchema = WidgetParamsSchema;
 
-    metricData: Type.Object({
-      success: Type.Boolean(),
-      data: Type.Object({
-        title: Type.String(),
-        metricType: Type.String(),
-        value: Type.Union([Type.Number(), Type.String()]),
-        phaseBadge: Type.Optional(
-          Type.Object({
-            text: Type.String(),
-            color: Type.String(),
-            borderColor: Type.String(),
-          })
-        ),
-        badges: Type.Optional(
-          Type.Array(
-            Type.Object({
-              text: Type.String(),
-              color: Type.String(),
-              borderColor: Type.String(),
-              icon: Type.Optional(Type.String()),
-            })
-          )
-        ),
-        secondaryMetrics: Type.Optional(
-          Type.Array(
-            Type.Object({
-              value: Type.Union([Type.Number(), Type.String()]),
-              label: Type.String(),
-              icon: Type.Optional(Type.String()),
-            })
-          )
-        ),
-        subtitle: Type.Optional(Type.String()),
-        description: Type.Optional(Type.String()),
-        trend: Type.Optional(Type.Number()),
-        status: Type.Optional(
-          Type.Union([
-            Type.Literal("up"),
-            Type.Literal("down"),
-            Type.Literal("neutral"),
-          ])
-        ),
-      }),
-    }),
+export const GetMetricDataQuerySchema = z.object({
+  metricType: z.enum([
+    "generated-actions",
+    "generated-recommendations",
+    "worst-performing-domain",
+    "high-risk-areas",
+    "assessment-activity",
+  ]),
+  title: z.string().optional(),
+});
 
-    tableData: Type.Object({
-      success: Type.Boolean(),
-      data: Type.Object({
-        rows: Type.Array(
-          Type.Record(Type.String(), Type.Union([Type.String(), Type.Number()]))
-        ),
-        columns: Type.Array(
-          Type.Object({
-            key: Type.String(),
-            label: Type.String(),
-          })
-        ),
-        scope: Type.Optional(
-          Type.Object({
-            assessmentName: Type.Optional(Type.String()),
-            programName: Type.Optional(Type.String()),
-          })
-        ),
-      }),
-    }),
+export const GetMetricDataResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.object({
+    title: z.string(),
+    metricType: z.string(),
+    value: z.union([z.number(), z.string()]),
+    phaseBadge: z
+      .object({
+        text: z.string(),
+        color: z.string(),
+        borderColor: z.string(),
+      })
+      .optional(),
+    badges: z
+      .array(
+        z.object({
+          text: z.string(),
+          color: z.string(),
+          borderColor: z.string(),
+          icon: z.string().optional(),
+        })
+      )
+      .optional(),
+    secondaryMetrics: z
+      .array(
+        z.object({
+          value: z.union([z.number(), z.string()]),
+          label: z.string(),
+          icon: z.string().optional(),
+        })
+      )
+      .optional(),
+    subtitle: z.string().optional(),
+    description: z.string().optional(),
+    trend: z.number().optional(),
+    status: z.enum(["up", "down", "neutral"]).optional(),
+  }),
+});
 
-    actionsData: Type.Object({
-      success: Type.Boolean(),
-      data: Type.Array(Type.String()),
-    }),
-  },
-};
+// GET table data for widgets
+export const GetTableDataParamsSchema = WidgetParamsSchema;
+
+export const GetTableDataQuerySchema = z.object({
+  entityType: z.enum(["actions", "recommendations", "comments"]),
+  assessmentId: z.coerce.number().optional(),
+  programId: z.coerce.number().optional(),
+});
+
+export const GetTableDataResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.object({
+    rows: z.array(z.record(z.string(), z.union([z.string(), z.number()]))),
+    columns: z.array(
+      z.object({
+        key: z.string(),
+        label: z.string(),
+      })
+    ),
+    scope: z
+      .object({
+        assessmentName: z.string().optional(),
+        programName: z.string().optional(),
+      })
+      .optional(),
+  }),
+});
+
+// GET actions data for widgets
+export const GetActionsDataParamsSchema = WidgetParamsSchema;
+
+export const GetActionsDataQuerySchema = z.object({
+  entityType: z.string(),
+});
+
+export const GetActionsDataResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.array(z.string()),
+});

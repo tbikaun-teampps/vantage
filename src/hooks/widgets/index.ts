@@ -1,10 +1,13 @@
-import type { WidgetType } from "@/components/dashboard/widgets/types";
+import type { WidgetConfig, WidgetType } from "@/types/api/dashboard";
 import { useCompanyFromUrl } from "../useCompanyFromUrl";
 import { useQuery } from "@tanstack/react-query";
-import { getMetricData, getActivityData, getActionsData, getTableData } from "@/lib/api/widgets";
-import type { WidgetConfig } from "../useDashboardLayouts";
+import {
+  getMetricData,
+  getActivityData,
+  getActionsData,
+  getTableData,
+} from "@/lib/api/widgets";
 
-export { useMetricData } from "./useMetricData";
 export { useTableData } from "./useTableData";
 
 function hasValidConfig(config: WidgetConfig | undefined): boolean {
@@ -21,25 +24,23 @@ export function useWidgetData(widgetType: WidgetType, config: WidgetConfig) {
     throw new Error("Company ID is required to fetch widget data");
   }
 
-  console.log("fetching widget data:", { widgetType, config, companyId });
-
   const metricQuery = useQuery({
     queryKey: ["widget", "metric", config, companyId],
     queryFn: async () => {
-      console.log("Query function starting");
-      try {
-        if (!config?.metric?.metricType) {
-          throw new Error("Metric type is required");
-        }
-        const result = await getMetricData(companyId, config.metric.metricType, config.metric.title);
-        console.log("Query function completed:", result);
-        return result;
-      } catch (error) {
-        console.log("Query function error:", error);
-        throw error;
+      if (!config?.metric?.metricType) {
+        throw new Error("Metric type is required");
       }
+      const result = await getMetricData(companyId, {
+        metricType: config.metric.metricType,
+        title: config.metric.title,
+      });
+      return result;
     },
-    enabled: widgetType === "metric" && isConfigured && !!companyId && !!config?.metric?.metricType,
+    enabled:
+      widgetType === "metric" &&
+      isConfigured &&
+      !!companyId &&
+      !!config?.metric?.metricType,
     retry: false, // Disable retries to see errors faster,
   });
 
@@ -49,15 +50,22 @@ export function useWidgetData(widgetType: WidgetType, config: WidgetConfig) {
       if (!config?.entity?.entityType) {
         throw new Error("Entity type is required");
       }
-      const entityType = config.entity.entityType as "interviews" | "assessments" | "programs";
-      return getActivityData(companyId, entityType);
+      const entityType = config.entity.entityType as
+        | "interviews"
+        | "assessments"
+        | "programs";
+      return getActivityData(companyId, { entityType });
     },
-    enabled: widgetType === "activity" && isConfigured && !!companyId && !!config?.entity?.entityType,
+    enabled:
+      widgetType === "activity" &&
+      isConfigured &&
+      !!companyId &&
+      !!config?.entity?.entityType,
   });
 
   const actionsQuery = useQuery({
     queryKey: ["widget", "actions", config, companyId],
-    queryFn: () => getActionsData(companyId),
+    queryFn: () => getActionsData(companyId, { entityType: "actions" }),
     enabled: widgetType === "actions" && isConfigured && !!companyId,
   });
 
@@ -67,15 +75,21 @@ export function useWidgetData(widgetType: WidgetType, config: WidgetConfig) {
       if (!config?.table?.entityType) {
         throw new Error("Table entity type is required");
       }
-      const entityType = config.table.entityType as "actions" | "recommendations" | "comments";
-      return getTableData(
-        companyId,
+      const entityType = config.table.entityType as
+        | "actions"
+        | "recommendations"
+        | "comments";
+      return getTableData(companyId, {
         entityType,
-        config.scope?.assessmentId,
-        config.scope?.programId
-      );
+        assessmentId: config.scope?.assessmentId,
+        programId: config.scope?.programId,
+      });
     },
-    enabled: widgetType === "table" && isConfigured && !!companyId && !!config?.table?.entityType,
+    enabled:
+      widgetType === "table" &&
+      isConfigured &&
+      !!companyId &&
+      !!config?.table?.entityType,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 

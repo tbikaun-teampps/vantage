@@ -173,7 +173,7 @@ function UserMenuInternal({
             <AvatarFallback className="rounded-lg">V</AvatarFallback>
           </Avatar>
           <div className="grid flex-1 text-left text-sm leading-tight">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               <span className="truncate font-medium">{userName}</span>
               {isAdmin && (
                 <Badge

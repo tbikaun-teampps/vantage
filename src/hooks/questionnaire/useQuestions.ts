@@ -1,13 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getQuestionnaireById } from "@/lib/api/questionnaires";
-import type {
-  QuestionnaireWithStructure,
-  SectionWithSteps,
-  StepWithQuestions,
-  QuestionnaireStep,
-  QuestionnaireQuestion,
-  UpdateQuestionnaireSectionData,
-} from "@/types/assessment";
 import {
   createSection,
   updateSection,
@@ -24,7 +16,19 @@ import {
   deleteQuestionRatingScale,
   addAllQuestionnaireRatingScales,
   updateQuestionRoles,
+  reorderQuestionnaire,
 } from "@/lib/api/questionnaires";
+import type {
+  CreateQuestionnaireQuestionBodyData,
+  CreateQuestionnaireStepBodyData,
+  GetQuestionnaireByIdResponseData,
+  ReorderQuestionnaireBodyData,
+  UpdateQuestionnaireQuestionBodyData,
+  UpdateQuestionnaireQuestionResponseData,
+  UpdateQuestionnaireSectionBodyData,
+  UpdateQuestionnaireStepBodyData,
+  UpdateQuestionRatingScaleBodyData,
+} from "@/types/api/questionnaire";
 
 // Query key factory for questions/structure data
 export const questionsKeys = {
@@ -33,40 +37,14 @@ export const questionsKeys = {
 };
 
 // Hook for full questionnaire structure (sections, steps, questions) with lazy loading
-function useQuestionnaireStructure(
-  questionnaireId: number,
-  enabled = true
-) {
+function useQuestionnaireStructure(questionnaireId: number, enabled = true) {
   return useQuery({
     queryKey: questionsKeys.structure(questionnaireId),
-    queryFn: (): Promise<QuestionnaireWithStructure> =>
+    queryFn: (): Promise<GetQuestionnaireByIdResponseData> =>
       getQuestionnaireById(questionnaireId),
     staleTime: 5 * 60 * 1000, // 5 minutes - structure data changes more frequently
     enabled: enabled && !!questionnaireId,
   });
-}
-
-// Helper functions to calculate question statistics
-function getQuestionCount(sections: SectionWithSteps[] = []): number {
-  let count = 0;
-  sections.forEach((section: SectionWithSteps) => {
-    if (section.steps) {
-      section.steps.forEach((step: StepWithQuestions) => {
-        if (step.questions) {
-          count += step.questions.length;
-        }
-      });
-    }
-  });
-  return count;
-}
-
-function hasQuestions(sections: SectionWithSteps[] = []): boolean {
-  return sections.some((section: SectionWithSteps) =>
-    section.steps.some(
-      (step: StepWithQuestions) => step.questions && step.questions.length > 0
-    )
-  );
 }
 
 // Hook specifically for the questions tab with lazy loading
@@ -79,8 +57,10 @@ export function useQuestionsTab(questionnaireId: number, isActive = false) {
   } = useQuestionnaireStructure(questionnaireId, isActive);
 
   const sections = questionnaire?.sections || [];
-  const questionCount = getQuestionCount(sections);
-  const isComplete = hasQuestions(sections);
+  const questionCount = questionnaire?.question_count;
+  const isComplete =
+    questionnaire?.question_count !== undefined &&
+    questionnaire.question_count > 0;
 
   return {
     questionnaire,
@@ -117,7 +97,7 @@ export function useSectionActions() {
       // Update questionnaire structure with new section
       queryClient.setQueryData(
         questionsKeys.structure(questionnaireId),
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old || old.id !== questionnaireId) return old;
           return {
             ...old,
@@ -134,13 +114,13 @@ export function useSectionActions() {
       updates,
     }: {
       id: number;
-      updates: UpdateQuestionnaireSectionData;
+      updates: UpdateQuestionnaireSectionBodyData;
     }) => updateSection(id, updates),
     onSuccess: (_, { id, updates }) => {
       // Update questionnaire structure with updated section
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -159,7 +139,7 @@ export function useSectionActions() {
       // Remove section from questionnaire structure
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -190,28 +170,19 @@ export function useStepActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: ({
-      sectionId,
-      title,
-    }: {
-      sectionId: number;
-      title: string;
-    }) => {
-      return createStep({
-        questionnaire_section_id: sectionId,
-        title,
-      });
+    mutationFn: (data: CreateQuestionnaireStepBodyData) => {
+      return createStep(data);
     },
-    onSuccess: (newStep, { sectionId }) => {
+    onSuccess: (newStep, { questionnaire_section_id }) => {
       // Update questionnaire structure with new step
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
             sections: old.sections.map((section) =>
-              section.id === sectionId
+              section.id === questionnaire_section_id
                 ? {
                     ...section,
                     steps: [...section.steps, { ...newStep, questions: [] }],
@@ -230,12 +201,12 @@ export function useStepActions() {
       updates,
     }: {
       id: number;
-      updates: Partial<QuestionnaireStep>;
+      updates: UpdateQuestionnaireStepBodyData;
     }) => updateStep(id, updates),
     onSuccess: (_, { id, updates }) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -256,7 +227,7 @@ export function useStepActions() {
     onSuccess: (_, id) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -290,42 +261,26 @@ export function useQuestionActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: ({
-      questionnaireStepId,
-      title,
-      question_text,
-      context,
-    }: {
-      questionnaireStepId: number;
-      title: string;
-      question_text: string;
-      context?: string;
-    }) => {
-      return createQuestion({
-        questionnaire_step_id: questionnaireStepId,
-        title,
-        question_text,
-        context,
-      });
+    mutationFn: (data: CreateQuestionnaireQuestionBodyData) => {
+      return createQuestion(data);
     },
-    onSuccess: (newQuestion, { questionnaireStepId }) => {
+    onSuccess: (newQuestion, { questionnaire_step_id }) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
             sections: old.sections.map((section) => ({
               ...section,
               steps: section.steps.map((step) =>
-                step.id === questionnaireStepId
+                step.id === questionnaire_step_id
                   ? {
                       ...step,
                       questions: [
                         ...step.questions,
                         {
                           ...newQuestion,
-                          question_rating_scales: [],
                           question_roles: [],
                         },
                       ],
@@ -345,12 +300,13 @@ export function useQuestionActions() {
       updates,
     }: {
       id: number;
-      updates: Partial<QuestionnaireQuestion>;
-    }) => updateQuestion(id, updates),
+      updates: UpdateQuestionnaireQuestionBodyData;
+    }): Promise<UpdateQuestionnaireQuestionResponseData> =>
+      updateQuestion(id, updates),
     onSuccess: (_, { id, updates }) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -374,7 +330,7 @@ export function useQuestionActions() {
     onSuccess: (_, id) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -398,7 +354,7 @@ export function useQuestionActions() {
     onSuccess: (newQuestion) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
           return {
             ...old,
@@ -438,11 +394,15 @@ export function useQuestionActions() {
   });
 
   const updateRatingScaleMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: ({
+      questionId,
+      questionRatingScaleId,
+      data,
+    }: {
       questionId: number;
       questionRatingScaleId: number;
-      description: string;
-    }) => updateQuestionRatingScale(data),
+      data: UpdateQuestionRatingScaleBodyData;
+    }) => updateQuestionRatingScale(questionId, questionRatingScaleId, data),
     onSuccess: () => {
       // Refresh the questionnaire data to get the updated rating scales
       queryClient.invalidateQueries({
@@ -473,65 +433,6 @@ export function useQuestionActions() {
     },
   });
 
-  // const updateRatingScalesMutation = useMutation({
-  //   mutationFn: async ({
-  //     questionId,
-  //     ratingScaleAssociations,
-  //   }: {
-  //     questionId: number;
-  //     ratingScaleAssociations: Array<{
-  //       ratingScaleId: number;
-  //       description: string;
-  //     }>;
-  //   }) => {
-  //     return updateQuestionRatingScales(questionId, ratingScaleAssociations);
-  //   },
-  //   onSuccess: (_, { questionId, ratingScaleAssociations }) => {
-  //     queryClient.setQueriesData(
-  //       { queryKey: questionsKeys.all },
-  //       (old: QuestionnaireWithStructure | null) => {
-  //         if (!old) return null;
-
-  //         const updatedAssociations = ratingScaleAssociations.map(
-  //           (association) => {
-  //             const ratingScale = old.rating_scales.find(
-  //               (scale) => scale.id === association.ratingScaleId
-  //             );
-  //             return {
-  //               id: `temp-${Date.now()}-${Math.random()}`,
-  //               created_at: new Date().toISOString(),
-  //               updated_at: new Date().toISOString(),
-  //               created_by: "",
-  //               questionnaire_question_id: questionId,
-  //               questionnaire_rating_scale_id: association.ratingScaleId,
-  //               description: association.description,
-  //               rating_scale: ratingScale!,
-  //             };
-  //           }
-  //         );
-
-  //         return {
-  //           ...old,
-  //           sections: old.sections.map((section) => ({
-  //             ...section,
-  //             steps: section.steps.map((step) => ({
-  //               ...step,
-  //               questions: step.questions.map((question) =>
-  //                 question.id === questionId
-  //                   ? {
-  //                       ...question,
-  //                       question_rating_scales: updatedAssociations,
-  //                     }
-  //                   : question
-  //               ),
-  //             })),
-  //           })),
-  //         };
-  //       }
-  //     );
-  //   },
-  // });
-
   const updateRolesMutation = useMutation({
     mutationFn: ({
       questionnaire_question_id,
@@ -539,11 +440,11 @@ export function useQuestionActions() {
     }: {
       questionnaire_question_id: number;
       shared_role_ids: number[];
-    }) => updateQuestionRoles(questionnaire_question_id, shared_role_ids),
+    }) => updateQuestionRoles(questionnaire_question_id, { shared_role_ids }),
     onSuccess: (update, { questionnaire_question_id }) => {
       queryClient.setQueriesData(
         { queryKey: questionsKeys.all },
-        (old: QuestionnaireWithStructure | null) => {
+        (old: GetQuestionnaireByIdResponseData | null) => {
           if (!old) return null;
 
           return {
@@ -604,5 +505,24 @@ export function useQuestionActions() {
   };
 }
 
-// Export the helper functions for use in other components if needed
-export { getQuestionCount, hasQuestions };
+// Reorder questionnaire tree (sections, steps, questions)
+export function useReorderQuestionnaireTree(questionnaireId: number) {
+  const queryClient = useQueryClient();
+
+  const reorderMutation = useMutation({
+    mutationFn: (updates: ReorderQuestionnaireBodyData) =>
+      reorderQuestionnaire(questionnaireId, updates),
+    onSuccess: () => {
+      // Invalidate questionnaire structure cache to refetch with new order
+      queryClient.invalidateQueries({
+        queryKey: questionsKeys.structure(questionnaireId),
+      });
+    },
+  });
+
+  return {
+    reorderTree: reorderMutation.mutateAsync,
+    isReordering: reorderMutation.isPending,
+    reorderError: reorderMutation.error,
+  };
+}

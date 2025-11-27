@@ -1,15 +1,25 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { IconPlus, IconTarget, IconX } from "@tabler/icons-react";
-import type { ProgramObjective } from "./schema";
+import type { GetProgramObjectivesResponseData } from "@/types/api/programs";
 
 interface ProgramObjectivesProps {
-  objectives: ProgramObjective[];
+  objectives: GetProgramObjectivesResponseData;
   onAddObjective: () => void;
   onRemoveObjective: (index: number) => void;
-  onUpdateObjective: (index: number, field: keyof ProgramObjective, value: string) => void;
+  onUpdateObjective: (
+    index: number,
+    field: keyof GetProgramObjectivesResponseData[number],
+    value: string
+  ) => void;
   error?: string;
 }
 
@@ -91,9 +101,7 @@ export function ProgramObjectives({
           )}
         </div>
 
-        {error && (
-          <p className="text-sm text-destructive">{error}</p>
-        )}
+        {error && <p className="text-sm text-destructive">{error}</p>}
       </CardContent>
     </Card>
   );

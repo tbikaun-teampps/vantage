@@ -20,7 +20,7 @@ import {
 import { HexagonalBackground } from "../hexagonal-bg";
 import { ThemeModeToggle } from "../theme-mode-toggle";
 
-export type AccessType = "interview" | "data";
+type AccessType = "interview" | "data";
 
 interface AccessCodeFormProps {
   id: string;

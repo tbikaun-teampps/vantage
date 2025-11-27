@@ -7,14 +7,11 @@ import {
 } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import type { QuestionRatingScaleOptions } from "@/types/api/interviews";
 import { IconCircleCheckFilled } from "@tabler/icons-react";
 
 interface InterviewRatingSectionProps {
-  options: Array<{
-    id: string;
-    value: number;
-    name: string;
-  }>;
+  options: QuestionRatingScaleOptions;
   form: any;
   isMobile: boolean;
 }
@@ -31,7 +28,7 @@ export function InterviewRatingSection({
   const hasAnswer = hasRating || isUnknown;
 
   return (
-    <div className="space-y-4" data-tour="interview-rating">
+    <div className="space-y-4 px-6" data-tour="interview-rating">
       {!isMobile && (
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
@@ -155,12 +152,7 @@ export function InterviewRatingSection({
 }
 
 interface OptionButtonProps {
-  rating: {
-    id: string;
-    value: number;
-    name: string;
-    description?: string;
-  };
+  rating: QuestionRatingScaleOptions[number];
   isSelected: boolean;
   isMobile: boolean;
   field: any;

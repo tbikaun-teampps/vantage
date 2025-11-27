@@ -1,99 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCurrentCompany } from "@/hooks/useCompany";
 import { useEffect, useRef } from "react";
-import type { Tables, TablesInsert, TablesUpdate } from "@/types/database";
 import type { Layout } from "react-grid-layout";
-import type { WidgetType } from "@/components/dashboard/widgets/types";
 import * as dashboardsApi from "@/lib/api/dashboards";
+import type {
+  CreateDashboardBodyData,
+  Dashboard,
+  UpdateDashboardBodyData,
+  Widget,
+} from "@/types/api/dashboard";
 
-// Database types
-export type DashboardRow = Tables<"dashboards">;
-export type DashboardInsert = TablesInsert<"dashboards">;
-export type DashboardUpdate = TablesUpdate<"dashboards">;
-
-// Frontend types
-export interface MetricConfig {
-  metricType:
-    | "generated-actions"
-    | "generated-recommendations"
-    | "worst-performing-domain"
-    | "high-risk-areas"
-    | "assessment-activity";
-  title: string;
-  description?: string; // Footer description
-  value: number | string; // Main metric value
-  trend?: number; // Percentage change (e.g., +15, -5)
-  status?: "up" | "down" | "neutral"; // Trend direction
-  badges?: Array<{
-    text: string;
-    color?: string;
-    borderColor?: string;
-    icon?: string;
-  }>; // Action/status badges
-  secondaryMetrics?: Array<{
-    value: number | string;
-    label: string;
-    icon?: string;
-  }>;
-  subtitle?: string; // Text after main value
-  phaseBadge?: {
-    text: string;
-    color?: string;
-    borderColor?: string;
-    icon?: string;
-  }; // Like "discover", "improve", "monitor"
-}
-
-// Configuration for action and activity widgets
-export interface EntityConfig {
-  entityType: "interviews" | "assessments" | "programs";
-}
-
-export interface TableConfig {
-  entityType: "actions" | "recommendations" | "comments";
-}
-
-export interface ScopeConfig {
-  assessmentId?: number;
-  programId?: number;
-  interviewId?: number;
-}
-
-// Generic widget configuration interface
-export interface WidgetConfig {
-  title?: string;
-  metric?: MetricConfig;
-  entity?: EntityConfig;
-  table?: TableConfig;
-  scope?: ScopeConfig;
-  // Future widget configs can be added here
-  // chart?: ChartConfig;
-}
-
-export interface DashboardItem {
-  id: string;
-  widgetType: WidgetType;
-  config: WidgetConfig;
-}
-
-export interface Dashboard {
-  id: number;
-  name: string;
-  createdAt: Date;
-  updatedAt: Date;
-  widgets: DashboardItem[];
-  layout: Layout[];
-  companyId: string;
-  createdBy: string;
-}
-
-export interface CreateDashboardInput {
-  name: string;
-  widgets: DashboardItem[];
-  layout: Layout[];
-}
-
-const createDefaultDashboard = (): CreateDashboardInput => ({
+const createDefaultDashboard = (): CreateDashboardBodyData => ({
   name: "My Dashboard",
   widgets: [],
   layout: [],
@@ -108,20 +25,6 @@ const dashboardLayoutKeys = {
   detail: (id: number) => [...dashboardLayoutKeys.all, "detail", id] as const,
 };
 
-// Transform API response to frontend type
-function transformDashboard(row: dashboardsApi.Dashboard): Dashboard {
-  return {
-    id: row.id,
-    name: row.name,
-    createdAt: new Date(row.created_at),
-    updatedAt: new Date(row.updated_at),
-    widgets: (row.widgets as unknown as DashboardItem[]) || [],
-    layout: (row.layout as unknown as Layout[]) || [],
-    companyId: row.company_id,
-    createdBy: row.created_by,
-  };
-}
-
 /**
  * Hook to fetch all dashboards for a company
  */
@@ -131,8 +34,7 @@ function useDashboards(companyId?: string) {
     queryFn: async () => {
       if (!companyId) return [];
 
-      const data = await dashboardsApi.getDashboards(companyId);
-      return data.map(transformDashboard);
+      return await dashboardsApi.getDashboards(companyId);
     },
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -147,15 +49,10 @@ function useDashboardActions() {
   const { data: currentCompany } = useCurrentCompany();
 
   const createMutation = useMutation({
-    mutationFn: async (dashboard: CreateDashboardInput) => {
+    mutationFn: async (dashboard: CreateDashboardBodyData) => {
       if (!currentCompany?.id) throw new Error("No company selected");
 
-      const data = await dashboardsApi.createDashboard(
-        currentCompany.id,
-        dashboard
-      );
-
-      return transformDashboard(data);
+      return await dashboardsApi.createDashboard(currentCompany.id, dashboard);
     },
     onSuccess: (newDashboard) => {
       if (!currentCompany?.id) return;
@@ -178,18 +75,16 @@ function useDashboardActions() {
     }) => {
       if (!currentCompany?.id) throw new Error("No company selected");
 
-      const updateInput: dashboardsApi.UpdateDashboardInput = {};
+      const updateInput: UpdateDashboardBodyData = {};
       if (updates.name !== undefined) updateInput.name = updates.name;
       if (updates.layout !== undefined) updateInput.layout = updates.layout;
       if (updates.widgets !== undefined) updateInput.widgets = updates.widgets;
 
-      const data = await dashboardsApi.updateDashboard(
+      return await dashboardsApi.updateDashboard(
         currentCompany.id,
         dashboardId,
         updateInput
       );
-
-      return transformDashboard(data);
     },
     onMutate: async ({ dashboardId, updates }) => {
       if (!currentCompany?.id) return;
@@ -326,9 +221,8 @@ export function useDashboardLayoutManager() {
 
   const updateDashboardWidgets = async (
     dashboardId: number,
-    widgets: DashboardItem[]
+    widgets: Widget[]
   ) => {
-    console.log("updating widgets", widgets);
     return updateDashboard({
       dashboardId,
       updates: { widgets },

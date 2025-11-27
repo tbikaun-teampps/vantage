@@ -46,5 +46,3 @@ tourManager.registerTour({
   id: 'assessment-management',
   steps: assessmentSteps
 });
-
-export { assessmentSteps };

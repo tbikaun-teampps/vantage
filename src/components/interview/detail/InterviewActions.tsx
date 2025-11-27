@@ -22,6 +22,7 @@ import {
 } from "@tabler/icons-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useResponseActions } from "@/hooks/interview/useResponseActions";
+import type { InterviewAction } from "@/types/api/interviews";
 
 interface InterviewActionsProps {
   responseId: number;
@@ -33,13 +34,14 @@ export function InterviewActions({
   disabled = false,
 }: InterviewActionsProps) {
   const [showActionDialog, setShowActionDialog] = useState(false);
-  const [editingAction, setEditingAction] = useState<any>(null);
+  const [editingAction, setEditingAction] = useState<InterviewAction | null>(
+    null
+  );
   const [actionForm, setActionForm] = useState({ title: "", description: "" });
   const isMobile = useIsMobile();
 
   const {
     actions,
-    isLoading,
     addAction,
     updateAction,
     deleteAction,
@@ -48,7 +50,7 @@ export function InterviewActions({
     isDeleting,
   } = useResponseActions(responseId);
 
-  const openActionDialog = (action?: any) => {
+  const openActionDialog = (action: InterviewAction) => {
     setEditingAction(action);
     setActionForm({
       title: action?.title || "",
@@ -136,7 +138,7 @@ export function InterviewActions({
             ) : (
               // <ScrollArea className="h-[300px] w-full">
               <div className="space-y-3 mb-4">
-                {actions.map((action: any, index: number) => (
+                {actions.map((action, index: number) => (
                   <Card key={action.id} className="relative group">
                     <CardContent>
                       <div className="flex items-start justify-between space-x-3">

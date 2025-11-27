@@ -2,14 +2,22 @@ import { FastifyInstance } from "fastify";
 import { InterviewsService } from "../../services/InterviewsService.js";
 import { EvidenceService } from "../../services/EvidenceService.js";
 import { EmailService } from "../../services/EmailService.js";
-import {
-  CreateInterviewResponseActionData,
-  UpdateInterviewData,
-  UpdateInterviewResponseActionData,
-  CreateInterviewData,
-  InterviewStatus,
-} from "../../types/entities/interviews.js";
 import { NotFoundError } from "../../plugins/errorHandler.js";
+import {
+  IndividualInterviewSchema,
+  InterviewQuestion,
+  InterviewQuestionSchema,
+  InterviewSummarySchema,
+} from "../../schemas/interviews.js";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod";
+import {
+  Error400Schema,
+  Error401Schema,
+  Error404Schema,
+  Error500Schema,
+} from "../../schemas/errors.js";
+import { InterviewStatusEnum } from "../../schemas/interviews.js";
 
 export async function interviewsRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -25,51 +33,81 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       request.user.id
     );
   });
-  fastify.get(
-    "",
-    {
-      schema: {
-        querystring: {
-          type: "object",
-          properties: {
-            company_id: { type: "string" },
-            assessment_id: { type: "number" },
-            status: { type: "array", items: { type: "string" } },
-            program_phase_id: { type: "string" },
-            questionnaire_id: { type: "string" },
-            detailed: { type: "boolean", default: false },
-          },
-          required: ["company_id"],
-        },
-        response: {
-          // 200: {
-          //   type: "object",
-          //   properties: {
-          //     success: { type: "boolean" },
-          //     data: {
-          //       type: "array",
-          //       items: { type: "object" },
-          //     },
-          //   },
-          // },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "",
+    schema: {
+      description: "Fetch interviews with optional filters",
+      querystring: z.object({
+        company_id: z.string(),
+        assessment_id: z.coerce.number().optional(),
+        program_phase_id: z.coerce.number().optional(),
+        questionnaire_id: z.coerce.number().optional(),
+        status: z.array(z.enum(InterviewStatusEnum)).optional(),
+        detailed: z.boolean().default(false).optional(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.array(
+            z.object({
+              id: z.number(),
+              name: z.string(),
+              is_individual: z.boolean(),
+              enabled: z.boolean(),
+              access_code: z.string().nullable(),
+              created_at: z.string(),
+              updated_at: z.string(),
+              due_at: z.string().nullable(),
+              assessment: z.object({
+                id: z.number(),
+                name: z.string(),
+                type: z.enum(["onsite", "desktop"]),
+              }),
+              program: z
+                .object({
+                  id: z.number(),
+                  name: z.string(),
+                  program_phase_id: z.number(),
+                  program_phase_name: z.string().nullable(),
+                })
+                .nullable(),
+              completion_rate: z.number(),
+              average_score: z.number(),
+              min_rating_value: z.number(),
+              max_rating_value: z.number(),
+              status: z.enum(InterviewStatusEnum),
+              interview_roles: z.array(
+                z.object({
+                  role: z.object({
+                    shared_role: z
+                      .object({ id: z.number(), name: z.string() })
+                      .nullable(),
+                  }),
+                })
+              ),
+              interviewee: z
+                .object({
+                  full_name: z.string().nullable(),
+                  email: z.string(),
+                  role: z.string(),
+                })
+                .nullable(),
+              interviewer: z
+                .object({
+                  full_name: z.string().nullable(),
+                  email: z.string(),
+                })
+                .nullable(),
+              responses: z.array(z.any()).optional(), // TODO: Only present if detailed=true, define structure
+            })
+          ),
+        }),
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const {
         company_id,
         assessment_id,
@@ -77,15 +115,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         program_phase_id,
         questionnaire_id,
         detailed,
-      } = request.query as {
-        company_id: string;
-        assessment_id: number;
-        status: InterviewStatus[];
-        program_id: number;
-        program_phase_id: number;
-        questionnaire_id: number;
-        detailed: boolean;
-      };
+      } = request.query;
       const data = await request.interviewsService!.getInterviews(
         company_id,
         assessment_id,
@@ -99,71 +129,47 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         success: true,
         data: data,
       };
-    }
-  );
-  fastify.post(
-    "",
-    {
-      schema: {
-        body: {
-          type: "object",
-          required: ["assessment_id", "name"],
-          properties: {
-            assessment_id: { type: "number" },
-            interviewer_id: { type: "string", nullable: true },
-            name: { type: "string" },
-            notes: { type: "string", nullable: true },
-            is_individual: { type: "boolean", default: false },
-            enabled: { type: "boolean", default: true },
-            access_code: { type: "string", nullable: true },
-            interview_contact_id: { type: "number", nullable: true },
-            role_ids: {
-              type: "array",
-              items: { type: "number" },
-            },
-          },
-        },
-        response: {
-          // 200: {
-          //   type: "object",
-          //   properties: {
-          //     success: { type: "boolean" },
-          //     data: {
-          //       type: "object",
-          //       properties: {
-          //         id: { type: "number" },
-          //         assessment_id: { type: "number" },
-          //         questionnaire_id: { type: "number" },
-          //         interviewer_id: { type: "string" },
-          //         name: { type: "string" },
-          //         notes: { type: "string" },
-          //         status: { type: "string" },
-          //         is_individual: { type: "boolean" },
-          //         created_at: { type: "string" },
-          //         updated_at: { type: "string" },
-          //       },
-          //     },
-          //   },
-          // },
-          // 404: {
-          //   type: "object",
-          //   properties: {
-          //     success: { type: "boolean" },
-          //     error: { type: "string" },
-          //   },
-          // },
-          // 500: {
-          //   type: "object",
-          //   properties: {
-          //     success: { type: "boolean" },
-          //     error: { type: "string" },
-          //   },
-          // },
-        },
+    },
+  });
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "",
+    schema: {
+      description: "Create a new interview",
+      body: z.object({
+        assessment_id: z.number(),
+        name: z.string(),
+        interviewer_id: z.string().nullable(),
+        interviewee_id: z.string().nullable(),
+        notes: z.string().optional(),
+        is_individual: z.boolean().default(false),
+        enabled: z.boolean().default(true),
+        access_code: z.string().optional(),
+        interview_contact_id: z.number().optional(),
+        role_ids: z.array(z.number()).optional(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.object({
+            id: z.number(),
+            assessment_id: z.number().nullable(),
+            questionnaire_id: z.number().nullable(),
+            name: z.string(),
+            notes: z.string().nullable(),
+            status: z.enum(InterviewStatusEnum),
+            is_individual: z.boolean(),
+            enabled: z.boolean(),
+            created_at: z.string(),
+            updated_at: z.string(),
+          }),
+        }),
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const body = request.body as CreateInterviewData;
+    handler: async (request) => {
+      const body = request.body;
 
       try {
         const interview =
@@ -174,7 +180,6 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           data: interview,
         };
       } catch (error) {
-        console.log("error: ", error);
         const errorMessage =
           error instanceof Error ? error.message : "Failed to create interview";
 
@@ -188,73 +193,30 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
 
         throw error; // rethrow other errors
       }
-    }
-  );
+    },
+  });
 
   // Method for creating one or more individual interviews that are scoped to individual
   // contacts via email and access code.
-  fastify.post(
-    "/individual",
-    {
-      schema: {
-        body: {
-          type: "object",
-          required: ["assessment_id", "name", "interview_contact_ids"],
-          properties: {
-            assessment_id: { type: "number" },
-            interview_contact_ids: { type: "array", items: { type: "number" } },
-            name: { type: "string" },
-          },
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    id: { type: "number" },
-                    assessment_id: { type: "number" },
-                    questionnaire_id: { type: "number" },
-                    interviewer_id: { type: "string", nullable: true },
-                    name: { type: "string" },
-                    is_individual: { type: "boolean" },
-                    access_code: { type: "string", nullable: true },
-                    interview_contact_id: { type: "number", nullable: true },
-                    created_at: { type: "string" },
-                    updated_at: { type: "string" },
-                  },
-                },
-              },
-            },
-          },
-          400: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/individual",
+    schema: {
+      description: "Create individual interviews for multiple contacts",
+      body: z.object({
+        assessment_id: z.number(),
+        interview_contact_ids: z.array(z.number()),
+        name: z.string(),
+      }),
+      response: {
+        200: IndividualInterviewSchema,
+        400: Error400Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
+    handler: async (request, reply) => {
       try {
-        const { assessment_id, interview_contact_ids, name } = request.body as {
-          assessment_id: number;
-          interview_contact_ids: number[];
-          name: string;
-        };
+        const { assessment_id, interview_contact_ids, name } = request.body;
 
         const interviewsService = new InterviewsService(
           request.supabaseClient,
@@ -272,8 +234,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         const emailService = new EmailService(
           fastify.config.RESEND_API_KEY,
           fastify.config.SITE_URL,
-          fastify.config.VANTAGE_LOGO_FULL_URL,
-          fastify.config.VANTAGE_LOGO_ICON_URL,
+          fastify.config.VANTAGE_PUBLIC_ASSETS_BUCKET_URL,
           fastify.supabase
         );
 
@@ -297,12 +258,15 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           );
         }
 
+        console.log(
+          "emails sent: ",
+          emailResults.filter((r) => r.status === "fulfilled").length
+        );
+        console.log("emails failed: ", failedEmails.length);
+
         return {
           success: true,
           data: interviews,
-          emailsSent: emailResults.filter((r) => r.status === "fulfilled")
-            .length,
-          emailsFailed: failedEmails.length,
         };
       } catch (error) {
         console.error("Error creating individual interviews:", error);
@@ -324,386 +288,293 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           error: errorMessage,
         });
       }
-    }
-  );
+    },
+  });
 
-  // Method for fetching interview structure (questionnaire hierarchy)
-  fastify.get(
-    "/:interviewId/structure",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            interviewId: { type: "string" },
-          },
-          required: ["interviewId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  interview: {
-                    type: "object",
-                    properties: {
-                      id: { type: "number" },
-                      name: { type: "string" },
-                      questionnaire_id: { type: "number" },
-                      assessment_id: { type: "number" },
-                      is_individual: { type: "boolean" },
-                    },
-                  },
-                  sections: { type: "array" },
-                },
-              },
-            },
-          },
-          404: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:interviewId/structure",
+    schema: {
+      description:
+        "Fetch interview structure by interview ID (questionnaire hierarchy)",
+      params: z.object({
+        interviewId: z.coerce.number(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z
+            .object({
+              interview: z.object({
+                id: z.number(),
+                name: z.string(),
+                questionnaire_id: z.number(),
+                assessment_id: z.number().nullable(),
+                is_individual: z.boolean(),
+              }),
+              sections: z.array(
+                // TODO: rename to "questionnaires" or rename 'questionnaire' to 'sections'. See other responses with same structure.
+                z.object({
+                  id: z.number(),
+                  title: z.string(),
+                  order_index: z.number(),
+                  steps: z.array(
+                    z.object({
+                      id: z.number(),
+                      title: z.string(),
+                      order_index: z.number(),
+                      questions: z.array(
+                        z.object({
+                          id: z.number(),
+                          title: z.string(),
+                          order_index: z.number(),
+                        })
+                      ),
+                    })
+                  ),
+                })
+              ),
+            })
+            .nullable(),
+        }),
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { interviewId } = request.params as { interviewId: number };
+    handler: async (request) => {
+      const { interviewId } = request.params;
       const structure =
         await request.interviewsService!.getInterviewStructure(interviewId);
 
-      if (!structure) {
-        throw new NotFoundError("Interview not found");
-      }
-
       return { success: true, data: structure };
-    }
-  );
+    },
+  });
 
-  // Method for fetching interview summary (lightweight - for layout/settings)
-  fastify.get(
-    "/:interviewId/summary",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            interviewId: { type: "string" },
-          },
-          required: ["interviewId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  id: { type: "number" },
-                  name: { type: "string" },
-                  status: { type: "string" },
-                  notes: { type: "string", nullable: true },
-                  is_individual: { type: "boolean" },
-                  overview: { type: "string", nullable: true },
-                  due_at: { type: "string", nullable: true },
-                  interviewer: {
-                    type: "object",
-                    nullable: true,
-                    properties: {
-                      full_name: { type: "string" },
-                      email: { type: "string" },
-                    },
-                  },
-                  interviewee: {
-                    type: "object",
-                    nullable: true,
-                    properties: {
-                      full_name: { type: "string" },
-                      email: { type: "string" },
-                    },
-                  },
-                  assessment: {
-                    type: "object",
-                    properties: {
-                      id: { type: "number" },
-                      name: { type: "string" },
-                    },
-                  },
-                  company: {
-                    type: "object",
-                    nullable: true,
-                    properties: {
-                      id: { type: "string" },
-                      name: { type: "string" },
-                      icon_url: { type: "string", nullable: true },
-                      branding: {
-                        type: "object",
-                        nullable: true,
-                        additionalProperties: true,
-                      },
-                    },
-                  },
-                  interview_roles: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        role: {
-                          type: "object",
-                          properties: {
-                            id: { type: "number" },
-                            shared_role: {
-                              type: "object",
-                              properties: {
-                                id: { type: "number" },
-                                name: { type: "string" },
-                              },
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:interviewId/summary",
+    schema: {
+      description:
+        "Fetch interview summary by interview ID (for layout/settings)",
+      params: z.object({
+        interviewId: z.coerce.number(),
+      }),
+      response: {
+        200: InterviewSummarySchema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { interviewId } = request.params as { interviewId: number };
+    handler: async (request) => {
+      const { interviewId } = request.params;
       const summary =
         await request.interviewsService!.getInterviewSummary(interviewId);
-
-      if (!summary) {
-        throw new NotFoundError("Interview not found");
-      }
-
       return { success: true, data: summary };
-    }
-  );
+    },
+  });
 
-  // Method for fetching interview details by ID
-  fastify.get(
-    "/:interviewId",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            interviewId: { type: "string" },
-          },
-          required: ["interviewId"],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:interviewId",
+    schema: {
+      description: "Fetch interview details by interview ID",
+      params: z.object({
+        interviewId: z.coerce.number(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z
+            .object({
+              interview: z.object({
+                id: z.number(),
+                questionnaire_id: z.number().nullable(),
+                name: z.string(),
+                notes: z.string().nullable(),
+                status: z.enum(InterviewStatusEnum),
+                is_individual: z.boolean(),
+                enabled: z.boolean(),
+                assessment_id: z.number().nullable(),
+              }),
+              questionnaire: z.array(
+                z.object({
+                  id: z.number(),
+                  title: z.string(),
+                  order_index: z.number(),
+                  steps: z.array(
+                    z.object({
+                      id: z.number(),
+                      title: z.string(),
+                      order_index: z.number(),
+                      questions: z.array(
+                        z.object({
+                          id: z.number(),
+                          title: z.string(),
+                          order_index: z.number(),
+                        })
+                      ),
+                    })
+                  ),
+                })
+              ),
+              firstQuestionId: z.number().nullable(), // TODO: Should be snake_case
+            })
+            .nullable(),
+        }),
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { interviewId } = request.params as { interviewId: number };
+    handler: async (request) => {
+      const { interviewId } = request.params;
       const interview =
         await request.interviewsService!.getInterviewById(interviewId);
 
       return { success: true, data: interview };
-    }
-  );
-  // Method for fetching interview progress by ID
-  fastify.get(
-    "/:interviewId/progress",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            interviewId: { type: "string" },
-          },
-          required: ["interviewId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                required: [
-                  "status",
-                  "total_questions",
-                  "answered_questions",
-                  "progress_percentage",
-                  "responses",
-                ],
-                properties: {
-                  status: { type: "string" },
-                  previous_status: { type: "string" },
-                  total_questions: { type: "number" },
-                  answered_questions: { type: "number" },
-                  progress_percentage: { type: "number" },
-                  responses: {
-                    type: "object",
-                    additionalProperties: {
-                      type: "object",
-                      properties: {
-                        id: { type: "number" },
-                        rating_score: { type: "number", nullable: true },
-                        is_applicable: { type: "boolean" },
-                        has_rating_score: { type: "boolean" },
-                        has_roles: { type: "boolean" },
-                        is_unknown: { type: "boolean" },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:interviewId/progress",
+    schema: {
+      description: "Fetch interview progress details by interview ID",
+      params: z.object({ interviewId: z.coerce.number() }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.object({
+            status: z.enum(InterviewStatusEnum),
+            previous_status: z.enum(InterviewStatusEnum).nullable(),
+            total_questions: z.number(),
+            answered_questions: z.number(),
+            progress_percentage: z.number(),
+            responses: z.record(
+              z.string(),
+              z.object({
+                id: z.number(),
+                rating_score: z.number().nullable(),
+                is_applicable: z.boolean(),
+                has_rating_score: z.boolean(),
+                is_unknown: z.boolean(),
+                has_roles: z.boolean(),
+              })
+            ),
+          }),
+        }),
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { interviewId } = request.params as { interviewId: number };
-
+    handler: async (request) => {
+      const { interviewId } = request.params;
       const interviewsService = new InterviewsService(
         request.supabaseClient,
         request.user.id,
         fastify.supabaseAdmin // Required for status updates
       );
-
       const data = await interviewsService.getInterviewProgress(interviewId);
       return { success: true, data };
-    }
-  );
-  // Method for fetching a specific question within an interview
-  fastify.get(
-    "/:interviewId/questions/:questionId",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            interviewId: { type: "string" },
-            questionId: { type: "string" },
-          },
-          required: ["interviewId", "questionId"],
-        },
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:interviewId/questions/:questionId",
+    schema: {
+      description:
+        "Fetch a specific question within an interview by interview ID and question ID",
+      params: z.object({
+        interviewId: z.coerce.number(),
+        questionId: z.coerce.number(),
+      }),
+      response: {
+        200: InterviewQuestionSchema,
       },
     },
-    async (request) => {
-      const { interviewId, questionId } = request.params as {
-        interviewId: number;
-        questionId: number;
-      };
+    handler: async (request) => {
+      const { interviewId, questionId } = request.params;
       const data = await request.interviewsService!.getInterviewQuestionById(
         interviewId,
         questionId
       );
+      const parsedData = InterviewQuestion.parse(data);
+      return { success: true, data: parsedData };
+    },
+  });
 
-      return { success: true, data };
-    }
-  );
-  // Method for updating a specific question within an interview
-  // fastify.put(
-  //   "/:interviewId/questions/:questionId",
-  //   {
-  //     schema: {
-  //       params: {
-  //         type: "object",
-  //         properties: {
-  //           interviewId: { type: "string" },
-  //         },
-  //         required: ["interviewId"],
-  //       },
-  //       body: {
-  //         type: "object",
-  //         properties: {
-  //           rating_scale_value: { type: "number" },
-  //           comments: { type: "string" },
-  //           applicable_roles: { type: "array", items: { type: "number" } },
-  //         },
-  //       },
-  //     },
-  //   },
-  //   async (request, reply) => {
-  //     const { interviewId, questionId } = request.params as {
-  //       interviewId: number;
-  //       questionId: number;
-  //     };
-  //     return { success: true, data: { interviewId, questionId } };
-  //   }
-  // );
-  // Method for updating interview details
-  fastify.put(
-    "/:interviewId",
-    {
-      schema: {
-        body: {
-          type: "object",
-          properties: {
-            name: { type: "string" },
-            status: { type: "string" },
-            notes: { type: "string" },
-          },
-        },
-        response: {
-          // 200: {
-          //   type: "object",
-          //   properties: {
-          //     success: { type: "boolean" },
-          //     data: { type: "object" },
-          //   },
-          // },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/:interviewId",
+    schema: {
+      description: "Update interview details such as name, status, and notes",
+      params: z.object({
+        interviewId: z.coerce.number(),
+      }),
+      body: z.object({
+        name: z.string().optional(),
+        status: z.enum(InterviewStatusEnum).optional(),
+        notes: z.string().optional(),
+        enabled: z.boolean().optional(),
+        due_at: z.string().nullable().optional(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.object({
+            id: z.number(),
+            name: z.string(),
+            status: z.string(),
+            enabled: z.boolean(),
+            notes: z.string().nullable(),
+            updated_at: z.string(),
+            due_at: z.string().nullable(),
+          }),
+        }),
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { interviewId } = request.params as { interviewId: number };
+    handler: async (request) => {
+      const { interviewId } = request.params;
       const data = await request.interviewsService!.updateInterviewDetails(
         interviewId,
-        request.body as UpdateInterviewData
+        request.body
       );
 
       return {
         success: true,
         data,
       };
-    }
-  );
+    },
+  });
 
-  // Method for completing an interview
-  fastify.post(
-    "/:interviewId/complete",
-    {
-      schema: {
-        body: {
-          type: "object",
-          properties: {
-            feedback: { type: "object", nullable: true },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/:interviewId/complete",
+    schema: {
+      description: "Mark an interview as complete with optional feedback",
+      params: z.object({
+        interviewId: z.coerce.number(),
+      }),
+      body: z.object({
+        feedback: z
+          .object({
+            interviewRating: z.number(),
+            interviewComment: z.string(),
+            experienceRating: z.number(),
+            experienceComment: z.string(),
+          })
+          .optional(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          message: z.string(),
+        }),
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { interviewId } = request.params as { interviewId: number };
-      const { feedback } = request.body as { feedback?: object };
+    handler: async (request) => {
+      const { interviewId } = request.params;
+      const { feedback } = request.body;
 
       const interviewsService = new InterviewsService(
         request.supabaseClient,
@@ -714,8 +585,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       const emailService = new EmailService(
         fastify.config.RESEND_API_KEY,
         fastify.config.SITE_URL,
-        fastify.config.VANTAGE_LOGO_FULL_URL,
-        fastify.config.VANTAGE_LOGO_ICON_URL,
+        fastify.config.VANTAGE_PUBLIC_ASSETS_BUCKET_URL,
         fastify.supabaseAdmin // Required for sending emails for individual (public) interviews
       );
 
@@ -726,286 +596,291 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       );
 
       return { success: true, message: "Interview completed successfully" };
-    }
-  );
-
-  // Method for deleting an interview (soft delete)
-  fastify.delete(
-    "/:interviewId",
-    {
-      schema: {
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
-      },
     },
-    async (request) => {
-      const { interviewId } = request.params as { interviewId: number };
-      await request.interviewsService!.deleteInterview(interviewId);
-
-      return { success: true };
-    }
-  );
-
-  // Method for fetching actions on a specific interview response
-  fastify.get("/responses/:responseId/actions", async (request) => {
-    const { responseId } = request.params as {
-      responseId: number;
-    };
-
-    // TODO: migrate this to service
-    const { data, error } = await request.supabaseClient
-      .from("interview_response_actions")
-      .select("id, title, description, created_at, updated_at")
-      .eq("interview_response_id", responseId)
-      .eq("is_deleted", false)
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    return { success: true, data };
   });
-  // Method for recording an action on a specific interview response
-  fastify.post(
-    "/responses/:responseId/actions",
-    {
-      schema: {
-        body: {
-          type: "object",
-          properties: {
-            title: { type: "string" },
-            description: { type: "string" },
-          },
-          required: ["description"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  id: { type: "number" },
-                  title: { type: "string" },
-                  description: { type: "string" },
-                  created_at: { type: "string" },
-                  updated_at: { type: "string" },
-                },
-              },
-            },
-          },
-        },
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/:interviewId",
+    schema: {
+      description: "Delete an interview by ID",
+      params: z.object({
+        interviewId: z.coerce.number(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+        }),
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { responseId } = request.params as {
-        responseId: number;
-      };
+    handler: async (request) => {
+      const { interviewId } = request.params;
+      await request.interviewsService!.deleteInterview(interviewId);
+      return { success: true };
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/responses/:responseId/actions",
+    schema: {
+      description: "Fetch actions for a specific interview response",
+      params: z.object({
+        responseId: z.coerce.number(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.array(
+            z.object({
+              id: z.number(),
+              title: z.string().nullable(),
+              description: z.string(),
+              created_at: z.string(),
+              updated_at: z.string(),
+            })
+          ),
+        }),
+      },
+    },
+    handler: async (request) => {
+      const { responseId } = request.params;
+      const data =
+        await request.interviewsService!.listInterviewResponseActions(
+          responseId
+        );
+      return { success: true, data };
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/responses/:responseId/actions",
+    schema: {
+      description: "Add an action associated with an interview response",
+      params: z.object({
+        responseId: z.coerce.number(),
+      }),
+      body: z.object({
+        title: z.string().optional(),
+        description: z.string(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.object({
+            id: z.number(),
+            title: z.string().nullable(),
+            description: z.string(),
+            created_at: z.string(),
+            updated_at: z.string(),
+          }),
+        }),
+      },
+    },
+    handler: async (request) => {
+      const { responseId } = request.params;
 
       const data =
         await request.interviewsService!.addActionToInterviewResponse(
           responseId,
-          request.body as CreateInterviewResponseActionData
+          request.body
         );
 
       return { success: true, data };
-    }
-  );
-  // Method for updating an action on a specific interview response
-  fastify.put(
-    "/responses/:responseId/actions/:actionId",
-    {
-      schema: {
-        body: {
-          type: "object",
-          properties: {
-            title: { type: "string" },
-            description: { type: "string" },
-          },
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  id: { type: "number" },
-                  title: { type: "string" },
-                  description: { type: "string" },
-                  created_at: { type: "string" },
-                  updated_at: { type: "string" },
-                },
-              },
-            },
-          },
-        },
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/responses/:responseId/actions/:actionId",
+    schema: {
+      description: "Update an action associated with an interview response",
+      params: z.object({
+        responseId: z.coerce.number(),
+        actionId: z.coerce.number(),
+      }),
+      body: z.object({
+        title: z.string().optional(),
+        description: z.string().optional(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.object({
+            id: z.number(),
+            title: z.string().nullable(),
+            description: z.string(),
+            created_at: z.string(),
+            updated_at: z.string(),
+          }),
+        }),
       },
     },
-    async (request) => {
-      const { actionId } = request.params as {
-        actionId: number;
-      };
-
+    handler: async (request) => {
+      const { actionId } = request.params;
       const data =
         await request.interviewsService!.updateInterviewResponseAction(
           actionId,
-          request.body as UpdateInterviewResponseActionData
+          request.body
         );
 
       return { success: true, data };
-    }
-  );
-  // Method for soft deleting an action on an interview response
-  fastify.delete(
-    "/responses/:responseId/actions/:actionId",
-    async (request) => {
-      const { actionId } = request.params as {
-        actionId: number;
-      };
-      await request.interviewsService!.deleteInterviewResponseAction(actionId);
-      return { success: true };
-    }
-  );
+    },
+  });
 
-  // Method for updating interview response (rating and/or roles)
-  fastify.put(
-    "/responses/:responseId",
-    {
-      schema: {
-        body: {
-          type: "object",
-          properties: {
-            rating_score: { type: "number", nullable: true },
-            role_ids: {
-              type: ["array"],
-              nullable: true,
-              items: { type: "number" },
-            },
-            is_unknown: { type: "boolean", nullable: true },
-          },
-        },
-        response: {
-          // 200: {
-          //   type: "object",
-          //   properties: {
-          //     success: { type: "boolean" },
-          //     data: {
-          //       type: "object",
-          //       properties: {
-          //         id: { type: "number" },
-          //         rating_score: { type: "number", nullable: true },
-          //         response_roles: {
-          //           type: "array",
-          //           items: {
-          //             type: "object",
-          //             properties: {
-          //               id: { type: "number" },
-          //               role: {
-          //                 type: "object",
-          //                 properties: {
-          //                   id: { type: "number" },
-          //                   name: { type: "string" },
-          //                 },
-          //               },
-          //             },
-          //           },
-          //         },
-          //       },
-          //     },
-          //   },
-          // },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/responses/:responseId/actions/:actionId",
+    schema: {
+      description:
+        "Soft delete an action associated with an interview response",
+      params: z.object({
+        responseId: z.coerce.number(),
+        actionId: z.coerce.number(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+        }),
       },
     },
-    async (request) => {
-      const { responseId } = request.params as {
-        responseId: number;
-      };
-      const { rating_score, role_ids, is_unknown } = request.body as {
-        rating_score?: number | null;
-        role_ids?: number[] | null;
-        is_unknown?: boolean | null;
-      };
+    handler: async (request) => {
+      const { actionId } = request.params;
+      await request.interviewsService!.deleteInterviewResponseAction(actionId);
+      return { success: true };
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/responses/:responseId",
+    schema: {
+      description:
+        "Update an interview response's rating score, roles, is_unknown flag, and question part answers",
+      params: z.object({
+        responseId: z.coerce.number(),
+      }),
+      body: z.object({
+        rating_score: z.number().nullable().optional(),
+        role_ids: z.array(z.number()).nullable().optional(),
+        is_unknown: z.boolean().nullable().optional(),
+        question_part_answers: z
+          .array(
+            z.object({
+              question_part_id: z.number(),
+              answer_value: z.string(),
+            })
+          )
+          .nullable()
+          .optional(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z
+            .union([
+              z.object({
+                id: z.number(),
+                questionnaire_question_id: z.number(),
+                interview_id: z.number(),
+                rating_score: z.number().nullable(),
+                is_unknown: z.boolean(),
+                response_roles: z.array(
+                  z.object({
+                    id: z.number(),
+                    role: z.object({
+                      id: z.number(),
+                    }),
+                  })
+                ),
+              }),
+              z.object({
+                id: z.number(),
+                questionnaire_question_id: z.number(),
+                interview_id: z.number(),
+                question_part_responses: z.array(
+                  z.object({
+                    id: z.number(),
+                    question_part_id: z.number(),
+                    answer_value: z.string(),
+                  })
+                ),
+              }),
+            ])
+            .nullable(),
+        }),
+      },
+    },
+    handler: async (request) => {
+      const { rating_score, role_ids, is_unknown, question_part_answers } =
+        request.body;
 
       const updatedResponse =
         await request.interviewsService!.updateInterviewResponse(
-          responseId,
+          request.params.responseId,
           rating_score,
           role_ids,
-          is_unknown
+          is_unknown,
+          question_part_answers
         );
 
       return {
         success: true,
         data: updatedResponse,
       };
-    }
-  );
-
-  // Method for fetching interview response comments
-  fastify.get("/responses/:responseId/comments", async (request) => {
-    const { responseId } = request.params as {
-      responseId: number;
-    };
-
-    const data =
-      await request.interviewsService!.getInterviewResponseComments(responseId);
-
-    return { success: true, data };
+    },
   });
-  // Method for updating interview response comments
-  fastify.put(
-    "/responses/:responseId/comments",
-    {
-      schema: {
-        body: {
-          type: "object",
-          properties: {
-            comments: { type: "string" },
-          },
-          required: ["comments"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  id: { type: "number" },
-                  comments: { type: "string" },
-                  created_at: { type: "string" },
-                  updated_at: { type: "string" },
-                },
-              },
-            },
-          },
-        },
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/responses/:responseId/comments",
+    schema: {
+      description: "Fetch comments for a specific interview response",
+      params: z.object({
+        responseId: z.coerce.number(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.string(),
+        }),
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { responseId } = request.params as {
-        responseId: number;
-      };
-      const { comments } = request.body as {
-        comments: string;
-      };
+    handler: async (request) => {
+      const { responseId } = request.params;
+      const data =
+        await request.interviewsService!.getInterviewResponseComments(
+          responseId
+        );
+      return { success: true, data };
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/responses/:responseId/comments",
+    schema: {
+      description: "Update comments for a specific interview response",
+      params: z.object({
+        responseId: z.coerce.number(),
+      }),
+      body: z.object({
+        comments: z.string(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.string(),
+        }),
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const { responseId } = request.params;
+      const { comments } = request.body;
 
       const data =
         await request.interviewsService!.updateInterviewResponseComments(
@@ -1014,61 +889,86 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
         );
 
       return { success: true, data };
-    }
-  );
+    },
+  });
 
   // ====== Interview Response Evidence ======
 
   // Method for fetching evidence files for a response
-  fastify.get("/responses/:responseId/evidence", async (request) => {
-    const { responseId } = request.params as {
-      responseId: number;
-    };
-    const evidenceService = new EvidenceService(
-      request.supabaseClient,
-      request.user.id
-    );
-
-    const data = await evidenceService.getEvidenceForResponse(responseId);
-
-    return { success: true, data };
-  });
-
-  // Method for uploading evidence for a response
-  fastify.post(
-    "/responses/:responseId/evidence",
-    {
-      schema: {
-        consumes: ["multipart/form-data"],
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  evidence: { type: "object" },
-                  publicUrl: { type: "string" },
-                },
-              },
-            },
-          },
-          400: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/responses/:responseId/evidence",
+    schema: {
+      description: "Fetch evidence files associated with an interview response",
+      params: z.object({
+        responseId: z.coerce.number(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.array(
+            z.object({
+              id: z.number(),
+              interview_id: z.number(),
+              interview_response_id: z.number(),
+              file_name: z.string(),
+              file_size: z.number(),
+              file_type: z.string(),
+              created_at: z.string(),
+              uploaded_by: z.string(),
+              uploaded_at: z.string(),
+            })
+          ),
+        }),
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
+    handler: async (request) => {
+      const { responseId } = request.params;
+      const evidenceService = new EvidenceService(
+        request.supabaseClient,
+        request.user.id
+      );
+      const data = await evidenceService.getEvidenceForResponse(responseId);
+      return { success: true, data };
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/responses/:responseId/evidence",
+    schema: {
+      description:
+        "Upload an evidence file associated with an interview response",
+      params: z.object({
+        responseId: z.coerce.number(),
+      }),
+      consumes: ["multipart/form-data"],
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.object({
+            evidence: z.object({
+              id: z.number(),
+              created_at: z.string(),
+              uploaded_at: z.string(),
+              file_name: z.string(),
+              file_size: z.number(),
+              file_type: z.string(),
+            }),
+            publicUrl: z.string(),
+          }),
+        }),
+        400: z.object({
+          success: z.boolean(),
+          error: z.string(),
+        }),
+        500: Error500Schema,
+      },
+    },
+    handler: async (request, reply) => {
       try {
-        const { responseId } = request.params as {
-          responseId: number;
-        };
+        const { responseId } = request.params;
 
         // Get the uploaded file
         const file = await request.file();
@@ -1098,16 +998,28 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
             error instanceof Error ? error.message : "Failed to upload file",
         });
       }
-    }
-  );
+    },
+  });
 
-  // Method for deleting evidence
-  fastify.delete(
-    "/responses/:responseId/evidence/:evidenceId",
-    async (request) => {
-      const { evidenceId } = request.params as {
-        evidenceId: number;
-      };
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/responses/:responseId/evidence/:evidenceId",
+    schema: {
+      description:
+        "Delete an evidence file associated with an interview response",
+      params: z.object({
+        responseId: z.coerce.number(),
+        evidenceId: z.coerce.number(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+        }),
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const { evidenceId } = request.params;
       const evidenceService = new EvidenceService(
         request.supabaseClient,
         request.user.id
@@ -1116,62 +1028,107 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
       await evidenceService.deleteEvidence(evidenceId);
 
       return { success: true };
-    }
-  );
-
-  // Method for fetching available roles associated with an assessment that can be used for
-  // scoping an interview.
-  fastify.get("/assessment-roles/:assessmentId", async (request) => {
-    const { assessmentId } = request.params as {
-      assessmentId: number;
-    };
-
-    const roles =
-      await request.interviewsService!.getRolesAssociatedWithAssessment(
-        assessmentId
-      );
-
-    return { success: true, data: roles };
+    },
   });
 
-  // Method for checking whether an assessments associated interview questionnaire has at least
-  // one applicabel question for a set of scoped roles
-  fastify.post("/assessment-roles/validate", async (request, reply) => {
-    const { assessmentId, roleIds } = request.body as {
-      assessmentId: number;
-      roleIds: number[];
-    };
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/assessment-roles/:assessmentId",
+    schema: {
+      description:
+        "Fetch roles associated with an assessment that can be used for scoping interviews",
+      params: z.object({
+        assessmentId: z.coerce.number(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.array(
+            z.object({
+              id: z.number(),
+              name: z.string().optional(), // TODO: this shouldn't be optional, fix in service
+              description: z.string().nullable().optional(),
+              shared_role_id: z.number().optional(), // TODO: this shouldn't be optional, fix in service
+              work_group_name: z.string(),
+              asset_group_name: z.string(),
+              site_name: z.string(),
+              region_name: z.string(),
+              business_unit_name: z.string(),
+            })
+          ),
+        }),
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const { assessmentId } = request.params;
+      const roles =
+        await request.interviewsService!.getRolesAssociatedWithAssessment(
+          assessmentId
+        );
 
-    if (!assessmentId || !roleIds || roleIds.length === 0) {
-      return reply.status(400).send({
-        success: false,
-        error: "assessmentId and roleIds are required",
-      });
-    }
-    const isValid =
-      await request.interviewsService!.validateAssessmentRolesForQuestionnaire(
-        assessmentId,
-        roleIds
-      );
-
-    return { success: true, data: { isValid } };
+      return { success: true, data: roles };
+    },
   });
 
-  // Method for validating that a program questionnaire has applicable questions for given role IDs
-  fastify.post(
-    "/questionnaires/:questionnaireId/validate-roles",
-    async (request, reply) => {
-      const { questionnaireId } = request.params as {
-        questionnaireId: number;
-      };
-      const { roleIds } = request.body as { roleIds: number[] };
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/assessment-roles/validate",
+    schema: {
+      description:
+        "Validate that an assessment's interview questionnaire has applicable questions for given role IDs",
+      body: z.object({
+        assessmentId: z.number(),
+        roleIds: z.array(z.number()).min(1),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.object({
+            isValid: z.boolean(),
+            hasUniversalQuestions: z.boolean(),
+          }),
+        }),
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const { assessmentId, roleIds } = request.body;
+      const isValid =
+        await request.interviewsService!.validateAssessmentRolesForQuestionnaire(
+          assessmentId,
+          roleIds
+        );
+      return { success: true, data: isValid };
+    },
+  });
 
-      if (!questionnaireId || !roleIds || roleIds.length === 0) {
-        return reply.status(400).send({
-          success: false,
-          error: "questionnaireId and roleIds are required",
-        });
-      }
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/questionnaires/:questionnaireId/validate-roles",
+    schema: {
+      description:
+        "Validate that a program questionnaire has applicable questions for given role IDs",
+      params: z.object({
+        questionnaireId: z.coerce.number(),
+      }),
+      body: z.object({
+        roleIds: z.array(z.number()).min(1),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.object({
+            isValid: z.boolean(),
+            hasUniversalQuestions: z.boolean(),
+          }),
+        }),
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const { questionnaireId } = request.params;
+      const { roleIds } = request.body;
 
       const isValid =
         await request.interviewsService!.validateProgramQuestionnaireHasApplicableRoles(
@@ -1179,7 +1136,7 @@ export async function interviewsRoutes(fastify: FastifyInstance) {
           roleIds
         );
 
-      return { success: true, data: { isValid } };
-    }
-  );
+      return { success: true, data: isValid };
+    },
+  });
 }

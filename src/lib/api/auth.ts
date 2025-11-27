@@ -4,23 +4,18 @@
  * Separates network logic from state management
  */
 
-import { apiClient } from "./client";
 import type {
-  BackendAuthResponse,
-  ValidateSessionResponse,
+  GetExternalInterviewTokenBodyData,
+  GetExternalInterviewTokenResponse,
+  RefreshTokenBodyData,
+  RefreshTokenResponse,
+  SignInBodyData,
+  SignInResponse,
+  SubscriptionTier,
   TokenData,
-} from "@/types/auth";
-
-export interface RefreshTokenResponse {
-  success: boolean;
-  data?: {
-    access_token: string;
-    refresh_token: string;
-    expires_at: number;
-  };
-  error?: string;
-  message?: string;
-}
+  ValidateSessionResponse,
+} from "@/types/api/auth";
+import { apiClient } from "./client";
 
 /**
  * Authentication API functions
@@ -30,11 +25,8 @@ export const authApi = {
    * Sign in with email and password
    * Returns enriched user data with profile and permissions
    */
-  async signIn(email: string, password: string): Promise<BackendAuthResponse> {
-    const response = await apiClient.post<BackendAuthResponse>("/auth/signin", {
-      email,
-      password,
-    });
+  async signIn(data: SignInBodyData): Promise<SignInResponse> {
+    const response = await apiClient.post<SignInResponse>("/auth/signin", data);
     return response.data;
   },
 
@@ -50,12 +42,12 @@ export const authApi = {
    * Refresh access token using refresh token
    * Returns new access and refresh tokens
    */
-  async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
+  async refreshToken(
+    data: RefreshTokenBodyData
+  ): Promise<RefreshTokenResponse> {
     const response = await apiClient.post<RefreshTokenResponse>(
       "/auth/refresh",
-      {
-        refresh_token: refreshToken,
-      }
+      data
     );
     return response.data;
   },
@@ -71,31 +63,29 @@ export const authApi = {
     return response.data;
   },
 
-  /**
-   * Request password reset email
-   */
-  async resetPassword(email: string): Promise<void> {
-    await apiClient.post("/auth/reset-password", { email });
-  },
+  // /**
+  //  * Request password reset email
+  //  */
+  // async resetPassword(email: string): Promise<void> {
+  //   await apiClient.post("/auth/reset-password", { email });
+  // },
 
   /**
    * Get external interview access token
    * Validates access code and email, returns JWT for public interview access
    */
   async getExternalInterviewToken(
-    interviewId: number,
-    email: string,
-    accessCode: string
-  ): Promise<{ token: string }> {
-    const response = await apiClient.post<{
-      success: boolean;
-      data: { token: string };
-    }>("/auth/external/interview-token", {
-      interviewId,
-      email,
-      accessCode,
-    });
-    return response.data.data;
+    data: GetExternalInterviewTokenBodyData
+  ): Promise<GetExternalInterviewTokenResponse> {
+    const response = await apiClient.post<GetExternalInterviewTokenResponse>(
+      "/auth/external/interview-token",
+      data
+    );
+    return response.data;
+  },
+
+  async updateSubscription(subscription_tier: SubscriptionTier): Promise<void> {
+    await apiClient.put(`/auth/subscription/${subscription_tier}`);
   },
 };
 

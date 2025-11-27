@@ -1,14 +1,39 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "../types/database";
-
-type InterviewStatus = Database["public"]["Enums"]["interview_statuses"];
-type AssessmentStatus = Database["public"]["Enums"]["assessment_statuses"];
-type ProgramStatus = Database["public"]["Enums"]["program_statuses"];
-
+import { InterviewStatusEnum } from "../schemas/interviews";
+import { ProgramStatusEnum } from "../schemas/programs";
+import { AssessmentStatusEnum } from "../schemas/assessments";
 export interface ActivityData {
   total: number;
   breakdown: Record<string, number>;
+  items: Array<{
+    id: number;
+    status: string;
+    created_at: string;
+    updated_at: string;
+    name: string;
+    type?: string;
+    is_individual?: boolean;
+    assessment?: {
+      id: number;
+      name: string;
+    };
+    program_phase?: {
+      id: number;
+      name: string;
+      program: {
+        id: number;
+        name: string;
+      };
+    };
+  }>;
 }
+
+type EntityTableMap = {
+  interviews: Database["public"]["Tables"]["interviews"]["Row"];
+  assessments: Database["public"]["Tables"]["assessments"]["Row"];
+  programs: Database["public"]["Tables"]["programs"]["Row"];
+};
 
 export interface MetricData {
   title: string;
@@ -55,27 +80,10 @@ export interface ConfigOptions {
 }
 
 const STATUS_MAPS = {
-  interviews: [
-    "pending",
-    "in_progress",
-    "completed",
-    "cancelled",
-  ] as InterviewStatus[],
-  assessments: [
-    "draft",
-    "active",
-    "under_review",
-    "completed",
-    "archived",
-  ] as AssessmentStatus[],
-  programs: [
-    "draft",
-    "active",
-    "under_review",
-    "completed",
-    "archived",
-  ] as ProgramStatus[],
-} as const;
+  interviews: InterviewStatusEnum,
+  assessments: AssessmentStatusEnum,
+  programs: ProgramStatusEnum,
+};
 
 export class WidgetService {
   private supabase: SupabaseClient<Database>;
@@ -86,9 +94,13 @@ export class WidgetService {
     this.supabase = supabaseClient;
   }
 
-  async getActivityData(
-    entityType: "interviews" | "assessments" | "programs"
-  ): Promise<ActivityData> {
+  /**
+   * Get activity data for a given entity type (interviews, assessments, programs)
+   */
+  async getActivityData<T extends "interviews" | "assessments" | "programs">(
+    entityType: T
+  ) {
+    // Promise<ActivityData>
     const validEntityTypes = ["interviews", "assessments", "programs"] as const;
     if (!validEntityTypes.includes(entityType)) {
       throw new Error(`Unsupported entity type: ${entityType}`);
@@ -96,16 +108,78 @@ export class WidgetService {
 
     const allStatuses = STATUS_MAPS[entityType];
 
-    const { data, error } = await this.supabase
-      .from(entityType)
-      .select("id, status, company_id, is_deleted")
-      .eq("company_id", this.companyId)
-      .eq("is_deleted", false)
-      .order("created_at", { ascending: false });
+    let data: EntityTableMap[T][] | null = null;
+    let error = null;
+
+    // Using switch statement with hardcoded table names to preserve type inference
+    switch (entityType) {
+      case "interviews": {
+        const result = await this.supabase
+          .from("interviews")
+          .select(
+            `id,
+            status,
+            created_at,
+            updated_at,
+            name,
+            is_individual,
+            assessment:assessment_id(
+              id,
+              name
+            )`
+          )
+          .eq("company_id", this.companyId)
+          .eq("is_deleted", false)
+          .order("created_at", { ascending: false });
+
+        data = result.data as EntityTableMap[T][] | null;
+        error = result.error;
+        break;
+      }
+      case "assessments": {
+        const result = await this.supabase
+          .from("assessments")
+          .select(
+            `id,
+            status,
+            created_at,
+            updated_at,
+            name,
+            type,
+            program_phase:program_phase_id(
+              id,
+              name,
+              program:program_id(
+                id, name
+              )
+            )
+            `
+          )
+          .eq("company_id", this.companyId)
+          .eq("is_deleted", false)
+          .order("created_at", { ascending: false });
+
+        data = result.data as EntityTableMap[T][] | null;
+        error = result.error;
+        break;
+      }
+      case "programs": {
+        const result = await this.supabase
+          .from("programs")
+          .select("id, status, created_at, updated_at, name")
+          .eq("company_id", this.companyId)
+          .eq("is_deleted", false)
+          .order("created_at", { ascending: false });
+
+        data = result.data as EntityTableMap[T][] | null;
+        error = result.error;
+        break;
+      }
+    }
 
     if (error) throw error;
 
-    // Initialize breakdown with all statuses set to 0
+    // Initialise breakdown with all statuses set to 0
     const breakdown = allStatuses.reduce(
       (acc, status) => {
         acc[status] = 0;
@@ -114,8 +188,12 @@ export class WidgetService {
       {} as Record<string, number>
     );
 
+    if (!data || data.length === 0) {
+      return { total: 0, breakdown, items: [] };
+    }
+
     // Count actual data
-    data?.forEach((item) => {
+    data.forEach((item) => {
       if (
         item.status &&
         Object.prototype.hasOwnProperty.call(breakdown, item.status)
@@ -124,7 +202,7 @@ export class WidgetService {
       }
     });
 
-    return { total: data?.length || 0, breakdown };
+    return { total: data.length, breakdown, items: data };
   }
 
   async getMetricData(
@@ -135,12 +213,13 @@ export class WidgetService {
       | "high-risk-areas"
       | "assessment-activity",
     title?: string
-  ): Promise<MetricData> {
+  ) {
+    // : Promise<MetricData>
     switch (metricType) {
       case "generated-actions": {
         const { data, error } = await this.supabase
           .from("interview_response_actions")
-          .select("id, company_id, is_deleted", { count: "exact" })
+          .select("id", { count: "exact" })
           .eq("company_id", this.companyId)
           .eq("is_deleted", false);
 
@@ -226,7 +305,8 @@ export class WidgetService {
     }
   }
 
-  async getConfigOptions(): Promise<ConfigOptions> {
+  async getConfigOptions() {
+    // : Promise<ConfigOptions>
     // Fetch assessments
     const { data: assessments, error: assessmentsError } = await this.supabase
       .from("assessments")
@@ -234,7 +314,7 @@ export class WidgetService {
       .eq("company_id", this.companyId)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false });
-      // .in("status", ["active", "under_review", "completed"])
+    // .in("status", ["active", "under_review", "completed"])
 
     if (assessmentsError) throw assessmentsError;
 
@@ -245,7 +325,7 @@ export class WidgetService {
       .eq("company_id", this.companyId)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false });
-      // .in("status", ["active", "under_review", "completed"])
+    // .in("status", ["active", "under_review", "completed"])
 
     if (programsError) throw programsError;
 
@@ -257,7 +337,7 @@ export class WidgetService {
       .eq("is_deleted", false)
       .order("created_at", { ascending: false })
       .limit(50); // Limit to recent interviews to avoid overwhelming the UI
-      // .in("status", ["pending", "in_progress", "completed"])
+    // .in("status", ["pending", "in_progress", "completed"])
 
     if (interviewsError) throw interviewsError;
 

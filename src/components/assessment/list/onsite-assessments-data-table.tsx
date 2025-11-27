@@ -1,5 +1,4 @@
 import {
-  IconExternalLink,
   IconUsers,
   IconPencil,
   IconClock,
@@ -15,18 +14,15 @@ import {
   SimpleDataTable,
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
-import type {
-  AssessmentStatusEnum,
-  AssessmentWithCounts,
-} from "@/types/assessment";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { Progress } from "@/components/ui/progress";
 import { formatDistanceToNow } from "date-fns";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import type { AssessmentStatus, GetAssessmentsResponseData } from "@/types/api/assessments";
 
 interface OnsiteAssessmentsDataTableProps {
-  data: AssessmentWithCounts[];
+  data: GetAssessmentsResponseData;
   isLoading?: boolean;
   defaultTab?: string;
   onTabChange?: (tabValue: string) => void;
@@ -45,7 +41,7 @@ export function OnsiteAssessmentsDataTable({
   const { assessmentType } = useAssessmentContext();
   const routes = useCompanyRoutes();
 
-  const getStatusIcon = (status: AssessmentStatusEnum) => {
+  const getStatusIcon = (status: AssessmentStatus) => {
     switch (status) {
       case "completed":
         return <IconCircleCheckFilled className="h-3 w-3 text-green-500" />;
@@ -63,7 +59,7 @@ export function OnsiteAssessmentsDataTable({
   };
 
   // Column definitions
-  const columns: ColumnDef<AssessmentWithCounts>[] = [
+  const columns: ColumnDef<GetAssessmentsResponseData[number]>[] = [
     {
       accessorKey: "name",
       header: "Name",
@@ -81,17 +77,29 @@ export function OnsiteAssessmentsDataTable({
     {
       accessorKey: "questionnaire_name",
       header: "Questionnaire",
-      cell: ({ row }) => (
-        <div className="flex-1">
-          <Link
-            to={routes.questionnaireDetail(row.original.questionnaire_id)}
-            className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1 group"
-            title={row.original.questionnaire_name}
-          >
-            <span className="truncate">{row.original.questionnaire_name}</span>
-          </Link>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const hasQuestionnaire = row.original.questionnaire_id !== null;
+
+        if (!hasQuestionnaire) {
+          return <div className="text-muted-foreground">No Questionnaire</div>;
+        }
+
+        return (
+          <div className="flex-1">
+            <Link
+              to={routes.questionnaireDetail(
+                row.original.questionnaire_id!.toString()
+              )}
+              className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1 group"
+              title={row.original.questionnaire_name}
+            >
+              <span className="truncate">
+                {row.original.questionnaire_name}
+              </span>
+            </Link>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "type",

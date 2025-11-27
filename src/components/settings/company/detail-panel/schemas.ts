@@ -55,7 +55,6 @@ export const workGroupSchema = z.object({
 export const roleSchema = z.object({
   id: z.union([z.string(), z.number()]).optional(),
   level: z.enum(LEVELS as [string, ...string[]]).optional(),
-  description: z.string().optional(),
   shared_role_id: z.string().min(1, "Role selection is required"),
   reports_to_role_id: z.string().optional(),
 });

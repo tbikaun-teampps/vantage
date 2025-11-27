@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import type { EntityConfig, WidgetConfig } from "@/hooks/useDashboardLayouts";
+import type { EntityWidgetConfig, WidgetConfig } from "@/types/api/dashboard";
 
-type EntityType = "interviews" | "assessments" | "programs";
+type EntityType = NonNullable<EntityWidgetConfig>["entityType"];
 
 interface ActionsWidgetConfigProps {
-  config?: EntityConfig;
+  config?: EntityWidgetConfig;
   onConfigChange: (config: WidgetConfig) => void;
 }
 

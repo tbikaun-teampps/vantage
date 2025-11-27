@@ -5,28 +5,21 @@ import {
   IconCircleCheck,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
-import type { AssessmentMeasurement } from "../../../types/assessment-measurements";
 import { cn } from "@/lib/utils";
+import type { AssessmentMeasurementDefinition } from "@/types/api/assessments";
 
-// Status options for measurements
-export const MEASUREMENT_STATUS_OPTIONS = [
+const MEASUREMENT_STATUS_OPTIONS = [
   {
-    value: "configured",
-    label: "Configured",
-    icon: IconCheck,
-    iconColor: "text-green-600",
+    value: "available",
+    label: "Available",
+    icon: IconAlertCircle,
+    iconColor: "text-blue-600",
   },
   {
-    value: "pending",
-    label: "Pending",
+    value: "unavailable",
+    label: "Unavailable",
     icon: IconAlertCircle,
-    iconColor: "text-yellow-600",
-  },
-  {
-    value: "error",
-    label: "Error",
-    icon: IconAlertCircle,
-    iconColor: "text-red-600",
+    iconColor: "text-orange-600",
   },
   {
     value: "in_use",
@@ -36,7 +29,6 @@ export const MEASUREMENT_STATUS_OPTIONS = [
   },
 ];
 
-// Get status icon component
 function StatusIcon({ status }: { status: string }) {
   const option = MEASUREMENT_STATUS_OPTIONS.find((opt) => opt.value === status);
   if (!option) return <IconAlertCircle className="h-4 w-4 text-gray-400" />;
@@ -44,10 +36,7 @@ function StatusIcon({ status }: { status: string }) {
   return <option.icon className={`h-4 w-4 ${option.iconColor}`} />;
 }
 
-// Create measurement table columns
-export function createMeasurementColumns(
-  onRowSelect: (measurement: AssessmentMeasurement) => void
-): ColumnDef<AssessmentMeasurement>[] {
+export function createMeasurementColumns(): ColumnDef<AssessmentMeasurementDefinition>[] {
   return [
     {
       id: "selected",
@@ -57,7 +46,7 @@ export function createMeasurementColumns(
           className="flex items-center justify-center w-8"
           key={row.original.id}
         >
-          {row.original.isInUse && (
+          {row.original.is_in_use && (
             <IconCircleCheck className="h-5 w-5 text-primary" />
           )}
         </div>
@@ -101,17 +90,31 @@ export function createMeasurementColumns(
       accessorKey: "status",
       header: () => <div>Status</div>,
       cell: ({ row }) => (
-        <div key={row.original.id}>
+        <div key={row.original.id} className="flex gap-2">
           <Badge
             className={cn(
               "flex items-center gap-1 capitalize",
-              row.original.status === "in_use" && "bg-green-100 text-green-800"
+              row.original.status === "available" &&
+                "bg-blue-100 text-blue-800",
+              row.original.status === "unavailable" &&
+                "bg-orange-100 text-orange-800"
             )}
             variant="secondary"
           >
             <StatusIcon status={row.original.status} />
             {row.original.status.replaceAll("_", " ")}
           </Badge>
+          {row.original.is_in_use && (
+            <Badge
+              className={cn(
+                "flex items-center gap-1 capitalize bg-green-100 text-green-800"
+              )}
+              variant="secondary"
+            >
+              <StatusIcon status="in_use" />
+              In Use
+            </Badge>
+          )}
         </div>
       ),
     },
@@ -120,7 +123,7 @@ export function createMeasurementColumns(
       header: () => <div className="text-center">Instances</div>,
       cell: ({ row }) => (
         <div key={row.original.id} className="flex justify-center">
-          <Badge variant="secondary">{row.original?.instanceCount ?? 0}</Badge>
+          <Badge variant="secondary">{row.original.instance_count ?? 0}</Badge>
         </div>
       ),
     },

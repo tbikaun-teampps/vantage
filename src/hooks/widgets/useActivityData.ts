@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { WidgetConfig } from "@/hooks/useDashboardLayouts";
+import type { WidgetConfig } from "@/types/api/dashboard";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { getActivityData } from "@/lib/api/widgets";
 
@@ -12,8 +12,8 @@ export function useActivityData(config?: WidgetConfig) {
       if (!config?.entity?.entityType || !companyId) {
         throw new Error("Entity config and companyId are required");
       }
-      const entityType = config.entity.entityType as "interviews" | "assessments" | "programs";
-      return await getActivityData(companyId, entityType);
+      const entityType = config.entity.entityType;
+      return await getActivityData(companyId, { entityType });
     },
     enabled: !!config?.entity?.entityType && !!companyId,
     staleTime: 2 * 60 * 1000, // 2 minutes

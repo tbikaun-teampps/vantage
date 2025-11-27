@@ -1,25 +1,21 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/database";
 import { EvidenceService } from "./EvidenceService";
+import { InterviewsService } from "./InterviewsService";
 import {
   Assessment,
-  AssessmentAction,
-  AssessmentComment,
-  AssessmentFilters,
-  AssessmentWithCounts,
-  AssessmentWithQuestionnaire,
-  CalculatedMeasurementWithLocation,
   CreateAssessmentData,
   TransformedQuestionnaire,
-  AssessmentInterview,
   UpdateAssessmentData,
+  AssessmentStatus,
+  AssessmentType,
 } from "../types/entities/assessments";
-import { InterviewEvidence } from "../types/entities/interviews";
+import { RecommendationsService } from "./RecommendationsService";
 import {
-  calculateAverageScore,
-  calculateCompletionRate,
-  calculateRatingValueRange,
-} from "./utils";
+  resolveLocationFromNode,
+  type LocationNodeType,
+} from "../lib/location-resolver";
+import { AssessmentMeasurementDefinitionStatus } from "../schemas/assessments";
 
 export class AssessmentsService {
   private supabase: SupabaseClient<Database>;
@@ -33,8 +29,12 @@ export class AssessmentsService {
   // Assessment CRUD operations
   async getAssessments(
     companyId: string,
-    filters?: AssessmentFilters
-  ): Promise<AssessmentWithCounts[]> {
+    filters?: {
+      status?: AssessmentStatus[];
+      type?: AssessmentType;
+      search?: string;
+    }
+  ) {
     let query = this.supabase
       .from("assessments")
       .select(
@@ -90,15 +90,13 @@ export class AssessmentsService {
             total + (interview.interview_responses?.length || 0),
           0
         ),
-        questionnaire_name:
-          assessment.questionnaire?.name || "Unknown Questionnaire",
-      } as AssessmentWithCounts;
+        questionnaire_name: assessment.questionnaire?.name,
+      };
     });
   }
 
-  async getAssessmentById(
-    id: number
-  ): Promise<AssessmentWithQuestionnaire | null> {
+  async getAssessmentById(id: number) {
+    // : Promise<AssessmentWithQuestionnaire | null>
     // Get assessment basic info with location lookups
     const { data: assessmentData, error: assessmentError } = await this.supabase
       .from("assessments")
@@ -146,7 +144,7 @@ export class AssessmentsService {
     // Get objectives for this assessment
     const { data: objectives, error: objectivesError } = await this.supabase
       .from("assessment_objectives")
-      .select("title, description")
+      .select("id, title, description")
       .eq("assessment_id", Number(id))
       .eq("company_id", assessmentData.company_id)
       .eq("is_deleted", false);
@@ -243,7 +241,10 @@ export class AssessmentsService {
       );
 
       // Remove the original questionnaire_sections to avoid redundancy
-      const { questionnaire_sections, ...restQuestionnaire } = questionnaire;
+      const {
+        questionnaire_sections: _questionnaire_sections,
+        ...restQuestionnaire
+      } = questionnaire;
 
       const transformedQuestionnaire: TransformedQuestionnaire = {
         ...restQuestionnaire,
@@ -320,10 +321,8 @@ export class AssessmentsService {
     return assessment;
   }
 
-  async updateAssessment(
-    id: number,
-    updates: UpdateAssessmentData
-  ): Promise<Assessment> {
+  async updateAssessment(id: number, updates: UpdateAssessmentData) {
+    // : Promise<Assessment>
     const { data, error } = await this.supabase
       .from("assessments")
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -333,6 +332,13 @@ export class AssessmentsService {
       .single();
 
     if (error) throw error;
+
+    // Detect whether the status has changed to 'completed'. This will trigger a recommendation generation service.
+    if (updates.status && updates.status === "completed") {
+      const recommendationsService = new RecommendationsService(this.supabase);
+      recommendationsService.generateRecommendations(id);
+    }
+
     return data;
   }
 
@@ -389,110 +395,38 @@ export class AssessmentsService {
   }
 
   // Get all interviews for an assessment with calculated fields
-  async getInterviewsByAssessmentId(
-    assessmentId: number
-  ): Promise<AssessmentInterview[]> {
+  // Delegates to InterviewsService.getInterviews for consistency and code reuse
+  async getInterviewsByAssessmentId(assessmentId: number) {
+    // : Promise<AssessmentInterview[]>
     try {
-      const { data: interviews, error } = await this.supabase
-        .from("interviews")
-        .select(
-          `
-            *,
-            assessment:assessments!inner(
-              id, 
-              name, 
-              company_id,
-              type,
-              questionnaire:questionnaires(
-                id,
-                questionnaire_rating_scales(
-                  id,
-                  value,
-                  order_index
-                )
-              )
-            ),
-            interviewer:profiles!interviewer_id(full_name, email),
-            interviewee:profiles!interviewee_id(full_name, email),
-            interview_contact:contacts(
-              id,
-              full_name,
-              email,
-              title,
-              phone
-            ),
-            assigned_role:roles(id, shared_role:shared_roles(id, name)),
-            interview_roles(
-              role:roles(
-                id,
-                shared_role:shared_roles(id, name),
-                work_group:work_groups(
-                  id,
-                  name
-                )
-              )
-            ),
-            interview_responses(
-              *,
-              interview_response_roles(
-                role:roles(*)
-              )
-            )
-          `
-        )
+      // First, fetch the assessment to get company_id
+      const { data: assessment, error: assessmentError } = await this.supabase
+        .from("assessments")
+        .select("company_id")
+        .eq("id", assessmentId)
         .eq("is_deleted", false)
-        .eq("assessment_id", assessmentId);
+        .single();
 
-      if (error) throw error;
-      if (!interviews || interviews.length === 0) return [];
+      if (assessmentError) throw assessmentError;
+      if (!assessment) return [];
 
-      // Transform interviews data
-      const data =
-        interviews.map((interview) => {
-          const ratingRange = calculateRatingValueRange(
-            interview.assessment?.questionnaire
-          );
+      // Create InterviewsService instance and delegate to getInterviews
+      // Using detailed=false to fetch minimal data (no nested response details)
+      const interviewsService = new InterviewsService(
+        this.supabase,
+        this.userId
+      );
 
-          return {
-            ...interview,
-            assessment: {
-              id: interview.assessment?.id,
-              name: interview.assessment?.name,
-              type: interview.assessment?.type,
-              company_id: interview.assessment?.company_id,
-            },
-            completion_rate: calculateCompletionRate(
-              interview.interview_responses || []
-            ),
-            average_score: calculateAverageScore(
-              interview.interview_responses || []
-            ),
-            min_rating_value: ratingRange.min,
-            max_rating_value: ratingRange.max,
-            interviewee: interview.interviewee?.email
-              ? {
-                  full_name: interview.interviewee.full_name,
-                  email: interview.interviewee.email,
-                  role:
-                    interview.interview_roles &&
-                    interview.interview_roles.length > 0
-                      ? interview.interview_roles
-                          .map((ir) => ir.role?.shared_role?.name)
-                          .filter(Boolean)
-                          .join(", ")
-                      : (interview.assigned_role?.shared_role?.name ?? ""),
-                }
-              : null,
-            interviewer: interview.interviewer?.email
-              ? {
-                  full_name: interview.interviewer.full_name,
-                  email: interview.interviewer.email,
-                }
-              : null,
-          };
-        }) || [];
+      const interviews = await interviewsService.getInterviews(
+        assessment.company_id,
+        assessmentId,
+        undefined, // status filter
+        undefined, // programPhaseId filter
+        undefined, // questionnaireId filter
+        false // detailed - do not fetch detailed response data
+      );
 
-      return data;
+      return interviews;
     } catch (error) {
       console.error("Error in getInterviewsByAssessmentId:", error);
       return [];
@@ -500,9 +434,8 @@ export class AssessmentsService {
   }
 
   // Get all comments for an assessment (across all interviews)
-  async getCommentsByAssessmentId(
-    assessmentId: number
-  ): Promise<AssessmentComment[]> {
+  async getCommentsByAssessmentId(assessmentId: number) {
+    // : Promise<AssessmentComment[]>
     try {
       const { data, error } = await this.supabase
         .from("interview_responses")
@@ -535,7 +468,7 @@ export class AssessmentsService {
         .not("comments", "is", null)
         .neq("comments", "")
         .eq("interview.assessment_id", assessmentId)
-        .eq('interview.is_deleted', false)
+        .eq("interview.is_deleted", false)
         .order("updated_at", { ascending: false });
 
       if (error) {
@@ -572,21 +505,22 @@ export class AssessmentsService {
   }
 
   // Get all evidence files for an assessment (across all interviews)
-  async getEvidenceByAssessmentId(assessmentId: number): Promise<
-    (InterviewEvidence & {
-      interview_id: number;
-      interview_name: string;
-      question_title: string;
-      question_id: number;
-      publicUrl: string;
-    })[]
-  > {
+  async getEvidenceByAssessmentId(assessmentId: number) {
+    //   : Promise<
+    //   (InterviewEvidence & {
+    //     interview_id: number;
+    //     interview_name: string;
+    //     question_title: string;
+    //     question_id: number;
+    //     publicUrl: string;
+    //   })[]
+    // >
     try {
       const { data: evidence, error } = await this.supabase
         .from("interview_evidence")
         .select(
           `
-          *,
+          id, uploaded_at, file_name, file_size, file_type,file_path,
           interview_responses!inner(
             questionnaire_question_id,
             questionnaire_questions(title),
@@ -595,7 +529,7 @@ export class AssessmentsService {
         `
         )
         .eq("interview_responses.interviews.assessment_id", assessmentId)
-        .eq('interview_responses.interviews.is_deleted', false)
+        .eq("interview_responses.interviews.is_deleted", false)
         .order("uploaded_at", { ascending: false });
 
       if (error) {
@@ -608,6 +542,7 @@ export class AssessmentsService {
       const evidenceService = new EvidenceService(this.supabase, this.userId);
 
       // Transform the data to flatten the relationships and add public URLs
+      // TODO: pop out the interview_responses object?
       return (evidence || []).map((item) => ({
         ...item,
         interview_id: item.interview_responses.interviews.id,
@@ -625,9 +560,8 @@ export class AssessmentsService {
   }
 
   // Get all actions made on interviews associated with an assessment
-  async getActionsByAssessmentId(
-    assessmentId: number
-  ): Promise<AssessmentAction[]> {
+  async getActionsByAssessmentId(assessmentId: number) {
+    // : Promise<AssessmentAction[]>
     try {
       const { data: actions, error } = await this.supabase
         .from("interview_response_actions")
@@ -679,15 +613,85 @@ export class AssessmentsService {
     }
   }
 
-  async getMeasurementsByAssessmentId(
-    assessmentId: number
-  ): Promise<CalculatedMeasurementWithLocation[]> {
-    // Fetch measurements associated with the assessment
+  async getMeasurmentsDefinitionsByAssessmentId(assessmentId: number) {
+    const { data: measurementDefs, error: measurementDefsError } =
+      await this.supabase
+        .from("measurement_definitions")
+        .select("*")
+        .eq("is_deleted", false);
+    if (measurementDefsError) {
+      throw measurementDefsError;
+    }
+    if (!measurementDefs) {
+      return [];
+    }
+
+    // Fetch all calculated measurements for the assessment
+    const { data: calculatedMeasurements, error: calculatedMeasurementsError } =
+      await this.supabase
+        .from("measurements_calculated")
+        .select("measurement_definition_id")
+        .eq("assessment_id", assessmentId);
+
+    if (calculatedMeasurementsError) {
+      throw calculatedMeasurementsError;
+    }
+    if (!calculatedMeasurements) {
+      return [];
+    }
+
+    const calculatedMeasurementDefIds = new Set(
+      calculatedMeasurements.map((m) => m.measurement_definition_id)
+    );
+
+    // Combine data to indicate if each definition is in use
+    const results = measurementDefs.map((def) => ({
+      ...def,
+      is_in_use: calculatedMeasurementDefIds.has(def.id),
+      instance_count: calculatedMeasurements.filter(
+        (m) => m.measurement_definition_id === def.id
+      ).length,
+      status: (calculatedMeasurementDefIds.has(def.id)
+        ? "in_use"
+        : def.active
+          ? "available"
+          : "unavailable") as AssessmentMeasurementDefinitionStatus,
+    }));
+
+    return results;
+  }
+
+  async getMeasurementsByAssessmentId(assessmentId: number) {
+    // : Promise<CalculatedMeasurementWithLocation[]>
+    // Fetch measurements associated with the assessment, enriched with definition data
     const { data: measurements, error: measurementsError } = await this.supabase
       .from("measurements_calculated")
       .select(
         `
-          *,
+          id,
+          created_at,
+          updated_at,
+          data_source,
+          calculated_value,
+          calculation_metadata,
+          program_phase_id,
+          created_by,
+          assessment_id,
+          company_id,
+          business_unit_id,
+          region_id,
+          site_id,
+          asset_group_id,
+          work_group_id,
+          role_id,
+          definition:measurement_definition_id(
+            id,
+            name,
+            description,
+            min_value,
+            max_value,
+            unit
+          ),
           business_unit:business_unit_id(name),
           region:region_id(name),
           site:site_id(name),
@@ -707,9 +711,15 @@ export class AssessmentsService {
 
     // Hoist up shared_role_id.name to role.name for easier access
     return measurements.map((m) => {
-      const { role, ...rest } = m;
+      const { role, definition, ...rest } = m;
       return {
         ...rest,
+        measurement_name: definition.name,
+        measurement_description: definition.description,
+        measurement_definition_id: definition.id,
+        measurement_min_value: definition.min_value,
+        measurement_max_value: definition.max_value,
+        measurement_unit: definition.unit,
         role: role?.shared_role_id ? { name: role.shared_role_id.name } : null,
       };
     });
@@ -720,12 +730,8 @@ export class AssessmentsService {
     measurement_definition_id: number,
     calculated_value: number,
     location?: {
-      business_unit_id?: number | null;
-      region_id?: number | null;
-      site_id?: number | null;
-      asset_group_id?: number | null;
-      work_group_id?: number | null;
-      role_id?: number | null;
+      id: number;
+      type: LocationNodeType;
     }
   ) {
     // Check assessment is 'desktop' type
@@ -757,43 +763,84 @@ export class AssessmentsService {
       throw new Error("Measurement definition not found");
     }
 
-    // Check measurement isn't already associated with the assessment
+    // Check that the value is within the min_value/max_value range
+    if (
+      measurementDef.min_value !== null &&
+      measurementDef.max_value !== null
+    ) {
+      if (
+        !(calculated_value >= measurementDef.min_value) &&
+        calculated_value <= measurementDef.max_value
+      ) {
+        throw new Error(
+          `Calculated value must be between ${measurementDef.min_value} and ${measurementDef.max_value}`
+        );
+      }
+    } else {
+      console.warn(
+        "Measurement definition does not have min_value/max_value set"
+      );
+    }
+
+    // Resolve the location hierarchy from the selected node
+    let resolvedLocation: {
+      business_unit_id?: number;
+      region_id?: number;
+      site_id?: number;
+      asset_group_id?: number;
+      work_group_id?: number;
+      role_id?: number;
+    } | null = null;
+
+    if (location) {
+      resolvedLocation = await resolveLocationFromNode(
+        this.supabase,
+        location.id,
+        location.type,
+        assessment.company_id
+      );
+    }
+
+    // console.log('resolvedLocation: ', resolvedLocation)
+
+    // Check measurement isn't already associated with the assessment at this location
     let existenceCheckQuery = this.supabase
       .from("measurements_calculated")
       .select("*")
       .eq("assessment_id", assessmentId)
       .eq("measurement_definition_id", measurement_definition_id);
 
-    if (location) {
-      if (location.business_unit_id) {
+    if (resolvedLocation) {
+      const loc = resolvedLocation;
+      if (loc.business_unit_id) {
         existenceCheckQuery = existenceCheckQuery.eq(
           "business_unit_id",
-          location.business_unit_id
+          loc.business_unit_id
         );
-        if (location.region_id) {
+        if (loc.region_id) {
           existenceCheckQuery = existenceCheckQuery.eq(
             "region_id",
-            location.region_id
+            loc.region_id
           );
-          if (location.site_id) {
+          if (loc.site_id) {
             existenceCheckQuery = existenceCheckQuery.eq(
               "site_id",
-              location.site_id
+              loc.site_id
             );
-            if (location.asset_group_id) {
+            if (loc.asset_group_id) {
               existenceCheckQuery = existenceCheckQuery.eq(
                 "asset_group_id",
-                location.asset_group_id
+                loc.asset_group_id
               );
-              if (location.work_group_id) {
+              if (loc.work_group_id) {
                 existenceCheckQuery = existenceCheckQuery.eq(
                   "work_group_id",
-                  location.work_group_id
+                  loc.work_group_id
                 );
-                if (location.role_id) {
+                if (loc.role_id) {
                   existenceCheckQuery = existenceCheckQuery.eq(
                     "role_id",
-                    location.role_id
+                    loc.role_id
                   );
                 }
               }
@@ -821,14 +868,42 @@ export class AssessmentsService {
           assessment_id: assessmentId,
           measurement_definition_id,
           calculated_value,
-          ...location,
+          ...resolvedLocation,
         })
-        .select()
+        .select(
+          `
+          id,
+          created_at,
+          updated_at,
+          data_source,
+          calculated_value,
+          calculation_metadata,
+          program_phase_id,
+          created_by,
+          assessment_id,
+          definition:measurement_definition_id(name, description),
+          business_unit:business_unit_id(name),
+          region:region_id(name),
+          site:site_id(name),
+          asset_group:asset_group_id(name),
+          work_group:work_group_id(name),
+          role:role_id(shared_role_id(name))
+          `
+        )
         .single();
 
     if (newMeasurementError || !newMeasurement) {
       throw new Error("Failed to add measurement to assessment");
     }
+
+    // Hoist up shared_role_id.name to role.name for easier access
+    const { role, definition, ...rest } = newMeasurement;
+    return {
+      ...rest,
+      measurement_name: definition.name,
+      measurement_description: definition.description,
+      role: role?.shared_role_id ? { name: role.shared_role_id.name } : null,
+    };
   }
 
   async deleteMeasurementFromAssessment(measurementId: number) {
@@ -926,5 +1001,48 @@ export class AssessmentsService {
     );
 
     return chartData;
+  }
+
+  async updateMeasurement(measurementId: number, updatedValue: number) {
+    const { data, error } = await this.supabase
+      .from("measurements_calculated")
+      .update({
+        calculated_value: updatedValue,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", measurementId)
+      .select(
+        `
+          id,
+          created_at,
+          updated_at,
+          data_source,
+          calculated_value,
+          calculation_metadata,
+          program_phase_id,
+          created_by,
+          assessment_id,
+          definition:measurement_definition_id(name, description),
+          business_unit:business_unit_id(name),
+          region:region_id(name),
+          site:site_id(name),
+          asset_group:asset_group_id(name),
+          work_group:work_group_id(name),
+          role:role_id(shared_role_id(name))
+          `
+      )
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error("Measurement not found");
+
+    // Hoist up shared_role_id.name to role.name for easier access
+    const { role, definition, ...rest } = data;
+    return {
+      ...rest,
+      measurement_name: definition.name,
+      measurement_description: definition.description,
+      role: role?.shared_role_id ? { name: role.shared_role_id.name } : null,
+    };
   }
 }

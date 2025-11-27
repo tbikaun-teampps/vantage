@@ -1,6 +1,4 @@
 import {
-  IconExternalLink,
-  IconUsers,
   IconPencil,
   IconClock,
   IconCircleCheckFilled,
@@ -15,18 +13,17 @@ import {
   SimpleDataTable,
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
-import type {
-  AssessmentStatusEnum,
-  AssessmentWithCounts,
-} from "@/types/assessment";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
-import { Progress } from "@/components/ui/progress";
 import { formatDistanceToNow } from "date-fns";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import type {
+  AssessmentStatus,
+  GetAssessmentsResponseData,
+} from "@/types/api/assessments";
 
 interface DesktopAssessmentsDataTableProps {
-  data: AssessmentWithCounts[];
+  data: GetAssessmentsResponseData;
   isLoading?: boolean;
   defaultTab?: string;
   onTabChange?: (tabValue: string) => void;
@@ -45,7 +42,7 @@ export function DesktopAssessmentsDataTable({
   const { assessmentType } = useAssessmentContext();
   const routes = useCompanyRoutes();
 
-  const getStatusIcon = (status: AssessmentStatusEnum) => {
+  const getStatusIcon = (status: AssessmentStatus) => {
     switch (status) {
       case "completed":
         return <IconCircleCheckFilled className="h-3 w-3 text-green-500" />;
@@ -63,7 +60,7 @@ export function DesktopAssessmentsDataTable({
   };
 
   // Column definitions
-  const columns: ColumnDef<AssessmentWithCounts>[] = [
+  const columns: ColumnDef<GetAssessmentsResponseData[number]>[] = [
     {
       accessorKey: "name",
       header: "Name",

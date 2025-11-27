@@ -1,0 +1,169 @@
+name: Deploy Supabase Migrations
+
+on:
+  push:
+    branches:
+      - staging
+      - main
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/seed*.sql'
+      - 'supabase/config.toml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      debug_mode:
+        description: 'Debug mode (preview only, no actual deployment)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  deploy-migrations:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Debug - Show context
+        run: |
+          echo "GitHub Ref: ${{ github.ref }}"
+          echo "GitHub Branch: ${GITHUB_REF#refs/heads/}"
+          echo "GitHub SHA: ${{ github.sha }}"
+          echo "Workflow triggered by: ${{ github.event_name }}"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "Manual trigger - Environment: ${{ inputs.environment }}"
+            echo "Debug mode: ${{ inputs.debug_mode }}"
+          fi
+      
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      # Determine environment based on branch or manual input
+      - name: Set environment
+        id: set-env
+        run: |
+          # For manual triggers, use the selected environment
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ "${{ inputs.environment }}" == "production" ]]; then
+              echo "ENVIRONMENT=production" >> $GITHUB_OUTPUT
+              echo "PROJECT_REF=${{ secrets.PRODUCTION_PROJECT_REF }}" >> $GITHUB_OUTPUT
+            else
+              echo "ENVIRONMENT=staging" >> $GITHUB_OUTPUT
+              echo "PROJECT_REF=${{ secrets.STAGING_PROJECT_REF }}" >> $GITHUB_OUTPUT
+            fi
+          # For push events, determine by branch
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "ENVIRONMENT=production" >> $GITHUB_OUTPUT
+            echo "PROJECT_REF=${{ secrets.PRODUCTION_PROJECT_REF }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+            echo "ENVIRONMENT=staging" >> $GITHUB_OUTPUT
+            echo "PROJECT_REF=${{ secrets.STAGING_PROJECT_REF }}" >> $GITHUB_OUTPUT
+          fi
+          
+          # Debug output
+          echo "Environment: $(grep ENVIRONMENT $GITHUB_OUTPUT | cut -d= -f2)"
+          echo "Project Ref: $(grep PROJECT_REF $GITHUB_OUTPUT | cut -d= -f2 | cut -c1-8)..."
+      
+      # Link to appropriate project
+      - name: Link Supabase project
+        run: |
+          supabase link --project-ref ${{ steps.set-env.outputs.PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      # Optional: Backup production database before migrations (skip in debug mode)
+      - name: Backup database (Production only)
+        if: steps.set-env.outputs.ENVIRONMENT == 'production' && inputs.debug_mode != true
+        run: |
+          BACKUP_FILE="backup-$(date +%Y%m%d-%H%M%S).sql"
+          supabase db dump \
+            -f $BACKUP_FILE \
+            --project-ref ${{ steps.set-env.outputs.PROJECT_REF }}
+          
+          # Verify backup file was created and has content
+          if [ ! -s "$BACKUP_FILE" ]; then
+            echo "❌ Backup file is empty or wasn't created"
+            exit 1
+          fi
+          
+          echo "BACKUP_FILE=$BACKUP_FILE" >> $GITHUB_ENV
+          echo "✅ Database backup created: $BACKUP_FILE ($(du -h $BACKUP_FILE | cut -f1))"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Upload backup artifact (Production only)
+        if: steps.set-env.outputs.ENVIRONMENT == 'production' && inputs.debug_mode != true
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ steps.set-env.outputs.ENVIRONMENT }}-${{ github.run_id }}-${{ github.sha }}
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 30
+      
+      - name: Preview migrations
+        run: |
+          echo "📋 Local migrations in repository:"
+          ls -la supabase/migrations/
+          echo ""
+          echo "📊 Currently applied migrations on ${{ steps.set-env.outputs.ENVIRONMENT }}:"
+          supabase migration list
+          echo ""
+          if [[ "${{ inputs.debug_mode }}" == "true" ]]; then
+            echo "🔍 DEBUG MODE: Migrations will NOT be applied"
+          else
+            echo "✅ Migrations WILL be applied to ${{ steps.set-env.outputs.ENVIRONMENT }}"
+          fi
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      
+      # Run migrations (skip in debug mode)
+      - name: Push database migrations
+        if: inputs.debug_mode != true
+        run: |
+          echo "🚀 Applying migrations to ${{ steps.set-env.outputs.ENVIRONMENT }}..."
+          supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      
+      # Verify migrations (skip in debug mode)
+      - name: List applied migrations
+        if: inputs.debug_mode != true
+        run: |
+          echo "✅ Migrations after deployment:"
+          supabase migration list
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      
+      # Optional: Run seed data for staging (skip in debug mode)
+      - name: Reset and seed staging database
+        if: steps.set-env.outputs.ENVIRONMENT == 'staging' && inputs.debug_mode != true
+        run: |
+          if [ -f "supabase/seed_staging.sql" ]; then
+            echo "🔄 Configuring staging seed file..."
+            sed -i 's|sql_paths = "./seed.sql"|sql_paths = "./seed_staging.sql"|' supabase/config.toml
+            echo "🔄 Resetting staging database (migrations + seed)..."
+            supabase db reset --linked --yes
+          fi
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      
+      # Notify on success
+      - name: Notify deployment result
+        if: success()
+        run: |
+          if [[ "${{ inputs.debug_mode }}" == "true" ]]; then
+            echo "🔍 Debug run completed for ${{ steps.set-env.outputs.ENVIRONMENT }} environment"
+            echo "No migrations were applied - this was a preview only"
+          else
+            echo "✅ Migrations successfully deployed to ${{ steps.set-env.outputs.ENVIRONMENT }}"
+          fi

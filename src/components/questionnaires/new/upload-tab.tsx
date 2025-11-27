@@ -120,10 +120,17 @@ export function NewQuestionnaireUploadTab() {
         navigate(`/questionnaires/${response.id}`);
       }, 1000);
     } catch (error) {
-      setValidationErrors([
-        error?.response?.data.error ||
-          "An unexpected error occurred during import",
-      ]);
+      if (error instanceof Error) {
+        const validationErrs = (error as Error & { validationErrors?: string[] })
+          .validationErrors;
+        if (validationErrs && Array.isArray(validationErrs)) {
+          setValidationErrors(validationErrs);
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.error("Failed to import questionnaire");
+      }
     } finally {
       setIsProcessing(false);
     }

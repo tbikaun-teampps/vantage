@@ -1,4 +1,4 @@
-import { Outlet, useParams, useNavigate } from "react-router-dom";
+import { Outlet, useParams, useNavigate, useLocation } from "react-router-dom";
 import ErrorBoundary, {
   PublicErrorFallback,
 } from "@/components/error-boundary";
@@ -8,6 +8,7 @@ import { useState } from "react";
 import { InterviewExitDialog } from "@/components/interview/detail/InterviewExitDialog";
 import { InterviewLayoutHeader } from "@/components/layouts/interview/header";
 import { InterviewLayoutFooter } from "@/components/layouts/interview/footer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ExternalInterviewLayoutProps {
   children?: React.ReactNode;
@@ -16,6 +17,8 @@ interface ExternalInterviewLayoutProps {
 export function ExternalInterviewLayout({
   children,
 }: ExternalInterviewLayoutProps) {
+  const location = useLocation();
+  const isMobile = useIsMobile();
   const { id: interviewId } = useParams<{ id: string }>();
   const [showExitDialog, setShowExitDialog] = useState<boolean>(false);
   const navigate = useNavigate();
@@ -28,6 +31,10 @@ export function ExternalInterviewLayout({
     navigate("/");
   };
 
+  if (!interviewData) {
+    return null;  //TODO: review if this should be a loading component
+  }
+
   return (
     <>
       <div className="min-h-screen flex flex-col">
@@ -36,12 +43,12 @@ export function ExternalInterviewLayout({
           showExitDialog={() => setShowExitDialog(true)}
         />
         <main className="h-screen overflow-y-auto pt-[var(--demo-banner-height)]">
-          <ErrorBoundary fallback={PublicErrorFallback}>
+          <ErrorBoundary key={location.pathname} fallback={PublicErrorFallback}>
             {children || <Outlet />}
           </ErrorBoundary>
         </main>
 
-        <InterviewLayoutFooter />
+        {isMobile && <InterviewLayoutFooter />}
       </div>
 
       <InterviewExitDialog

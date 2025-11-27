@@ -61,6 +61,7 @@ export type UpdateInterviewData = Pick<
   "name" | "notes" | "is_individual" | "enabled" | "status"
 >;
 
+// TODO: split InterviewQuestion into two types. See responses in getInterviewQuestionById.
 export interface InterviewQuestion {
   id: number;
   title: string;
@@ -71,7 +72,7 @@ export interface InterviewQuestion {
     step: string;
     question: string;
   };
-  options: {
+  options?: {
     applicable_roles: Record<
       string,
       {
@@ -89,14 +90,35 @@ export interface InterviewQuestion {
       description: string;
     }[];
   };
+  question_parts?:
+    | {
+        id: number;
+        text: string;
+        order_index: number;
+        answer_type:
+          | "scale"
+          | "percentage"
+          | "number"
+          | "labelled_scale"
+          | "number"
+          | "boolean";
+        options: Json;
+      }[]
+    | null;
   response: {
     id: number;
     rating_score: number | null;
-    response_roles: {
+    is_unknown: boolean;
+    response_roles?: {
       id: number;
       role: {
         id: number;
       };
+    }[];
+    question_part_responses?: {
+      id: number;
+      answer_value: string | null;
+      question_part_id: number;
     }[];
   } | null;
 }
@@ -117,9 +139,9 @@ export interface InterviewSummary {
     role: {
       id: number;
       shared_role: { name: string } | null;
-    } | null;
+    };
   }>;
-  company?: {
+  company: {
     name: string;
     icon_url: string | null;
     branding: Json | null;
@@ -140,6 +162,7 @@ export interface InterviewProgress {
       is_applicable: boolean;
       has_rating_score: boolean;
       has_roles: boolean;
+      is_unknown: boolean;
     }
   >;
 }

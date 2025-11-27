@@ -1,29 +1,23 @@
+import type {
+  CreateSharedRoleBodyData,
+  CreateSharedRoleResponseData,
+  GetAllSharedRolesResponseData,
+  GetMeasurementDefinitionByIdResponseData,
+  GetMeasurementDefinitionsResponseData,
+  UpdateSharedRoleBodyData,
+  UpdateSharedRoleResponseData,
+} from "@/types/api/shared";
 import { apiClient } from "./client";
-import type { SharedRole } from "@/types/assessment";
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-}
-
-export interface CreateSharedRoleData {
-  name: string;
-  description?: string;
-  company_id: string;
-}
-
-export interface UpdateSharedRoleData {
-  name?: string;
-  description?: string;
-}
+import type { ApiResponse } from "./utils";
 
 /**
  * Get all shared roles (system roles + user-created roles)
  */
-export async function getAllSharedRoles(): Promise<SharedRole[]> {
+export async function getAllSharedRoles(): Promise<GetAllSharedRolesResponseData> {
   const response =
-    await apiClient.get<ApiResponse<SharedRole[]>>("/shared/roles");
+    await apiClient.get<ApiResponse<GetAllSharedRolesResponseData>>(
+      "/shared/roles"
+    );
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch shared roles");
@@ -35,7 +29,7 @@ export async function getAllSharedRoles(): Promise<SharedRole[]> {
 /**
  * Get only roles created by the current user
  */
-export async function getUserSharedRoles(): Promise<SharedRole[]> {
+export async function getUserSharedRoles(): Promise<GetAllSharedRolesResponseData> {
   // Filter client-side for user-created roles
   const allRoles = await getAllSharedRoles();
   return allRoles.filter((role) => role.created_by !== null);
@@ -45,16 +39,11 @@ export async function getUserSharedRoles(): Promise<SharedRole[]> {
  * Create a new shared role
  */
 export async function createSharedRole(
-  roleData: CreateSharedRoleData
-): Promise<SharedRole> {
-  const response = await apiClient.post<ApiResponse<SharedRole>>(
-    "/shared/roles",
-    {
-      name: roleData.name,
-      description: roleData.description || null,
-      companyId: roleData.company_id,
-    }
-  );
+  data: CreateSharedRoleBodyData
+): Promise<CreateSharedRoleResponseData> {
+  const response = await apiClient.post<
+    ApiResponse<CreateSharedRoleResponseData>
+  >("/shared/roles", data);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to create shared role");
@@ -68,12 +57,11 @@ export async function createSharedRole(
  */
 export async function updateSharedRole(
   id: number,
-  roleData: UpdateSharedRoleData
-): Promise<SharedRole> {
-  const response = await apiClient.put<ApiResponse<SharedRole>>(
-    `/shared/roles/${id}`,
-    roleData
-  );
+  updates: UpdateSharedRoleBodyData
+): Promise<UpdateSharedRoleResponseData> {
+  const response = await apiClient.put<
+    ApiResponse<UpdateSharedRoleResponseData>
+  >(`/shared/roles/${id}`, updates);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to update shared role");
@@ -97,35 +85,27 @@ export async function deleteSharedRole(id: number): Promise<void> {
 
 // ===== SHARED MEASUREMENT DEFINITIONS =====
 
-export async function getMeasurementDefinitions(): Promise<
-  Array<{
-    id: number;
-    name: string;
-    description: string;
-    calculation_type: string;
-    provider: string;
-    objective: string;
-    calculation: string;
-    required_csv_columns: Record<string, string>;
-  }>
-> {
+export async function getMeasurementDefinitions(): Promise<GetMeasurementDefinitionsResponseData> {
   const response = await apiClient.get<
-    ApiResponse<
-      Array<{
-        id: number;
-        name: string;
-        description: string;
-        calculation_type: string;
-        provider: string;
-        objective: string;
-        calculation: string;
-        required_csv_columns: Record<string, string>;
-      }>
-    >
+    ApiResponse<GetMeasurementDefinitionsResponseData>
   >("/shared/measurement-definitions");
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch measurements");
+  }
+
+  return response.data.data;
+}
+
+export async function getMeasurementDefinitionById(
+  id: number
+): Promise<GetMeasurementDefinitionByIdResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetMeasurementDefinitionByIdResponseData>
+  >(`/shared/measurement-definitions/${id}`);
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to fetch measurement");
   }
 
   return response.data.data;

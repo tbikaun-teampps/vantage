@@ -1,10 +1,18 @@
 import { FastifyInstance } from "fastify";
-import { usersSchemas } from "../schemas/users.js";
 import { UsersService } from "../services/UsersService.js";
 import {
   UnauthorizedError,
   InternalServerError,
 } from "../plugins/errorHandler.js";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
+import {
+  SubscriptionTierParamsSchema,
+  UpdateProfileBodySchema,
+  UserProfileResponseSchema,
+  SuccessResponseSchema,
+  UpdateProfileResponseSchema,
+} from "../schemas/users";
+import { Error401Schema, Error500Schema } from "../schemas/errors";
 
 export async function usersRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -14,19 +22,18 @@ export async function usersRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get(
-    "/me",
-    {
-      schema: {
-        description: "Get current authenticated user and profile",
-        response: {
-          200: usersSchemas.responses.userProfile,
-          401: usersSchemas.responses[401],
-          500: usersSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/me",
+    schema: {
+      description: "Get current authenticated user and profile",
+      response: {
+        200: UserProfileResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const { user } = request;
       if (!user) {
         throw new UnauthorizedError();
@@ -43,62 +50,46 @@ export async function usersRoutes(fastify: FastifyInstance) {
         user,
         profile,
       };
-    }
-  );
-  fastify.put(
-    "/subscription/:subscription_tier",
-    {
-      schema: {
-        description: "Update user subscription",
-        params: usersSchemas.params.subscriptionParams,
-        response: {
-          200: { type: "object", properties: { success: { type: "boolean" } } },
-          401: usersSchemas.responses[401],
-          500: usersSchemas.responses[500],
-        },
+    },
+  });
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/subscription/:subscription_tier",
+    schema: {
+      description: "Update user subscription",
+      params: SubscriptionTierParamsSchema,
+      response: {
+        200: SuccessResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const { user } = request;
       if (!user) {
         throw new UnauthorizedError();
       }
 
-      const { subscription_tier } = request.params as {
-        subscription_tier: "demo" | "consultant" | "enterprise";
-      };
+      const { subscription_tier } = request.params;
 
       const usersService = new UsersService(request.supabaseClient);
       await usersService.updateSubscription(user.id, subscription_tier);
       return { success: true };
-    }
-  );
-  fastify.put(
-    "/profile",
-    {
-      schema: {
-        description: "Update user profile",
-        body: {
-          type: "object",
-          properties: {
-            full_name: { type: "string" },
-            // Add other updatable profile fields as needed
-          },
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              profile: { type: "object", additionalProperties: true },
-            },
-          },
-          401: usersSchemas.responses[401],
-          500: usersSchemas.responses[500],
-        },
+    },
+  });
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/profile",
+    schema: {
+      description: "Update user profile",
+      body: UpdateProfileBodySchema,
+      response: {
+        200: UpdateProfileResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const { user } = request;
       if (!user) {
         throw new UnauthorizedError();
@@ -112,22 +103,21 @@ export async function usersRoutes(fastify: FastifyInstance) {
       );
 
       return { success: true, profile: updatedProfile };
-    }
-  );
+    },
+  });
 
-  fastify.put(
-    "/onboarded",
-    {
-      schema: {
-        description: "Mark user as onboarded",
-        response: {
-          200: { type: "object", properties: { success: { type: "boolean" } } },
-          401: usersSchemas.responses[401],
-          500: usersSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/onboarded",
+    schema: {
+      description: "Mark user as onboarded",
+      response: {
+        200: SuccessResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const { user } = request;
       if (!user) {
         throw new UnauthorizedError();
@@ -136,6 +126,6 @@ export async function usersRoutes(fastify: FastifyInstance) {
       const usersService = new UsersService(request.supabaseClient);
       await usersService.markUserAsOnboarded(user.id);
       return { success: true };
-    }
-  );
+    },
+  });
 }

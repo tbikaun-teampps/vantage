@@ -2,24 +2,20 @@ import { Database } from "../database";
 import { InterviewResponseAction } from "./interviews";
 import { CreatedBy } from "./profiles";
 
-export interface AssessmentFilters {
-  status?: Database["public"]["Enums"]["assessment_statuses"][];
-  type?: Database["public"]["Enums"]["assessment_types"];
-  company_id?: number;
-  search?: string;
-}
-
 export interface AssessmentObjective {
   title: string;
   description?: string | null;
 }
 
-export type AssessmentStatus = Database["public"]["Enums"]["assessment_statuses"];
+export type AssessmentStatus =
+  Database["public"]["Enums"]["assessment_statuses"];
+
+export type AssessmentType = Database["public"]["Enums"]["assessment_types"];
 
 export interface CreateAssessmentData {
   name: string;
   description?: string | null;
-  questionnaire_id: number;
+  questionnaire_id?: number | null;
   company_id: string;
   business_unit_id?: number | null;
   region_id?: number | null;

@@ -39,7 +39,7 @@ export function NavData({ title, items }: { title: string; items: NavItem[] }) {
     };
 
   const handleDropdownItemClick =
-    (itemName: string, actionName: string, disabled?: boolean) =>
+    (_: string, actionName: string, disabled?: boolean) =>
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (disabled) {
         e.preventDefault();

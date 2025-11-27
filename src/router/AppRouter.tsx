@@ -11,7 +11,7 @@ import { InterviewLayout } from "@/layouts/InterviewLayout";
 
 import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/pages/auth/LoginPage";
-import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
+// import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
 import { SelectCompanyPage } from "@/pages/SelectCompanyPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
@@ -41,6 +41,7 @@ import { EnterpriseWelcomePage } from "@/pages/enterprise/EnterpriseWelcomePage"
 
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PublicInterviewAuthProvider } from "@/components/public-interview-auth-provider";
+import { AuditLogsPage } from "@/pages/AuditLogsPage";
 
 export function AppRouter() {
   return (
@@ -66,10 +67,10 @@ export function AppRouter() {
         {/* Auth routes */}
         <Route element={<AuthLayout />}>
           <Route path={routes.login} element={<LoginPage />} />
-          <Route
+          {/* <Route
             path={routes.forgotPassword}
             element={<ForgotPasswordPage />}
-          />
+          /> */}
         </Route>
 
         {/* Protected routes */}
@@ -95,22 +96,30 @@ export function AppRouter() {
               {/* Interview pages with dedicated layout */}
               <Route element={<InterviewLayout />}>
                 <Route
-                  path="assessments/onsite/interviews/:id"
-                  element={<InterviewDetailPage isIndividualInterview={false} />}
+                  path="interviews/:id"
+                  element={
+                    <InterviewDetailPage isIndividualInterview={false} />
+                  }
                 />
               </Route>
 
               {/* Company-scoped dashboard routes */}
               <Route element={<DashboardLayout />}>
+                {/* Main dashboard page */}
                 <Route path="dashboard" element={<DashboardPage />} />
 
+                {/* Audit Logs */}
+                <Route path="audit-logs" element={<AuditLogsPage />} />
                 {/* Programs */}
                 <Route path="programs" element={<ProgramListPage />} />
                 <Route path="programs/new" element={<ProgramNewPage />} />
                 <Route path="programs/:id" element={<ProgramDetailPage />} />
 
                 {/* Questionnaires */}
-                <Route path="questionnaires" element={<QuestionnaireListPage />} />
+                <Route
+                  path="questionnaires"
+                  element={<QuestionnaireListPage />}
+                />
                 <Route
                   path="questionnaires/new"
                   element={<QuestionnaireNewPage />}
@@ -149,10 +158,7 @@ export function AppRouter() {
                 />
 
                 {/* Interviews */}
-                <Route
-                  path="assessments/onsite/interviews"
-                  element={<InterviewsListPage />}
-                />
+                <Route path="interviews" element={<InterviewsListPage />} />
 
                 {/* Analytics */}
                 <Route path="analytics" element={<AnalyticsPage />} />
@@ -169,7 +175,7 @@ export function AppRouter() {
                 {/* Reports */}
                 <Route
                   path="reports"
-                  element={<div>Reports Page (TODO)</div>}
+                  element={<div>Reports Page</div>}
                 />
 
                 {/* Company Settings */}

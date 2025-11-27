@@ -1,147 +1,86 @@
 import { FastifyInstance } from "fastify";
-import { commonResponseSchemas } from "../../schemas/common.js";
 import { QuestionnaireService } from "../../services/QuestionnaireService.js";
 import { NotFoundError } from "../../plugins/errorHandler.js";
-
-const ratingScale = {
-  type: "object",
-  properties: {
-    id: { type: "number" },
-    name: { type: "string" },
-    description: { type: "string" },
-    value: { type: "number" },
-    order_index: { type: "number" },
-    created_at: { type: "string", format: "date-time" },
-    updated_at: { type: "string", format: "date-time" },
-  },
-};
+import { ZodTypeProvider } from "fastify-type-provider-zod";
+import {
+  GetRatingScalesParamsSchema,
+  GetRatingScalesResponseSchema,
+  BatchRatingScalesParamsSchema,
+  BatchRatingScalesBodySchema,
+  BatchRatingScalesResponseSchema,
+  CreateRatingScaleParamsSchema,
+  CreateRatingScaleBodySchema,
+  CreateRatingScaleResponseSchema,
+  UpdateRatingScaleParamsSchema,
+  UpdateRatingScaleBodySchema,
+  UpdateRatingScaleResponseSchema,
+  DeleteRatingScaleParamsSchema,
+  DeleteRatingScaleResponseSchema,
+} from "../../schemas/questionnaires/rating-scales.js";
+import {
+  Error403Schema,
+  Error404Schema,
+  Error500Schema,
+} from "../../schemas/errors.js";
 
 export async function ratingScalesRoutes(fastify: FastifyInstance) {
-  // Get rating scales for a questionnaire
-  fastify.get(
-    "/:questionnaireId/rating-scales",
-    {
-      schema: {
-        description: "Get rating scales for a questionnaire",
-        params: {
-          type: "object",
-          properties: {
-            questionnaireId: {
-              type: "string",
-            },
-          },
-          required: ["questionnaireId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: ratingScale,
-              },
-            },
-          },
-
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:questionnaireId/rating-scales",
+    schema: {
+      description: "Get rating scales for a questionnaire",
+      params: GetRatingScalesParamsSchema,
+      response: {
+        200: GetRatingScalesResponseSchema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { questionnaireId } = request.params as { questionnaireId: string };
+    handler: async (request) => {
+      const { questionnaireId } = request.params;
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
         request.user.id
       );
       const ratingScales =
         await questionnaireService.getRatingScalesByQuestionnaireId(
-          parseInt(questionnaireId)
+          questionnaireId
         );
 
       return {
         success: true,
         data: ratingScales,
       };
-    }
-  );
+    },
+  });
 
-  // Add multiple rating scales to a questionnaire (batch)
-  fastify.post(
-    "/:questionnaireId/rating-scales/batch",
-    {
-      schema: {
-        description: "Add multiple rating scales to a questionnaire at once",
-        params: {
-          type: "object",
-          properties: {
-            questionnaireId: {
-              type: "string",
-            },
-          },
-          required: ["questionnaireId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            scales: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  name: { type: "string" },
-                  description: { type: "string" },
-                  value: { type: "number" },
-                  order_index: { type: "number" },
-                },
-                required: ["name", "value", "order_index"],
-              },
-            },
-          },
-          required: ["scales"],
-        },
-        response: {
-          201: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: ratingScale,
-              },
-            },
-          },
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/:questionnaireId/rating-scales/batch",
+    schema: {
+      description: "Add multiple rating scales to a questionnaire at once",
+      params: BatchRatingScalesParamsSchema,
+      body: BatchRatingScalesBodySchema,
+      response: {
+        201: BatchRatingScalesResponseSchema,
+        403: Error403Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { questionnaireId } = request.params as {
-        questionnaireId: string;
-      };
-      const { scales } = request.body as {
-        scales: Array<{
-          name: string;
-          description: string;
-          value: number;
-          order_index: number;
-        }>;
-      };
+    handler: async (request) => {
+      const { questionnaireId } = request.params;
+      const { scales } = request.body;
 
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
         request.user.id
       );
 
-      await questionnaireService.checkQuestionnaireInUse(
-        parseInt(questionnaireId)
-      );
+      await questionnaireService.checkQuestionnaireInUse(questionnaireId);
 
       const ratingScales = await questionnaireService.createRatingScalesBatch(
-        parseInt(questionnaireId),
+        questionnaireId,
         scales
       );
 
@@ -149,113 +88,61 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
         success: true,
         data: ratingScales,
       };
-    }
-  );
+    },
+  });
 
-  // Add a rating scale to a questionnaire
-  fastify.post(
-    "/:questionnaireId/rating-scale",
-    {
-      schema: {
-        description: "Add a rating scale to a questionnaire",
-        params: {
-          type: "object",
-          properties: {
-            questionnaireId: {
-              type: "string",
-            },
-          },
-          required: ["questionnaireId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            name: { type: "string" },
-            description: { type: "string" },
-            value: { type: "number" },
-          },
-          required: ["name", "value"],
-        },
-        response: {
-          201: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "object" },
-            },
-          },
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/:questionnaireId/rating-scale",
+    schema: {
+      description: "Add a rating scale to a questionnaire",
+      params: CreateRatingScaleParamsSchema,
+      body: CreateRatingScaleBodySchema,
+      response: {
+        201: CreateRatingScaleResponseSchema,
+        403: Error403Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { questionnaireId } = request.params as {
-        questionnaireId: string;
-      };
+    handler: async (request) => {
+      const { questionnaireId } = request.params;
 
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
         request.user.id
       );
 
-      await questionnaireService.checkQuestionnaireInUse(
-        parseInt(questionnaireId)
-      );
+      await questionnaireService.checkQuestionnaireInUse(questionnaireId);
 
       const ratingScale = await questionnaireService.createRatingScale(
-        parseInt(questionnaireId),
-        request.body as any
+        questionnaireId,
+        request.body
       );
 
       return {
         success: true,
         data: ratingScale,
       };
-    }
-  );
+    },
+  });
 
-  // Update a rating scale
-  fastify.put(
-    "/rating-scales/:ratingScaleId",
-    {
-      schema: {
-        description: "Update a rating scale in a questionnaire",
-        params: {
-          type: "object",
-          properties: {
-            ratingScaleId: { type: "string" },
-          },
-          required: ["ratingScaleId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            name: { type: "string" },
-            description: { type: "string" },
-            value: { type: "number" },
-            order_index: { type: "number" },
-          },
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: ratingScale,
-            },
-          },
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/rating-scales/:ratingScaleId",
+    schema: {
+      description: "Update a rating scale in a questionnaire",
+      params: UpdateRatingScaleParamsSchema,
+      body: UpdateRatingScaleBodySchema,
+      response: {
+        200: UpdateRatingScaleResponseSchema,
+        403: Error403Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
-      const { ratingScaleId } = request.params as {
-        ratingScaleId: string;
-      };
+    handler: async (request, reply) => {
+      const { ratingScaleId } = request.params;
 
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
@@ -267,7 +154,7 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
         await request.supabaseClient
           .from("questionnaire_rating_scales")
           .select("questionnaire_id")
-          .eq("id", parseInt(ratingScaleId))
+          .eq("id", ratingScaleId)
           .eq("is_deleted", false)
           .single();
 
@@ -280,18 +167,16 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
       );
 
       // Check if rating scale is being used by questions when modifying the value
-      const body = request.body as any;
+      const body = request.body;
       const isValueUpdate = body.value !== undefined;
 
       if (isValueUpdate) {
-        await questionnaireService.checkRatingScaleInUse(
-          parseInt(ratingScaleId)
-        );
+        await questionnaireService.checkRatingScaleInUse(ratingScaleId);
       }
 
       const ratingScale = await questionnaireService.updateRatingScale(
-        parseInt(ratingScaleId),
-        request.body as any
+        ratingScaleId,
+        request.body
       );
 
       if (!ratingScale) {
@@ -305,34 +190,24 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
         success: true,
         data: ratingScale,
       };
-    }
-  );
+    },
+  });
 
-  // Delete a rating scale
-  fastify.delete(
-    "/rating-scales/:ratingScaleId",
-    {
-      schema: {
-        description: "Delete a rating scale from a questionnaire",
-        params: {
-          type: "object",
-          properties: {
-            ratingScaleId: { type: "string" },
-          },
-          required: ["ratingScaleId"],
-        },
-        response: {
-          200: commonResponseSchemas.messageResponse,
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/rating-scales/:ratingScaleId",
+    schema: {
+      description: "Delete a rating scale from a questionnaire",
+      params: DeleteRatingScaleParamsSchema,
+      response: {
+        200: DeleteRatingScaleResponseSchema,
+        403: Error403Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
-      const { ratingScaleId } = request.params as {
-        ratingScaleId: string;
-      };
+    handler: async (request, reply) => {
+      const { ratingScaleId } = request.params;
 
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
@@ -344,7 +219,7 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
         await request.supabaseClient
           .from("questionnaire_rating_scales")
           .select("questionnaire_id")
-          .eq("id", parseInt(ratingScaleId))
+          .eq("id", ratingScaleId)
           .eq("is_deleted", false)
           .single();
 
@@ -360,13 +235,13 @@ export async function ratingScalesRoutes(fastify: FastifyInstance) {
       );
 
       // Check if rating scale is being used by questions
-      await questionnaireService.checkRatingScaleInUse(parseInt(ratingScaleId));
-      await questionnaireService.deleteRatingScale(parseInt(ratingScaleId));
+      await questionnaireService.checkRatingScaleInUse(ratingScaleId);
+      await questionnaireService.deleteRatingScale(ratingScaleId);
 
       return {
         success: true,
         message: "Rating scale deleted successfully",
       };
-    }
-  );
+    },
+  });
 }

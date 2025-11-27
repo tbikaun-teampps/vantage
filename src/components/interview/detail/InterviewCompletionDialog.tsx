@@ -12,13 +12,8 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-
-export interface InterviewFeedback {
-  interviewRating: number;
-  interviewComment: string;
-  experienceRating: number;
-  experienceComment: string;
-}
+import { Loader2 } from "lucide-react";
+import type { InterviewFeedback } from "@/types/api/interviews";
 
 interface InterviewCompletionDialogProps {
   open: boolean;
@@ -54,7 +49,14 @@ export function InterviewCompletionDialog({
   const isFormValid = interviewRating !== "" && experienceRating !== "";
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog
+      open={open}
+      onOpenChange={(newOpen) => {
+        // Prevent closing dialog during loading
+        if (isLoading && !newOpen) return;
+        onOpenChange(newOpen);
+      }}
+    >
       <AlertDialogContent className="max-h-[90vh] overflow-y-auto">
         <AlertDialogHeader>
           <AlertDialogTitle>Congratulations!</AlertDialogTitle>
@@ -146,7 +148,14 @@ export function InterviewCompletionDialog({
             onClick={handleConfirm}
             disabled={isLoading || !isFormValid}
           >
-            {isLoading ? "Completing..." : "Complete Interview"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Completing...
+              </>
+            ) : (
+              "Complete Interview"
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

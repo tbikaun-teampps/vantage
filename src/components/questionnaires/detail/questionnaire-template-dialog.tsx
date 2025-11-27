@@ -76,7 +76,7 @@ export function QuestionnaireTemplateDialog({
   const { createQuestionnaire } = useQuestionnaireActions();
   const { createSection } = useSectionActions();
   const { createStep } = useStepActions();
-  const { createQuestion, updateQuestionRatingScales } = useQuestionActions();
+  const { createQuestion, addQuestionRatingScale } = useQuestionActions();
   const { createRatingScale } = useRatingScaleActions(questionnaireId);
   const { data: selectedQuestionnaire } = useQuestionnaireById(questionnaireId);
 
@@ -90,7 +90,7 @@ export function QuestionnaireTemplateDialog({
   const [customTitle, setCustomTitle] = useState("");
   const [customDescription, setCustomDescription] = useState("");
   const [showConflictDialog, setShowConflictDialog] = useState(false);
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  // const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [ratingScaleConflicts, setRatingScaleConflicts] = useState<
     Array<{
       templateScale: any;
@@ -107,26 +107,26 @@ export function QuestionnaireTemplateDialog({
     setCustomDescription("");
     setSelectedTab(defaultTab);
     setShowConflictDialog(false);
-    setShowUploadDialog(false);
+    // setShowUploadDialog(false);
     setRatingScaleConflicts([]);
   };
 
-  const handleUploadSuccess = (questionnaireId: number) => {
-    resetForm();
-    onOpenChange(false);
+  // const handleUploadSuccess = (questionnaireId: number) => {
+  //   resetForm();
+  //   onOpenChange(false);
 
-    // If we have a callback for template creation, call it
-    if (onTemplateCreated) {
-      onTemplateCreated(questionnaireId);
-    }
-  };
+  //   // If we have a callback for template creation, call it
+  //   if (onTemplateCreated) {
+  //     onTemplateCreated(questionnaireId);
+  //   }
+  // };
 
   const detectRatingScaleConflicts = (templateRatingScales: any[]) => {
-    if (!selectedQuestionnaire?.rating_scales) {
+    if (!selectedQuestionnaire?.questionnaire_rating_scales) {
       return []; // No existing rating scales to conflict with
     }
 
-    const existingScales = selectedQuestionnaire.rating_scales;
+    const existingScales = selectedQuestionnaire.questionnaire_rating_scales;
     const conflicts: Array<{
       templateScale: any;
       existingScale?: any;
@@ -220,85 +220,85 @@ export function QuestionnaireTemplateDialog({
 
       // If using a full template
       if (selectedTemplate) {
-        throw new Error('Not implemented yet');
-        // First, create rating scales if they don't exist and keep track of created scale IDs
-        const ratingScaleSet = selectedTemplate.ratingScaleSet;
-        const createdRatingScaleIds: Record<number, number> = {}; // Maps scale value to created ID
+        throw new Error("Not implemented yet");
+        // // First, create rating scales if they don't exist and keep track of created scale IDs
+        // const ratingScaleSet = selectedTemplate.ratingScaleSet;
+        // const createdRatingScaleIds: Record<number, number> = {}; // Maps scale value to created ID
 
-        if (ratingScaleSet) {
-          // TODO: Update with batch insert method.
-          for (const scale of ratingScaleSet.scales) {
-            try {
-              const createdScale = await createRatingScale({
-                questionnaireId: actualQuestionnaireId,
-                ratingData: {
-                  // questionnaire_id: actualQuestionnaireId,
-                  value: scale.value,
-                  name: scale.name,
-                  description: scale.description,
-                  order_index: 1,
-                },
-              });
-              createdRatingScaleIds[scale.value] = createdScale.id;
-            } catch (error) {
-              // If rating scale already exists, we'll need to get its ID from the questionnaire
-              toast.error(
-                error instanceof Error
-                  ? error.message
-                  : "Rating scale might already exist"
-              );
-            }
-          }
-        }
+        // if (ratingScaleSet) {
+        //   // TODO: Update with batch insert method.
+        //   for (const scale of ratingScaleSet.scales) {
+        //     try {
+        //       const createdScale = await createRatingScale({
+        //         questionnaireId: actualQuestionnaireId,
+        //         ratingData: {
+        //           // questionnaire_id: actualQuestionnaireId,
+        //           value: scale.value,
+        //           name: scale.name,
+        //           description: scale.description,
+        //           order_index: 1,
+        //         },
+        //       });
+        //       createdRatingScaleIds[scale.value] = createdScale.id;
+        //     } catch (error) {
+        //       // If rating scale already exists, we'll need to get its ID from the questionnaire
+        //       toast.error(
+        //         error instanceof Error
+        //           ? error.message
+        //           : "Rating scale might already exist"
+        //       );
+        //     }
+        //   }
+        // }
 
-        // Create sections from template
-        for (const section of selectedTemplate.sections) {
-          const createdSection = await createSection({
-            questionnaireId: actualQuestionnaireId,
-            title: section.title,
-          });
+        // // Create sections from template
+        // for (const section of selectedTemplate.sections) {
+        //   const createdSection = await createSection({
+        //     questionnaireId: actualQuestionnaireId,
+        //     title: section.title,
+        //   });
 
-          // Create steps for each section
-          for (const step of section.steps) {
-            const createdStep = await createStep({
-              sectionId: createdSection.id,
-              title: step.title,
-            });
+        //   // Create steps for each section
+        //   for (const step of section.steps) {
+        //     const createdStep = await createStep({
+        //       sectionId: createdSection.id,
+        //       title: step.title,
+        //     });
 
-            // Create questions for each step
-            const questions = getQuestionsByIds(step.questionIds);
-            for (const question of questions) {
-              const createdQuestion = await createQuestion({
-                stepId: createdStep.id,
-                title: question.title,
-                question_text: question.question_text,
-                context: question.context,
-              });
+        //     // Create questions for each step
+        //     const questions = getQuestionsByIds(step.questionIds);
+        //     for (const question of questions) {
+        //       const createdQuestion = await createQuestion({
+        //         stepId: createdStep.id,
+        //         title: question.title,
+        //         question_text: question.question_text,
+        //         context: question.context,
+        //       });
 
-              // If the question has custom rating scale descriptions, apply them
-              if (question.ratingScaleDescriptions) {
-                const ratingScaleAssociations = Object.entries(
-                  question.ratingScaleDescriptions
-                )
-                  .filter(
-                    ([scaleValue, _]) =>
-                      createdRatingScaleIds[parseInt(scaleValue)]
-                  )
-                  .map(([scaleValue, description]) => ({
-                    ratingScaleId: createdRatingScaleIds[parseInt(scaleValue)],
-                    description: description,
-                  }));
+        //       // If the question has custom rating scale descriptions, apply them
+        //       if (question.ratingScaleDescriptions) {
+        //         const ratingScaleAssociations = Object.entries(
+        //           question.ratingScaleDescriptions
+        //         )
+        //           .filter(
+        //             ([scaleValue, _]) =>
+        //               createdRatingScaleIds[parseInt(scaleValue)]
+        //           )
+        //           .map(([scaleValue, description]) => ({
+        //             ratingScaleId: createdRatingScaleIds[parseInt(scaleValue)],
+        //             description: description,
+        //           }));
 
-                if (ratingScaleAssociations.length > 0) {
-                  await updateQuestionRatingScales({
-                    questionId: createdQuestion.id,
-                    ratingScaleAssociations,
-                  });
-                }
-              }
-            }
-          }
-        }
+        //         if (ratingScaleAssociations.length > 0) {
+        //           await updateQuestionRatingScales({
+        //             questionId: createdQuestion.id,
+        //             ratingScaleAssociations,
+        //           });
+        //         }
+        //       }
+        //     }
+        //   }
+        // }
       }
 
       // If using individual sections
@@ -335,14 +335,14 @@ export function QuestionnaireTemplateDialog({
 
           for (const step of section.steps) {
             const createdStep = await createStep({
-              sectionId: createdSection.id,
+              questionnaire_section_id: createdSection.id,
               title: step.title,
             });
 
             const questions = getQuestionsByIds(step.questionIds);
             for (const question of questions) {
               const createdQuestion = await createQuestion({
-                stepId: createdStep.id,
+                questionnaire_step_id: createdStep.id,
                 title: question.title,
                 question_text: question.question_text,
                 context: question.context,
@@ -354,7 +354,7 @@ export function QuestionnaireTemplateDialog({
                   question.ratingScaleDescriptions
                 )
                   .filter(
-                    ([scaleValue, _]) =>
+                    ([scaleValue]) =>
                       createdRatingScaleIds[parseInt(scaleValue)]
                   )
                   .map(([scaleValue, description]) => ({
@@ -363,10 +363,13 @@ export function QuestionnaireTemplateDialog({
                   }));
 
                 if (ratingScaleAssociations.length > 0) {
-                  await updateQuestionRatingScales({
-                    questionId: createdQuestion.id,
-                    ratingScaleAssociations,
-                  });
+                  for (const association of ratingScaleAssociations) {
+                    await addQuestionRatingScale({
+                      questionId: createdQuestion.id,
+                      questionnaire_rating_scale_id: association.ratingScaleId,
+                      description: association.description,
+                    });
+                  }
                 }
               }
             }
@@ -429,7 +432,7 @@ export function QuestionnaireTemplateDialog({
       }
 
       // Build rating scale mapping based on resolutions
-      const ratingScaleMapping: Record<number, string> = {};
+      const ratingScaleMapping: Record<number, number> = {};
 
       // Process rating scales with conflict resolutions
       if (selectedTemplate?.ratingScaleSet) {
@@ -450,27 +453,31 @@ export function QuestionnaireTemplateDialog({
               case "replace":
                 // Delete existing and create new one
                 // TODO: Implement delete existing scale
-                const replacedScale = await createRatingScale(
-                  actualQuestionnaireId,
-                  {
-                    value: scale.value,
-                    name: scale.name,
-                    description: scale.description,
-                  }
-                );
-                ratingScaleMapping[scale.value] = replacedScale.id;
+                {
+                  const replacedScale = await createRatingScale({
+                    questionnaireId: actualQuestionnaireId,
+                    ratingData: {
+                      value: scale.value,
+                      name: scale.name,
+                      description: scale.description,
+                    },
+                  });
+                  ratingScaleMapping[scale.value] = replacedScale.id;
+                }
                 break;
               case "rename":
                 // Create with modified name
-                const renamedScale = await createRatingScale(
-                  actualQuestionnaireId,
-                  {
-                    value: scale.value,
-                    name: `${scale.name} (Template)`,
-                    description: scale.description,
-                  }
-                );
-                ratingScaleMapping[scale.value] = renamedScale.id;
+                {
+                  const renamedScale = await createRatingScale({
+                    questionnaireId: actualQuestionnaireId,
+                    ratingData: {
+                      value: scale.value,
+                      name: `${scale.name} (Template)`,
+                      description: scale.description,
+                    },
+                  });
+                  ratingScaleMapping[scale.value] = renamedScale.id;
+                }
                 break;
               case "skip":
                 // Don't create this rating scale
@@ -482,7 +489,6 @@ export function QuestionnaireTemplateDialog({
               const createdScale = await createRatingScale({
                 questionnaireId: actualQuestionnaireId,
                 ratingData: {
-                  questionnaire_id: actualQuestionnaireId,
                   value: scale.value,
                   name: scale.name,
                   description: scale.description,
@@ -519,7 +525,7 @@ export function QuestionnaireTemplateDialog({
 
   const continueTemplateImport = async (
     actualQuestionnaireId: number,
-    ratingScaleMapping: Record<number, string>
+    ratingScaleMapping: Record<number, number>
   ) => {
     // Continue with sections and questions import...
     const sectionsToImport = selectedTemplate
@@ -534,14 +540,14 @@ export function QuestionnaireTemplateDialog({
 
       for (const step of section.steps) {
         const createdStep = await createStep({
-          sectionId: createdSection.id,
+          questionnaire_section_id: createdSection.id,
           title: step.title,
         });
 
         const questions = getQuestionsByIds(step.questionIds);
         for (const question of questions) {
           const createdQuestion = await createQuestion({
-            stepId: createdStep.id,
+            questionnaire_step_id: createdStep.id,
             title: question.title,
             question_text: question.question_text,
             context: question.context,
@@ -561,10 +567,13 @@ export function QuestionnaireTemplateDialog({
               }));
 
             if (ratingScaleAssociations.length > 0) {
-              await updateQuestionRatingScales({
-                questionId: createdQuestion.id,
-                ratingScaleAssociations,
-              });
+              for (const association of ratingScaleAssociations) {
+                await addQuestionRatingScale({
+                  questionId: createdQuestion.id,
+                  questionnaire_rating_scale_id: association.ratingScaleId,
+                  description: association.description,
+                });
+              }
             }
           }
         }
@@ -807,7 +816,7 @@ export function QuestionnaireTemplateDialog({
                     Click the button below to start the upload process
                   </p>
                   <Button
-                    onClick={() => setShowUploadDialog(true)}
+                    // onClick={() => setShowUploadDialog(true)}
                     disabled={isProcessing}
                     className="w-full"
                   >

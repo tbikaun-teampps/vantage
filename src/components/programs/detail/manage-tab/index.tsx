@@ -1,17 +1,31 @@
 import { useState, useMemo } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { IconPlus } from "@tabler/icons-react";
-import { useCreatePhase } from "@/hooks/useProgram";
-import type { ProgramPhase } from "@/types/program";
+import { DatePicker } from "@/components/ui/date-picker";
+import {
+  IconPlus,
+  IconClock,
+  IconProgress,
+  IconCircleCheck,
+  IconArchive
+} from "@tabler/icons-react";
+import { formatDistanceToNow, format, addWeeks, addMonths } from "date-fns";
+import { useCreatePhase, useDeletePhase } from "@/hooks/useProgram";
 import { Interviews } from "./interviews";
 import { useProgramValidation } from "@/hooks/useProgramValidation";
 import { CalculatedMeasurements } from "@/components/measurements/calculated-measurements";
 import { PhaseDetails } from "./phase-details";
+import { DeletePhaseConfirmationDialog } from "./delete-phase-confirmation-dialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -20,10 +34,23 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import type { ProgramDetailResponseData } from "@/types/api/programs";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarProvider,
+} from "@/components/ui/sidebar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { GetProgramByIdResponseData, ProgramPhase } from "@/types/api/programs";
 
 interface ManageTabProps {
-  program: ProgramDetailResponseData;
+  program: GetProgramByIdResponseData;
 }
 
 const statusColors = {
@@ -40,9 +67,16 @@ const statusLabels = {
   archived: "Archived",
 } as const;
 
+const statusIcons = {
+  scheduled: IconClock,
+  in_progress: IconProgress,
+  completed: IconCircleCheck,
+  archived: IconArchive,
+} as const;
+
 interface PhaseTabContentProps {
   phase: ProgramPhase;
-  program: ProgramDetailResponseData;
+  program: GetProgramByIdResponseData;
   programValidation: ReturnType<typeof useProgramValidation>;
 }
 
@@ -53,7 +87,9 @@ function PhaseTabContent({
 }: PhaseTabContentProps) {
   if (!phase) {
     return (
-      <p className="text-muted-foreground">No program phase data available.</p>
+      <p className="text-muted-foreground">
+        No program assessment data available.
+      </p>
     );
   }
 
@@ -84,6 +120,17 @@ function PhaseTabContent({
         title="Desktop Analysis Measurements"
         description="Calculated values for this assessment in the program"
       />
+      {/* <div className="shadow-none text-center border-dashed border-2 border-border m-4 rounded-lg bg-background">
+        <div className="p-8">
+          <div className="text-center py-8">
+            <IconSettings className="mx-auto mb-4 h-8 w-8 text-muted-foreground" />
+            <div className="text-muted-foreground text-sm">
+              Interview and measurement management features will be available once the program has
+              been set up. Navigate to the <strong>Setup</strong> tab to configure the program.
+            </div>
+          </div>
+        </div>
+      </div> */}
     </>
   );
 }
@@ -117,70 +164,184 @@ export function ManageTab({ program }: ManageTabProps) {
 
   const programValidation = useProgramValidation(program);
 
-  return (
-    <div className="space-y-6 mb-6">
-      <div>
-        {phases.length === 0 ? (
-          <p className="text-muted-foreground">
-            No phases found for this program.
-          </p>
-        ) : (
-          <Tabs
-            value={validActivePhaseId?.toString() || ""}
-            onValueChange={(value) => setActivePhaseId(parseInt(value, 10))}
-          >
-            <div className="flex items-center justify-between gap-4">
-              <TabsList className="flex w-full justify-start overflow-x-auto">
-                {phases.map((phase) => (
-                  <TabsTrigger
-                    key={phase.id ?? `phase-${phase.sequence_number}`}
-                    value={(phase.id ?? 0).toString()}
-                    className="flex items-center gap-2"
-                  >
-                    <span>
-                      {phase.name || `Phase ${phase.sequence_number ?? 0}`}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className={`text-xs ${statusColors[phase.status as keyof typeof statusColors]}`}
-                    >
-                      {statusLabels[phase.status as keyof typeof statusLabels]}
-                    </Badge>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              <div className="flex gap-4">
-                {program && (
-                  <AddPhaseDialog
-                    program={program}
-                    onPhaseAdded={(newPhaseId) => setActivePhaseId(newPhaseId)}
-                  />
-                )}
-              </div>
-            </div>
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const deletePhaseMutation = useDeletePhase();
 
-            {activePhase && (
-              <TabsContent
-                key={activePhase.id ?? 0}
-                value={(activePhase.id ?? 0).toString()}
-                className="space-y-4"
-              >
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (activePhase && program && activePhase.id) {
+      deletePhaseMutation.mutate(
+        { programId: program.id, phaseId: activePhase.id },
+        {
+          onSuccess: () => {
+            setShowDeleteDialog(false);
+            // activePhaseId will auto-update via validActivePhaseId useMemo
+          },
+        }
+      );
+    }
+  };
+
+  return (
+    <div className="relative h-full w-full">
+      <SidebarProvider>
+        <div className="absolute inset-0 flex">
+          <Sidebar className="border-r bg-transparent" collapsible="none">
+            <SidebarContent className="px-2 py-4">
+              {program && (
+                <AddPhaseDialog
+                  program={program}
+                  onPhaseAdded={(newPhaseId) => setActivePhaseId(newPhaseId)}
+                />
+              )}
+              {phases.length === 0 ? (
+                <div className="p-2">
+                  <p className="text-sm text-muted-foreground">
+                    No assessments found for this program.
+                  </p>
+                </div>
+              ) : (
+                <SidebarMenu>
+                  {phases.map((phase) => {
+                    const phaseName =
+                      phase.name || `Phase ${phase.sequence_number ?? 0}`;
+                    return (
+                      <SidebarMenuItem
+                        key={phase.id ?? `phase-${phase.sequence_number}`}
+                      >
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuButton
+                              onClick={() => setActivePhaseId(phase.id)}
+                              isActive={phase.id === validActivePhaseId}
+                              className="flex items-start justify-between py-3 cursor-pointer h-auto"
+                            >
+                              <div className="flex flex-col gap-1 min-w-0 flex-1">
+                                <span className="font-medium truncate">
+                                  {phaseName}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {phase.created_at &&
+                                    formatDistanceToNow(
+                                      new Date(phase.created_at),
+                                      {
+                                        addSuffix: true,
+                                      }
+                                    )}
+                                </span>
+                              </div>
+                              <Badge
+                                variant="outline"
+                                className={`p-1 flex-shrink-0 ml-2 ${statusColors[phase.status as keyof typeof statusColors]}`}
+                                title={
+                                  statusLabels[
+                                    phase.status as keyof typeof statusLabels
+                                  ]
+                                }
+                              >
+                                {(() => {
+                                  const Icon =
+                                    statusIcons[
+                                      phase.status as keyof typeof statusIcons
+                                    ];
+                                  return <Icon className="h-3 w-3" />;
+                                })()}
+                              </Badge>
+                            </SidebarMenuButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" sideOffset={8}>
+                            <div className="flex flex-col gap-1">
+                              <span className="font-medium">{phaseName}</span>
+                              {phase.created_at && (
+                                <span className="text-xs opacity-80">
+                                  {format(new Date(phase.created_at), "PPP")}
+                                </span>
+                              )}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              )}
+            </SidebarContent>
+          </Sidebar>
+
+          <main className="flex-1 overflow-y-auto">
+            {activePhase ? (
+              <div className="space-y-4">
                 <PhaseTabContent
                   phase={activePhase as ProgramPhase}
                   program={program}
                   programValidation={programValidation}
                 />
-              </TabsContent>
+
+                {/* Danger Zone */}
+                <div className="p-4">
+                  <Card className="border-destructive/50">
+                    <CardHeader>
+                      <CardTitle className="text-destructive">
+                        Danger Zone
+                      </CardTitle>
+                      <CardDescription>
+                        Irreversible actions that will permanently delete this
+                        assessment.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-medium">
+                            Delete Assessment
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            {phases.length === 1
+                              ? "Cannot delete the only remaining assessment. Programs must have at least one assessment."
+                              : "Permanently delete this assessment and all associated interviews and calculated metrics. This action cannot be undone."}
+                          </p>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          onClick={handleDeleteClick}
+                          disabled={
+                            phases.length === 1 || deletePhaseMutation.isPending
+                          }
+                        >
+                          Delete Assessment
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">
+                No program assessment data available.
+              </p>
             )}
-          </Tabs>
-        )}
-      </div>
+          </main>
+        </div>
+      </SidebarProvider>
+
+      {activePhase && (
+        <DeletePhaseConfirmationDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          phase={activePhase}
+          onConfirm={handleDeleteConfirm}
+          isDeleting={deletePhaseMutation.isPending}
+        />
+      )}
     </div>
   );
 }
 
 interface AddPhaseSheetProps {
-  program: ProgramDetailResponseData;
+  program: GetProgramByIdResponseData;
   onPhaseAdded: (phaseId: number) => void;
 }
 
@@ -188,18 +349,67 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
   const [open, setOpen] = useState(false);
   const [phaseName, setPhaseName] = useState("");
   const [activatePhase, setActivatePhase] = useState(false);
+  const [plannedStartDate, setPlannedStartDate] = useState<Date | undefined>();
+  const [plannedEndDate, setPlannedEndDate] = useState<Date | undefined>();
 
   const createPhaseMutation = useCreatePhase();
 
+  // Find the previous phase (highest sequence_number) to anchor date helpers
+  const previousPhase = useMemo(() => {
+    if (!program.phases || program.phases.length === 0) return null;
+    return [...program.phases].sort(
+      (a, b) => (b.sequence_number ?? 0) - (a.sequence_number ?? 0)
+    )[0];
+  }, [program.phases]);
+
+  // Get anchor date for helpers (previous phase end date or today)
+  const anchorDate = useMemo(() => {
+    if (previousPhase?.planned_end_date) {
+      return new Date(previousPhase.planned_end_date);
+    }
+    return new Date();
+  }, [previousPhase]);
+
+  // Helper function to set dates based on interval
+  const handleDateHelper = (weeksToAdd?: number, monthsToAdd?: number) => {
+    let newStartDate = anchorDate;
+
+    if (weeksToAdd) {
+      newStartDate = addWeeks(anchorDate, weeksToAdd);
+    } else if (monthsToAdd) {
+      newStartDate = addMonths(anchorDate, monthsToAdd);
+    }
+
+    // Also suggest end date with the same interval
+    let newEndDate = newStartDate;
+    if (weeksToAdd) {
+      newEndDate = addWeeks(newStartDate, weeksToAdd);
+    } else if (monthsToAdd) {
+      newEndDate = addMonths(newStartDate, monthsToAdd);
+    }
+
+    setPlannedStartDate(newStartDate);
+    setPlannedEndDate(newEndDate);
+  };
+
   const handleSubmit = () => {
-    if (!phaseName) return;
+    // Validate all required fields
+    if (!phaseName || !plannedStartDate || !plannedEndDate) return;
+
+    // Validate that end date is after start date
+    if (plannedEndDate <= plannedStartDate) {
+      alert("Planned end date must be after planned start date");
+      return;
+    }
 
     createPhaseMutation.mutate(
       {
         programId: program.id,
-        phaseData: {
+        data: {
           name: phaseName,
           activate: activatePhase,
+          planned_start_date: plannedStartDate.toISOString(),
+          planned_end_date: plannedEndDate.toISOString(),
         },
       },
       {
@@ -208,6 +418,8 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
           setOpen(false);
           setPhaseName("");
           setActivatePhase(false);
+          setPlannedStartDate(undefined);
+          setPlannedEndDate(undefined);
         },
       }
     );
@@ -216,7 +428,7 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="w-full">
           <IconPlus className="h-4 w-4 mr-2" />
           Add Assessment
         </Button>
@@ -228,16 +440,79 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
           the active assessment.
         </DialogDescription>
 
-        <div className="flex-1 overflow-y-auto space-y-4 py-6">
+        <div className="flex-1 overflow-y-auto space-y-4">
           <div>
             <Label htmlFor="new-phase-name" className="mb-2">
-              Assessment Name (Optional)
+              Assessment Name (Required)
             </Label>
             <Input
               id="new-phase-name"
               value={phaseName}
               placeholder="e.g., Initial Assessment, 60-Day Review"
               onChange={(e) => setPhaseName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="planned-start-date">
+                Planned Start Date (Required)
+              </Label>
+              <div className="flex gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDateHelper(1)}
+                  className="h-7 text-xs"
+                >
+                  +1 Week
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDateHelper(undefined, 1)}
+                  className="h-7 text-xs"
+                >
+                  +1 Month
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDateHelper(undefined, 6)}
+                  className="h-7 text-xs"
+                >
+                  +6 Months
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mb-2">
+              Quick dates based on{" "}
+              {previousPhase
+                ? "the previous assessment's end date"
+                : "today's date"}
+              . Both start and end dates will be set with the selected interval.
+            </p>
+            <DatePicker
+              date={plannedStartDate}
+              setDate={setPlannedStartDate}
+              placeholder="Select start date"
+              disablePastDates={true}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="planned-end-date" className="mb-2">
+              Planned End Date (Required)
+            </Label>
+            <DatePicker
+              date={plannedEndDate}
+              setDate={setPlannedEndDate}
+              placeholder="Select end date"
+              disablePastDates={true}
             />
           </div>
 
@@ -250,7 +525,8 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
               }
             />
             <Label htmlFor="activate-phase" className="text-sm font-normal">
-              Make this the active phase (update program to this phase)
+              Make this the active assessment (update program to this
+              assessment)
             </Label>
           </div>
         </div>
@@ -265,9 +541,16 @@ function AddPhaseDialog({ program, onPhaseAdded }: AddPhaseSheetProps) {
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={createPhaseMutation.isPending}
+            disabled={
+              createPhaseMutation.isPending ||
+              !phaseName ||
+              !plannedStartDate ||
+              !plannedEndDate
+            }
           >
-            {createPhaseMutation.isPending ? "Creating..." : "Create Phase"}
+            {createPhaseMutation.isPending
+              ? "Creating..."
+              : "Create Assessment"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -21,18 +21,20 @@ import {
   IconSearch,
   IconCheck,
 } from "@tabler/icons-react";
-import type { AssessmentObjective } from "@/types/assessment";
 import { OBJECTIVES } from "@/lib/library/objectives";
+import type {
+  CreateObjectiveFormData,
+} from "@/types/api/assessments";
 
 interface ObjectivesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onObjectivesSelected: (objectives: AssessmentObjective[]) => void;
-  existingObjectives: AssessmentObjective[];
+  onObjectivesSelected: (objectives: CreateObjectiveFormData[]) => void;
+  existingObjectives: CreateObjectiveFormData[];
 }
 
 // Map categories to icons
-const categoryIcons: Record<string, React.ComponentType<any>> = {
+const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   "Safety & Compliance": IconShieldCheck,
   "Operational Efficiency": IconTrendingUp,
   "Quality Management": IconTarget,
@@ -48,7 +50,7 @@ export function ObjectivesDialog({
   existingObjectives,
 }: ObjectivesDialogProps) {
   const [selectedObjectives, setSelectedObjectives] = useState<
-    AssessmentObjective[]
+    CreateObjectiveFormData[]
   >([]);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -62,7 +64,7 @@ export function ObjectivesDialog({
     ),
   })).filter((category) => category.objectives.length > 0);
 
-  const isObjectiveSelected = (objective: AssessmentObjective) => {
+  const isObjectiveSelected = (objective: CreateObjectiveFormData) => {
     return selectedObjectives.some(
       (obj) =>
         obj.title === objective.title &&
@@ -70,7 +72,7 @@ export function ObjectivesDialog({
     );
   };
 
-  const toggleObjective = (objective: AssessmentObjective) => {
+  const toggleObjective = (objective: CreateObjectiveFormData) => {
     if (isObjectiveSelected(objective)) {
       setSelectedObjectives((prev) =>
         prev.filter(

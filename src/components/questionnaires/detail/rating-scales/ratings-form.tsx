@@ -33,14 +33,17 @@ import {
   IconCheck,
 } from "@tabler/icons-react";
 import { useRatingScaleActions } from "@/hooks/questionnaire/useRatingScales";
-import type { QuestionnaireRatingScale } from "@/types/assessment";
 import { ratingScaleSets } from "@/lib/library/rating-scales";
 import { toast } from "sonner";
 import { formatDistance } from "date-fns";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import type {
+  BatchCreateQuestionnaireRatingScalesBodyData,
+  GetQuestionnaireRatingScalesResponseData,
+} from "@/types/api/questionnaire";
 
 interface RatingsFormProps {
-  ratings: QuestionnaireRatingScale[];
+  ratings: GetQuestionnaireRatingScalesResponseData;
   questionnaireId: number;
   isLoading?: boolean;
   onAddRating?: () => void;
@@ -69,8 +72,9 @@ export default function RatingsForm({
   } = useRatingScaleActions(questionnaireId);
 
   const [showAddDialog, setShowAddDialog] = useState<boolean>(false);
-  const [editingRating, setEditingRating] =
-    useState<QuestionnaireRatingScale | null>(null);
+  const [editingRating, setEditingRating] = useState<
+    GetQuestionnaireRatingScalesResponseData[number] | null
+  >(null);
   const [formData, setFormData] = useState({
     value: "",
     name: "",
@@ -82,7 +86,7 @@ export default function RatingsForm({
   const isProcessing =
     isCreatingRatingScale || isUpdatingRatingScale || isDeletingRatingScale;
   const [deleteRating, setDeleteRating] =
-    useState<QuestionnaireRatingScale | null>(null);
+    useState<GetQuestionnaireRatingScalesResponseData[number] | null>(null);
 
   // Rating scale library state
   const [selectedTab, setSelectedTab] = useState("create");
@@ -104,7 +108,7 @@ export default function RatingsForm({
     } else {
       const numValue = parseInt(formData.value);
       if (isNaN(numValue) || numValue < 0) {
-        newErrors.value = "Rating value must be greater than 0";
+        newErrors.value = "Rating value must be 0 or greater";
       } else {
         // Check for duplicate values (excluding current editing item)
         const existingRating = ratings.find(
@@ -142,70 +146,56 @@ export default function RatingsForm({
 
   const handleAdd = async () => {
     if (!validateForm()) return;
+    await createRatingScale({
+      questionnaireId,
+      ratingData: {
+        value: parseInt(formData.value),
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+      },
+    });
 
-    try {
-      await createRatingScale({
-        questionnaireId,
-        ratingData: {
-          value: parseInt(formData.value),
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-        },
-      });
-
-      resetForm();
-      setShowAddDialog(false);
-      toast.success("Rating scale created successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create rating scale"
-      );
-    }
+    resetForm();
+    setShowAddDialog(false);
   };
 
   const handleUpdate = async () => {
     if (!validateForm() || !editingRating) return;
+    // Build updates object with only dirty fields
+    const updates: Record<string, any> = {};
 
-    try {
-      // Build updates object with only dirty fields
-      const updates: Record<string, any> = {};
+    if (parseInt(formData.value) !== editingRating.value) {
+      updates.value = parseInt(formData.value);
+    }
 
-      if (parseInt(formData.value) !== editingRating.value) {
-        updates.value = parseInt(formData.value);
-      }
+    if (formData.name.trim() !== editingRating.name) {
+      updates.name = formData.name.trim();
+    }
 
-      if (formData.name.trim() !== editingRating.name) {
-        updates.name = formData.name.trim();
-      }
+    if (formData.description.trim() !== (editingRating.description || "")) {
+      updates.description = formData.description.trim();
+    }
 
-      if (formData.description.trim() !== (editingRating.description || "")) {
-        updates.description = formData.description.trim();
-      }
-
-      // If nothing changed, just close the dialog
-      if (Object.keys(updates).length === 0) {
-        resetForm();
-        setEditingRating(null);
-        toast.info("No changes to save");
-        return;
-      }
-
-      await updateRatingScale({
-        id: editingRating.id,
-        updates,
-      });
-
+    // If nothing changed, just close the dialog
+    if (Object.keys(updates).length === 0) {
       resetForm();
       setEditingRating(null);
-      toast.success("Rating scale updated successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update rating scale"
-      );
+      toast.info("No changes to save");
+      return;
     }
+
+    await updateRatingScale({
+      id: editingRating.id,
+      updates,
+    });
+
+    resetForm();
+    setEditingRating(null);
   };
 
-  const handleEdit = (rating: QuestionnaireRatingScale) => {
+  const handleEdit = (
+    rating: GetQuestionnaireRatingScalesResponseData[number]
+  ) => {
     setFormData({
       value: rating.value.toString(),
       name: rating.name,
@@ -214,7 +204,9 @@ export default function RatingsForm({
     setEditingRating(rating);
   };
 
-  const handleDelete = (rating: QuestionnaireRatingScale) => {
+  const handleDelete = (
+    rating: GetQuestionnaireRatingScalesResponseData[number]
+  ) => {
     setDeleteRating(rating);
     // Close the edit dialog if open
     setEditingRating(null);
@@ -222,16 +214,8 @@ export default function RatingsForm({
 
   const confirmDelete = async () => {
     if (!deleteRating) return;
-
-    try {
-      await deleteRatingScale(deleteRating.id);
-      setDeleteRating(null);
-      toast.success("Rating scale deleted successfully");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to delete rating scale"
-      );
-    }
+    await deleteRatingScale(deleteRating.id);
+    setDeleteRating(null);
   };
 
   const handleCancel = () => {
@@ -241,24 +225,10 @@ export default function RatingsForm({
     setSelectedTab("create");
   };
 
-  const handleUseRatingSet = async (ratingSet: {
-    id: number;
-    name: string;
-    scales: Array<{
-      value: number;
-      name: string;
-      description: string;
-      order_index: number;
-    }>;
-  }) => {
-    await createRatingScalesBatch(
-      ratingSet.scales.map((scale) => ({
-        value: scale.value,
-        name: scale.name,
-        description: scale.description,
-        order_index: scale.order_index,
-      }))
-    );
+  const handleUseRatingSet = async (
+    data: BatchCreateQuestionnaireRatingScalesBodyData
+  ) => {
+    await createRatingScalesBatch(data);
 
     setShowAddDialog(false);
     setSelectedTab("create");
@@ -389,6 +359,7 @@ export default function RatingsForm({
                     id="value"
                     type="number"
                     min="0"
+                    step="1"
                     value={formData.value}
                     onChange={(e) =>
                       setFormData((prev) => ({
@@ -396,7 +367,7 @@ export default function RatingsForm({
                         value: e.target.value,
                       }))
                     }
-                    placeholder="e.g., 1, 2, 3..."
+                    placeholder="e.g., 0, 1, 2, 3..."
                     className={errors.value ? "border-destructive" : ""}
                     disabled={isProcessing || disabled}
                   />
@@ -458,7 +429,8 @@ export default function RatingsForm({
                     <Input
                       id="value"
                       type="number"
-                      min="1"
+                      min="0"
+                      step="1"
                       value={formData.value}
                       onChange={(e) =>
                         setFormData((prev) => ({
@@ -466,7 +438,7 @@ export default function RatingsForm({
                           value: e.target.value,
                         }))
                       }
-                      placeholder="e.g., 1, 2, 3..."
+                      placeholder="e.g., 0, 1, 2, 3..."
                       className={errors.value ? "border-destructive" : ""}
                       disabled={isProcessing || disabled}
                     />
@@ -517,9 +489,9 @@ export default function RatingsForm({
               <TabsContent value="library" className="space-y-4">
                 <ScrollArea className="h-[400px] w-full rounded-md border p-4">
                   <div className="space-y-4">
-                    {ratingScaleSets.map((scaleSet) => (
+                    {ratingScaleSets.map((scaleSet, index) => (
                       <Card
-                        key={scaleSet.id}
+                        key={index}
                         className="cursor-pointer hover:bg-accent transition-colors"
                       >
                         <CardContent className="p-4">
@@ -571,7 +543,11 @@ export default function RatingsForm({
                             <div className="flex justify-end pt-2">
                               <Button
                                 size="sm"
-                                onClick={() => handleUseRatingSet(scaleSet)}
+                                onClick={() =>
+                                  handleUseRatingSet({
+                                    scales: scaleSet.scales,
+                                  })
+                                }
                                 disabled={isProcessing || disabled}
                               >
                                 Use This Scale Set
@@ -648,8 +624,12 @@ export default function RatingsForm({
             <AlertDialogTitle>Delete Rating Scale</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete the rating "{deleteRating?.name}"?
-              This action cannot be undone and may affect questions that use
-              this rating scale.
+              This action cannot be undone.{" "}
+              <strong>
+                If this rating scale is assigned to any questions, deletion will
+                fail.
+              </strong>{" "}
+              You must first remove it from all questions that use it.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,46 +1,42 @@
 import { FastifyInstance } from "fastify";
-import { commonResponseSchemas } from "../../schemas/common.js";
 import { QuestionnaireService } from "../../services/QuestionnaireService.js";
-import {
-  CreateQuestionnaireStepBody,
-  UpdateQuestionnaireStepData,
-} from "../../types/entities/questionnaires.js";
 import {
   InternalServerError,
   NotFoundError,
 } from "../../plugins/errorHandler.js";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
+import {
+  CreateQuestionnaireStepBodySchema,
+  CreateQuestionnaireStepResponseSchema,
+  UpdateQuestionnaireStepParamsSchema,
+  UpdateQuestionnaireStepBodySchema,
+  UpdateQuestionnaireStepResponseSchema,
+  DeleteQuestionnaireStepParamsSchema,
+  DeleteQuestionnaireStepResponseSchema,
+} from "../../schemas/questionnaires/steps.js";
+import {
+  Error403Schema,
+  Error404Schema,
+  Error500Schema,
+} from "../../schemas/errors.js";
 
 export async function stepsRoutes(fastify: FastifyInstance) {
   // Method for creating a new step in a questionnaire section
-  fastify.post(
-    "/steps",
-    {
-      schema: {
-        description: "Create a new step in a section",
-        body: {
-          type: "object",
-          properties: {
-            questionnaire_section_id: { type: "number" },
-            title: { type: "string" },
-          },
-          required: ["questionnaire_section_id", "title"],
-        },
-        response: {
-          201: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "object" },
-            },
-          },
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/steps",
+    schema: {
+      description: "Create a new step in a section",
+      body: CreateQuestionnaireStepBodySchema,
+      response: {
+        201: CreateQuestionnaireStepResponseSchema,
+        403: Error403Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const body = request.body as CreateQuestionnaireStepBody;
+    handler: async (request, reply) => {
+      const body = request.body;
 
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
@@ -69,50 +65,30 @@ export async function stepsRoutes(fastify: FastifyInstance) {
         body
       );
 
-      return {
+      return reply.status(201).send({
         success: true,
         data: step,
-      };
-    }
-  );
+      });
+    },
+  });
 
   // method for updating a step in a questionnaire
-  fastify.put(
-    "/steps/:stepId",
-    {
-      schema: {
-        description: "Update a step in a questionnaire",
-        params: {
-          type: "object",
-          properties: {
-            stepId: { type: "string" },
-          },
-          required: ["stepId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            title: { type: "string" },
-          },
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "object" },
-            },
-          },
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/steps/:stepId",
+    schema: {
+      description: "Update a step in a questionnaire",
+      params: UpdateQuestionnaireStepParamsSchema,
+      body: UpdateQuestionnaireStepBodySchema,
+      response: {
+        200: UpdateQuestionnaireStepResponseSchema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { stepId } = request.params as {
-        stepId: number;
-      };
-      const body = request.body as UpdateQuestionnaireStepData;
+    handler: async (request) => {
+      const { stepId } = request.params;
+      const body = request.body;
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
         request.user.id
@@ -127,34 +103,25 @@ export async function stepsRoutes(fastify: FastifyInstance) {
         success: true,
         data: step,
       };
-    }
-  );
+    },
+  });
 
   // Delete a step in a questionnaire
-  fastify.delete(
-    "/steps/:stepId",
-    {
-      schema: {
-        description: "Delete a step in a questionnaire",
-        params: {
-          type: "object",
-          properties: {
-            stepId: { type: "string" },
-          },
-          required: ["stepId"],
-        },
-        response: {
-          200: commonResponseSchemas.messageResponse,
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/steps/:stepId",
+    schema: {
+      description: "Delete a step in a questionnaire",
+      params: DeleteQuestionnaireStepParamsSchema,
+      response: {
+        200: DeleteQuestionnaireStepResponseSchema,
+        403: Error403Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { stepId } = request.params as {
-        stepId: string;
-      };
+    handler: async (request) => {
+      const { stepId } = request.params;
 
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
@@ -165,7 +132,7 @@ export async function stepsRoutes(fastify: FastifyInstance) {
       const { data: step, error: stepError } = await request.supabaseClient
         .from("questionnaire_steps")
         .select("questionnaire_id")
-        .eq("id", parseInt(stepId))
+        .eq("id", stepId)
         .eq("is_deleted", false)
         .single();
 
@@ -175,7 +142,7 @@ export async function stepsRoutes(fastify: FastifyInstance) {
 
       await questionnaireService.checkQuestionnaireInUse(step.questionnaire_id);
 
-      const deleted = await questionnaireService.deleteStep(parseInt(stepId));
+      const deleted = await questionnaireService.deleteStep(stepId);
 
       if (!deleted) {
         throw new InternalServerError("Failed to delete step");
@@ -185,6 +152,6 @@ export async function stepsRoutes(fastify: FastifyInstance) {
         success: true,
         message: "Step deleted successfully",
       };
-    }
-  );
+    },
+  });
 }

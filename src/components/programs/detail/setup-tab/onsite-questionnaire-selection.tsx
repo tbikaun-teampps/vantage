@@ -16,22 +16,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  IconEdit,
   IconCheck,
   IconX,
   IconClipboardList,
   IconLink,
   IconUnlink,
   IconExternalLink,
+  IconPlus,
 } from "@tabler/icons-react";
 import { useQuestionnaires } from "@/hooks/useAssessments";
 import { Link } from "react-router-dom";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
-import type { ProgramDetailResponseData } from "@/types/api/programs";
+import type { GetProgramByIdResponseData } from "@/types/api/programs";
 
 interface ProgramQuestionnaireSelectionProps {
-  program: ProgramDetailResponseData;
+  program: GetProgramByIdResponseData;
   onOnsiteQuestionnaireUpdate: (questionnaireId: number | null) => void;
   isUpdating?: boolean;
 }
@@ -107,12 +107,11 @@ export function OnsiteQuestionnaireSelection({
           </div>
           {!isEditing && (
             <Button
-              variant="outline"
               size="sm"
               onClick={() => setIsEditing(true)}
               disabled={isUpdating}
             >
-              <IconEdit className="h-4 w-4 mr-2" />
+              <IconPlus className="h-4 w-4 mr-2" />
               {currentQuestionnaire ? "Change" : "Link"} Questionnaire
             </Button>
           )}
