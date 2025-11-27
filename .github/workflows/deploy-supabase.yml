@@ -123,10 +123,10 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       
       # Optional: Run seed data for staging (skip in debug mode)
-      - name: reset and seed staging database
+      - name: Reset and seed staging database
         if: steps.set-env.outputs.ENVIRONMENT == 'staging' && inputs.debug_mode != true
         run: |
-          if [ -f "supabase/seed.sql" ]; then
+          if [ -f "supabase/seed_staging.sql" ]; then
             echo "🔄 Resetting staging database (migrations + seed)..."
             supabase db reset --linked --yes
           fi
