@@ -100,6 +100,7 @@ jobs:
           echo "✅ Database backup created: $BACKUP_FILE ($(du -h $BACKUP_FILE | cut -f1))"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
 
       - name: Upload backup artifact (Production only)
         if: steps.set-env.outputs.ENVIRONMENT == 'production' && inputs.debug_mode != true
