@@ -5,6 +5,10 @@ on:
     branches:
       - staging
       - main
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/seed*.sql'
+      - 'supabase/config.toml'
   workflow_dispatch:
     inputs:
       environment:

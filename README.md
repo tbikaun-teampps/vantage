@@ -1,34 +1,35 @@
 # Vantage
 
-
-
 ## Development - Ways of Working
 
 ### Technology Stack
+
 - Supabase (PostgreSQL) database + auth.
 - Vite/React frontend using Shadcn+Tailwind (typescript)
 - Fastify nodejs server (typescript)
 
-
-### Working with supabase locally.
+### Working with supabase locally
 
 ```bash
 npx supabase init
 ```
 
 Start local server (ensure Docker is installed and running):
+
 ```bash
 npx supabase start
 ```
 
 Stop local server:
+
 ```bash
 npx supabase stop
 ```
 
-
 Apply migrations, seed database:
+
 - This must be run whenever you want to reseed from scratch
+
 ```bash
 npx supabase db reset
 ```
@@ -38,22 +39,23 @@ npx supabase status
 ```
 
 Generate a seed from a local database (everything):
+
 ```bash
 npx supabase db dump -f './supabase/seed.sql' --local --data-only
 ```
 
 Generate a seed for staging database (not everything):
+
 ```bash
 npx supabase db dump -f './supabase/seed_staging.sql' --local --data-only --schema public --schema auth --schema storage
 ```
 
 Changes to the database are all done via migrations, including RLS policies, etc.
 
-
-
-
 ### Branches
+
 There are three main branches
+
 - `main` (production)
   - Has branch protection rules
 - `staging` (pre-production)
