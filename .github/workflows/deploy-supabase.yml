@@ -5,6 +5,10 @@ on:
     branches:
       - staging
       - main
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/seed*.sql'
+      - 'supabase/config.toml'
   workflow_dispatch:
     inputs:
       environment:
@@ -71,22 +75,40 @@ jobs:
           echo "Environment: $(grep ENVIRONMENT $GITHUB_OUTPUT | cut -d= -f2)"
           echo "Project Ref: $(grep PROJECT_REF $GITHUB_OUTPUT | cut -d= -f2 | cut -c1-8)..."
       
-      # Optional: Backup production database before migrations (skip in debug mode)
-      - name: Backup database (Production only)
-        if: steps.set-env.outputs.ENVIRONMENT == 'production' && inputs.debug_mode != true
-        run: |
-          supabase db dump \
-            -f backup-$(date +%Y%m%d-%H%M%S).sql \
-            --project-ref ${{ steps.set-env.outputs.PROJECT_REF }}
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      
       # Link to appropriate project
       - name: Link Supabase project
         run: |
           supabase link --project-ref ${{ steps.set-env.outputs.PROJECT_REF }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      # Optional: Backup production database before migrations (skip in debug mode)
+      - name: Backup database (Production only)
+        if: steps.set-env.outputs.ENVIRONMENT == 'production' && inputs.debug_mode != true
+        run: |
+          BACKUP_FILE="backup-$(date +%Y%m%d-%H%M%S).sql"
+          supabase db dump \
+            -f $BACKUP_FILE \
+            --project-ref ${{ steps.set-env.outputs.PROJECT_REF }}
+          
+          # Verify backup file was created and has content
+          if [ ! -s "$BACKUP_FILE" ]; then
+            echo "❌ Backup file is empty or wasn't created"
+            exit 1
+          fi
+          
+          echo "BACKUP_FILE=$BACKUP_FILE" >> $GITHUB_ENV
+          echo "✅ Database backup created: $BACKUP_FILE ($(du -h $BACKUP_FILE | cut -f1))"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Upload backup artifact (Production only)
+        if: steps.set-env.outputs.ENVIRONMENT == 'production' && inputs.debug_mode != true
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ steps.set-env.outputs.ENVIRONMENT }}-${{ github.run_id }}-${{ github.sha }}
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 30
       
       - name: Preview migrations
         run: |
@@ -94,7 +116,7 @@ jobs:
           ls -la supabase/migrations/
           echo ""
           echo "📊 Currently applied migrations on ${{ steps.set-env.outputs.ENVIRONMENT }}:"
-          supabase migration list --project-ref ${{ steps.set-env.outputs.PROJECT_REF }}
+          supabase migration list
           echo ""
           if [[ "${{ inputs.debug_mode }}" == "true" ]]; then
             echo "🔍 DEBUG MODE: Migrations will NOT be applied"
@@ -123,12 +145,14 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       
       # Optional: Run seed data for staging (skip in debug mode)
-      - name: Seed staging database
+      - name: Reset and seed staging database
         if: steps.set-env.outputs.ENVIRONMENT == 'staging' && inputs.debug_mode != true
         run: |
-          if [ -f "supabase/seed.sql" ]; then
-            echo "🌱 Seeding staging database..."
-            supabase db seed
+          if [ -f "supabase/seed_staging.sql" ]; then
+            echo "🔄 Configuring staging seed file..."
+            sed -i 's|sql_paths = "./seed.sql"|sql_paths = "./seed_staging.sql"|' supabase/config.toml
+            echo "🔄 Resetting staging database (migrations + seed)..."
+            supabase db reset --linked --yes
           fi
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
