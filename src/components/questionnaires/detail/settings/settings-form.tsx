@@ -9,6 +9,7 @@ import { InlineSelectEditor } from "@/components/ui/inline-select-editor";
 import type { SelectOption } from "@/components/ui/inline-select-editor";
 import { useQuestionnaireActions } from "@/hooks/useQuestionnaires";
 import { useQuestionnaireDetail } from "@/contexts/QuestionnaireDetailContext";
+import type { QuestionnaireStatusEnum } from "@/types/api/questionnaire";
 
 export default function SettingsForm() {
   const { updateQuestionnaire } = useQuestionnaireActions();
@@ -73,7 +74,7 @@ export default function SettingsForm() {
     await updateQuestionnaire({
       id: questionnaire.id,
       updates: {
-        status: newValue as "draft" | "active" | "under_review" | "archived",
+        status: newValue as QuestionnaireStatusEnum,
       },
     });
   };
@@ -86,8 +87,8 @@ export default function SettingsForm() {
       icon: <IconPencil className="h-4 w-4 text-yellow-500" />,
     },
     {
-      value: "active",
-      label: "Active",
+      value: "published",
+      label: "Published",
       icon: (
         <IconCircleCheckFilled className="h-4 w-4 fill-green-500 dark:fill-green-400" />
       ),

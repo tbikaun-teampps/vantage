@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { IconDeviceFloppy, IconTrash } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { DatePicker } from "@/components/ui/date-picker";
+import type { UpdateInterviewBodyData } from "@/types/api/interviews";
 
 interface InterviewSettingsProps {
   currentInterview: {
@@ -15,13 +16,7 @@ interface InterviewSettingsProps {
     notes?: string;
     due_at?: string | null;
   };
-  roles?: { id: number; name: string }[];
-  onSave: (updates: {
-    name?: string;
-    status?: string;
-    notes?: string;
-    due_at?: string | null;
-  }) => Promise<void>;
+  onSave: (updates: UpdateInterviewBodyData) => Promise<void>;
   onDelete?: () => void;
   onExport?: () => void;
   isSaving: boolean;
@@ -31,10 +26,9 @@ interface InterviewSettingsProps {
 
 export function InterviewSettings({
   currentInterview,
-  roles = [],
   onSave,
   onDelete,
-  onExport,
+  // onExport,
   isSaving,
   isProcessing = false,
   showDelete = true,
@@ -51,7 +45,9 @@ export function InterviewSettings({
     setName(currentInterview.name);
     setStatus(currentInterview.status || "pending");
     setNotes(currentInterview.notes || "");
-    setDueAt(currentInterview.due_at ? new Date(currentInterview.due_at) : undefined);
+    setDueAt(
+      currentInterview.due_at ? new Date(currentInterview.due_at) : undefined
+    );
   }, [currentInterview]);
 
   const handleSave = async () => {
@@ -60,7 +56,7 @@ export function InterviewSettings({
       return;
     }
 
-    const updates: { name?: string; status?: string; notes?: string; due_at?: string | null } = {};
+    const updates: UpdateInterviewBodyData = {};
 
     if (name.trim() !== currentInterview.name) {
       updates.name = name.trim();
@@ -80,12 +76,7 @@ export function InterviewSettings({
       toast.info("No changes to save");
       return;
     }
-
-    try {
-      await onSave(updates);
-    } catch (error) {
-      // Error handling is done in the parent component
-    }
+    await onSave(updates);
   };
 
   const hasUnsavedChanges =
@@ -138,22 +129,6 @@ export function InterviewSettings({
               />
             </div>
 
-            {/* <div className="space-y-2">
-              <Label>Scoped Roles</Label>
-              {roles.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {roles.map((role) => (
-                    <Badge key={role.id} variant="secondary">
-                      {role.name}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No specific roles assigned to this interview
-                </p>
-              )}
-            </div> */}
           </div>
 
           {/* Export Section */}

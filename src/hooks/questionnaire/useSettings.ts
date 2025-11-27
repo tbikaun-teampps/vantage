@@ -1,5 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { getQuestionnaireById, checkQuestionnaireUsage } from "@/lib/api/questionnaires";
+import {
+  getQuestionnaireById,
+  checkQuestionnaireUsage,
+} from "@/lib/api/questionnaires";
+import type { GetQuestionnaireByIdResponseData } from "@/types/api/questionnaire";
 
 // Query key factory for settings-specific data
 export const settingsKeys = {
@@ -8,49 +12,12 @@ export const settingsKeys = {
   usage: (id: number) => [...settingsKeys.all, "usage", id] as const,
 };
 
-export interface QuestionnaireBasic {
-  id: number;
-  name: string;
-  description: string;
-  guidelines: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  is_deleted: boolean;
-  deleted_at: string | null;
-}
-
-export interface QuestionnaireUsage {
-  isInUse: boolean;
-  assessmentCount: number;
-  interviewCount: number;
-  programCount: number;
-  assessments?: unknown[];
-  programs?: unknown[];
-}
-
 // Hook for basic questionnaire information (without heavy structure data)
-export function useQuestionnaireSettings(id: number) {
+function useQuestionnaireSettings(id: number) {
   return useQuery({
     queryKey: settingsKeys.basic(id),
-    queryFn: async (): Promise<QuestionnaireBasic> => {
-      // We still need to call the full endpoint, but we only use the basic fields
-      // In the future, we could create a lighter endpoint on the server
-      const data = await getQuestionnaireById(id);
-
-      return {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        guidelines: data.guidelines,
-        status: data.status,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        created_by: data.created_by,
-        is_deleted: data.is_deleted,
-        deleted_at: data.deleted_at || null,
-      };
+    queryFn: async (): Promise<GetQuestionnaireByIdResponseData> => {
+      return await getQuestionnaireById(id);
     },
     staleTime: 15 * 60 * 1000, // 15 minutes
     enabled: !!id,
@@ -61,7 +28,7 @@ export function useQuestionnaireSettings(id: number) {
 function useQuestionnaireUsage(id: number) {
   return useQuery({
     queryKey: settingsKeys.usage(id),
-    queryFn: (): Promise<QuestionnaireUsage> => checkQuestionnaireUsage(id),
+    queryFn: () => checkQuestionnaireUsage(id),
     staleTime: 30 * 1000, // 30 seconds - usage data changes more frequently
     enabled: !!id,
   });

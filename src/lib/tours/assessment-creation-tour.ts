@@ -82,5 +82,3 @@ tourManager.registerTour({
   id: 'assessment-creation',
   steps: assessmentCreationSteps
 });
-
-export { assessmentCreationSteps };

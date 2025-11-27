@@ -1,20 +1,13 @@
+import type { GetRecommendationsResponseData } from "@/types/api/recommendations";
 import { apiClient } from "./client";
-import type { Tables } from "@/types/database";
-
-export type Recommendation = Tables<"recommendations">;
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-}
+import type { ApiResponse } from "./utils";
 
 export async function getRecommendations(
   companyId: string
-): Promise<Recommendation[]> {
-  const response = await apiClient.get<ApiResponse<Recommendation[]>>(
-    `/companies/${companyId}/recommendations`
-  );
+): Promise<GetRecommendationsResponseData> {
+  const response = await apiClient.get<
+    ApiResponse<GetRecommendationsResponseData>
+  >(`/companies/${companyId}/recommendations`);
 
   if (!response.data.success) {
     throw new Error(response.data.error || "Failed to fetch recommendations");

@@ -30,19 +30,17 @@ import {
   DashboardRefreshProvider,
   useDashboardRefresh,
 } from "@/contexts/DashboardRefreshContext";
-import {
-  useDashboardLayoutManager,
-  type DashboardItem,
-  type Dashboard,
-  type WidgetConfig,
-} from "@/hooks/useDashboardLayouts";
-import {
-  getWidget,
-  WidgetContainer,
-} from "@/components/dashboard/widgets";
+import { useDashboardLayoutManager } from "@/hooks/useDashboardLayouts";
+import { getWidget, WidgetContainer } from "@/components/dashboard/widgets";
 import { ConfigDialog } from "../widgets/ConfigDialog";
-import type { WidgetType } from "../widgets/types";
+import type {
+  Dashboard,
+  Widget,
+  WidgetConfig,
+  WidgetType,
+} from "@/types/api/dashboard";
 import { Loader } from "@/components/loader";
+import type { CreateDashboardBodyData } from "@/types/api/dashboard";
 
 const ReactGridLayout = WidthProvider(RGL);
 
@@ -61,10 +59,10 @@ function GridLayoutContent() {
     null
   );
   const [newDashboardName, setNewDashboardName] = useState("");
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isAddWidgetsDialogOpen, setIsAddWidgetsDialogOpen] = useState(false);
   const [pendingDashboard, setPendingDashboard] = useState<{
-    widgets: DashboardItem[];
+    widgets: Widget[];
     layout: RGL.Layout[];
   } | null>(null);
 
@@ -108,7 +106,7 @@ function GridLayoutContent() {
       if (!widget) return;
 
       const newId = `${widgetType}-${Date.now()}`;
-      const newItem: DashboardItem = {
+      const newItem: Widget = {
         id: newId,
         widgetType: widgetType,
         config: {}, // Start with empty config
@@ -152,15 +150,13 @@ function GridLayoutContent() {
     };
 
     const templateWidgets = templates[templateId] || [];
-    const widgets: DashboardItem[] = templateWidgets.map(
-      (widgetType, index) => ({
-        id: `${widgetType}-${Date.now()}-${index}`,
-        widgetType: widgetType as WidgetType,
-        config: {},
-      })
-    );
+    const widgets = templateWidgets.map((widgetType, index) => ({
+      id: `${widgetType}-${Date.now()}-${index}`,
+      widgetType: widgetType as WidgetType,
+      config: {},
+    }));
 
-    const newDashboard = {
+    const newDashboard: CreateDashboardBodyData = {
       name,
       widgets,
       layout: [], // Start with empty layout; user can arrange later
@@ -264,7 +260,7 @@ function GridLayoutContent() {
       if (!currentDashboard || !pendingDashboard) return;
 
       const updatedWidgets = pendingDashboard.widgets.filter(
-        (w: DashboardItem) => w.id !== widgetId
+        (w: Widget) => w.id !== widgetId
       );
       const updatedLayout = pendingDashboard.layout.filter(
         (item: RGL.Layout) => item.i !== widgetId
@@ -282,7 +278,7 @@ function GridLayoutContent() {
   ) => {
     if (!currentDashboard || !pendingDashboard) return;
 
-    const updatedWidgets = pendingDashboard.widgets.map((w: DashboardItem) =>
+    const updatedWidgets = pendingDashboard.widgets.map((w: Widget) =>
       w.id === widgetItemId ? { ...w, config: newConfig } : w
     );
 
@@ -432,7 +428,9 @@ function GridLayoutContent() {
                   ) : (
                     <ReactGridLayout
                       className="layout"
-                      layout={pendingDashboard?.layout ?? currentDashboard.layout}
+                      layout={
+                        pendingDashboard?.layout ?? currentDashboard.layout
+                      }
                       rowHeight={60}
                       isDraggable={isEditMode}
                       isResizable={isEditMode}
@@ -441,24 +439,24 @@ function GridLayoutContent() {
                       verticalCompact={true}
                       onLayoutChange={handleLayoutChange}
                     >
-                      {(pendingDashboard?.widgets ?? currentDashboard.widgets).map(
-                        (dashboardItem: DashboardItem) => (
-                          <div key={dashboardItem.id}>
-                            <WidgetContainer
-                              dashboardItem={dashboardItem}
-                              isEditMode={isEditMode}
-                              onRemove={() => removeWidget(dashboardItem.id)}
-                              onConfigClick={() =>
-                                openConfig(
-                                  dashboardItem.id,
-                                  dashboardItem.widgetType,
-                                  dashboardItem.config || {}
-                                )
-                              }
-                            />
-                          </div>
-                        )
-                      )}
+                      {(
+                        pendingDashboard?.widgets ?? currentDashboard.widgets
+                      ).map((widget: Widget) => (
+                        <div key={widget.id}>
+                          <WidgetContainer
+                            widget={widget}
+                            isEditMode={isEditMode}
+                            onRemove={() => removeWidget(widget.id)}
+                            onConfigClick={() =>
+                              openConfig(
+                                widget.id,
+                                widget.widgetType,
+                                widget.config || {}
+                              )
+                            }
+                          />
+                        </div>
+                      ))}
                     </ReactGridLayout>
                   )}
                   {configDialog.isOpen &&

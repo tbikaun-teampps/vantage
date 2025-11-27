@@ -14,22 +14,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { BusinessUnit, Region, Site, AssetGroup } from "@/types/company";
+import type {
+  BusinessUnitEntity,
+  RegionEntity,
+  SiteEntity,
+  AssetGroupEntity,
+} from "@/types/api/companies";
+import type { CreateAssessmentFormData } from "@/types/api/assessments";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 
 interface LocationHierarchyProps {
   formData: {
-    business_unit_id?: string;
-    region_id?: string;
-    site_id?: string;
-    asset_group_id?: string;
+    business_unit_id?: number;
+    region_id?: number;
+    site_id?: number;
+    asset_group_id?: number;
   };
   formErrors: Record<string, string>;
-  businessUnits: BusinessUnit[];
-  regions: Region[];
-  sites: Site[];
-  assetGroups: AssetGroup[];
-  onInputChange: (field: string, value: string) => void;
+  businessUnits: BusinessUnitEntity[];
+  regions: RegionEntity[];
+  sites: SiteEntity[];
+  assetGroups: AssetGroupEntity[];
+  onInputChange: (field: keyof CreateAssessmentFormData, value: string | number) => void;
 }
 
 export function LocationHierarchy({
@@ -46,17 +52,17 @@ export function LocationHierarchy({
   const filteredRegions = formData.business_unit_id
     ? regions.filter(
         (region) =>
-          region.business_unit_id?.toString() === formData.business_unit_id
+          region.business_unit_id === formData.business_unit_id
       )
     : [];
 
   const filteredSites = formData.region_id
-    ? sites.filter((site) => site.region_id?.toString() === formData.region_id)
+    ? sites.filter((site) => site.region_id === formData.region_id)
     : [];
 
   const filteredAssetGroups = formData.site_id
     ? assetGroups.filter(
-        (group) => group.site_id?.toString() === formData.site_id
+        (group) => group.site_id === formData.site_id
       )
     : [];
 

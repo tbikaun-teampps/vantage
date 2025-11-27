@@ -75,14 +75,8 @@ export function ImportCompanyDialog({
 
       // Reset state
       setSelectedFile(null);
-    } catch (err) {
-      const errorMessage =
-        err &&
-        typeof err === "object" &&
-        "response" in err &&
-        err.response?.data?.error
-          ? err.response.data.error
-          : "Failed to import company structure";
+    } catch {
+      const errorMessage = "Failed to import company structure";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {

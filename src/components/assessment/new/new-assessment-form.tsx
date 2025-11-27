@@ -32,7 +32,11 @@ export function NewAssessmentForm() {
     data: questionnaires = [],
     isLoading,
     error,
-  } = useQuestionnaires(companyId, assessmentType === "onsite");
+  } = useQuestionnaires(
+    companyId,
+    { status: "published" },
+    assessmentType === "onsite"
+  );
   const { data: businessUnits = [] } = useBusinessUnits(companyId);
   const { data: regions = [] } = useRegions(companyId);
   const { data: sites = [] } = useSites(companyId);
@@ -130,6 +134,7 @@ export function NewAssessmentForm() {
                 onInputChange={handleInputChange}
               />
 
+              {/* TODO: Create an endpoint that just returns the hierarchy directly. */}
               <LocationHierarchy
                 formData={formData}
                 formErrors={formErrors}
@@ -143,7 +148,7 @@ export function NewAssessmentForm() {
           )}
 
           <AssessmentObjectives
-            objectives={formData.objectives || []}
+            objectives={formData.objectives}
             formErrors={formErrors}
             onAddObjective={() => addObjective()}
             onRemoveObjective={removeObjective}
@@ -182,7 +187,7 @@ export function NewAssessmentForm() {
         onObjectivesSelected={(selectedObjectives) => {
           selectedObjectives.forEach((objective) => addObjective(objective));
         }}
-        existingObjectives={formData.objectives || []}
+        existingObjectives={formData.objectives}
       />
     </DashboardPage>
   );

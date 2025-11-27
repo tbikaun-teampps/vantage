@@ -17,7 +17,7 @@ export function InterviewsListPage() {
     data: interviews = [],
     isLoading: interviewsLoading,
     error,
-  } = useInterviews(companyId);
+  } = useInterviews({ company_id: companyId });
 
   const { assessmentType } = useAssessmentContext();
   const navigate = useCompanyAwareNavigate();

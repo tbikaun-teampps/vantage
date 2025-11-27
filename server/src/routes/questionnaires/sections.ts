@@ -1,52 +1,44 @@
 import { FastifyInstance } from "fastify";
-import { commonResponseSchemas } from "../../schemas/common.js";
 import { QuestionnaireService } from "../../services/QuestionnaireService.js";
-import { UpdateQuestionnaireSectionData } from "../../types/entities/questionnaires.js";
 import {
   InternalServerError,
   NotFoundError,
 } from "../../plugins/errorHandler.js";
-
+import { ZodTypeProvider } from "fastify-type-provider-zod";
+import {
+  CreateQuestionnaireSectionBodySchema,
+  CreateQuestionnaireSectionResponseSchema,
+  UpdateQuestionnaireSectionParamsSchema,
+  UpdateQuestionnaireSectionBodySchema,
+  UpdateQuestionnaireSectionResponseSchema,
+  DeleteQuestionnaireSectionParamsSchema,
+  DeleteQuestionnaireSectionResponseSchema,
+} from "../../schemas/questionnaires/sections.js";
+import {
+  Error403Schema,
+  Error404Schema,
+  Error500Schema,
+} from "../../schemas/errors.js";
 export async function sectionsRoutes(fastify: FastifyInstance) {
-  // Create a new section in a questionnaire
-  fastify.post(
-    "/sections",
-    {
-      schema: {
-        description: "Create a new section in a questionnaire",
-        body: {
-          type: "object",
-          properties: {
-            questionnaire_id: { type: "number" },
-            title: { type: "string" },
-          },
-          required: ["questionnaire_id", "title"],
-        },
-        response: {
-          // 201: {
-          //   type: "object",
-          //   properties: {
-          //     success: { type: "boolean" },
-          //     data: { type: "object" },
-          //   },
-          // },
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/sections",
+    schema: {
+      description: "Create a new questionnaire section",
+      body: CreateQuestionnaireSectionBodySchema,
+      response: {
+        201: CreateQuestionnaireSectionResponseSchema,
+        403: Error403Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
         request.user.id
       );
-
-      const { questionnaire_id, title } = request.body as {
-        questionnaire_id: number;
-        title: string;
-      };
-
+      const { title, questionnaire_id } = request.body;
       await questionnaireService.checkQuestionnaireInUse(questionnaire_id);
 
       const section = await questionnaireService.createSection(
@@ -58,51 +50,25 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
         success: true,
         data: section,
       };
-    }
-  );
+    },
+  });
 
   // Update a section in a questionnaire
-  fastify.put(
-    "/sections/:sectionId",
-    {
-      schema: {
-        description: "Update a section in a questionnaire",
-        params: {
-          type: "object",
-          properties: {
-            sectionId: { type: "string" },
-          },
-          required: ["sectionId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            title: { type: "string" },
-          },
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  id: { type: "number" },
-                  title: { type: "string" },
-                },
-              },
-            },
-          },
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/sections/:sectionId",
+    schema: {
+      description: "Update a section in a questionnaire",
+      params: UpdateQuestionnaireSectionParamsSchema,
+      body: UpdateQuestionnaireSectionBodySchema,
+      response: {
+        200: UpdateQuestionnaireSectionResponseSchema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { sectionId } = request.params as {
-        sectionId: number;
-      };
+    handler: async (request) => {
+      const { sectionId } = request.params;
 
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
@@ -110,7 +76,7 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
       );
       const section = await questionnaireService.updateSection(
         sectionId,
-        request.body as UpdateQuestionnaireSectionData
+        request.body
       );
 
       if (!section) {
@@ -121,34 +87,25 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
         success: true,
         data: section,
       };
-    }
-  );
+    },
+  });
 
   // Delete a section in a questionnaire
-  fastify.delete(
-    "/sections/:sectionId",
-    {
-      schema: {
-        description: "Delete a section in a questionnaire",
-        params: {
-          type: "object",
-          properties: {
-            sectionId: { type: "string" },
-          },
-          required: ["sectionId"],
-        },
-        response: {
-          200: commonResponseSchemas.messageResponse,
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/sections/:sectionId",
+    schema: {
+      description: "Delete a section in a questionnaire",
+      params: DeleteQuestionnaireSectionParamsSchema,
+      response: {
+        200: DeleteQuestionnaireSectionResponseSchema,
+        403: Error403Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { sectionId } = request.params as {
-        sectionId: string;
-      };
+    handler: async (request) => {
+      const { sectionId } = request.params;
 
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
@@ -160,7 +117,7 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
         await request.supabaseClient
           .from("questionnaire_sections")
           .select("questionnaire_id")
-          .eq("id", parseInt(sectionId))
+          .eq("id", sectionId)
           .eq("is_deleted", false)
           .single();
 
@@ -172,9 +129,7 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
         section.questionnaire_id
       );
 
-      const deleted = await questionnaireService.deleteSection(
-        parseInt(sectionId)
-      );
+      const deleted = await questionnaireService.deleteSection(sectionId);
 
       if (!deleted) {
         throw new InternalServerError("Failed to delete section");
@@ -184,6 +139,6 @@ export async function sectionsRoutes(fastify: FastifyInstance) {
         success: true,
         message: "Section deleted successfully",
       };
-    }
-  );
+    },
+  });
 }

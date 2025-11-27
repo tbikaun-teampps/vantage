@@ -1,6 +1,4 @@
-import type { WidgetConfig } from "@/hooks/useDashboardLayouts";
-
-export type WidgetType = "metric" | "chart" | "activity" | "actions" | "table"; 
+import type { WidgetConfig } from "@/types/api/dashboard";
 
 export interface WidgetComponentProps {
   config?: WidgetConfig;

@@ -7,11 +7,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import {
-  availableWidgets,
-  type Widget,
-} from "@/components/dashboard/widgets";
-import type { WidgetType } from "../widgets/types";
+import { availableWidgets } from "@/components/dashboard/widgets";
+import type { Widget } from "@/components/dashboard/widgets/types"; // This is for template widgets, not db widgets.
+import type { WidgetType } from "@/types/api/dashboard";
 
 interface AddWidgetsDialogProps {
   isOpen: boolean;
@@ -58,7 +56,10 @@ export const AddWidgetsDialog: React.FC<AddWidgetsDialogProps> = ({
                 {widgets.map((widget: Widget) => (
                   <button
                     key={widget.id}
-                    onClick={() => !widget.disabled && handleAddWidget(widget.id as WidgetType)}
+                    onClick={() =>
+                      !widget.disabled &&
+                      handleAddWidget(widget.id as WidgetType)
+                    }
                     disabled={widget.disabled}
                     className={`p-4 bg-card text-left border border-border rounded-lg transition-colors ${
                       widget.disabled

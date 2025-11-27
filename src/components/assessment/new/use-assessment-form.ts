@@ -3,15 +3,15 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useAssessmentActions } from "@/hooks/useAssessments";
 import { createAssessmentSchema } from "./form-schema";
-import type {
-  CreateAssessmentData,
-  AssessmentObjective,
-  AssessmentFormData,
-} from "@/types/assessment";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
+import type {
+  CreateAssessmentBodyData,
+  CreateAssessmentFormData,
+  CreateObjectiveFormData,
+} from "@/types/api/assessments";
 
 export function useAssessmentForm() {
   const navigate = useCompanyAwareNavigate();
@@ -20,7 +20,7 @@ export function useAssessmentForm() {
   const routes = useCompanyRoutes();
   const { assessmentType } = useAssessmentContext();
 
-  const [formData, setFormData] = useState<AssessmentFormData>({
+  const [formData, setFormData] = useState<CreateAssessmentFormData>({
     questionnaire_id: undefined,
     name: "",
     description: "",
@@ -37,9 +37,12 @@ export function useAssessmentForm() {
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleInputChange = useCallback(
-    (field: keyof AssessmentFormData, value: string | number) => {
+    (field: keyof CreateAssessmentFormData, value: string | number) => {
       setFormData((prev) => {
-        const newData = { ...prev, [field]: value === "__clear__" || value === "" ? undefined : value };
+        const newData = {
+          ...prev,
+          [field]: value === "__clear__" || value === "" ? undefined : value,
+        };
 
         // Clear child selections when parent changes or is cleared
         if (field === "business_unit_id") {
@@ -65,7 +68,7 @@ export function useAssessmentForm() {
   );
 
   const addObjective = useCallback(
-    (objective?: AssessmentObjective) => {
+    (objective?: CreateObjectiveFormData) => {
       const newObjective = objective || { title: "", description: "" };
       setFormData((prev) => ({
         ...prev,
@@ -88,7 +91,7 @@ export function useAssessmentForm() {
   }, []);
 
   const updateObjective = useCallback(
-    (index: number, field: keyof AssessmentObjective, value: string) => {
+    (index: number, field: keyof CreateObjectiveFormData, value: string) => {
       setFormData((prev) => ({
         ...prev,
         objectives:
@@ -141,7 +144,7 @@ export function useAssessmentForm() {
         setCreationStep("Preparing assessment data...");
 
         // Transform form data to create data
-        const cleanedData: CreateAssessmentData = {
+        const cleanedData: CreateAssessmentBodyData = {
           ...formData,
           // For desktop assessments, questionnaire_id is not used
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -163,7 +166,12 @@ export function useAssessmentForm() {
 
         // Small delay to show the final step before redirect
         setTimeout(() => {
-          navigate(routes.assessmentDetails(assessmentType || "onsite", newAssessment.id));
+          navigate(
+            routes.assessmentDetails(
+              assessmentType || "onsite",
+              newAssessment.id
+            )
+          );
         }, 1000);
       } catch (error) {
         setCreationStep("");
@@ -173,7 +181,15 @@ export function useAssessmentForm() {
         );
       }
     },
-    [formData, companyId, assessmentType, validateForm, createAssessment, navigate, routes]
+    [
+      formData,
+      companyId,
+      assessmentType,
+      validateForm,
+      createAssessment,
+      navigate,
+      routes,
+    ]
   );
 
   return {

@@ -14,18 +14,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Questionnaire } from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
+import type { GetQuestionnairesResponseData } from "@/types/api/questionnaire";
+import type { CreateAssessmentFormData } from "@/types/api/assessments";
 
 interface QuestionnaireSelectionProps {
-  questionnaires: Questionnaire[];
-  formData: {
-    questionnaire_id: string;
-    name: string;
-    description: string;
-  };
+  questionnaires: GetQuestionnairesResponseData;
+  formData: CreateAssessmentFormData;
   formErrors: Record<string, string>;
-  onInputChange: (field: string, value: string) => void;
+  onInputChange: (field: keyof CreateAssessmentFormData, value: string) => void;
 }
 
 export function QuestionnaireSelection({
@@ -94,7 +91,7 @@ export function QuestionnaireSelection({
             </p>
           )}
           <p className="text-xs text-muted-foreground">
-            Only active questionnaires are shown. Under review, draft and
+            Only published questionnaires are shown. Draft, under review and
             archived questionnaires are hidden from this list.
           </p>
           {questionnaires.length === 0 && (

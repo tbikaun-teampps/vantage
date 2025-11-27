@@ -1,7 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
-import { apiClient } from "@/lib/api/client";
-import type { UserProfile } from "@/types/assessment";
+import { MarkUserOnboarded, updateProfile } from "@/lib/api/profile";
+import type { UpdateProfileBodyData } from "@/types/api/profile";
+import { authApi } from "@/lib/api/auth";
+import type { SubscriptionTier } from "@/types/api/auth";
 
 // Query key factory for profile cache management
 const profileKeys = {
@@ -35,46 +37,64 @@ export function useProfileActions() {
   const { user } = authStore;
 
   const updateProfileMutation = useMutation({
-    mutationFn: async (profileData: Partial<UserProfile>) => {
+    mutationFn: async (data: UpdateProfileBodyData) => {
       if (!user) throw new Error("User not authenticated");
 
-      // Update the profile
-      const response = await apiClient.put<{
-        success: boolean;
-        profile: UserProfile;
-      }>("/users/profile", profileData);
-
-      if (!response.data.success) {
-        throw new Error("Failed to update profile");
-      }
+      await updateProfile(data);
 
       // Fetch fresh session data to ensure all auth-related data is synced
-      const sessionResponse = await apiClient.get<{
-        success: boolean;
-        data: {
-          user: typeof user;
-          profile: UserProfile;
-          permissions: typeof authStore.permissions;
-          companies: typeof authStore.companies;
-        };
-      }>("/auth/session");
+      const sessionData = await authApi.validateSession();
 
-      if (!sessionResponse.data.success || !sessionResponse.data.data) {
+      if (!sessionData.data) {
         throw new Error("Failed to fetch updated session");
       }
-
-      return sessionResponse.data.data;
+      return sessionData.data;
     },
     onSuccess: (sessionData) => {
       // Update auth store with complete session data
       authStore.setUser(sessionData.user);
       authStore.setProfile(sessionData.profile);
-      authStore.permissions = sessionData.permissions;
-      authStore.companies = sessionData.companies;
+      authStore.setPermissions(sessionData.permissions);
+      authStore.setCompanies(sessionData.companies);
 
       // Also update React Query cache
       if (user) {
-        queryClient.setQueryData(profileKeys.detail(user.id), sessionData.profile);
+        queryClient.setQueryData(
+          profileKeys.detail(user.id),
+          sessionData.profile
+        );
+      }
+    },
+  });
+
+  const updateSubscriptionMutation = useMutation({
+    mutationFn: async (subscription_tier: SubscriptionTier) => {
+      if (!user) throw new Error("User not authenticated");
+
+      // Call backend to update subscription
+      await authApi.updateSubscription(subscription_tier);
+
+      // Fetch fresh session data to get updated subscription info
+      const sessionData = await authApi.validateSession();
+
+      if (!sessionData.data) {
+        throw new Error("Failed to fetch updated session");
+      }
+      return sessionData.data;
+    },
+    onSuccess: (sessionData) => {
+      // Update auth store with complete session data
+      authStore.setUser(sessionData.user);
+      authStore.setProfile(sessionData.profile);
+      authStore.setPermissions(sessionData.permissions);
+      authStore.setCompanies(sessionData.companies);
+
+      // Also update React Query cache
+      if (user) {
+        queryClient.setQueryData(
+          profileKeys.detail(user.id),
+          sessionData.profile
+        );
       }
     },
   });
@@ -84,21 +104,15 @@ export function useProfileActions() {
       if (!user) throw new Error("User not authenticated");
 
       // Mark as onboarded
-      await apiClient.put("/users/onboarded");
+      await MarkUserOnboarded();
 
       // Fetch fresh profile with updated onboarded status
-      const response = await apiClient.get<{
-        success: boolean;
-        data: {
-          profile: UserProfile;
-        };
-      }>("/auth/session");
+      const sessionData = await authApi.validateSession();
 
-      if (!response.data.success || !response.data.data) {
-        throw new Error("Failed to fetch updated profile");
+      if (!sessionData.data) {
+        throw new Error("Failed to fetch updated session");
       }
-
-      return response.data.data.profile;
+      return sessionData.data.profile;
     },
     onSuccess: (updatedProfile) => {
       // Update auth store
@@ -111,6 +125,35 @@ export function useProfileActions() {
     },
   });
 
+  const refreshSessionMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+
+      // Fetch fresh session data to get updated user state (role, permissions, companies, etc.)
+      const sessionData = await authApi.validateSession();
+
+      if (!sessionData.data) {
+        throw new Error("Failed to fetch updated session");
+      }
+      return sessionData.data;
+    },
+    onSuccess: (sessionData) => {
+      // Update auth store with complete session data
+      authStore.setUser(sessionData.user);
+      authStore.setProfile(sessionData.profile);
+      authStore.setPermissions(sessionData.permissions);
+      authStore.setCompanies(sessionData.companies);
+
+      // Also update React Query cache
+      if (user) {
+        queryClient.setQueryData(
+          profileKeys.detail(user.id),
+          sessionData.profile
+        );
+      }
+    },
+  });
+
   return {
     updateProfile: updateProfileMutation.mutateAsync,
     isUpdatingProfile: updateProfileMutation.isPending,
@@ -119,5 +162,13 @@ export function useProfileActions() {
     markOnboarded: markOnboardedMutation.mutateAsync,
     isMarkingOnboarded: markOnboardedMutation.isPending,
     markOnboardedError: markOnboardedMutation.error,
+
+    refreshSession: refreshSessionMutation.mutateAsync,
+    isRefreshingSession: refreshSessionMutation.isPending,
+    refreshSessionError: refreshSessionMutation.error,
+
+    updateSubscription: updateSubscriptionMutation.mutateAsync,
+    isUpdatingSubscription: updateSubscriptionMutation.isPending,
+    updateSubscriptionError: updateSubscriptionMutation.error,
   };
 }

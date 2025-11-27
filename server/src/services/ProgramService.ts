@@ -1,14 +1,20 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../types/database.js";
 import {
+  Program,
   ProgramPhaseStatus,
   ProgramStatus,
   ProgramWithRelations,
 } from "../types/entities/programs.js";
-import { CalculatedMeasurementWithDefinition } from "../types/entities/assessments.js";
+// import { CalculatedMeasurementWithDefinition } from "../types/entities/assessments.js";
 import { NotFoundError } from "../plugins/errorHandler.js";
 import { InterviewsService } from "./InterviewsService.js";
 import { CreateInterviewData } from "../types/entities/interviews.js";
+import { RecommendationsService } from "./RecommendationsService.js";
+import {
+  resolveLocationFromNode,
+  type LocationNodeType,
+} from "../lib/location-resolver.js";
 
 export class ProgramService {
   private supabase: SupabaseClient<Database>;
@@ -58,7 +64,12 @@ export class ProgramService {
     name: string;
     description?: string;
     company_id: string;
-  }): Promise<any> {
+  }): Promise<
+    Omit<
+      Program,
+      "is_demo" | "created_by" | "company_id" | "is_deleted" | "deleted_at"
+    >
+  > {
     const { data: program, error } = await this.supabase
       .from("programs")
       .insert({
@@ -66,7 +77,9 @@ export class ProgramService {
         description: data.description,
         company_id: data.company_id,
       })
-      .select()
+      .select(
+        "id, created_at, updated_at, name, description, status, current_sequence_number, presite_questionnaire_id, onsite_questionnaire_id"
+      )
       .single();
 
     if (error) throw error;
@@ -80,6 +93,10 @@ export class ProgramService {
         sequence_number: 1,
         name: "Program Assessment - Phase 1",
         status: "in_progress",
+        planned_start_date: new Date().toISOString(),
+        planned_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(), // +1 week
       });
 
     if (phaseError) throw phaseError;
@@ -92,16 +109,24 @@ export class ProgramService {
    * @param programId
    * @returns
    */
-  async getProgramById(programId: number): Promise<any> {
+  async getProgramById(programId: number) {
     const { data: program, error } = await this.supabase
       .from("programs")
       .select(
         `
-        *,
+        id,
+        created_at,
+        updated_at,
+        name,
+        description,
+        status,
+        onsite_questionnaire_id,
+        presite_questionnaire_id,
         company:companies!inner(id, name),
-        program_objectives(id),
+        program_objectives(id, name, description, created_at, updated_at),
         presite_questionnaire:questionnaires!presite_questionnaire_id(id, name),
-        onsite_questionnaire:questionnaires!onsite_questionnaire_id(id, name)
+        onsite_questionnaire:questionnaires!onsite_questionnaire_id(id, name),
+        program_measurements:program_measurements(id)
       `
       )
       .eq("id", programId)
@@ -115,7 +140,23 @@ export class ProgramService {
     // Get phases
     const { data: phases, error: phasesError } = await this.supabase
       .from("program_phases")
-      .select("*")
+      .select(
+        `
+        actual_end_date,
+        actual_start_date,
+        created_at,
+        id,
+        locked_for_analysis_at,
+        name,
+        notes,
+        planned_end_date,
+        planned_start_date,
+        program_id,
+        sequence_number,
+        status,
+        updated_at
+        `
+      )
       .eq("program_id", programId)
       .eq("is_deleted", false);
 
@@ -123,8 +164,9 @@ export class ProgramService {
 
     return {
       ...program,
-      measurements_count: 0, // Placeholder, implement measurement count logic if needed
+      measurements_count: program.program_measurements.length,
       objective_count: program.program_objectives?.length || 0,
+      objectives: program.program_objectives,
       phases,
       presite_questionnaire: program.presite_questionnaire,
       onsite_questionnaire: program.onsite_questionnaire,
@@ -174,6 +216,8 @@ export class ProgramService {
     activate: boolean = false,
     phaseData: {
       name: string;
+      planned_start_date?: string | null;
+      planned_end_date?: string | null;
     }
   ): Promise<any> {
     const { data: program, error: programError } = await this.supabase
@@ -239,6 +283,17 @@ export class ProgramService {
       actual_end_date?: string | null;
     }
   ): Promise<any> {
+    // Fetch the current phase to get the old status for potential rollback
+    const { data: oldPhase, error: fetchError } = await this.supabase
+      .from("program_phases")
+      .select("status")
+      .eq("id", phaseId)
+      .eq("is_deleted", false)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // Update the program phase
     const { data: phase, error } = await this.supabase
       .from("program_phases")
       .update({
@@ -252,7 +307,93 @@ export class ProgramService {
 
     if (error) throw error;
 
+    // If status changed to 'completed', sync all linked assessments
+    if (data.status && data.status === "completed") {
+      try {
+        // Fetch all assessments linked to this phase
+        const { data: assessments, error: assessmentsError } =
+          await this.supabase
+            .from("assessments")
+            .select("id, status")
+            .eq("program_phase_id", phaseId)
+            .neq("status", "completed")
+            .eq("is_deleted", false);
+
+        if (assessmentsError) throw assessmentsError;
+        console.log(`Fetched ${assessments.length} assessments`, assessments);
+
+        // Filter assessments that aren't already completed
+        // const assessmentsToComplete = assessments?.filter(
+        //   (assessment) => assessment.status !== "completed"
+        // ) || [];
+
+        if (assessments.length > 0) {
+          // Update all non-completed assessments to 'completed'
+          const assessmentIds = assessments.map((a) => a.id);
+
+          const { error: updateError } = await this.supabase
+            .from("assessments")
+            .update({
+              status: "completed",
+              updated_at: new Date().toISOString(),
+            })
+            .in("id", assessmentIds);
+
+          if (updateError) throw updateError;
+
+          // Trigger recommendation generation for each newly completed assessment
+          const recommendationsService = new RecommendationsService(
+            this.supabase
+          );
+
+          for (const assessment of assessments) {
+            // Trigger recommendation generation asynchronously
+            recommendationsService
+              .generateRecommendations(assessment.id)
+              .catch((err) => {
+                console.error(
+                  `Failed to generate recommendations for assessment ${assessment.id}:`,
+                  err
+                );
+              });
+          }
+        }
+      } catch (syncError) {
+        // Rollback the phase status to the old status if sync fails
+        try {
+          await this.supabase
+            .from("program_phases")
+            .update({
+              status: oldPhase.status,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", phaseId);
+        } catch (rollbackError) {
+          console.error("Failed to rollback phase status:", rollbackError);
+        }
+
+        throw syncError;
+      }
+    }
+
     return phase;
+  }
+
+  /**
+   * Soft deletes a program phase
+   * @param phaseId
+   */
+  async deleteProgramPhase(phaseId: number): Promise<void> {
+    const { error } = await this.supabase
+      .from("program_phases")
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", phaseId);
+
+    if (error) throw error;
   }
 
   /**
@@ -621,9 +762,19 @@ export class ProgramService {
     let query: any = this.supabase.from("program_measurements");
 
     if (includeDefinitions) {
-      query = query.select(`*, 
-  measurement_definition:measurement_definitions!inner(id, name, 
-  description, calculation_type, required_csv_columns, provider)`);
+      query = query.select(`
+        *,
+        measurement_definition:measurement_definitions!inner(
+          id,
+          name,
+          description,
+          calculation_type,
+          required_csv_columns,
+          provider,
+          min_value,
+          max_value,
+          unit
+        )`);
     } else {
       query = query.select("*");
     }
@@ -672,6 +823,16 @@ export class ProgramService {
     programId: number,
     measurementDefinitionIds: number[]
   ): Promise<any> {
+    // Fetch progrmam to get company_id
+    const { data: program, error: programError } = await this.supabase
+      .from("programs")
+      .select("company_id")
+      .eq("id", programId)
+      .single();
+
+    if (programError) throw programError;
+    if (!program) throw new NotFoundError("Program not found");
+
     // Ensure no duplicates in measurementDefinitionIds
     measurementDefinitionIds = Array.from(new Set(measurementDefinitionIds));
 
@@ -715,6 +876,7 @@ export class ProgramService {
     const records = newDefinitionIds.map((id) => ({
       program_id: programId,
       measurement_definition_id: id,
+      company_id: program.company_id,
     }));
 
     const { data, error } = await this.supabase
@@ -770,43 +932,15 @@ export class ProgramService {
     if (error) throw error;
   }
 
-  async getCalculatedMeasurementsForProgramPhase(
-    programPhaseId: number
-  ): Promise<any> {
-    const { data: metrics, error } = await this.supabase
-      .from("measurements_calculated")
-      .select(
-        `
-        *,
-        measurement_definition:measurement_definitions!measurement_definition_id(
-          id,
-          name,
-          description,
-          calculation_type,
-          required_csv_columns,
-          provider
-        )
-      `
-      )
-      .eq("program_phase_id", programPhaseId)
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-    return metrics || [];
-  }
-
-  async getCalculatedMeasurementForProgramPhase(
-    programPhaseId: number,
-    measurementId?: number,
-    location?: {
-      business_unit_id?: number;
-      region_id?: number;
-      site_id?: number;
-      asset_group_id?: number;
-      work_group_id?: number;
-      role_id?: number;
-    }
-  ): Promise<any> {
+  async getCalculatedMeasurementsForProgramPhase({
+    programPhaseId,
+    filters,
+  }: {
+    programPhaseId: number;
+    filters?: {
+      measurementDefinitionId?: number;
+    };
+  }): Promise<any> {
     let query = this.supabase
       .from("measurements_calculated")
       .select(
@@ -818,7 +952,99 @@ export class ProgramService {
           description,
           calculation_type,
           required_csv_columns,
-          provider
+          provider,
+          min_value,
+          max_value,
+          unit
+        ),
+        business_unit:business_units!business_unit_id(id, name),
+        region:regions!region_id(id, name),
+        site:sites!site_id(id, name),
+        asset_group:asset_groups!asset_group_id(id, name),
+        work_group:work_groups!work_group_id(id, name),
+        role:roles!role_id(id, shared_role:shared_role_id(id, name))
+      `
+      )
+      .eq("program_phase_id", programPhaseId);
+
+    if (filters?.measurementDefinitionId) {
+      query = query.eq(
+        "measurement_definition_id",
+        filters.measurementDefinitionId
+      );
+    }
+
+    const { data: measurements, error } = await query.order("created_at", {
+      ascending: false,
+    });
+
+    if (error) throw error;
+
+    // Add context by concatenating location names
+    if (measurements) {
+      return measurements.map((measurement) => {
+        const locationParts: string[] = [];
+        if (measurement.business_unit)
+          locationParts.push(measurement.business_unit.name);
+        if (measurement.region) locationParts.push(measurement.region.name);
+        if (measurement.site) locationParts.push(measurement.site.name);
+        if (measurement.asset_group)
+          locationParts.push(measurement.asset_group.name);
+        if (measurement.work_group)
+          locationParts.push(measurement.work_group.name);
+        if (measurement.role && measurement.role.shared_role)
+          locationParts.push(measurement.role.shared_role.name);
+
+        return {
+          ...measurement,
+          location_context: locationParts.join(" > "),
+        };
+      });
+    }
+
+    return [];
+  }
+
+  async getCalculatedMeasurementForProgramPhase(
+    programPhaseId: number,
+    measurementId?: number,
+    measurementDefinitionId?: number,
+    location?: { id: number; type: LocationNodeType }
+  ): Promise<any> {
+    // New format: need to resolve and get company_id first
+    const { data: phase } = await this.supabase
+      .from("program_phases")
+      .select("company_id")
+      .eq("id", programPhaseId)
+      .single();
+
+    if (!phase) throw new Error("Program phase not found");
+
+    let resolvedLocation = undefined;
+    if (location) {
+      resolvedLocation = await resolveLocationFromNode(
+        this.supabase,
+        location.id,
+        location.type,
+        phase.company_id
+      );
+    }
+
+    let query = this.supabase
+      .from("measurements_calculated")
+      .select(
+        `
+        *,
+        measurement_definition:measurement_definitions!measurement_definition_id(
+          id,
+          name,
+          description,
+          calculation_type,
+          required_csv_columns,
+          provider,
+          min_value,
+          max_value,
+          unit
         )
       `
       )
@@ -828,19 +1054,29 @@ export class ProgramService {
       query = query.eq("id", measurementId);
     }
 
-    if (location) {
-      if (location.business_unit_id) {
-        query = query.eq("business_unit_id", location.business_unit_id);
-        if (location.region_id) {
-          query = query.eq("region_id", location.region_id);
-          if (location.site_id) {
-            query = query.eq("site_id", location.site_id);
-            if (location.asset_group_id) {
-              query = query.eq("asset_group_id", location.asset_group_id);
-              if (location.work_group_id) {
-                query = query.eq("work_group_id", location.work_group_id);
-                if (location.role_id) {
-                  query = query.eq("role_id", location.role_id);
+    if (measurementDefinitionId) {
+      query = query.eq("measurement_definition_id", measurementDefinitionId);
+    }
+
+    if (resolvedLocation) {
+      if (resolvedLocation.business_unit_id) {
+        query = query.eq("business_unit_id", resolvedLocation.business_unit_id);
+        if (resolvedLocation.region_id) {
+          query = query.eq("region_id", resolvedLocation.region_id);
+          if (resolvedLocation.site_id) {
+            query = query.eq("site_id", resolvedLocation.site_id);
+            if (resolvedLocation.asset_group_id) {
+              query = query.eq(
+                "asset_group_id",
+                resolvedLocation.asset_group_id
+              );
+              if (resolvedLocation.work_group_id) {
+                query = query.eq(
+                  "work_group_id",
+                  resolvedLocation.work_group_id
+                );
+                if (resolvedLocation.role_id) {
+                  query = query.eq("role_id", resolvedLocation.role_id);
                 }
               }
             }
@@ -849,23 +1085,19 @@ export class ProgramService {
       }
     }
 
-    const { data: metric, error } = await query.maybeSingle();
+    const { data: measurement, error } = await query.maybeSingle();
 
     if (error) throw error;
-    return metric;
+    console.log("measurement: ", measurement);
+    return measurement;
   }
 
   async createCalculatedMeasurement(data: {
     program_phase_id: number;
     measurement_definition_id: number;
     calculated_value: number;
-    business_unit_id?: number;
-    region_id?: number;
-    site_id?: number;
-    asset_group_id?: number;
-    work_group_id?: number;
-    role_id?: number;
-  }): Promise<CalculatedMeasurementWithDefinition> {
+    location?: { id: number; type: LocationNodeType };
+  }) { // : Promise<CalculatedMeasurementWithDefinition>
     // Check phase exists and get company_id and sequence_number from it
     const { data: phase } = await this.supabase
       .from("program_phases")
@@ -874,6 +1106,26 @@ export class ProgramService {
       .single();
 
     if (!phase) throw new Error("Program phase not found");
+
+    // Resolve location from new format if provided
+    let resolvedLocation: {
+      business_unit_id?: number;
+      region_id?: number;
+      site_id?: number;
+      asset_group_id?: number;
+      work_group_id?: number;
+      role_id?: number;
+    } = {};
+
+    if ("location" in data && data.location) {
+      // New format: resolve from location node
+      resolvedLocation = await resolveLocationFromNode(
+        this.supabase,
+        data.location.id,
+        data.location.type,
+        phase.company_id
+      );
+    }
 
     // Check if a desktop assessment exists for this program phase, or create one
     // As the structure is program > phase > assessment > measurement(s)
@@ -891,7 +1143,10 @@ export class ProgramService {
     }
 
     if (existingAssessment) {
-      console.log("Existing desktop assessment found with ID:", existingAssessment.id);
+      console.log(
+        "Existing desktop assessment found with ID:",
+        existingAssessment.id
+      );
       assessmentId = existingAssessment.id;
     } else {
       console.log("No existing desktop assessment found, creating new one.");
@@ -913,6 +1168,39 @@ export class ProgramService {
       assessmentId = newAssessment.id;
     }
 
+    // Fetch measurement definition to validate existence and check that the value is within the min/max value if they
+    // are defined
+
+    const { data: measurementDefinition, error: definitionError } =
+      await this.supabase
+        .from("measurement_definitions")
+        .select("id, min_value, max_value")
+        .eq("id", data.measurement_definition_id)
+        .single();
+
+    if (definitionError) throw definitionError;
+    if (!measurementDefinition)
+      throw new Error("Measurement definition not found");
+
+    if (
+      measurementDefinition.min_value !== null &&
+      data.calculated_value < measurementDefinition.min_value
+    ) {
+      throw new Error(
+        `Value ${data.calculated_value} is below the minimum allowed value of ${measurementDefinition.min_value}`
+      );
+    }
+
+    if (
+      measurementDefinition.max_value !== null &&
+      data.calculated_value > measurementDefinition.max_value
+    ) {
+      throw new Error(
+        `Value ${data.calculated_value} is above the maximum allowed value of ${measurementDefinition.max_value}`
+      );
+    }
+
+    // Insert calculated measurement
     const { data: measurement, error } = await this.supabase
       .from("measurements_calculated")
       .insert({
@@ -922,12 +1210,12 @@ export class ProgramService {
         calculated_value: data.calculated_value,
         company_id: phase.company_id,
         data_source: "manual",
-        business_unit_id: data.business_unit_id || null,
-        region_id: data.region_id || null,
-        site_id: data.site_id || null,
-        asset_group_id: data.asset_group_id || null,
-        work_group_id: data.work_group_id || null,
-        role_id: data.role_id || null,
+        business_unit_id: resolvedLocation.business_unit_id || null,
+        region_id: resolvedLocation.region_id || null,
+        site_id: resolvedLocation.site_id || null,
+        asset_group_id: resolvedLocation.asset_group_id || null,
+        work_group_id: resolvedLocation.work_group_id || null,
+        role_id: resolvedLocation.role_id || null,
       })
       .select(
         `
@@ -938,7 +1226,10 @@ export class ProgramService {
           description,
           calculation_type,
           required_csv_columns,
-          provider
+          provider,
+          min_value,
+          max_value,
+          unit
         )
       `
       )
@@ -951,7 +1242,50 @@ export class ProgramService {
   async updateCalculatedMeasurement(
     measurementId: number,
     calculated_value: number
-  ): Promise<CalculatedMeasurementWithDefinition> {
+  ) { // : Promise<CalculatedMeasurementWithDefinition>
+    // Fetch existing measurement to get its definition for validation
+    const { data: existingMeasurement, error: fetchError } = await this.supabase
+      .from("measurements_calculated")
+      .select("measurement_definition_id")
+      .eq("id", measurementId)
+      .single();
+
+    if (fetchError) throw fetchError;
+    if (!existingMeasurement)
+      throw new Error("Calculated measurement not found");
+
+    // Fetch measurement definition to validate existence and check that the value is within the min/max value if they
+    // are defined
+    const { data: measurementDefinition, error: definitionError } =
+      await this.supabase
+        .from("measurement_definitions")
+        .select("id, min_value, max_value")
+        .eq("id", existingMeasurement.measurement_definition_id)
+        .single();
+
+    if (definitionError) throw definitionError;
+    if (!measurementDefinition)
+      throw new Error("Measurement definition not found");
+
+    if (
+      measurementDefinition.min_value !== null &&
+      calculated_value < measurementDefinition.min_value
+    ) {
+      throw new Error(
+        `Value ${calculated_value} is below the minimum allowed value of ${measurementDefinition.min_value}`
+      );
+    }
+
+    if (
+      measurementDefinition.max_value !== null &&
+      calculated_value > measurementDefinition.max_value
+    ) {
+      throw new Error(
+        `Value ${calculated_value} is above the maximum allowed value of ${measurementDefinition.max_value}`
+      );
+    }
+
+    // Update calculated measurement
     const { data: measurement, error } = await this.supabase
       .from("measurements_calculated")
       .update({
@@ -968,7 +1302,10 @@ export class ProgramService {
           description,
           calculation_type,
           required_csv_columns,
-          provider
+          provider,
+          min_value,
+          max_value,
+          unit
         )
       `
       )
@@ -985,5 +1322,28 @@ export class ProgramService {
       .eq("id", measurementId);
 
     if (error) throw error;
+  }
+
+  async getProgramMeasurementDefinitions(programId: number): Promise<any> {
+    const { data: definitions, error } = await this.supabase
+      .from("program_measurements")
+      .select(
+        `
+        measurement_definition:measurement_definitions!measurement_definition_id(
+          id,
+          name,
+          description,
+          objective,
+          min_value,
+          max_value,
+          unit
+        )
+      `
+      )
+      .eq("program_id", programId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return definitions?.map((d) => d.measurement_definition) || [];
   }
 }

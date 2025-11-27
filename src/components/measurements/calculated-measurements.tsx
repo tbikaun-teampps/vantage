@@ -13,27 +13,30 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   IconLoader2,
-  IconCalendar,
   IconPlus,
-  IconInfoCircle,
   IconTrash,
+  IconEdit,
 } from "@tabler/icons-react";
 import {
   useProgramPhaseCalculatedMeasurements,
   useDeleteProgramPhaseMeasurementData,
+  useProgramAllowedMeasurementDefinitions,
 } from "@/hooks/useProgram";
 import { MeasurementsDataDialog } from "@/components/measurements/measurements-data-dialog";
+import { EditCalculatedMeasurementDialog } from "@/components/measurements/edit-calculated-measurement-dialog";
 import { formatDistanceToNow } from "date-fns";
 import { SimpleDataTable } from "@/components/simple-data-table";
-// import type { CalculatedMetricWithDefinition } from "@/lib/supabase/metrics-service";
 import { Card, CardHeader, CardContent } from "../ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { ScrollArea } from "../ui/scroll-area";
+import type { ProgramCalculatedMeasurement } from "@/types/api/programs";
 
 interface CalculatedMeasurementsProps {
   programId: number;
@@ -48,16 +51,37 @@ export function CalculatedMeasurements({
   programPhaseId,
   title = "Calculated Metrics",
   description = "Current metric values for this phase",
-  showEmpty = true,
+  // showEmpty
 }: CalculatedMeasurementsProps) {
   const { data: calculatedMeasurements, isLoading } =
     useProgramPhaseCalculatedMeasurements(programId, programPhaseId);
   const deleteMutation = useDeleteProgramPhaseMeasurementData();
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [measurementToDelete, setMeasurementToDelete] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [isAddDataDialogOpen, setIsAddDataDialogOpen] =
+    useState<boolean>(false);
+  const [isEditMeasurementDialogOpen, setIsEditMeasurementDialogOpen] =
+    useState<boolean>(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState<boolean>(false);
+  const [measurementToDelete, setMeasurementToDelete] =
+    useState<ProgramCalculatedMeasurement>();
+  const [measurementToEdit, setMeasurementToEdit] =
+    useState<ProgramCalculatedMeasurement>();
+  const [selectedMeasurementDefinitionId, setSelectedMeasurementDefinitionId] =
+    useState<number | null>(null);
 
-  const handleDeleteClick = (measurement) => {
+  const { data: allowedMeasurementDefinitions } =
+    useProgramAllowedMeasurementDefinitions(programId);
+
+  if (!programId || !programPhaseId) {
+    return null;
+  }
+
+  const handleEditClick = (measurement: ProgramCalculatedMeasurement) => {
+    setMeasurementToEdit(measurement);
+    setIsEditMeasurementDialogOpen(true);
+  };
+
+  const handleDeleteClick = (measurement: ProgramCalculatedMeasurement) => {
     setMeasurementToDelete(measurement);
     setDeleteConfirmOpen(true);
   };
@@ -71,14 +95,14 @@ export function CalculatedMeasurements({
         measurementId: measurementToDelete.id,
       });
       setDeleteConfirmOpen(false);
-      setMeasurementToDelete(null);
+      setMeasurementToDelete(undefined);
     } catch (error) {
       console.error("Failed to delete calculated measurement:", error);
     }
   };
 
   // Create column definitions with useCallback for formatValue
-  const columns: ColumnDef<CalculatedMeasurementWithDefinition>[] = [
+  const columns: ColumnDef<ProgramCalculatedMeasurement>[] = [
     {
       id: "measurement_name",
       header: "Measurement Name",
@@ -86,7 +110,7 @@ export function CalculatedMeasurements({
         const measurement = row.original;
         return (
           <div className="font-medium">
-            {measurement.measurement_definition.name}
+            {measurement.measurement_definition?.name}
           </div>
         );
       },
@@ -96,7 +120,7 @@ export function CalculatedMeasurements({
       header: "Value",
       cell: ({ row }) => {
         const value = row.getValue("calculated_value") as number;
-        return <div className="">{value}</div>;
+        return <div className="text-center">{value}</div>;
       },
     },
     {
@@ -113,95 +137,67 @@ export function CalculatedMeasurements({
       },
     },
     {
-      id: "organizational_context",
+      id: "location_context",
       header: "Context",
       cell: ({ row }) => {
-        const measurement = row.original;
-        const contexts = [
-          measurement.business_unit_id && {
-            label: "Business Unit",
-            value: String(measurement.business_unit_id),
-          },
-          measurement.region_id && {
-            label: "Region",
-            value: String(measurement.region_id),
-          },
-          measurement.site_id && {
-            label: "Site",
-            value: String(measurement.site_id),
-          },
-          measurement.asset_group_id && {
-            label: "Asset Group",
-            value: String(measurement.asset_group_id),
-          },
-          measurement.work_group_id && {
-            label: "Work Group",
-            value: String(measurement.work_group_id),
-          },
-          measurement.role_id && {
-            label: "Role",
-            value: String(measurement.role_id),
-          },
-        ].filter(Boolean) as { label: string; value: string }[];
+        const context = row.original.location_context;
 
-        if (contexts.length === 0) return "-";
+        // Split context into lines if too long
+        if (!context) return "-";
+
+        const contextParts = context.split(">");
+
+        const contextText =
+          (contextParts.length > 3 ? "... > " : "") +
+          contextParts.slice(-3).join(" > ");
 
         return (
-          <div className="flex flex-wrap gap-1">
-            {contexts.slice(0, 2).map((context) => (
-              <Badge key={context.label} variant="outline" className="text-xs">
-                {context.label}: {context.value}
-              </Badge>
-            ))}
-            {contexts.length > 2 && (
-              <Badge variant="outline" className="text-xs">
-                +{contexts.length - 2} more
-              </Badge>
-            )}
-          </div>
+          <span
+            className="text-sm overflow-hidden text-ellipsis whitespace-nowrap"
+            title={context}
+          >
+            {contextText}
+          </span>
         );
       },
     },
-    {
-      id: "metadata",
-      header: "Details",
-      cell: ({ row }) => {
-        const measurement = row.original;
-        if (!measurement.calculation_metadata) return "-";
+    // {
+    //   id: "metadata",
+    //   header: "Details",
+    //   cell: ({ row }) => {
+    //     const measurement = row.original;
+    //     if (!measurement.calculation_metadata) return "-";
 
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <IconInfoCircle className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-sm">
-                <div className="space-y-1">
-                  <div className="text-xs font-medium">Calculation Details</div>
-                  <pre className="text-xs whitespace-pre-wrap">
-                    {JSON.stringify(measurement.calculation_metadata, null, 2)}
-                  </pre>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      },
-    },
+    //     return (
+    //       <TooltipProvider>
+    //         <Tooltip>
+    //           <TooltipTrigger>
+    //             <IconInfoCircle className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+    //           </TooltipTrigger>
+    //           <TooltipContent className="max-w-sm">
+    //             <div className="space-y-1">
+    //               <div className="text-xs font-medium">Calculation Details</div>
+    //               <pre className="text-xs whitespace-pre-wrap">
+    //                 {JSON.stringify(measurement.calculation_metadata, null, 2)}
+    //               </pre>
+    //             </div>
+    //           </TooltipContent>
+    //         </Tooltip>
+    //       </TooltipProvider>
+    //     );
+    //   },
+    // },
     {
       accessorKey: "created_at",
       header: "Last Updated",
       cell: ({ row }) => {
         const createdAt = row.getValue("created_at") as string;
         return (
-          <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-            <IconCalendar className="h-4 w-4" />
-            <span>
-              {formatDistanceToNow(new Date(createdAt), {
-                addSuffix: true,
-              })}
-            </span>
-          </div>
+          <span>
+            {formatDistanceToNow(new Date(createdAt), {
+              addSuffix: true,
+            })}
+          </span>
         );
       },
     },
@@ -211,14 +207,24 @@ export function CalculatedMeasurements({
       cell: ({ row }) => {
         const measurement = row.original;
         return (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDeleteClick(measurement)}
-            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-          >
-            <IconTrash className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEditClick(measurement)}
+              className="h-8 w-8 p-0"
+            >
+              <IconEdit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDeleteClick(measurement)}
+              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+            >
+              <IconTrash className="h-4 w-4" />
+            </Button>
+          </div>
         );
       },
     },
@@ -233,45 +239,111 @@ export function CalculatedMeasurements({
     );
   }
 
-  if (!calculatedMeasurements || calculatedMeasurements.length === 0) {
-    if (!showEmpty) return null;
-  }
+  const handleMeasurementDefinitionSelect = (definitionId: number) => {
+    setSelectedMeasurementDefinitionId(definitionId);
+    setIsAddDataDialogOpen(true);
+    setIsDialogOpen(false);
+  };
 
   return (
-    <Card className="shadow-none border-none">
-      <CardHeader>
-        <div>
-          <h2 className="font-semibold">{title}</h2>
-          <p className="text-sm text-muted-foreground">{description}</p>
-        </div>
-      </CardHeader>
+    <>
+      <Card className="shadow-none border-none">
+        <CardHeader>
+          <div>
+            <h2 className="font-semibold">{title}</h2>
+            <p className="text-sm text-muted-foreground">{description}</p>
+          </div>
+        </CardHeader>
 
-      <CardContent>
-        <SimpleDataTable
-          data={calculatedMeasurements || []}
-          columns={columns}
-          getRowId={(row) => row.id.toString()}
-          enableSorting={true}
-          enableFilters={true}
-          enableColumnVisibility={true}
-          filterPlaceholder="Filter measurements..."
-          primaryAction={
-            programId
-              ? {
-                  label: "Add Data",
-                  icon: IconPlus,
-                  onClick: () => setIsSheetOpen(true),
-                }
-              : undefined
-          }
-          defaultPageSize={20}
-        />
-      </CardContent>
+        <CardContent>
+          <SimpleDataTable
+            data={calculatedMeasurements || []}
+            columns={columns}
+            getRowId={(row) => row.id.toString()}
+            enableSorting={true}
+            enableFilters={true}
+            enableColumnVisibility={true}
+            filterPlaceholder="Filter measurements..."
+            primaryAction={
+              programId
+                ? {
+                    label: "Add Data",
+                    icon: IconPlus,
+                    onClick: () => setIsDialogOpen(true),
+                  }
+                : undefined
+            }
+            defaultPageSize={20}
+          />
+        </CardContent>
+      </Card>
 
-      {programId && (
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Select Measurement</DialogTitle>
+            <DialogDescription>
+              Select the measurements you would like to add or modify data for.
+            </DialogDescription>
+          </DialogHeader>
+          <div>
+            {allowedMeasurementDefinitions ? (
+              <ScrollArea style={{ height: "400px" }}>
+                <div className="space-y-4">
+                  {allowedMeasurementDefinitions
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((definition) => (
+                      <Card key={definition.id} className="shadow-none">
+                        <CardContent>
+                          <div className="flex items-center justify-between">
+                            <div className="mr-2">
+                              <h3 className="text-sm font-medium">
+                                {definition.name}
+                              </h3>
+                              <p className="text-xs text-muted-foreground">
+                                {definition.description}
+                              </p>
+                            </div>
+                            <Button
+                              className="cursor-pointer"
+                              onClick={() => {
+                                handleMeasurementDefinitionSelect(
+                                  definition.id
+                                );
+                              }}
+                            >
+                              Select
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="p-4">
+                No allowed measurement definitions found. Visit the{" "}
+                <strong>Setup</strong> tab to configure.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      {programId && selectedMeasurementDefinitionId && (
         <MeasurementsDataDialog
-          open={isSheetOpen}
-          onOpenChange={setIsSheetOpen}
+          open={isAddDataDialogOpen}
+          onOpenChange={setIsAddDataDialogOpen}
+          programId={programId}
+          programPhaseId={programPhaseId}
+          measurementDefinitionId={selectedMeasurementDefinitionId}
+        />
+      )}
+
+      {programId && programPhaseId && measurementToEdit && (
+        <EditCalculatedMeasurementDialog
+          open={isEditMeasurementDialogOpen}
+          onOpenChange={setIsEditMeasurementDialogOpen}
+          measurement={measurementToEdit}
           programId={programId}
           programPhaseId={programPhaseId}
         />
@@ -283,8 +355,8 @@ export function CalculatedMeasurements({
             <AlertDialogTitle>Delete Calculated Metric</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete the calculated measurement "
-              {measurementToDelete?.measurement_definition.name}"? This action
-              cannot be undone.
+              {measurementToDelete?.measurement_definition.name}
+              "? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -306,6 +378,6 @@ export function CalculatedMeasurements({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </>
   );
 }

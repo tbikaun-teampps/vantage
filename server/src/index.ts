@@ -19,15 +19,25 @@ import { analyticsRoutes } from "./routes/analytics";
 import { dashboardsRoutes } from "./routes/dashboards";
 import { emailsRoutes } from "./routes/emails";
 import { feedbackRoutes } from "./routes/feedback";
-import { companySchemas } from "./schemas/company";
-import { dashboardSchemas } from "./schemas/dashboard";
-import { interviewsRoutes } from "./routes/interviews";
 import { authRoutes } from "./routes/auth";
 import { authWhitelist } from "./lib/whitelist";
+import { auditRoutes } from "./routes/audit";
+import {
+  jsonSchemaTransform,
+  serializerCompiler,
+  validatorCompiler,
+  ZodTypeProvider,
+} from "fastify-type-provider-zod";
+import { z } from "zod";
+import { interviewsRoutes } from "./routes/interviews";
+import { recommendationsRoutes } from "./routes/recommendations";
 
 const fastify = Fastify({
   logger: true,
 });
+
+fastify.setValidatorCompiler(validatorCompiler);
+fastify.setSerializerCompiler(serializerCompiler);
 
 // Register plugins
 await fastify.register(envPlugin);
@@ -56,11 +66,7 @@ await fastify.register(swagger, {
     ],
     security: [{ Bearer: [] }],
     components: {
-      schemas: {
-        ...companySchemas.body,
-        ...companySchemas.responses,
-        ...dashboardSchemas.responses,
-      },
+      schemas: {},
       securitySchemes: {
         Bearer: {
           type: "http",
@@ -70,6 +76,7 @@ await fastify.register(swagger, {
       },
     },
   },
+  transform: jsonSchemaTransform,
 });
 
 // Register Swagger UI only in development
@@ -106,9 +113,8 @@ await fastify.register(cors, {
     }
 
     // Get allowed origins from environment variable
-    const allowedOrigins = fastify.config.ALLOWED_ORIGINS
-      ?.split(',')
-      .map(o => o.trim()) || [];
+    const allowedOrigins =
+      fastify.config.ALLOWED_ORIGINS?.split(",").map((o) => o.trim()) || [];
 
     // If no origins configured, allow all (fallback for development)
     if (allowedOrigins.length === 0) {
@@ -121,12 +127,12 @@ await fastify.register(cors, {
       callback(null, true);
     } else {
       fastify.log.warn(`CORS blocked request from origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'), false);
+      callback(new Error("Not allowed by CORS"), false);
     }
   },
   credentials: true, // Allow cookies/auth headers
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // Explicitly allow all needed HTTP methods
-  allowedHeaders: ['Content-Type', 'Authorization'], // Allow content-type and auth headers
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], // Explicitly allow all needed HTTP methods
+  allowedHeaders: ["Content-Type", "Authorization"], // Allow content-type and auth headers
 });
 
 // Register rate limiting
@@ -157,7 +163,10 @@ fastify.addHook("preHandler", async (request, reply) => {
 
   // Skip for auth whitelisted routes
   if (authWhitelist.some((pattern) => request.url.startsWith(pattern))) {
-    console.log("Skipping subscription check for whitelisted route:", request.url);
+    console.log(
+      "Skipping subscription check for whitelisted route:",
+      request.url
+    );
     return;
   }
 
@@ -194,21 +203,34 @@ fastify.get("/openapi.json", async (_request, reply) => {
   return fastify.swagger();
 });
 
-fastify.get("/health", async () => {
-  try {
-    const { error } = await fastify.supabase
-      .from("profiles")
-      .select("count")
-      .limit(1);
-    if (error) throw error;
-    return { status: "healthy", database: "connected" };
-  } catch (error) {
-    return {
-      status: "unhealthy",
-      database: "disconnected",
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
+fastify.withTypeProvider<ZodTypeProvider>().route({
+  method: "GET",
+  url: "/health",
+  schema: {
+    response: {
+      200: z.object({
+        status: z.string(),
+        database: z.string(),
+        error: z.string().optional(),
+      }),
+    },
+  },
+  handler: async () => {
+    try {
+      const { error } = await fastify.supabase
+        .from("profiles")
+        .select("count")
+        .limit(1);
+      if (error) throw error;
+      return { status: "healthy", database: "connected" };
+    } catch (error) {
+      return {
+        status: "unhealthy",
+        database: "disconnected",
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  },
 });
 
 // Stricter rate limit for authenticated endpoints
@@ -272,7 +294,10 @@ fastify.get(
 );
 
 const apiPrefix = ""; // No prefix. URL will be api.domain.com/endpoint
-// Register program routes
+// Register routes
+fastify.register(auditRoutes, {
+  prefix: `${apiPrefix}/audit`,
+});
 fastify.register(authRoutes, {
   prefix: `${apiPrefix}/auth`,
 });
@@ -308,6 +333,9 @@ fastify.register(feedbackRoutes, {
 });
 fastify.register(interviewsRoutes, {
   prefix: `${apiPrefix}/interviews`,
+});
+fastify.register(recommendationsRoutes, {
+  prefix: `${apiPrefix}/recommendations`,
 });
 
 const start = async () => {

@@ -3,17 +3,12 @@ import type { Database, Json } from "../types/database";
 import { createCustomSupabaseJWT } from "../lib/jwt";
 import type { QuestionnaireSectionFromDB } from "../types/entities/questionnaires";
 import type {
-  InterviewWithQuestionnaire,
   InterviewSummary,
   CreateInterviewData,
-  Interview,
   UpdateInterviewResponseActionData,
   CreateInterviewResponseActionData,
   UpdateInterviewData,
   InterviewStatus,
-  InterviewQuestion,
-  InterviewProgress,
-  InterviewStructure,
 } from "../types/entities/interviews";
 import {
   calculateAverageScore,
@@ -22,6 +17,36 @@ import {
 } from "./utils";
 import { InternalServerError, NotFoundError } from "../plugins/errorHandler";
 import { EmailService } from "./EmailService";
+import type { NumericScoring } from "../types/entities/weighted-scoring";
+
+/**
+ * Numeric range type for threshold-based scoring
+ */
+interface NumericRange {
+  min: number;
+  max: number;
+  level: number;
+}
+
+/**
+ * Type guard to check if a scoring configuration is numeric
+ */
+function isNumericScoring(scoring: unknown): scoring is NumericScoring {
+  return Array.isArray(scoring);
+}
+
+/**
+ * Calculate which level a numeric answer maps to
+ */
+function calculateNumericLevel(answer: number, ranges: NumericRange[]): number {
+  for (const range of ranges) {
+    if (answer >= range.min && answer <= range.max) {
+      return range.level;
+    }
+  }
+  // Default to highest level if answer exceeds all ranges
+  return ranges[ranges.length - 1]?.level || 1;
+}
 
 interface AssessmentWithQuestionnaire {
   id: number;
@@ -98,14 +123,14 @@ export class InterviewsService {
     program_id?: number;
     program_phase_id?: number;
     questionnaire_id?: number;
-  }): Promise<
+  }) {
+    // : Promise<
     // Array<
     //   Interview & {
     //     contact: { id: number; full_name: string; email: string };
     //   }
     // >
-    any[]
-  > {
+    // >
     if (!this.supabaseAdmin) {
       throw new Error("Supabase admin client is required for this operation");
     }
@@ -118,7 +143,8 @@ export class InterviewsService {
       program_phase_id,
       questionnaire_id,
     } = data;
-    const createdInterviews: any[] = [];
+    const createdInterviews = [];
+    const failedContacts: Array<{ email: string; reason: string }> = [];
     // Array<
     //   Interview & {
     //     contact: { id: number; full_name: string; email: string };
@@ -159,7 +185,7 @@ export class InterviewsService {
       number,
       { id: number; full_name: string; email: string }
     >();
-    roleContacts.forEach((rc: any) => {
+    roleContacts.forEach((rc) => {
       contactRoleMap.set(rc.contact_id, rc.role_id);
       if (rc.contact) {
         contactInfoMap.set(rc.contact_id, rc.contact);
@@ -186,41 +212,139 @@ export class InterviewsService {
       // Generate unique access code
       const accessCode = await this.generateAccessCode();
 
+      // Normalize email to prevent case-sensitivity and whitespace issues
+      const normalizedEmail = contactInfo.email.trim().toLowerCase();
+
       let userId: string;
-      // Check if user already exists:
+      // Check if user already exists in profiles table
       const { data: profile, error: profileError } = await this.supabaseAdmin
         .from("profiles")
         .select()
-        .eq("email", contactInfo.email)
+        .eq("email", normalizedEmail)
         .maybeSingle();
 
       if (profileError) {
-        console.log("profileError: ", profileError);
-        continue; // Skip this contact on error
+        console.error("Error checking profile: ", profileError);
+        failedContacts.push({
+          email: contactInfo.email,
+          reason: `Database error checking profile: ${profileError.message}`,
+        });
+        continue;
       }
 
       if (!profile) {
-        console.log("No existing profile found for contact, creating user");
-        const {
-          data: { user: newUser },
-          error: userError,
-        } = await this.supabaseAdmin.auth.admin.createUser({
-          email: contactInfo.email,
-          password: crypto.randomUUID(),
-          email_confirm: true,
-          // Must be set with user_metadata not app_metadata
-          // see: https://github.com/supabase/auth/issues/1280
-          user_metadata: {
-            account_type: "interviewee", // Flag for overriding profile subscription_tier default 'demo'. Instead sets as 'interviewee'
-          },
-        });
-        if (userError || !newUser) {
-          console.log("userError: ", userError);
-          continue; // Skip this contact on error
-        }
-        console.log("Created user for contact: ", newUser);
+        // No profile found - try to create user first
+        console.log(
+          "No existing profile found for contact, attempting to create user"
+        );
 
-        userId = newUser.id;
+        try {
+          const {
+            data: { user: newUser },
+            error: userError,
+          } = await this.supabaseAdmin.auth.admin.createUser({
+            email: normalizedEmail,
+            password: crypto.randomUUID(),
+            email_confirm: true,
+            user_metadata: {
+              account_type: "interviewee",
+            },
+          });
+
+          if (userError) {
+            // Check if error is due to existing email
+            if (
+              userError.message?.includes("already been registered") ||
+              userError.code === "email_exists"
+            ) {
+              // User exists in auth.users but not in profiles - need to recover
+              console.log(
+                "Auth user exists but profile missing, fetching user from auth"
+              );
+
+              // Use listUsers to find the user by email
+              const { data: listUsersData, error: listError } =
+                await this.supabaseAdmin.auth.admin.listUsers();
+
+              if (listError || !listUsersData) {
+                console.error("Error listing users: ", listError);
+                failedContacts.push({
+                  email: contactInfo.email,
+                  reason: `User exists but could not retrieve user list: ${listError?.message || "Unknown error"}`,
+                });
+                continue;
+              }
+
+              // Find the user with matching email
+              const existingUser = listUsersData.users.find(
+                (u) => u.email?.toLowerCase() === normalizedEmail
+              );
+
+              if (!existingUser) {
+                console.error("User exists but not found in user list");
+                failedContacts.push({
+                  email: contactInfo.email,
+                  reason:
+                    "User exists but could not be located in authentication system",
+                });
+                continue;
+              }
+
+              // Create the missing profile using RPC to ensure consistent logic with trigger
+              console.log(
+                "Creating missing profile for existing auth user: ",
+                existingUser.id
+              );
+
+              const { error: profileInsertError } =
+                await this.supabaseAdmin.rpc("create_user_profile", {
+                  user_id: existingUser.id,
+                  user_email: normalizedEmail,
+                  user_metadata: existingUser.user_metadata || {},
+                });
+
+              if (profileInsertError) {
+                console.error("Error creating profile: ", profileInsertError);
+                failedContacts.push({
+                  email: contactInfo.email,
+                  reason: `Failed to create missing profile: ${profileInsertError.message}`,
+                });
+                continue;
+              }
+
+              console.log(
+                "Successfully created missing profile for existing auth user"
+              );
+              userId = existingUser.id;
+            } else {
+              // Different error - log and skip
+              console.error("Error creating user: ", userError);
+              failedContacts.push({
+                email: contactInfo.email,
+                reason: `Failed to create user: ${userError.message}`,
+              });
+              continue;
+            }
+          } else if (!newUser) {
+            console.error("User creation returned no user object");
+            failedContacts.push({
+              email: contactInfo.email,
+              reason: "User creation failed without error message",
+            });
+            continue;
+          } else {
+            // Successfully created new user (trigger creates profile automatically)
+            console.log("Created new user for contact: ", newUser);
+            userId = newUser.id;
+          }
+        } catch (error) {
+          console.error("Unexpected error during user creation: ", error);
+          failedContacts.push({
+            email: contactInfo.email,
+            reason: `Unexpected error: ${error instanceof Error ? error.message : "Unknown error"}`,
+          });
+          continue;
+        }
       } else {
         console.log("Found existing profile for contact: ", profile);
         userId = profile.id;
@@ -300,16 +424,37 @@ export class InterviewsService {
           contact: contactInfo,
         });
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         console.error(
           `Failed to create interview for contact ${contactId}:`,
-          error
+          errorMessage
         );
-        // Continue with other contacts even if one fails
+        failedContacts.push({
+          email: contactInfo.email,
+          reason: `Interview creation failed: ${errorMessage}`,
+        });
       }
     }
 
+    // Provide detailed feedback about failures
     if (createdInterviews.length === 0) {
-      throw new Error("Failed to create any interviews");
+      const errorDetails = failedContacts
+        .map((f) => `${f.email}: ${f.reason}`)
+        .join("; ");
+      throw new Error(
+        `Failed to create any interviews. Failures: ${errorDetails}`
+      );
+    }
+
+    // Log partial success details
+    if (failedContacts.length > 0) {
+      console.warn(
+        `Created ${createdInterviews.length} interviews, but ${failedContacts.length} contacts failed:`
+      );
+      failedContacts.forEach((f) =>
+        console.warn(`  - ${f.email}: ${f.reason}`)
+      );
     }
 
     return createdInterviews;
@@ -320,9 +465,8 @@ export class InterviewsService {
    * @param interviewData Data for creating the interview
    * @returns
    */
-  async createInterview(
-    interviewData: CreateInterviewData
-  ): Promise<Interview> {
+  async createInterview(interviewData: CreateInterviewData) {
+    // : Promise<Interview>
     // Extract fields that aren't directly part of the database schema or need special handling
     const {
       role_ids,
@@ -369,7 +513,7 @@ export class InterviewsService {
       `
       )
       .eq("id", interviewData.assessment_id)
-      .single()) as { data: AssessmentWithQuestionnaire | null; error: any };
+      .single()) as { data: AssessmentWithQuestionnaire | null; error: Error | null };
 
     if (assessmentError) throw assessmentError;
     if (!assessment) throw new Error("Assessment not found");
@@ -470,7 +614,18 @@ export class InterviewsService {
           access_code: accessCode, // Use generated or provided access code
         },
       ])
-      .select()
+      .select(
+        `id,
+        questionnaire_id,
+        name,
+        notes,
+        status,
+        is_individual,
+        enabled,
+        assessment_id,
+        created_at,
+        updated_at`
+      )
       .single();
 
     if (interviewError) throw interviewError;
@@ -689,9 +844,8 @@ export class InterviewsService {
    * @param interviewId ID of the interview to retrieve
    * @returns
    */
-  async getInterviewById(
-    interviewId: number
-  ): Promise<InterviewWithQuestionnaire | null> {
+  async getInterviewById(interviewId: number) {
+    // : Promise<InterviewWithQuestionnaire | null>
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
       .select(
@@ -785,9 +939,7 @@ export class InterviewsService {
    * @param interviewId ID of the interview to retrieve
    * @returns Interview summary with assessment, interviewer, and roles
    */
-  async getInterviewSummary(
-    interviewId: number
-  ): Promise<InterviewSummary | null> {
+  async getInterviewSummary(interviewId: number): Promise<InterviewSummary> {
     const { data: interview, error } = await this.supabase
       .from("interviews")
       .select(
@@ -815,7 +967,7 @@ export class InterviewsService {
       .maybeSingle();
 
     if (error) throw error;
-    if (!interview) return null;
+    if (!interview) throw new NotFoundError("Interview not found");
 
     if (!interview.assessment) {
       throw new InternalServerError(
@@ -857,6 +1009,7 @@ export class InterviewsService {
           : interview.assessment,
       // Map interview_roles to expected structure
       interview_roles: interview.interview_roles || [],
+      company: null,
     };
 
     // For private interviews, fetch and add company information
@@ -889,6 +1042,10 @@ export class InterviewsService {
       }
     }
 
+    if (!response) {
+      throw new NotFoundError("Interview summary not found");
+    }
+
     return response;
   }
 
@@ -896,9 +1053,8 @@ export class InterviewsService {
    * Get interview structure (questionnaire hierarchy)
    * Optimized for navigation - minimal data, long cache TTL
    */
-  async getInterviewStructure(
-    interviewId: number
-  ): Promise<InterviewStructure | null> {
+  async getInterviewStructure(interviewId: number) {
+    // : Promise<InterviewStructure>
     // Get interview basic info
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
@@ -910,7 +1066,8 @@ export class InterviewsService {
       .maybeSingle();
 
     if (interviewError) throw interviewError;
-    if (!interview || !interview.questionnaire_id) return null;
+    if (!interview || !interview.questionnaire_id)
+      throw new NotFoundError("Interview not found");
 
     // Validate that individual interviews are enabled
     if (interview.is_individual && !interview.enabled) {
@@ -993,7 +1150,8 @@ export class InterviewsService {
   }
 
   // TODO: need to ensure that the counts are correct, currently they are higher than expected.
-  async getInterviewProgress(interviewId: number): Promise<InterviewProgress> {
+  async getInterviewProgress(interviewId: number) {
+    // : Promise<InterviewProgress>
     if (!this.supabaseAdmin) {
       console.log(
         "No supabaseAdmin client available. Cannot update interview status."
@@ -1024,12 +1182,12 @@ export class InterviewsService {
 
     const isIndividualInterview = data.is_individual;
 
-    const totalQuestions = data?.interview_responses?.length || 0;
+    const totalQuestions = data.interview_responses.length || 0;
     // Answered questions are those that have:
     // - rating_score set OR is_unknown marked as true
     // - For individual interviews, also need at least one response role
     // If the interview is individual (single role), then just need rating_score or is_unknown
-    const answeredQuestions = data?.interview_responses
+    const answeredQuestions = data.interview_responses
       ? data.interview_responses.filter((response) => {
           const hasAnswer =
             response.rating_score !== null || response.is_unknown === true;
@@ -1112,10 +1270,8 @@ export class InterviewsService {
     };
   }
 
-  async getInterviewQuestionById(
-    interviewId: number,
-    questionId: number
-  ): Promise<InterviewQuestion | null> {
+  async getInterviewQuestionById(interviewId: number, questionId: number) {
+    // : Promise<InterviewQuestion | null>
     // First, get the interview to determine company context
     const { data: interview, error: interviewError } = await this.supabase
       .from("interviews")
@@ -1125,7 +1281,7 @@ export class InterviewsService {
       .maybeSingle();
 
     if (interviewError) throw interviewError;
-    if (!interview) return null;
+    if (!interview) throw new NotFoundError("Interview not found");
 
     // Validate that individual interviews are enabled
     if (interview.is_individual && !interview.enabled) {
@@ -1315,59 +1471,122 @@ export class InterviewsService {
       {} as Record<string, typeof selectableRoles>
     );
 
-    // Get the response associated with the question (if any)
-    const { data: responseData, error: responseError } = await this.supabase
-      .from("interview_responses")
-      .select(
-        `
-        id,
-        rating_score,
-        is_unknown,
-        response_roles:interview_response_roles(
-          id,
-          role:roles(
-            id
-          )
-        )
-      `
-      )
-      .eq("interview_id", interviewId)
-      .eq("questionnaire_question_id", questionId)
-      .maybeSingle();
-
-    if (responseError) throw responseError;
-
-    const questionDetails = {
+    const baseResponse = {
       id: questionId,
       title: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index}. ${interviewQuestion.title}`,
-      question_text: interviewQuestion.question_text,
+      // question_text: interviewQuestion.question_text === "" ? "No question text provided." : interviewQuestion.question_text,
       context: interviewQuestion.context,
       breadcrumbs: {
         section: `${interviewQuestion.step.section.order_index}. ${interviewQuestion.step.section.title}`,
         step: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}. ${interviewQuestion.step.title}`,
         question: `${interviewQuestion.step.section.order_index}.${interviewQuestion.step.order_index}.${interviewQuestion.order_index + 1}. ${interviewQuestion.title}`,
-        // TODO: review why question index is off by one here
       },
-      options: {
-        applicable_roles: groupedRoles,
-        rating_scales: interviewQuestion.rating_scale.map((rs) => ({
-          id: rs.id,
-          name: rs.questionnaire_rating_scale.name,
-          value: rs.questionnaire_rating_scale.value,
-          description: rs.description,
-        })),
-      },
-      response: responseData,
     };
 
-    return questionDetails;
+    let finalQuestionText = interviewQuestion.question_text;
+    if (!interview.is_individual && interviewQuestion.question_text === "") {
+      // Join question_parts together if they exist
+      const { data: questionParts, error: questionPartsError } =
+        await this.supabase
+          .from("questionnaire_question_parts")
+          .select("text")
+          .eq("questionnaire_question_id", questionId)
+          .eq("is_deleted", false)
+          .order("order_index", { ascending: true });
+
+      if (questionPartsError) throw questionPartsError;
+
+      finalQuestionText = questionParts
+        ? questionParts.map((part) => part.text).join("\n")
+        : "No question text provided.";
+    }
+
+    if (interview.is_individual) {
+      // Get the response associated with the question (if any)
+      const { data: individualResponseData, error: individualResponseError } =
+        await this.supabase
+          .from("interview_responses")
+          .select(
+            `id,
+            rating_score,
+            is_unknown,
+            question_part_responses:interview_question_part_responses(
+              id,
+              answer_value,
+              question_part_id
+            ),
+            response_roles:interview_response_roles(id,role:roles(id))`
+          )
+          .eq("interview_id", interviewId)
+          .eq("questionnaire_question_id", questionId)
+          .maybeSingle();
+
+      if (individualResponseError) throw individualResponseError;
+
+      // Get question parts
+      const { data: questionParts, error: questionPartsError } =
+        await this.supabase
+          .from("questionnaire_question_parts")
+          .select("id, text, order_index, answer_type, options")
+          .eq("questionnaire_question_id", questionId)
+          .eq("is_deleted", false)
+          .order("order_index", { ascending: true });
+
+      if (questionPartsError) throw questionPartsError;
+
+      return {
+        ...baseResponse,
+        question_text: finalQuestionText,
+        question_parts: questionParts,
+        response: individualResponseData,
+      };
+    } else {
+      // Get the response associated with the question (if any)
+      const { data: responseData, error: responseError } = await this.supabase
+        .from("interview_responses")
+        .select(
+          "id,rating_score,is_unknown,response_roles:interview_response_roles(id,role:roles(id))"
+        )
+        .eq("interview_id", interviewId)
+        .eq("questionnaire_question_id", questionId)
+        .maybeSingle();
+
+      if (responseError) throw responseError;
+      return {
+        ...baseResponse,
+        question_text: finalQuestionText,
+        options: {
+          applicable_roles: groupedRoles,
+          rating_scales: interviewQuestion.rating_scale.map((rs) => ({
+            id: rs.id,
+            name: rs.questionnaire_rating_scale.name,
+            value: rs.questionnaire_rating_scale.value,
+            description: rs.description,
+          })),
+        },
+        response: responseData,
+      };
+    }
   }
 
+  /**
+   * Update an interview response
+   * @param responseId ID of the interview response to update
+   * @param rating_score New rating score (optional)
+   * @param role_ids New role IDs to associate (optional)
+   * @param is_unknown Mark as unknown (optional)
+   * @param question_part_answers Answers for question parts (optional, for individual interviews)
+   * @returns Updated interview response
+   */
   async updateInterviewResponse(
     responseId: number,
     rating_score?: number | null,
     role_ids?: number[] | null,
-    is_unknown?: boolean | null
+    is_unknown?: boolean | null,
+    question_part_answers?: Array<{
+      question_part_id: number;
+      answer_value: string;
+    }> | null
   ) {
     // First, verify the response exists and get current data
     const { data: existingResponse, error: fetchError } = await this.supabase
@@ -1380,83 +1599,219 @@ export class InterviewsService {
       throw new NotFoundError("Interview response not found");
     }
 
-    // Build update object for rating_score and is_unknown
-    // These fields are mutually exclusive - if one is set, clear the other
-    const updates: { rating_score?: number | null; is_unknown?: boolean } = {};
+    if (
+      question_part_answers !== undefined &&
+      question_part_answers !== null &&
+      question_part_answers.length > 0
+    ) {
+      // Before updating the question part answers, validate that its possible
+      // to calculate the rating score from the answers provided.
+      // 1. Fetch the associated questions 'rating_scale_mapping' which maps
+      // question_part_id to rating scale value
+      const { data: question, error: questionError } = await this.supabase
+        .from("questionnaire_questions")
+        .select("rating_scale_mapping")
+        .eq("id", existingResponse.questionnaire_question_id)
+        .eq("is_deleted", false)
+        .maybeSingle();
 
-    if (rating_score !== undefined) {
-      updates.rating_score = rating_score;
-      // Clear is_unknown when setting a rating
-      if (rating_score !== null) {
-        updates.is_unknown = false;
+      // Should return something like:
+      // {"version": "...", "partScoring": {"question_part_id": {"answer_value": rating_scale_value, ...}, ...}}
+      // {"version": "weighted", "partScoring": {"28": {"Partial automation - Some automated capture exists but still relies heavily on manual entry": 2, "No automated system - Losses captured manually through shift logs, timecards, or word of mouth": 1, "Automated system in place - Fully automated system captures losses with good accuracy (~80% coverage)": 3, "Fully optimized automation - Automated system with excellent accuracy and accessibility (~95% coverage)": 4}, "29": {"Moderate coverage - Covers main operational areas but gaps exist": 2, "Minimal coverage - Only captures losses in limited areas or departments": 1, "Comprehensive coverage - Covers all major operational areas with minor gaps": 3, "Complete coverage - All operational areas fully covered with integrated data": 4}, "30": {"Not captured - No systematic capture of failure modes or root causes": 1, "Basic capture - Some failure data captured but inconsistent or incomplete": 2, "Detailed capture - Failure modes and causes captured with linkage to maintenance orders (~80%)": 3, "Advanced analytics - Complete failure mode capture with root cause analysis and maintenance integration (~95%)": 4}}}
+
+      if (questionError) throw questionError;
+      if (!question || !question.rating_scale_mapping) {
+        throw new InternalServerError(
+          "Unable to calculate rating score - question rating scale mapping not found"
+        );
       }
-    }
 
-    if (is_unknown !== undefined) {
-      updates.is_unknown = is_unknown ?? false;
-      // Clear rating_score when marking as unknown
-      if (is_unknown === true) {
-        updates.rating_score = null;
+      const ratingScaleMap: {
+        version: string;
+        partScoring: Record<string, Record<string, number> | NumericScoring>;
+      } = question.rating_scale_mapping as {
+        version: string;
+        partScoring: Record<string, Record<string, number> | NumericScoring>;
+      };
+
+      const upsertData = question_part_answers.map((answer) => ({
+        interview_response_id: responseId,
+        question_part_id: answer.question_part_id,
+        answer_value: answer.answer_value,
+        company_id: existingResponse.company_id,
+      }));
+
+      // Upsert question part answers for individual interviews
+      // Uses unique constraint on (interview_response_id, question_part_id)
+      const { error: upsertError } = await this.supabase
+        .from("interview_question_part_responses")
+        .upsert(upsertData, {
+          onConflict: "interview_response_id,question_part_id",
+        });
+
+      if (upsertError) throw upsertError;
+
+      // Get the response associated with the question (if any)
+      const { data: responseData, error: responseError } = await this.supabase
+        .from("interview_responses")
+        .select(
+          `id,
+          questionnaire_question_id,
+          interview_id,
+          question_part_responses:interview_question_part_responses(id, answer_value, question_part_id)
+          `
+        )
+        .eq("id", responseId)
+        .maybeSingle();
+
+      if (responseError) throw responseError;
+
+      // Calculate the rating_score based on the individual answers
+      // For each question part answer, look up the corresponding rating scale value
+      let totalScore = 0;
+      let answeredParts = 0;
+
+      for (const answer of question_part_answers) {
+        const partId = answer.question_part_id.toString();
+        const partMapping = ratingScaleMap.partScoring[partId];
+
+        if (partMapping) {
+          let score: number | undefined;
+
+          // Check if this is numeric scoring with ranges
+          if (isNumericScoring(partMapping)) {
+            score = calculateNumericLevel(
+              parseFloat(answer.answer_value), // Convert answer to number
+              partMapping
+            );
+          } else {
+            // Boolean or labelled scale scoring: direct lookup
+            score = (partMapping as Record<string, number>)[
+              answer.answer_value
+            ];
+          }
+
+          if (score !== undefined) {
+            totalScore += score;
+            answeredParts += 1;
+          }
+        }
       }
-    }
+      console.log("totalScore: ", totalScore);
+      console.log("answeredParts: ", answeredParts);
 
-    // Update the response if there are changes to apply
-    if (Object.keys(updates).length > 0) {
+      // Calculate the average rating score across all answered parts
+      // Conservatively round down to nearest whole number
+      // TODO: In the future, have the rating scale mapping dictate the average/max/min, etc to use.
+      const calculatedRatingScore =
+        answeredParts > 0 ? Math.floor(totalScore / answeredParts) : null;
+      const finalRatingScore =
+        calculatedRatingScore !== null
+          ? Math.floor(calculatedRatingScore)
+          : null;
+
+      console.log(
+        "Calculated rating score from question parts:",
+        calculatedRatingScore
+      );
+      console.log("Final calculated rating score:", finalRatingScore);
+
+      // Update the response with the calculated rating score
       const { error: updateError } = await this.supabase
         .from("interview_responses")
-        .update(updates)
+        .update({
+          rating_score: finalRatingScore,
+          score_source: "calculated",
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", responseId);
 
       if (updateError) throw updateError;
-    }
 
-    // Update roles if provided
-    if (role_ids !== undefined) {
-      // Delete existing role associations
-      const { error: deleteError } = await this.supabase
-        .from("interview_response_roles")
-        .delete()
-        .eq("interview_response_id", responseId);
+      return responseData;
+    } else {
+      // Build update object for rating_score and is_unknown
+      // These fields are mutually exclusive - if one is set, clear the other
+      const updates: { rating_score?: number | null; is_unknown?: boolean } =
+        {};
 
-      if (deleteError) throw deleteError;
-
-      // Insert new role associations (only if role_ids is not null/empty)
-      if (role_ids && role_ids.length > 0) {
-        const roleAssociations = role_ids.map((roleId) => ({
-          interview_response_id: responseId,
-          role_id: roleId,
-          company_id: existingResponse.company_id,
-          interview_id: existingResponse.interview_id,
-        }));
-
-        const { error: insertError } = await this.supabase
-          .from("interview_response_roles")
-          .insert(roleAssociations);
-
-        if (insertError) throw insertError;
+      if (rating_score !== undefined) {
+        updates.rating_score = rating_score;
+        // Clear is_unknown when setting a rating
+        if (rating_score !== null) {
+          updates.is_unknown = false;
+        }
       }
-    }
 
-    // Fetch and return updated response
-    const { data: updatedResponse, error: responseError } = await this.supabase
-      .from("interview_responses")
-      .select(
-        `
+      if (is_unknown !== undefined) {
+        updates.is_unknown = is_unknown ?? false;
+        // Clear rating_score when marking as unknown
+        if (is_unknown === true) {
+          updates.rating_score = null;
+        }
+      }
+
+      // Update the response if there are changes to apply
+      if (Object.keys(updates).length > 0) {
+        const { error: updateError } = await this.supabase
+          .from("interview_responses")
+          .update(updates)
+          .eq("id", responseId);
+
+        if (updateError) throw updateError;
+      }
+
+      // Update roles if provided
+      if (role_ids !== undefined) {
+        // Delete existing role associations
+        const { error: deleteError } = await this.supabase
+          .from("interview_response_roles")
+          .delete()
+          .eq("interview_response_id", responseId);
+
+        if (deleteError) throw deleteError;
+
+        // Insert new role associations (only if role_ids is not null/empty)
+        if (role_ids && role_ids.length > 0) {
+          const roleAssociations = role_ids.map((roleId) => ({
+            interview_response_id: responseId,
+            role_id: roleId,
+            company_id: existingResponse.company_id,
+            interview_id: existingResponse.interview_id,
+          }));
+
+          const { error: insertError } = await this.supabase
+            .from("interview_response_roles")
+            .insert(roleAssociations);
+
+          if (insertError) throw insertError;
+        }
+      }
+
+      // Fetch and return updated response
+      const { data: updatedResponse, error: responseError } =
+        await this.supabase
+          .from("interview_responses")
+          .select(
+            `
         id,
         rating_score,
         is_unknown,
+        questionnaire_question_id,
+        interview_id,
         response_roles:interview_response_roles(
           id,
           role:roles(id)
         )
       `
-      )
-      .eq("id", responseId)
-      .single();
+          )
+          .eq("id", responseId)
+          .single();
 
-    if (responseError) throw responseError;
+      if (responseError) throw responseError;
 
-    return updatedResponse;
+      return updatedResponse;
+    }
   }
   // Get roles associated with an assessment
   // business_unit > region > site > asset_group > work_group > role < shared_roles
@@ -1905,17 +2260,20 @@ export class InterviewsService {
       const baseOutput = {
         ...interview,
         assessment: {
-          id: interview.assessment?.id,
-          name: interview.assessment?.name,
-          type: interview.assessment?.type,
-          company_id: interview.assessment?.company_id,
+          id: interview.assessment.id,
+          name: interview.assessment.name,
+          type: interview.assessment.type,
+          // company_id: interview.assessment?.company_id,
         },
-        program: {
-          id: interview.assessment.program_phase?.program?.id || null,
-          name: interview.assessment.program_phase?.program?.name || null,
-          program_phase_id: interview.assessment.program_phase?.id || null,
-          program_phase_name: interview.assessment.program_phase?.name || null,
-        },
+        program:
+          interview.assessment.program_phase !== null
+            ? {
+                id: interview.assessment.program_phase.program.id,
+                name: interview.assessment.program_phase.program.name,
+                program_phase_id: interview.assessment.program_phase.id,
+                program_phase_name: interview.assessment.program_phase.name,
+              }
+            : null,
         completion_rate: calculateCompletionRate(interviewResponses || []),
         average_score: calculateAverageScore(interviewResponses || []),
         min_rating_value: ratingRange.min,
@@ -1979,7 +2337,7 @@ export class InterviewsService {
         updated_at: new Date().toISOString(),
       })
       .eq("id", interviewId)
-      .select()
+      .select("id, name, notes, status, updated_at, due_at, enabled")
       .single();
 
     if (error) throw error;
@@ -1997,6 +2355,19 @@ export class InterviewsService {
       .eq("id", interviewId);
 
     if (error) throw error;
+  }
+
+  async listInterviewResponseActions(responseId: number) {
+    const { data, error } = await this.supabase
+      .from("interview_response_actions")
+      .select("id, title, description, created_at, updated_at")
+      .eq("interview_response_id", responseId)
+      .eq("is_deleted", false)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    return data || [];
   }
 
   async addActionToInterviewResponse(
@@ -2020,7 +2391,7 @@ export class InterviewsService {
         description: data.description,
         title: data.title,
       })
-      .select()
+      .select("id, title, description, created_at, updated_at")
       .single();
 
     if (error) throw error;
@@ -2039,7 +2410,7 @@ export class InterviewsService {
         updated_at: new Date().toISOString(),
       })
       .eq("id", actionId)
-      .select()
+      .select("id, title, description, created_at, updated_at")
       .single();
 
     if (error) throw error;

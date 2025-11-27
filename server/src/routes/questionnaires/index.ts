@@ -1,6 +1,4 @@
 import { FastifyInstance } from "fastify";
-import { questionnaireSchemas } from "../../schemas/questionnaire.js";
-import { commonResponseSchemas } from "../../schemas/common.js";
 import { QuestionnaireService } from "../../services/QuestionnaireService.js";
 import { ratingScalesRoutes } from "./rating-scales.js";
 import { sectionsRoutes } from "./sections.js";
@@ -12,6 +10,31 @@ import {
   ForbiddenError,
   NotFoundError,
 } from "../../plugins/errorHandler.js";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
+import {
+  CheckQuestionnaireUsageParamsSchema,
+  CheckQuestionnaireUsageResponseSchema,
+  CreateQuestionnaireBodySchema,
+  CreateQuestionnaireResponseSchema,
+  DeleteQuestionnaireParamsSchema,
+  DeleteQuestionnaireResponseSchema,
+  DuplicateQuestionnaireParamsSchema,
+  DuplicateQuestionnaireResponseSchema,
+  GetQuestionnaireByIdParamsSchema,
+  GetQuestionnaireByIdResponseSchema,
+  ImportQuestionnaireResponseSchema,
+  QuestionnaireItemTypeEnum,
+  UpdateQuestionnaireBodySchema,
+  UpdateQuestionnaireParamsSchema,
+  UpdateQuestionnaireResponseSchema,
+} from "../../schemas/questionnaires/index.js";
+import {
+  Error403Schema,
+  Error404Schema,
+  Error500Schema,
+  ValidationErrorSchema,
+} from "../../schemas/errors.js";
+import { z } from "zod";
 
 export async function questionnairesRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -22,43 +45,33 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
   });
 
   // Register sub-routers
-  await fastify.register(ratingScalesRoutes);
   await fastify.register(sectionsRoutes);
   await fastify.register(stepsRoutes);
+  await fastify.register(ratingScalesRoutes);
   await fastify.register(questionsRoutes);
-  fastify.get(
-    "/:questionnaireId",
-    {
-      schema: {
-        description: "Get a questionnaire by ID",
-        params: {
-          type: "object",
-          properties: {
-            questionnaireId: {
-              type: "string",
-            },
-          },
-          required: ["questionnaireId"],
-        },
-        response: {
-          // 200: questionnaireSchemas.responses.questionnaireDetail,
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+
+  // Main questionnaire routes
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:questionnaireId",
+    schema: {
+      description: "Get a questionnaire by ID",
+      params: GetQuestionnaireByIdParamsSchema,
+      response: {
+        200: GetQuestionnaireByIdResponseSchema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { questionnaireId } = request.params as {
-        questionnaireId: string;
-      };
+    handler: async (request) => {
+      const { questionnaireId } = request.params;
 
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
         request.user.id
       );
-      const questionnaire = await questionnaireService.getQuestionnaireById(
-        parseInt(questionnaireId)
-      );
+      const questionnaire =
+        await questionnaireService.getQuestionnaireById(questionnaireId);
 
       if (!questionnaire) {
         throw new NotFoundError("Questionnaire not found");
@@ -67,67 +80,53 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
         success: true,
         data: questionnaire,
       };
-    }
-  );
-  fastify.post(
-    "",
-    {
-      schema: {
-        description: "Create a new questionnaire",
-        body: questionnaireSchemas.body.create,
-        response: {
-          200: questionnaireSchemas.responses.questionnaireCreate,
-          500: commonResponseSchemas.responses[500],
-        },
+    },
+  });
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "",
+    schema: {
+      description: "Create a new questionnaire",
+      body: CreateQuestionnaireBodySchema,
+      response: {
+        201: CreateQuestionnaireResponseSchema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
         request.user.id
       );
       const questionnaire = await questionnaireService.createQuestionnaire(
-        request.body as any
+        request.body
       );
       return {
         success: true,
-        data: [questionnaire],
+        data: questionnaire,
       };
-    }
-  );
-  fastify.delete(
-    "/:questionnaireId",
-    {
-      schema: {
-        description: "Soft delete a questionnaire by ID",
-        params: {
-          type: "object",
-          properties: {
-            questionnaireId: {
-              type: "string",
-            },
-          },
-          required: ["questionnaireId"],
-        },
-        response: {
-          200: commonResponseSchemas.messageResponse,
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+    },
+  });
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/:questionnaireId",
+    schema: {
+      description: "Soft delete a questionnaire by ID",
+      params: DeleteQuestionnaireParamsSchema,
+      response: {
+        200: DeleteQuestionnaireResponseSchema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { questionnaireId } = request.params as {
-        questionnaireId: string;
-      };
-
+    handler: async (request) => {
+      const { questionnaireId } = request.params;
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
         request.user.id
       );
-      const deleted = await questionnaireService.deleteQuestionnaire(
-        parseInt(questionnaireId)
-      );
+      const deleted =
+        await questionnaireService.deleteQuestionnaire(questionnaireId);
 
       if (!deleted) {
         throw new NotFoundError("Questionnaire not found");
@@ -137,35 +136,24 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
         success: true,
         message: "Questionnaire deleted successfully",
       };
-    }
-  );
-  fastify.put(
-    "/:questionnaireId",
-    {
-      schema: {
-        description: "Update a questionnaire by ID",
-        params: {
-          type: "object",
-          properties: {
-            questionnaireId: {
-              type: "string",
-            },
-          },
-          required: ["questionnaireId"],
-        },
-        body: questionnaireSchemas.body.update,
-        response: {
-          200: questionnaireSchemas.responses.questionnaireCreate,
-          403: commonResponseSchemas.responses[403],
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+    },
+  });
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/:questionnaireId",
+    schema: {
+      description: "Update a questionnaire by ID",
+      params: UpdateQuestionnaireParamsSchema,
+      body: UpdateQuestionnaireBodySchema,
+      response: {
+        200: UpdateQuestionnaireResponseSchema,
+        403: Error403Schema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { questionnaireId } = request.params as {
-        questionnaireId: string;
-      };
+    handler: async (request) => {
+      const { questionnaireId } = request.params;
 
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
@@ -173,11 +161,9 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
       );
 
       // Check if questionnaire is in use and if status is being changed
-      const body = request.body as any;
-      if (body.status !== undefined) {
-        const usageCheck = await questionnaireService.checkQuestionnaireInUse(
-          parseInt(questionnaireId)
-        );
+      if (request.body.status !== undefined) {
+        const usageCheck =
+          await questionnaireService.checkQuestionnaireInUse(questionnaireId);
         if (usageCheck.isInUse) {
           throw new ForbiddenError(
             "Cannot change questionnaire status while in use"
@@ -186,8 +172,8 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
       }
 
       const questionnaire = await questionnaireService.updateQuestionnaire(
-        parseInt(questionnaireId),
-        request.body as any
+        questionnaireId,
+        request.body
       );
 
       if (!questionnaire) {
@@ -196,43 +182,32 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
 
       return {
         success: true,
-        data: [questionnaire],
+        data: questionnaire,
       };
-    }
-  );
-  fastify.post(
-    "/:questionnaireId/duplicate",
-    {
-      schema: {
-        description: "Duplicate a questionnaire by ID",
-        params: {
-          type: "object",
-          properties: {
-            questionnaireId: {
-              type: "string",
-            },
-          },
-          required: ["questionnaireId"],
-        },
-        response: {
-          200: questionnaireSchemas.responses.questionnaireCreate,
-          404: commonResponseSchemas.responses[404],
-          500: commonResponseSchemas.responses[500],
-        },
+    },
+  });
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/:questionnaireId/duplicate",
+
+    schema: {
+      description: "Duplicate a questionnaire by ID",
+      params: DuplicateQuestionnaireParamsSchema,
+      response: {
+        201: DuplicateQuestionnaireResponseSchema,
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { questionnaireId } = request.params as {
-        questionnaireId: string;
-      };
+    handler: async (request) => {
+      const { questionnaireId } = request.params;
 
       const questionnaireService = new QuestionnaireService(
         request.supabaseClient,
         request.user.id
       );
-      const questionnaire = await questionnaireService.duplicateQuestionnaire(
-        parseInt(questionnaireId)
-      );
+      const questionnaire =
+        await questionnaireService.duplicateQuestionnaire(questionnaireId);
 
       if (!questionnaire) {
         throw new NotFoundError("Questionnaire not found");
@@ -240,41 +215,54 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
 
       return {
         success: true,
-        data: [questionnaire],
+        data: questionnaire,
       };
-    }
-  );
-  fastify.get("/:questionnaireId/usage", {}, async (request) => {
-    const { questionnaireId } = request.params as {
-      questionnaireId: string;
-    };
+    },
+  });
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:questionnaireId/usage",
+    schema: {
+      params: CheckQuestionnaireUsageParamsSchema,
+      response: {
+        200: CheckQuestionnaireUsageResponseSchema,
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const { questionnaireId } = request.params;
 
-    const questionnaireService = new QuestionnaireService(
-      request.supabaseClient,
-      request.user.id
-    );
-    const usage = await questionnaireService.checkQuestionnaireUsage(
-      parseInt(questionnaireId)
-    );
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+      const usage =
+        await questionnaireService.checkQuestionnaireUsage(questionnaireId);
 
-    return {
-      success: true,
-      data: usage,
-    };
+      return {
+        success: true,
+        data: usage,
+      };
+    },
   });
 
   /**
    * Import questionnaire - to be implemented
    * This endpoint will handle importing a questionnaire from a CSV file.
    */
-  fastify.post(
-    "/import",
-    {
-      schema: {
-        consumes: ["multipart/form-data"],
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "POST",
+    url: "/import",
+    schema: {
+      description: "Import a questionnaire from a CSV file",
+      consumes: ["multipart/form-data"],
+      response: {
+        201: ImportQuestionnaireResponseSchema,
+        400: ValidationErrorSchema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
+    handler: async (request) => {
       const userId = request.user.id;
 
       // Parse multipart form data using parts()
@@ -662,10 +650,55 @@ export async function questionnairesRoutes(fastify: FastifyInstance) {
         );
       }
 
+      if (!questionnaire) {
+        throw new BadRequestError("Failed to import questionnaire");
+      }
+
       return {
         success: true,
         data: questionnaire,
       };
-    }
-  );
+    },
+  });
+
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PATCH",
+    url: "/:questionnaireId/reorder",
+    schema: {
+      params: z.object({
+        questionnaireId: z.coerce.number(),
+      }),
+      body: z.array(
+        z.object({
+          id: z.number(),
+          type: z.enum(QuestionnaireItemTypeEnum),
+          order_index: z.number(),
+          parent_id: z.number().optional(),
+        })
+      ),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          message: z.string(),
+        }),
+        500: Error500Schema,
+      },
+    },
+    handler: async (request) => {
+      const questionnaireService = new QuestionnaireService(
+        request.supabaseClient,
+        request.user.id
+      );
+
+      await questionnaireService.reorderQuestionnaire(
+        request.params.questionnaireId,
+        request.body
+      );
+
+      return {
+        success: true,
+        message: "Questionnaire reordered successfully",
+      };
+    },
+  });
 }

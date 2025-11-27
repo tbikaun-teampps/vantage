@@ -4,7 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -20,7 +20,8 @@
     "noUnusedParameters": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "baml_client/**/*"
   ],
   "exclude": [
     "node_modules",

@@ -1,4 +1,4 @@
-import React from "react";
+import { useState } from "react";
 import {
   IconExternalLink,
   IconClock,
@@ -10,12 +10,10 @@ import {
   IconLockOpen,
   IconCopy,
   IconLoader2,
-  IconEyeOff,
   IconMail,
   IconDots,
   IconTrash,
   IconEye,
-  IconCalendar,
   IconEdit,
   IconUsers,
   IconUser,
@@ -48,10 +46,6 @@ import {
   type SimpleDataTableTab,
 } from "@/components/simple-data-table";
 import { useInterviewActions } from "@/hooks/interview/useInterviewActions";
-import type {
-  InterviewWithResponses,
-  InterviewWithDetails,
-} from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { sendInterviewReminder, sendInterviewSummary } from "@/lib/api/emails";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
@@ -59,9 +53,14 @@ import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { InterviewSettingsDialog } from "@/components/interview/detail/InterviewSettingsDialog";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import type {
+  GetInterviewsResponseData,
+  UpdateInterviewBodyData,
+} from "@/types/api/interviews";
+import type { GetInterviewsByAssessmentIdResponseData } from "@/types/api/assessments";
 
 interface InterviewsDataTableProps {
-  data: InterviewWithResponses[] | InterviewWithDetails[];
+  data: GetInterviewsResponseData | GetInterviewsByAssessmentIdResponseData; //    | InterviewWithResponses[] | InterviewWithDetails[];
   isLoading?: boolean;
   showAssessmentColumn?: boolean;
   showProgramColumn?: boolean;
@@ -70,7 +69,8 @@ interface InterviewsDataTableProps {
   onCreateInterview?: () => void;
 }
 
-type InterviewData = InterviewWithResponses | InterviewWithDetails;
+type InterviewData = GetInterviewsResponseData[number];
+// | GetInterviewsByAssessmentIdResponseData[number];
 
 export function InterviewsDataTable({
   data,
@@ -84,22 +84,22 @@ export function InterviewsDataTable({
   const userCanAdmin = useCanAdmin();
   const navigate = useCompanyAwareNavigate();
   const { updateInterview, deleteInterview } = useInterviewActions();
-  const [togglingInterviewId, setTogglingInterviewId] = React.useState<
-    number | null
-  >(null);
-  const [sendingEmailId, setSendingEmailId] = React.useState<{
+  const [togglingInterviewId, setTogglingInterviewId] = useState<number | null>(
+    null
+  );
+  const [sendingEmailId, setSendingEmailId] = useState<{
     id: number;
     type: "summary" | "reminder";
   } | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [deletingInterviewId, setDeletingInterviewId] = React.useState<
-    number | null
-  >(null);
-  const [isDeleting, setIsDeleting] = React.useState(false);
-  const [editDialogOpen, setEditDialogOpen] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
+  const [deletingInterviewId, setDeletingInterviewId] = useState<number | null>(
+    null
+  );
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
   const [editingInterview, setEditingInterview] =
-    React.useState<InterviewData | null>(null);
-  const [isSaving, setIsSaving] = React.useState(false);
+    useState<InterviewData | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const routes = useCompanyRoutes();
 
   // Status icons helper
@@ -250,12 +250,7 @@ export function InterviewsDataTable({
     setEditDialogOpen(true);
   };
 
-  const handleEditSave = async (updates: {
-    name?: string;
-    status?: string;
-    notes?: string;
-    due_at?: string | null;
-  }) => {
+  const handleEditSave = async (updates: UpdateInterviewBodyData) => {
     if (!editingInterview) return;
 
     setIsSaving(true);
@@ -278,7 +273,7 @@ export function InterviewsDataTable({
   };
 
   // Column definitions
-  const columns: ColumnDef<InterviewData>[] = [
+  const columns: ColumnDef<GetInterviewsResponseData[number]>[] = [
     {
       accessorKey: "name",
       header: "Name",
@@ -313,7 +308,7 @@ export function InterviewsDataTable({
             accessorKey: "assessment" as const,
             header: "Assessment",
             cell: ({ row }: { row: { original: InterviewData } }) => {
-              const interview = row.original as InterviewWithResponses;
+              const interview = row.original;
               return (
                 <div className="flex-1">
                   <Link
@@ -338,7 +333,7 @@ export function InterviewsDataTable({
             accessorKey: "program" as const,
             header: "Program",
             cell: ({ row }: { row: { original: InterviewData } }) => {
-              const interview = row.original as InterviewWithResponses;
+              const interview = row.original;
               console.log("interview: ", interview);
               if (!interview.program?.name) {
                 return (
@@ -411,14 +406,6 @@ export function InterviewsDataTable({
             >
               {row.original.interviewee?.email || "N/A"}
             </div>
-            {row.original.interviewee?.title && (
-              <div
-                className="text-muted-foreground text-xs truncate"
-                title={row.original.interviewee.title}
-              >
-                {row.original.interviewee.title}
-              </div>
-            )}
           </div>
         </div>
       ),
@@ -426,15 +413,42 @@ export function InterviewsDataTable({
     {
       accessorKey: "role",
       header: "Roles",
-      cell: ({ row }) => (
-        <div
-          className="truncate text-xs"
-          title={row.original.interviewee?.role || undefined}
-        >
-          {row.original.interviewee?.role || "All"}
-        </div>
-      ),
+      cell: ({ row }) => {
+        if (row.original.interviewee?.role) {
+          return (
+            <div
+              className="truncate text-xs"
+              title={row.original.interviewee?.role}
+            >
+              {row.original.interviewee?.role}
+            </div>
+          );
+        }
+
+        if (row.original.interview_roles.length > 0) {
+          const uniqueRoles = Array.from(
+            new Set(
+              row.original.interview_roles
+                .map((r) => r?.role?.shared_role?.name)
+                .filter(Boolean)
+            )
+          );
+          const roles = uniqueRoles.join(", ");
+          return (
+            <div className="truncate text-xs" title={roles}>
+              {roles}
+            </div>
+          );
+        }
+
+        return (
+          <div className="truncate text-xs" title="All Roles">
+            All Company Roles
+          </div>
+        );
+      },
     },
+
     {
       accessorKey: "status",
       header: "Status",
@@ -647,17 +661,17 @@ export function InterviewsDataTable({
   ];
 
   // Filter data by status for tabs
-  const allInterviews = data;
-  const inProgressInterviews = data.filter(
+  const allInterviews = data as GetInterviewsResponseData;
+  const inProgressInterviews = (data as GetInterviewsResponseData).filter(
     (i) => i.status.toLowerCase() === "in_progress"
   );
-  const pendingInterviews = data.filter(
+  const pendingInterviews = (data as GetInterviewsResponseData).filter(
     (i) => i.status.toLowerCase() === "pending"
   );
-  const completedInterviews = data.filter(
+  const completedInterviews = (data as GetInterviewsResponseData).filter(
     (i) => i.status.toLowerCase() === "completed"
   );
-  const cancelledInterviews = data.filter(
+  const cancelledInterviews = (data as GetInterviewsResponseData).filter(
     (i) => i.status.toLowerCase() === "cancelled"
   );
 
@@ -756,7 +770,7 @@ export function InterviewsDataTable({
                   <br />
                   Interview:{" "}
                   <strong>
-                    {deletingInterview.name ||
+                    {"name" in deletingInterview && deletingInterview.name ||
                       `Interview #${deletingInterview.id}`}
                   </strong>
                 </>
@@ -788,7 +802,6 @@ export function InterviewsDataTable({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Edit Interview Dialog */}
       <InterviewSettingsDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}

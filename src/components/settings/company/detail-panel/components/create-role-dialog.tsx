@@ -18,6 +18,7 @@ import { FormSelect } from "./form-fields";
 import { LEVELS } from "@/lib/library/roles";
 import { useTreeNodeActions } from "@/hooks/useCompany";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
+import type { WorkGroupNode } from "@/types/api/companies";
 
 // Schema for role creation - only requires shared_role_id
 const createRoleSchema = z.object({
@@ -30,7 +31,7 @@ type CreateRoleFormData = z.infer<typeof createRoleSchema>;
 interface CreateRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  parentWorkGroup: any; // The work group where the role will be created
+  parentWorkGroup: WorkGroupNode; // The work group where the role will be created
   onSuccess?: () => void;
 }
 
@@ -55,7 +56,7 @@ export function CreateRoleDialog({
   // Helper to check for duplicate roles in the target work group
   const checkForDuplicateRole = (sharedRoleId: string): string | null => {
     const existingRole = parentWorkGroup.roles?.find(
-      (role: any) => role.shared_role_id === sharedRoleId
+      (role) => role.shared_role_id.toString() === sharedRoleId
     );
 
     if (existingRole) {
@@ -82,8 +83,7 @@ export function CreateRoleDialog({
       if (data.level) formData.append("level", data.level);
 
       await createTreeNode({
-        parentType: "work_group",
-        parentId: parseInt(parentWorkGroup.id),
+        parentId: parentWorkGroup.id,
         nodeType: "role",
         formData,
         companyId: companyId!,
@@ -117,7 +117,7 @@ export function CreateRoleDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <IconUser className="h-4 w-4" />
-            Create New Role
+            Add New Role
           </DialogTitle>
           <DialogDescription>
             Select a role and configure its details for this work group.
@@ -133,6 +133,7 @@ export function CreateRoleDialog({
                 label="Role *"
                 placeholder="Select a role..."
                 selectOnly={false}
+                disabled={isLoading}
               />
             </div>
 
@@ -143,6 +144,7 @@ export function CreateRoleDialog({
                 label="Level"
                 options={roleLevelOptions}
                 placeholder="Select level..."
+                required
               />
             </div>
           </div>
@@ -158,7 +160,7 @@ export function CreateRoleDialog({
             </Button>
             <Button
               type="submit"
-              disabled={isLoading || !form.watch("shared_role_id")}
+              disabled={isLoading || !form.watch("shared_role_id") || !form.watch("level")}
             >
               {isLoading ? (
                 <>
@@ -166,7 +168,7 @@ export function CreateRoleDialog({
                   Creating...
                 </>
               ) : (
-                "Create Role"
+                "Add Role"
               )}
             </Button>
           </DialogFooter>

@@ -16,7 +16,7 @@ import {
 } from "@/contexts/QuestionnaireDetailContext";
 import { RatingScales } from "@/components/questionnaires/detail/rating-scales";
 
-export function QuestionnaireDetailPageContent() {
+function QuestionnaireDetailPageContent() {
   const routes = useCompanyRoutes();
 
   const {

@@ -110,5 +110,3 @@ tourManager.registerTour({
   id: "interview-detail-mobile",
   steps: interviewDetailMobileSteps,
 });
-
-export { interviewDetailMobileSteps };

@@ -31,7 +31,7 @@ const MapClickHandler = ({
 }: {
   onLocationClick: (lat: number, lng: number) => void;
 }) => {
-  const map = useMapEvents({
+  useMapEvents({
     click: (e) => {
       if (e.originalEvent.shiftKey) {
         // Prevent all event propagation

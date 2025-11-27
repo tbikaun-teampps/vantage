@@ -17,6 +17,8 @@ interface InlineFieldEditorProps {
   validation?: (value: string) => string | null; // Returns error message or null
   maxLength?: number;
   minRows?: number;
+  required?: boolean;
+  helperText?: string;
 }
 
 export function InlineFieldEditor({
@@ -29,6 +31,8 @@ export function InlineFieldEditor({
   validation,
   maxLength,
   minRows = 3,
+  required = false,
+  helperText,
 }: InlineFieldEditorProps) {
   const userCanAdmin = useCanAdmin();
 
@@ -110,7 +114,11 @@ export function InlineFieldEditor({
         <div className="grid w-full gap-2">
           <Label htmlFor={label.toLowerCase().replace(/\s+/g, "-")}>
             {label}
+            {required && <span className="text-red-500">*</span>}
           </Label>
+          {helperText && (
+            <span className="text-xs text-muted-foreground">{helperText}</span>
+          )}
           {type === "textarea" ? (
             <Textarea
               id={label.toLowerCase().replace(/\s+/g, "-")}
@@ -153,6 +161,9 @@ export function InlineFieldEditor({
         <Label htmlFor={label.toLowerCase().replace(/\s+/g, "-")}>
           {label}
         </Label>
+        {helperText && (
+          <span className="text-xs text-muted-foreground">{helperText}</span>
+        )}
         {type === "textarea" ? (
           <Textarea
             id={label.toLowerCase().replace(/\s+/g, "-")}

@@ -28,7 +28,7 @@ export function useCompanyRoutes() {
     newAssessment: () => `/${companyId}/assessments/new`,
     newOnsiteAssessment: () => `/${companyId}/assessments/onsite/new`,
     newDesktopAssessment: () => `/${companyId}/assessments/desktop/new`,
-    interviews: () => `/${companyId}/assessments/onsite/interviews`,
+    interviews: () => `/${companyId}/interviews`,
     questionnaires: () => `/${companyId}/questionnaires`,
     newQuestionnaire: () => `/${companyId}/questionnaires/new`,
     analytics: () => `/${companyId}/analytics`,
@@ -49,7 +49,7 @@ export function useCompanyRoutes() {
     assessmentDesktopDetail: (id: string | number) =>
       `/${companyId}/assessments/desktop/${id}`,
     interviewDetail: (id: string | number) =>
-      `/${companyId}/assessments/onsite/interviews/${id}`,
+      `/${companyId}/interviews/${id}`,
     externalInterviewDetail: (
       id: string | number,
       accessCode: string,

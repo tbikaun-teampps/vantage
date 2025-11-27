@@ -56,7 +56,7 @@ export interface SimpleDataTableTab {
   emptyStateDescription?: string;
 }
 
-export interface SimpleDataTableConfig<T> {
+interface SimpleDataTableConfig<T> {
   data: T[];
   columns: ColumnDef<T>[];
   getRowId: (row: T) => string;

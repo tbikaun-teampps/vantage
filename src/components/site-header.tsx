@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { useLocation, Link } from "react-router-dom";
+import React from "react";
+import { useLocation, Link, useParams } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import {
@@ -21,7 +21,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
-import { useCurrentCompany } from "@/hooks/useCompany";
 // import { CannyFeedbackButton } from "@/components/feedback/canny-feedback-button";
 // Ensure tours are imported and registered
 import "@/lib/tours";
@@ -48,70 +47,63 @@ function useSidebarSafe() {
 export function SiteHeader() {
   const location = useLocation();
   const pathname = location.pathname;
+  const { companyId } = useParams<{ companyId: string }>();
   const { hasTourForPage, startTourForPage } = useTourManager();
   const sidebarContext = useSidebarSafe();
-  const { data: currentCompany } = useCurrentCompany();
-  // const title = routeTitles[pathname] || generateTitleFromPath(pathname);
-
-  // Memoized company name resolution for breadcrumbs
-  const getCompanyDisplayName = useMemo(() => {
-    return (companyId: string) => {
-      if (currentCompany && currentCompany.id === companyId) {
-        return currentCompany.name;
-      }
-      return companyId; // Fallback to ID if company not found or still loading
-    };
-  }, [currentCompany]);
 
   // Generate breadcrumbs
   const generateBreadcrumbs = () => {
     const segments = pathname.split("/").filter(Boolean);
     const breadcrumbs = [];
 
-    if (pathname === "/dashboard") {
-      // For dashboard, just show "Dashboard"
-      breadcrumbs.push({
-        href: "/dashboard",
-        label: "Dashboard",
-        isCurrent: true,
-      });
-      return breadcrumbs;
-    }
+    // Check if this is a company-scoped route
+    const isCompanyRoute = companyId && segments[0] === companyId;
 
-    // Always start with Dashboard
-    breadcrumbs.push({
-      href: "/dashboard",
-      label: "Dashboard",
-      isCurrent: false,
-    });
+    if (isCompanyRoute) {
+      // For company-scoped routes, skip the company ID segment in breadcrumbs
+      const companyDashboardHref = `/${companyId}/dashboard`;
+      const routeSegments = segments.slice(1); // Skip company ID
 
-    // Build path segments
-    let currentPath = "";
-    for (let i = 0; i < segments.length; i++) {
-      currentPath += `/${segments[i]}`;
-      const isCurrent = i === segments.length - 1;
-      
-      // Check if this is the first segment (potential company ID)
-      let label: string;
-      if (i === 0) {
-        // First segment is likely company ID - check if it matches company ID pattern
-        const companyIdPattern = /^[a-fA-F0-9-]+$/;
-        if (companyIdPattern.test(segments[i])) {
-          // This looks like a company ID, use the resolved company name
-          label = getCompanyDisplayName(segments[i]);
-        } else {
-          // Not a company ID pattern, use normal title generation
-          label = generateTitleFromPath(currentPath);
-        }
-      } else {
-        // For non-company segments, use normal title generation
-        label = generateTitleFromPath(currentPath);
+      // If we're on the dashboard itself, just show Dashboard
+      if (
+        routeSegments.length === 0 ||
+        (routeSegments.length === 1 && routeSegments[0] === "dashboard")
+      ) {
+        breadcrumbs.push({
+          href: companyDashboardHref,
+          label: "Dashboard",
+          isCurrent: true,
+        });
+        return breadcrumbs;
       }
 
+      // For other company routes, start with Dashboard link
       breadcrumbs.push({
-        href: currentPath,
-        label,
-        isCurrent,
+        href: companyDashboardHref,
+        label: "Dashboard",
+        isCurrent: false,
+      });
+
+      // Build breadcrumbs from remaining segments (excluding company ID)
+      let currentPath = `/${companyId}`;
+      for (let i = 0; i < routeSegments.length; i++) {
+        currentPath += `/${routeSegments[i]}`;
+        const isCurrent = i === routeSegments.length - 1;
+        const label = generateTitleFromPath(currentPath);
+
+        breadcrumbs.push({
+          href: currentPath,
+          label,
+          isCurrent,
+        });
+      }
+    } else {
+      // For non-company routes (global routes like /settings, /account)
+      // Just show the current page
+      breadcrumbs.push({
+        href: pathname,
+        label: generateTitleFromPath(pathname),
+        isCurrent: true,
       });
     }
 

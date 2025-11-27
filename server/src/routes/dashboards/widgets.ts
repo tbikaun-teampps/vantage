@@ -1,167 +1,128 @@
 import { FastifyInstance } from "fastify";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { WidgetService } from "../../services/WidgetService";
-import { widgetSchemas } from "../../schemas/widget";
-import { commonResponseSchemas } from "../../schemas/common";
+import {
+  GetConfigOptionsParamsSchema,
+  GetConfigOptionsResponseSchema,
+  GetActivityDataParamsSchema,
+  GetActivityDataQuerySchema,
+  GetActivityDataResponseSchema,
+  GetMetricDataParamsSchema,
+  GetMetricDataQuerySchema,
+  GetMetricDataResponseSchema,
+  GetTableDataParamsSchema,
+  GetTableDataQuerySchema,
+  GetTableDataResponseSchema,
+  GetActionsDataParamsSchema,
+  GetActionsDataQuerySchema,
+  GetActionsDataResponseSchema,
+} from "../../schemas/widget";
+import { Error401Schema, Error500Schema } from "../../schemas/errors";
 
 export async function widgetsRoutes(fastify: FastifyInstance) {
-  // GET config options for widget configuration
-  // Route: /dashboards/widgets/:companyId/config-options
-  fastify.get(
-    "/:companyId/config-options",
-    {
-      schema: {
-        description:
-          "Get available options for widget configuration (assessments, programs, interviews)",
-        params: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-          },
-          required: ["companyId"],
-        },
-        response: {
-          200: widgetSchemas.responses.configOptions,
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId/config-options",
+    schema: {
+      description:
+        "Get available options for widget configuration (assessments, programs, interviews)",
+      params: GetConfigOptionsParamsSchema,
+      response: {
+        200: GetConfigOptionsResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
-      const { companyId } = request.params as { companyId: string };
-
+    handler: async (request) => {
       const widgetService = new WidgetService(
-        companyId,
+        request.params.companyId,
         request.supabaseClient
       );
       const data = await widgetService.getConfigOptions();
 
-      return reply.send({
+      return {
         success: true,
         data,
-      });
-    }
-  );
+      };
+    },
+  });
 
-  // GET activity data for widgets
-  // Route: /dashboards/widgets/:companyId/activity
-  fastify.get(
-    "/:companyId/activity",
-    {
-      schema: {
-        description: "Get activity data for a widget (status breakdown)",
-        params: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-          },
-          required: ["companyId"],
-        },
-        querystring: widgetSchemas.querystring.activity,
-        response: {
-          200: widgetSchemas.responses.activityData,
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId/activity",
+    schema: {
+      description: "Get activity data for a widget (status breakdown)",
+      params: GetActivityDataParamsSchema,
+      querystring: GetActivityDataQuerySchema,
+      response: {
+        200: GetActivityDataResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
-      const { companyId } = request.params as { companyId: string };
-      const { entityType } = request.query as {
-        entityType: "interviews" | "assessments" | "programs";
-      };
-
+    handler: async (request) => {
       const widgetService = new WidgetService(
-        companyId,
+        request.params.companyId,
         request.supabaseClient
       );
-      const data = await widgetService.getActivityData(entityType);
+      const data = await widgetService.getActivityData(
+        request.query.entityType
+      );
 
-      return reply.send({
+      return {
         success: true,
         data,
-      });
-    }
-  );
+      };
+    },
+  });
 
-  // GET metric data for widgets
-  // Route: /dashboards/widgets/:companyId/metrics
-  fastify.get(
-    "/:companyId/metrics",
-    {
-      schema: {
-        description: "Get metric data for a widget",
-        params: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-          },
-          required: ["companyId"],
-        },
-        querystring: widgetSchemas.querystring.metrics,
-        response: {
-          200: widgetSchemas.responses.metricData,
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId/metrics",
+    schema: {
+      description: "Get metric data for a widget",
+      params: GetMetricDataParamsSchema,
+      querystring: GetMetricDataQuerySchema,
+      response: {
+        200: GetMetricDataResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
-      const { companyId } = request.params as { companyId: string };
-      const { metricType, title } = request.query as {
-        metricType:
-          | "generated-actions"
-          | "generated-recommendations"
-          | "worst-performing-domain"
-          | "high-risk-areas"
-          | "assessment-activity";
-        title?: string;
-      };
+    handler: async (request) => {
+      const { metricType, title } = request.query;
 
       const widgetService = new WidgetService(
-        companyId,
+        request.params.companyId,
         request.supabaseClient
       );
       const data = await widgetService.getMetricData(metricType, title);
 
-      return reply.send({
+      return {
         success: true,
         data,
-      });
-    }
-  );
+      };
+    },
+  });
 
-  // GET table data for widgets
-  // Route: /dashboards/widgets/:companyId/table
-  fastify.get(
-    "/:companyId/table",
-    {
-      schema: {
-        description: "Get table data for a widget",
-        params: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-          },
-          required: ["companyId"],
-        },
-        querystring: widgetSchemas.querystring.table,
-        response: {
-          200: widgetSchemas.responses.tableData,
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId/table",
+    schema: {
+      description: "Get table data for a widget",
+      params: GetTableDataParamsSchema,
+      querystring: GetTableDataQuerySchema,
+      response: {
+        200: GetTableDataResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
-      const { companyId } = request.params as { companyId: string };
-      const { entityType, assessmentId, programId } = request.query as {
-        entityType: "actions" | "recommendations" | "comments";
-        assessmentId?: number;
-        programId?: number;
-      };
+    handler: async (request) => {
+      const { entityType, assessmentId, programId } = request.query;
 
       const widgetService = new WidgetService(
-        companyId,
+        request.params.companyId,
         request.supabaseClient
       );
       const data = await widgetService.getTableData(
@@ -170,48 +131,37 @@ export async function widgetsRoutes(fastify: FastifyInstance) {
         programId
       );
 
-      return reply.send({
+      return {
         success: true,
         data,
-      });
-    }
-  );
+      };
+    },
+  });
 
-  // GET actions data for widgets
-  // Route: /dashboards/widgets/:companyId/actions
-  fastify.get(
-    "/:companyId/actions",
-    {
-      schema: {
-        description: "Get actions data for a widget",
-        params: {
-          type: "object",
-          properties: {
-            companyId: { type: "string" },
-          },
-          required: ["companyId"],
-        },
-        querystring: widgetSchemas.querystring.actions,
-        response: {
-          200: widgetSchemas.responses.actionsData,
-          401: commonResponseSchemas.responses[401],
-          500: commonResponseSchemas.responses[500],
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:companyId/actions",
+    schema: {
+      description: "Get actions data for a widget",
+      params: GetActionsDataParamsSchema,
+      querystring: GetActionsDataQuerySchema,
+      response: {
+        200: GetActionsDataResponseSchema,
+        401: Error401Schema,
+        500: Error500Schema,
       },
     },
-    async (request, reply) => {
-      const { companyId } = request.params as { companyId: string };
-
+    handler: async (request) => {
       const widgetService = new WidgetService(
-        companyId,
+        request.params.companyId,
         request.supabaseClient
       );
       const data = await widgetService.getActionsData();
 
-      return reply.send({
+      return {
         success: true,
         data,
-      });
-    }
-  );
+      };
+    },
+  });
 }

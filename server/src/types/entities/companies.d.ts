@@ -10,6 +10,8 @@ export type AssetGroup = Database["public"]["Tables"]["asset_groups"]["Row"];
 export type WorkGroup = Database["public"]["Tables"]["work_groups"]["Row"];
 export type Role = Database["public"]["Tables"]["roles"]["Row"];
 
+export type UserCompanyRole =
+  Database["public"]["Tables"]["user_companies"]["Row"]["role"];
 
 export type RoleLevel = Database["public"]["Enums"]['role_levels']
 

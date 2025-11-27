@@ -14,7 +14,7 @@ export interface QuestionTemplate {
   };
 }
 
-export interface StepTemplate {
+interface StepTemplate {
   id: string;
   title: string;
   description?: string;
@@ -55,27 +55,32 @@ export const ratingScaleSets: RatingScaleSet[] = [
         value: 1,
         name: "Strongly Disagree",
         description: "Completely oppose or reject the statement",
+        order_index: 1,
       },
       {
         value: 2,
         name: "Disagree",
         description:
           "Generally oppose or have reservations about the statement",
+        order_index: 2,
       },
       {
         value: 3,
         name: "Neutral",
         description: "Neither agree nor disagree with the statement",
+        order_index: 3,
       },
       {
         value: 4,
         name: "Agree",
         description: "Generally support or accept the statement",
+        order_index: 4,
       },
       {
         value: 5,
         name: "Strongly Agree",
         description: "Completely support or endorse the statement",
+        order_index: 5,
       },
     ],
   },
@@ -89,26 +94,31 @@ export const ratingScaleSets: RatingScaleSet[] = [
         value: 1,
         name: "Poor",
         description: "Below acceptable standards",
+        order_index: 1,
       },
       {
         value: 2,
         name: "Fair",
         description: "Meets minimum requirements",
+        order_index: 2,
       },
       {
         value: 3,
         name: "Good",
         description: "Meets expectations",
+        order_index: 3,
       },
       {
         value: 4,
         name: "Very Good",
         description: "Exceeds expectations",
+        order_index: 4,
       },
       {
         value: 5,
         name: "Excellent",
         description: "Outstanding performance",
+        order_index: 5,
       },
     ],
   },
@@ -178,7 +188,6 @@ export const questionnaireTemplates: QuestionnaireTemplate[] = [
     sections: [sectionTemplates[0]],
   },
 ];
-
 
 // Helper to get questions by IDs
 export const getQuestionsByIds = (ids: number[]): QuestionTemplate[] => {

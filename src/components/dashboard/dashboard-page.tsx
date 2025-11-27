@@ -2,7 +2,19 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { BackButton } from "./back-button";
 import { BackButtonDynamic } from "./back-button-dynamic";
-import type { DashboardPageProps } from "@/types/ui/dashboard";
+
+interface DashboardPageProps {
+  title: string | React.ReactNode;
+  description?: string | React.ReactNode;
+  headerActions?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+  showBack?: boolean;
+  backHref?: string; // If provided, uses static Link
+  onBack?: () => void;
+  tourId?: string;
+  ref?: React.Ref<HTMLDivElement>;
+}
 
 export function DashboardPage({
   title,
@@ -53,7 +65,7 @@ export function DashboardPage({
         </div>
         <Separator />
       </div>
-      <div className="flex-1 min-h-0 overflow-hidden pb-6">{children}</div>
+      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
     </div>
   );
 }

@@ -86,7 +86,7 @@ export function useInterviewNavigation(
 
       const queryString = params.toString();
       navigate(
-        `${isIndividualInterview ? "/external/interview" : "/assessments/onsite/interviews"}/${interviewId}${queryString ? `?${queryString}` : ""}`
+        `${isIndividualInterview ? "/external/interview" : "/interviews"}/${interviewId}${queryString ? `?${queryString}` : ""}`
       );
     },
     [allQuestions, searchParams, navigate, interviewId, isIndividualInterview]

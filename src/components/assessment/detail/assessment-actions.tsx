@@ -11,31 +11,17 @@ import { getActionsByAssessmentId } from "@/lib/api/assessments";
 import { SimpleDataTable } from "@/components/simple-data-table";
 import { type ColumnDef } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
+import type { GetActionsByAssessmentIdResponseData } from "@/types/api/assessments";
 
 interface AssessmentActionsProps {
   assessmentId: number;
 }
 
-interface AssessmentActionItem {
-  id: number;
-  title: string | null;
-  description: string;
-  created_by: {
-    full_name: string;
-    email: string;
-  };
-  created_at: string;
-  updated_at: string;
-  interview_id: number;
-  interview_name: string;
-  question_title: string;
-  question_id: number;
-  rating_score: number | null;
-}
-
 export function AssessmentActions({ assessmentId }: AssessmentActionsProps) {
-  const [actions, setActions] = useState<AssessmentActionItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [actions, setActions] = useState<GetActionsByAssessmentIdResponseData>(
+    []
+  );
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,7 +39,6 @@ export function AssessmentActions({ assessmentId }: AssessmentActionsProps) {
         const actionsData = await getActionsByAssessmentId(assessmentId);
         setActions(actionsData);
       } catch (error) {
-        console.error("Failed to load assessment actions:", error);
         setError(
           error instanceof Error ? error.message : "Failed to load actions"
         );
@@ -67,7 +52,7 @@ export function AssessmentActions({ assessmentId }: AssessmentActionsProps) {
   }, [assessmentId]);
 
   // Column definitions
-  const columns: ColumnDef<AssessmentActionItem>[] = [
+  const columns: ColumnDef<GetActionsByAssessmentIdResponseData[number]>[] = [
     {
       accessorKey: "title",
       header: "Title",
@@ -106,14 +91,18 @@ export function AssessmentActions({ assessmentId }: AssessmentActionsProps) {
     {
       accessorKey: "created_by",
       header: () => <div>Author</div>,
-      cell: ({ row }) => (
-        <div className="text-sm">
-          {row.original.created_by.full_name}{" "}
-          <span className="text-muted-foreground">
-            ({row.original.created_by.email})
-          </span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const author = row.original.created_by;
+        if (!author) {
+          return <div className="text-sm text-muted-foreground">Unknown</div>;
+        }
+        return (
+          <div className="text-sm">
+            {author.full_name}{" "}
+            <span className="text-muted-foreground">({author.email})</span>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "created_at",

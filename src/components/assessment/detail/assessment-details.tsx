@@ -8,18 +8,15 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { IconExternalLink, IconForms } from "@tabler/icons-react";
-import type {
-  AssessmentWithQuestionnaire,
-  DesktopAssessment,
-} from "@/types/assessment";
 import { useCompanyRoutes } from "@/hooks/useCompanyRoutes";
 import { InlineFieldEditor } from "@/components/ui/inline-field-editor";
 import { InlineSelectEditor } from "@/components/ui/inline-select-editor";
 import type { SelectOption } from "@/components/ui/inline-select-editor";
 import { getStatusIcon } from "@/components/assessment/detail/status-utils";
+import type { GetAssessmentByIdResponseData } from "@/types/api/assessments";
 
 interface AssessmentDetailsProps {
-  assessment: AssessmentWithQuestionnaire | DesktopAssessment;
+  assessment: GetAssessmentByIdResponseData;
   onStatusChange: (status: string) => Promise<void>;
   onNameChange: (name: string) => Promise<void>;
   onDescriptionChange: (description: string) => Promise<void>;
@@ -163,13 +160,15 @@ export function AssessmentDetails({
                   Questionnaire Template
                 </Label>
                 <p className="text-sm">
-                  <Link
+                    <Link
                     to={routes.questionnaireDetail(assessment.questionnaire_id!)}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-primary hover:text-primary/80 underline inline-flex items-center gap-1"
-                  >
+                    >
                     {assessment?.questionnaire?.name || "Loading..."}
                     <IconExternalLink className="h-3 w-3" />
-                  </Link>
+                    </Link>
                 </p>
               </div>
               <div className="space-y-2">

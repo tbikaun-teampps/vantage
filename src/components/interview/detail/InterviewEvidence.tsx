@@ -41,7 +41,6 @@ interface Evidence {
 export function InterviewEvidenceContent({
   disabled = false,
   responseId,
-  onClose,
 }: InterviewEvidenceContentProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 

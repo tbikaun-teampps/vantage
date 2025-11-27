@@ -1,10 +1,8 @@
-// components/sidebar-data.ts
 import {
   IconBlocks,
   IconBuildingFactory2,
   IconChartBar,
   IconClipboardList,
-  // IconCloud,
   IconDashboard,
   IconDatabase,
   IconDeviceDesktop,
@@ -16,6 +14,8 @@ import {
   IconListDetails,
   IconUpload,
   IconUserPlus,
+  IconUsers,
+  IconUserShield,
 } from "@tabler/icons-react";
 
 /**
@@ -58,26 +58,27 @@ export function getSidebarData(companyId: string) {
             title: "Desktop",
             url: `${companyPrefix}/assessments/desktop`,
             icon: IconDeviceDesktop,
-            items: [
-              {
-                title: "Data Requests",
-                url: `${companyPrefix}/assessments/desktop/data-requests`,
-                disabled: true,
-              },
-            ],
+            // items: [
+            //   {
+            //     title: "Data Requests",
+            //     url: `${companyPrefix}/assessments/desktop/data-requests`,
+            //     disabled: true,
+            //   },
+            // ],
           },
           {
             title: "Onsite",
             url: `${companyPrefix}/assessments/onsite`,
             icon: IconEngine,
-            items: [
-              {
-                title: "Interviews",
-                url: `${companyPrefix}/assessments/onsite/interviews`,
-              },
-            ],
+            // items: [
+            // ],
           },
         ],
+      },
+      {
+        icon: IconUsers,
+        title: "Interviews",
+        url: `${companyPrefix}/interviews`,
       },
       {
         icon: IconEdit,
@@ -174,6 +175,11 @@ export function getSidebarData(companyId: string) {
         title: "Team Members",
         url: `${companyPrefix}/team`,
         icon: IconUserPlus,
+      },
+      {
+        title: "Audit Logs",
+        url: `${companyPrefix}/audit-logs`,
+        icon: IconUserShield,
       },
       {
         title: "Help & Support",

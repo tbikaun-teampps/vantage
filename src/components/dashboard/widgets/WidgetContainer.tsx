@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { getWidget } from "./index";
-import type { DashboardItem } from "@/hooks/useDashboardLayouts";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -20,29 +19,30 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { IconDotsVertical, IconSettings, IconTrash } from "@tabler/icons-react";
+import type { Widget } from "@/types/api/dashboard";
 
 interface WidgetContainerProps {
-  dashboardItem: DashboardItem;
+  widget: Widget;
   isEditMode: boolean;
   onRemove: () => void;
   onConfigClick: () => void;
 }
 
 export function WidgetContainer({
-  dashboardItem,
+  widget,
   isEditMode,
   onRemove,
   onConfigClick,
 }: WidgetContainerProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const widget = getWidget(dashboardItem.widgetType);
-  if (!widget) return null;
+  const widgetDefinition = getWidget(widget.widgetType);
+  if (!widgetDefinition) return null;
 
-  const WidgetComponent = widget.component;
+  const WidgetComponent = widgetDefinition.component;
 
   return (
-    <Card key={dashboardItem.id} className="h-full w-full relative">
+    <Card key={widget.id} className="h-full w-full relative">
       {isEditMode && (
         <div className="absolute top-4 right-4 z-10">
           <DropdownMenu>
@@ -76,25 +76,27 @@ export function WidgetContainer({
         </div>
       )}
 
-      <WidgetComponent config={dashboardItem.config} />
+      <WidgetComponent config={widget.config} />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Widget</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove the "{widget.title}" widget? This
+              Are you sure you want to remove the "{widgetDefinition.title}" widget? This
               action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="cursor-pointer">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 onRemove();
                 setShowDeleteDialog(false);
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive hover:bg-destructive/90 cursor-pointer"
             >
               Remove Widget
             </AlertDialogAction>

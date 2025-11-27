@@ -30,13 +30,13 @@ export const routes = {
   newDesktopAssessment: "/:companyId/assessments/desktop/new",
 
   // Interview routes
-  interviews: "/:companyId/assessments/onsite/interviews",
-  interviewDetail: "/:companyId/assessments/onsite/interviews/:id",
+  interviews: "/:companyId/interviews",
+  interviewDetail: "/:companyId/interviews/:id",
 
   // Questionnaire routes
-  questionnaires: "/:companyId/assessments/onsite/questionnaires",
-  questionnaireDetail: "/:companyId/assessments/onsite/questionnaires/:id",
-  newQuestionnaire: "/:companyId/assessments/onsite/questionnaires/new",
+  questionnaires: "/:companyId/questionnaires",
+  questionnaireDetail: "/:companyId/questionnaires/:id",
+  newQuestionnaire: "/:companyId/questionnaires/new",
 
   // Analytics routes
   analytics: "/:companyId/analytics",
@@ -63,6 +63,9 @@ export const routes = {
   // Legal routes
   privacyPolicy: "/privacy-policy",
   termsOfService: "/terms-of-service",
+
+  // Audit
+  auditLogs: "/:companyId/audit-logs",
 } as const;
 
 // Company-scoped route patterns (used by useCompanyAwareNavigate)
@@ -74,6 +77,8 @@ export const COMPANY_SCOPED_PATTERNS = [
   "/reports",
   "/questionnaires",
   "/recommendations",
+  "/interviews",
+  "/audit-logs",
   "/settings", // Only company-scoped /settings, not global /account
 ] as const;
 
@@ -88,6 +93,8 @@ export const companyRoutes = {
   assessmentsDesktop: (companyId: string) =>
     `/${companyId}/assessments/desktop`,
   assessmentsOnsite: (companyId: string) => `/${companyId}/assessments/onsite`,
+  assessmentDetail: (companyId: string, id: number | string, type: "onsite" | "desktop") =>
+    `/${companyId}/assessments/${type}/${id}`,
   assessmentOnsiteDetail: (companyId: string, id: number | string) =>
     `/${companyId}/assessments/onsite/${id}`,
   assessmentDesktopDetail: (companyId: string, id: number | string) =>
@@ -98,9 +105,9 @@ export const companyRoutes = {
   newDesktopAssessment: (companyId: string) =>
     `/${companyId}/assessments/desktop/new`,
   interviews: (companyId: string) =>
-    `/${companyId}/assessments/onsite/interviews`,
+    `/${companyId}/interviews`,
   interviewDetail: (companyId: string, id: number | string) =>
-    `/${companyId}/assessments/onsite/interviews/${id}`,
+    `/${companyId}/interviews/${id}`,
   questionnaires: (companyId: string) => `/${companyId}/questionnaires`,
   questionnaireDetail: (companyId: string, id: number | string) =>
     `/${companyId}/questionnaires/${id}`,
@@ -112,4 +119,5 @@ export const companyRoutes = {
   settingsCompany: (companyId: string) => `/${companyId}/settings`,
   recommendations: (companyId: string) => `/${companyId}/recommendations`,
   team: (companyId: string) => `/${companyId}/team`,
+  auditLogs: (companyId: string) => `/${companyId}/audit-logs`,
 } as const;

@@ -4,20 +4,21 @@ import {
   deleteInterview,
   updateInterview,
 } from "@/lib/api/interviews";
-import type {
-  CreateInterviewData,
-  InterviewWithResponses,
-  UpdateInterviewData,
-} from "@/types/assessment";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { interviewKeys } from "../useInterviews";
+import type {
+  CreateIndividualInterviewsBodyData,
+  CreateInterviewBodyData,
+  GetInterviewsResponseData,
+  UpdateInterviewBodyData,
+} from "@/types/api/interviews";
 
 // Interview CRUD operations
 export function useInterviewActions() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateInterviewData) => {
+    mutationFn: (data: CreateInterviewBodyData) => {
       return createInterview(data);
     },
     onSuccess: () => {
@@ -27,7 +28,7 @@ export function useInterviewActions() {
   });
 
   const createIndividualInterviewsMutation = useMutation({
-    mutationFn: (data: any) => {
+    mutationFn: (data: CreateIndividualInterviewsBodyData) => {
       return createIndividualInterviews(data);
     },
     onSuccess: () => {
@@ -42,7 +43,7 @@ export function useInterviewActions() {
       updates,
     }: {
       id: number;
-      updates: UpdateInterviewData;
+      updates: UpdateInterviewBodyData;
     }) => {
       return updateInterview(id, updates);
     },
@@ -55,7 +56,7 @@ export function useInterviewActions() {
       // Update cache optimistically in lists
       queryClient.setQueriesData(
         { queryKey: interviewKeys.lists() },
-        (old: InterviewWithResponses[] | undefined) => {
+        (old: GetInterviewsResponseData | undefined) => {
           if (!old) return old;
           return old.map((interview) =>
             interview.id === id ? { ...interview, ...updates } : interview
@@ -71,7 +72,7 @@ export function useInterviewActions() {
       // Remove from all lists
       queryClient.setQueriesData(
         { queryKey: interviewKeys.lists() },
-        (old: InterviewWithResponses[] | undefined) => {
+        (old: GetInterviewsResponseData | undefined) => {
           if (!old) return old;
           return old.filter((interview) => interview.id !== id);
         }

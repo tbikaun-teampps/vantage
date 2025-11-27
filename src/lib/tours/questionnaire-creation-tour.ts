@@ -73,5 +73,3 @@ tourManager.registerTour({
   id: 'questionnaire-creation',
   steps: questionnaireCreationSteps
 });
-
-export { questionnaireCreationSteps };

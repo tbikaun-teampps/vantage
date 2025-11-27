@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useProfile } from "@/hooks/useProfile";
 
-export interface FeatureFlags {
+interface FeatureFlags {
   canCreateCompany: boolean;
   // canDeleteCompany: boolean;
   // canModifyCompanyStructure: boolean;

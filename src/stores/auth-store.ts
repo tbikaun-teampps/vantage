@@ -19,10 +19,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
   setSession: (session) => set({ session, authenticated: !!session }),
   setProfile: (profile) => set({ profile }),
   setLoading: (loading) => set({ loading }),
+  setPermissions: (permissions) => set({ permissions }),
+  setCompanies: (companies) => set({ companies }),
 
   signIn: async (email: string, password: string) => {
     try {
-      const response = await authApi.signIn(email, password);
+      const response = await authApi.signIn({email, password});
 
       if (!response.success || !response.data) {
         return { error: response.message || "Sign in failed" };
@@ -96,16 +98,16 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
-  resetPassword: async (email: string) => {
-    try {
-      await authApi.resetPassword(email);
-      return {};
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Password reset failed";
-      return { error: message };
-    }
-  },
+  // resetPassword: async (email: string) => {
+  //   try {
+  //     await authApi.resetPassword(email);
+  //     return {};
+  //   } catch (error: unknown) {
+  //     const message =
+  //       error instanceof Error ? error.message : "Password reset failed";
+  //     return { error: message };
+  //   }
+  // },
 
   initialize: async () => {
     // Prevent multiple initializations

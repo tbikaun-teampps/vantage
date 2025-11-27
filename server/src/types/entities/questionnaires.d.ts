@@ -1,4 +1,4 @@
-import type { Database } from "../database";
+import type { Database, Json } from "../database";
 
 export type Questionnaire =
   Database["public"]["Tables"]["questionnaires"]["Row"];
@@ -11,6 +11,9 @@ export type QuestionnaireQuestion =
 
 export type QuestionnaireRatingScale =
   Database["public"]["Tables"]["questionnaire_rating_scales"]["Row"];
+
+export type QuestionnaireStatus =
+  Database["public"]["Enums"]["questionnaire_statuses"];
 
 // Derive transformed types from Supabase schema
 export type QuestionnaireQuestion = Pick<
@@ -86,8 +89,10 @@ export interface QuestionRole {
   questionnaire_question_id: number;
 }
 
-export type CreateQuestionnaireSectionData =
-  Pick<Database["public"]["Tables"]["questionnaire_sections"]["Insert"], "title">
+export type CreateQuestionnaireSectionData = Pick<
+  Database["public"]["Tables"]["questionnaire_sections"]["Insert"],
+  "title"
+>;
 
 export type UpdateQuestionnaireSectionData = Partial<
   Pick<
@@ -105,11 +110,7 @@ export type UpdateQuestionnaireStepData = Partial<
 
 export type CreateQuestionnaireQuestionData = Pick<
   Database["public"]["Tables"]["questionnaire_questions"]["Insert"],
-  | "questionnaire_step_id"
-  | "title"
-  | "question_text"
-  | "context"
-  | "order_index"
+  "questionnaire_step_id" | "title" | "question_text" | "context"
 >;
 
 export type UpdateQuestionnaireQuestionData = Partial<
@@ -140,6 +141,30 @@ export type UpdateQuestionnaireStepBody = Pick<
 
 export type QuestionnaireQuestionRatingScale =
   Database["public"]["Tables"]["questionnaire_question_rating_scales"]["Row"];
+
+// Flattened rating scale structure (hoisted name/value from nested join)
+export type FlattenedQuestionRatingScale = {
+  id: number;
+  description: string;
+  questionnaire_rating_scale_id: number;
+  questionnaire_question_id: number;
+  questionnaire_id: number;
+  name: string;
+  value: number;
+};
+
+// QuestionnaireQuestion with flattened rating scales included (for API responses)
+export type QuestionnaireQuestionWithRatingScales = Pick<
+  Database["public"]["Tables"]["questionnaire_questions"]["Row"],
+  | "id"
+  | "title"
+  | "order_index"
+  | "context"
+  | "question_text"
+  | "questionnaire_step_id"
+> & {
+  question_rating_scales: FlattenedQuestionRatingScale[];
+};
 
 // ===== Questionnaire Question Roles =====
 
@@ -173,6 +198,7 @@ export interface QuestionnaireStructureQuestionsData {
   context: string | null;
   questionnaire_step_id: number;
   questionnaire_id: number;
+  rating_scale_mapping: Json;
 }
 
 export type QuestionnaireStructureQuestionRatingScaleData = {
@@ -185,11 +211,21 @@ export type QuestionnaireStructureQuestionRatingScaleData = {
   questionnaire_question_id: number;
 };
 
+export type QuestionnaireStructureQuestionPartData = {
+  id: number;
+  questionnaire_question_id: number;
+  text: string;
+  answer_type: Database["public"]["Enums"]["question_part_answer_type"];
+  options: any;
+  order_index: number;
+};
+
 export type QuestionnaireStructureData = [
   sections: QuestionnaireStructureSectionsData[],
   steps: QuestionnaireStructureStepsData[],
   questions: QuestionnaireStructureQuestionsData[],
   question_rating_scales: QuestionnaireStructureQuestionRatingScaleData[],
+  question_parts: QuestionnaireStructureQuestionPartData[],
 ];
 
 export type QuestionnaireWithStructure = QuestionnaireWithCounts & {
@@ -205,6 +241,12 @@ export type QuestionnaireWithStructure = QuestionnaireWithCounts & {
                 description: string;
               }>;
               question_roles?: Array<QuestionRole>;
+              question_parts?: Array<
+                Pick<
+                  QuestionPart,
+                  "id" | "text" | "answer_type" | "options" | "order_index"
+                >
+              >;
             }
           >;
         }
@@ -224,3 +266,23 @@ export interface QuestionApplicableRole extends QuestionRole {
   name: string;
   description: string | null;
 }
+
+// ===== Questionnaire Question Parts =====
+
+export type CreateQuestionPartData = Pick<
+  Database["public"]["Tables"]["questionnaire_question_parts"]["Insert"],
+  "text" | "answer_type" | "options" | "order_index"
+>;
+
+export type UpdateQuestionPartData = Partial<
+  Pick<
+    Database["public"]["Tables"]["questionnaire_question_parts"]["Update"],
+    "text" | "answer_type" | "options" | "order_index"
+  >
+>;
+
+export type QuestionPart =
+  Database["public"]["Tables"]["questionnaire_question_parts"]["Row"];
+
+export type QuestionPartAnswerType =
+  Database["public"]["Enums"]["question_part_answer_type"];

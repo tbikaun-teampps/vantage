@@ -10,7 +10,7 @@ import { createActionsColumns } from "./columns";
 
 export function ActionsTable() {
   const companyId = useCompanyFromUrl();
-  const { data: actions = [], isLoading } = useActions(companyId || "");
+  const { data: actions = [], isLoading } = useActions(companyId);
   const routes = useCompanyRoutes();
 
   // Create columns with routes

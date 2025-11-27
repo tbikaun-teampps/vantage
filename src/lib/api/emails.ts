@@ -1,24 +1,14 @@
+import type {
+  SendInterviewReminderResponse,
+  SendInterviewSummaryResponse,
+} from "@/types/api/email";
 import { apiClient } from "./client";
-
-export interface InviteTeamMemberData {
-  email: string;
-  name?: string;
-  role?: string;
-  company_name?: string;
-  invite_link?: string;
-}
-
-export interface EmailResponse {
-  success: boolean;
-  message: string;
-  messageId?: string;
-}
 
 export async function sendInterviewReminder(
   interviewId: number
-): Promise<EmailResponse> {
+): Promise<SendInterviewReminderResponse> {
   try {
-    const response = await apiClient.post<EmailResponse>(
+    const response = await apiClient.post<SendInterviewReminderResponse>(
       "/emails/send-interview-reminder",
       null,
       {
@@ -28,7 +18,6 @@ export async function sendInterviewReminder(
 
     return response.data;
   } catch (error) {
-    console.error("Email service error:", error);
     return {
       success: false,
       message:
@@ -41,9 +30,9 @@ export async function sendInterviewReminder(
 
 export async function sendInterviewSummary(
   interviewId: number
-): Promise<EmailResponse> {
+): Promise<SendInterviewSummaryResponse> {
   try {
-    const response = await apiClient.post<EmailResponse>(
+    const response = await apiClient.post<SendInterviewSummaryResponse>(
       "/emails/send-interview-summary",
       null,
       { params: { interviewId } }
@@ -51,7 +40,6 @@ export async function sendInterviewSummary(
 
     return response.data;
   } catch (error) {
-    console.error("Email service error:", error);
     return {
       success: false,
       message:

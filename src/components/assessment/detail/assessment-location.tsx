@@ -6,15 +6,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { AssessmentLocation } from "@/types/api/assessments";
 import { IconWorld } from "@tabler/icons-react";
 
 interface AssessmentLocationProps {
-  location?: {
-    business_unit?: { id: number | null; name: string | null };
-    region?: { id: number | null; name: string | null };
-    site?: { id: number | null; name: string | null };
-    asset_group?: { id: number | null; name: string | null };
-  };
+  location: AssessmentLocation;
 }
 
 export function AssessmentLocation({ location }: AssessmentLocationProps) {

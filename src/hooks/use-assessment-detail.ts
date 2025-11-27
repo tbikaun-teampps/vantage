@@ -7,7 +7,7 @@ import {
 import { useAssessmentContext } from "@/hooks/useAssessmentContext";
 import { useCompanyAwareNavigate } from "@/hooks/useCompanyAwareNavigate";
 import { useCompanyFromUrl } from "@/hooks/useCompanyFromUrl";
-import type { AssessmentStatus } from "@/types/domains/assessment";
+import type { AssessmentStatus } from "@/types/api/assessments";
 
 export function useAssessmentDetail(assessmentId: number) {
   const navigate = useCompanyAwareNavigate();

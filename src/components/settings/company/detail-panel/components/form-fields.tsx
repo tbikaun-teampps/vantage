@@ -36,6 +36,7 @@ interface FormSelectProps<TFieldValues extends FieldValues>
   options: { value: string; label: string }[];
   placeholder?: string;
   disabled?: boolean;
+  required?: boolean;
 }
 
 interface FormLocationMapProps<TFieldValues extends FieldValues> {
@@ -99,11 +100,12 @@ export function FormSelect<TFieldValues extends FieldValues>({
   placeholder = "Select an option",
   className = "",
   disabled = false,
+  required=false,
 }: FormSelectProps<TFieldValues>) {
   return (
     <div className={`space-y-2 ${className}`}>
       <Label htmlFor={name} className="text-sm font-medium">
-        {label}
+        {label}{required ? " *" : ""}
       </Label>
       <Controller
         control={control}

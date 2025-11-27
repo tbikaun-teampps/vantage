@@ -1,7 +1,6 @@
 import { createContext, useState, type ReactNode } from "react";
 
-// Generic dialog interface
-export interface DialogConfig {
+interface DialogConfig {
   id: string;
   content: ReactNode;
   onClose?: () => void;

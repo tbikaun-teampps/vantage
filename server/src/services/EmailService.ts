@@ -130,22 +130,25 @@ export class EmailService {
   private siteUrl: string;
   private templateService: TemplateService;
   private supabase?: SupabaseClient<Database>;
+  private publicAssetsBucketUrl: string;
   private vantageLogoFullUrl: string;
   private vantageLogoIconUrl: string;
 
   constructor(
     apiKey: string,
     siteUrl: string,
-    vantageLogoFullUrl: string,
-    vantageLogoIconUrl: string,
+    publicAssetsBucketUrl: string,
     supabase?: SupabaseClient<Database>
   ) {
     this.resend = new Resend(apiKey);
     this.siteUrl = siteUrl;
-    this.vantageLogoFullUrl = vantageLogoFullUrl;
-    this.vantageLogoIconUrl = vantageLogoIconUrl;
+    this.publicAssetsBucketUrl = publicAssetsBucketUrl;
     this.templateService = new TemplateService();
     this.supabase = supabase;
+
+    // Construct logo URLs
+    this.vantageLogoFullUrl = `${this.publicAssetsBucketUrl}/vantage-logo-full.png`;
+    this.vantageLogoIconUrl = `${this.publicAssetsBucketUrl}/vantage-logo.svg`;
   }
 
   async sendInterviewInvitation(

@@ -1,8 +1,12 @@
 import { FastifyInstance } from "fastify";
 import { RecommendationsService } from "../services/RecommendationsService";
-import type { Tables } from "../types/database";
-
-type Recommendation = Tables<"recommendations">;
+import { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod";
+import { Error404Schema, Error500Schema } from "../schemas/errors";
+import {
+  RecommendationPriorityEnum,
+  RecommendationStatusEnum,
+} from "../schemas/recommendations";
 
 export async function recommendationsRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRoute", (routeOptions) => {
@@ -11,264 +15,123 @@ export async function recommendationsRoutes(fastify: FastifyInstance) {
       routeOptions.schema.tags = ["Recommendations"];
     }
   });
-  fastify.get(
-    "/:recommendationId",
-    {
-      schema: {
-        description: "Get recommendation by ID",
-        params: {
-          type: "object",
-          properties: {
-            recommendationId: { type: "string" },
-          },
-          required: ["recommendationId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  id: { type: "string" },
-                  content: { type: "string" },
-                  context: { type: "string" },
-                  priority: { type: "string", enum: ["low", "medium", "high"] },
-                  status: {
-                    type: "string",
-                    enum: ["open", "in_progress", "closed"],
-                  },
-                  program_id: { type: "number" },
-                  created_at: { type: "string", format: "date-time" },
-                  updated_at: { type: "string", format: "date-time" },
-                },
-              },
-            },
-          },
-          404: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:recommendationId",
+    schema: {
+      description: "Get recommendation by ID",
+      params: z.object({
+        recommendationId: z.coerce.number(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.object({
+            id: z.number(),
+            content: z.string(),
+            context: z.string(),
+            priority: z.enum(RecommendationPriorityEnum),
+            status: z.enum(RecommendationStatusEnum),
+            program_id: z.number().nullable(),
+            created_at: z.string(),
+            updated_at: z.string(),
+          }),
+        }),
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { recommendationId } = request.params as {
-        recommendationId: string;
-      };
-
+    handler: async (request) => {
       const recommendationService = new RecommendationsService(
         request.supabaseClient
       );
       const recommendation = await recommendationService.getRecommendationById(
-        parseInt(recommendationId)
+        request.params.recommendationId
       );
 
       return {
         success: true,
         data: recommendation,
       };
-    }
-  );
-  fastify.post(
-    "",
-    {
-      schema: {
-        description: "Create a new recommendation",
-        body: {
-          type: "object",
-          properties: {
-            company_id: { type: "string" },
-            content: { type: "string" },
-            context: { type: "string" },
-            priority: { type: "string", enum: ["low", "medium", "high"] },
-            status: {
-              type: "string",
-              enum: ["open", "in_progress", "closed"],
-            },
-            program_id: { type: "number" },
-          },
-          required: ["company_id", "content", "priority", "status"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "object" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+    },
+  });
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/:recommendationId",
+    schema: {
+      description: "Update recommendation by ID",
+      params: z.object({
+        recommendationId: z.coerce.number(),
+      }),
+      body: z.object({
+        content: z.string().optional(),
+        context: z.string().optional(),
+        priority: z.enum(RecommendationPriorityEnum).optional(),
+        status: z.enum(RecommendationStatusEnum).optional(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.object({
+            id: z.number(),
+            content: z.string(),
+            context: z.string(),
+            priority: z.enum(RecommendationPriorityEnum),
+            status: z.enum(RecommendationStatusEnum),
+            program_id: z.number().nullable(),
+            created_at: z.string(),
+            updated_at: z.string(),
+          }),
+        }),
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const data = request.body as Omit<
-        Recommendation,
-        "id" | "created_at" | "updated_at" | "deleted_at" | "is_deleted"
-      >;
-
-      // TODO: review this
-      // const recommendationService = new RecommendationsService(
-      //   request.supabaseClient
-      // );
-
-      // Note: Server RecommendationsService has createRecommendation commented out
-      // This will need to be uncommented in the service file
-      const newRecommendation = await request.supabaseClient
-        .from("recommendations")
-        .insert(data)
-        .select()
-        .single();
-
-      if (newRecommendation.error) {
-        throw new Error(newRecommendation.error.message);
-      }
-
-      return {
-        success: true,
-        data: newRecommendation.data,
-      };
-    }
-  );
-  fastify.put(
-    "/:recommendationId",
-    {
-      schema: {
-        description: "Update recommendation by ID",
-        params: {
-          type: "object",
-          properties: {
-            recommendationId: { type: "string" },
-          },
-          required: ["recommendationId"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            content: { type: "string" },
-            context: { type: "string" },
-            priority: { type: "string", enum: ["low", "medium", "high"] },
-            status: {
-              type: "string",
-              enum: ["open", "in_progress", "closed"],
-            },
-            program_id: { type: "number" },
-          },
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: { type: "object" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
-      },
-    },
-    async (request) => {
-      const { recommendationId } = request.params as {
-        recommendationId: string;
-      };
-      const updates = request.body as Partial<
-        Pick<
-          Recommendation,
-          "content" | "context" | "priority" | "status" | "program_id"
-        >
-      >;
-
+    handler: async (request) => {
       const recommendationService = new RecommendationsService(
         request.supabaseClient
       );
       const updatedRecommendation =
         await recommendationService.updateRecommendation(
-          parseInt(recommendationId),
-          updates
+          request.params.recommendationId,
+          request.body
         );
 
       return {
         success: true,
         data: updatedRecommendation,
       };
-    }
-  );
-  fastify.delete(
-    "/:recommendationId",
-    {
-      schema: {
-        description: "Delete recommendation by ID",
-        params: {
-          type: "object",
-          properties: {
-            recommendationId: { type: "string" },
-          },
-          required: ["recommendationId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              message: { type: "string" },
-            },
-          },
-          404: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-          500: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              error: { type: "string" },
-            },
-          },
-        },
+    },
+  });
+  fastify.withTypeProvider<ZodTypeProvider>().route({
+    method: "DELETE",
+    url: "/:recommendationId",
+    schema: {
+      description: "Delete recommendation by ID",
+      params: z.object({
+        recommendationId: z.coerce.number(),
+      }),
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          message: z.string(),
+        }),
+        404: Error404Schema,
+        500: Error500Schema,
       },
     },
-    async (request) => {
-      const { recommendationId } = request.params as {
-        recommendationId: string;
-      };
+    handler: async (request) => {
       const recommendationService = new RecommendationsService(
         request.supabaseClient
       );
       await recommendationService.deleteRecommendation(
-        parseInt(recommendationId)
+        request.params.recommendationId
       );
 
       return {
         success: true,
         message: "Recommendation deleted successfully",
       };
-    }
-  );
+    },
+  });
 }

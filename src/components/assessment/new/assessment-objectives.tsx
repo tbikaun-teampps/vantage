@@ -9,16 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { IconPlus, IconTarget, IconX } from "@tabler/icons-react";
-import type { AssessmentObjective } from "@/types/assessment";
+import type { CreateObjectiveFormData } from "@/types/api/assessments";
 
 interface AssessmentObjectivesProps {
-  objectives: AssessmentObjective[];
+  objectives: CreateObjectiveFormData[];
   formErrors: Record<string, string>;
   onAddObjective: () => void;
   onRemoveObjective: (index: number) => void;
   onUpdateObjective: (
     index: number,
-    field: keyof AssessmentObjective,
+    field: keyof CreateObjectiveFormData,
     value: string
   ) => void;
   onShowObjectivesDialog: () => void;

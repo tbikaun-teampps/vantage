@@ -1,13 +1,21 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { IconMail, IconPhone, IconUser, IconX, IconPencil } from "@tabler/icons-react";
-import type { Contact } from "@/types/contact";
+import {
+  IconMail,
+  IconPhone,
+  IconUser,
+  IconX,
+  IconPencil,
+} from "@tabler/icons-react";
 import { useCanAdmin } from "@/hooks/useUserCompanyRole";
+import type { GetEntityContactsResponseData, Contact } from "@/types/api/companies";
 
 interface ContactListProps {
-  contacts: Contact[];
-  onEditContact?: (contact: Contact) => void;
+  contacts: GetEntityContactsResponseData;
+  onEditContact?: (
+    contact: Contact
+  ) => void;
   onRemoveContact?: (contactId: number) => void;
   showRemoveButton?: boolean;
   className?: string;
@@ -21,7 +29,7 @@ export const ContactList: React.FC<ContactListProps> = ({
   className = "",
 }) => {
   const userCanAdmin = useCanAdmin();
-  if (contacts.length === 0) {
+  if (!contacts || contacts.length === 0) {
     return (
       <div className={`text-sm text-muted-foreground ${className}`}>
         No contacts assigned

@@ -3,29 +3,87 @@ import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useInterviewStructure } from "@/hooks/interview/useInterviewStructure";
 import { useInterviewQuestion } from "@/hooks/interview/useQuestion";
 import { useSaveInterviewResponse } from "@/hooks/interview/useSaveResponse";
+import { useCompleteInterview } from "@/hooks/interview/useCompleteInterview";
 import { useMemo, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { LoadingSpinner } from "@/components/loader";
 import { UnauthorizedPage } from "@/pages/UnauthorizedPage";
-import { toast } from "sonner";
-import { completeInterview } from "@/lib/api/interviews";
-import type { InterviewFeedback } from "@/components/interview/detail/InterviewCompletionDialog";
 import { IntroScreen } from "@/components/interview/detail/IntroScreen";
+import type { CompleteInterviewBodyData } from "@/types/api/interviews";
 
 interface InterviewDetailPageProps {
   isIndividualInterview?: boolean;
 }
 
-// Form schema for interview responses
-const responseSchema = z.object({
-  rating_score: z.number().nullable().optional(),
-  role_ids: z.array(z.number()).optional().default([]),
-  is_unknown: z.boolean().optional().default(false),
-});
+// Form schema for interview responses - dynamic based on question parts
+const createResponseSchema = (questionParts?: Array<{
+  id: number;
+  answer_type: string;
+  options: unknown;
+}>) => {
+  const baseSchema = z.object({
+    rating_score: z.number().nullable().optional(),
+    role_ids: z.array(z.number()).optional(),
+    is_unknown: z.boolean().optional(),
+  });
 
-type ResponseFormData = z.infer<typeof responseSchema>;
+  // If no question parts, return base schema
+  if (!questionParts || questionParts.length === 0) {
+    return baseSchema;
+  }
+
+  // Build dynamic validation rules for question parts
+  const questionPartSchema: Record<string, z.ZodTypeAny> = {};
+
+  for (const part of questionParts) {
+    const fieldName = `question_part_${part.id}`;
+
+    if (part.answer_type === "scale" || part.answer_type === "number") {
+      const options = part.options as { min: number; max: number };
+
+      questionPartSchema[fieldName] = z
+        .string()
+        .optional()
+        .refine(
+          (val) => {
+            if (!val) return true; // Optional fields are valid
+            const num = parseFloat(val);
+            return !isNaN(num) && num >= options.min && num <= options.max;
+          },
+          {
+            message: `Value must be between ${options.min} and ${options.max}`,
+          }
+        );
+    } else if (part.answer_type === "percentage") {
+      questionPartSchema[fieldName] = z
+        .string()
+        .optional()
+        .refine(
+          (val) => {
+            if (!val) return true;
+            const num = parseFloat(val);
+            return !isNaN(num) && num >= 0 && num <= 100;
+          },
+          {
+            message: "Percentage must be between 0 and 100",
+          }
+        );
+    } else {
+      // For other types (labelled_scale, boolean), just accept strings
+      questionPartSchema[fieldName] = z.string().optional();
+    }
+  }
+
+  return baseSchema.extend(questionPartSchema);
+};
+
+type ResponseFormData = z.infer<ReturnType<typeof createResponseSchema>>;
+
+export type InterviewFormData = ResponseFormData & {
+  [key: `question_part_${number}`]: string | undefined;
+};
 
 // localStorage utilities for interview state
 interface InterviewState {
@@ -73,7 +131,6 @@ export function InterviewDetailPage({
   // Always show intro for individual interviews
   const [showIntro, setShowIntro] = useState(isIndividualInterview);
 
-  // Fetch data using new 3-endpoint architecture
   const {
     data: structure,
     isLoading: isLoadingStructure,
@@ -108,9 +165,20 @@ export function InterviewDetailPage({
   const { mutate: saveResponse, isPending: isSaving } =
     useSaveInterviewResponse();
 
-  // Form for current question
-  const form = useForm<ResponseFormData>({
-    resolver: zodResolver(responseSchema),
+  // Complete interview mutation
+  const { mutateAsync: completeInterviewMutation, isPending: isCompleting } =
+    useCompleteInterview();
+
+  // Form for current question - schema updates when question changes
+  const schema = useMemo(
+    () => createResponseSchema(question?.question_parts),
+    [question?.question_parts]
+  );
+
+  const form = useForm<InterviewFormData>({
+    resolver: zodResolver(schema),
+    mode: "onBlur", // Validate when user leaves field
+    reValidateMode: "onChange", // Re-validate on change after first validation
     defaultValues: {
       rating_score: null,
       role_ids: [],
@@ -121,14 +189,26 @@ export function InterviewDetailPage({
   // Update form when question data loads
   useEffect(() => {
     if (question?.response) {
-      form.reset({
+      const formValues: InterviewFormData = {
         rating_score: question.response.rating_score ?? null,
         role_ids:
           question.response.response_roles?.map((rr) => rr.role.id) ?? [],
         is_unknown: question.response.is_unknown ?? false,
-      });
+      };
+
+      // Add question part responses for individual interviews
+      if (isIndividualInterview && question.response.question_part_responses) {
+        question.response.question_part_responses.forEach((response) => {
+          if (response.answer_value) {
+            formValues[`question_part_${response.question_part_id}`] =
+              response.answer_value;
+          }
+        });
+      }
+
+      form.reset(formValues);
     }
-  }, [question, form]);
+  }, [question, form, isIndividualInterview]);
 
   // Track last question in localStorage for resume functionality
   useEffect(() => {
@@ -164,19 +244,40 @@ export function InterviewDetailPage({
     );
   }
 
-  const handleSave = () => {
+  const handleSave = form.handleSubmit((formData) => {
+    // This function only runs if validation passes
     if (!question?.response?.id || !currentQuestionId) return;
 
-    const formData = form.getValues();
+    // Convert any question_part_{id} fields to part answers
+    const partAnswers: {
+      question_part_id: number;
+      answer_value: string;
+    }[] = [];
+
+    for (const key in formData) {
+      if (key.startsWith("question_part_")) {
+        const partId = parseInt(key.replace("question_part_", ""));
+        const value = formData[key as keyof InterviewFormData];
+
+        if (value !== undefined && value !== null) {
+          partAnswers.push({
+            question_part_id: partId,
+            answer_value: String(value),
+          });
+        }
+      }
+    }
+
     saveResponse({
-      interviewId: parseInt(interviewId!),
       responseId: question.response.id,
-      questionId: currentQuestionId,
-      rating_score: formData.rating_score,
-      role_ids: formData.role_ids,
-      is_unknown: formData.is_unknown,
+      data: {
+        rating_score: formData.rating_score,
+        role_ids: formData.role_ids,
+        is_unknown: formData.is_unknown,
+        question_part_answers: partAnswers,
+      },
     });
-  };
+  });
 
   const dismissIntro = () => {
     setShowIntro(false);
@@ -186,18 +287,14 @@ export function InterviewDetailPage({
     });
   };
 
-  const handleComplete = async (feedback: InterviewFeedback) => {
-    try {
-      await completeInterview(parseInt(interviewId!), feedback);
+  const handleComplete = async (feedback: CompleteInterviewBodyData) => {
+    await completeInterviewMutation({
+      interviewId: parseInt(interviewId!),
+      feedback,
+    });
 
-      toast.success("Interview completed successfully");
-      navigate("/");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to complete interview"
-      );
-      throw error; // Re-throw to let the dialog handle the error state
-    }
+    // Navigate to home after successful completion
+    navigate("/");
   };
 
   // Show intro screen for individual interviews on first load
@@ -218,6 +315,7 @@ export function InterviewDetailPage({
       interviewId={parseInt(interviewId!)}
       handleSave={handleSave}
       isSaving={isSaving}
+      isCompleting={isCompleting}
       onComplete={handleComplete}
     />
   );

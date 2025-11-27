@@ -62,5 +62,3 @@ tourManager.registerTour({
   id: 'company-setup',
   steps: companySetupSteps
 });
-
-export { companySetupSteps };

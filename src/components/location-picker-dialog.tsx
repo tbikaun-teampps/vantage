@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { IconMapPin, IconTarget } from "@tabler/icons-react";
 
 // Fix Leaflet default markers in React
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+// Work around the webpack issue with Leaflet default icon paths
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -62,7 +62,7 @@ export const LocationPickerDialog: React.FC<LocationPickerDialogProps> = ({
   const [manualLat, setManualLat] = useState(initialLocation.lat.toString());
   const [manualLng, setManualLng] = useState(initialLocation.lng.toString());
   const [mapCenter, setMapCenter] = useState([initialLocation.lat, initialLocation.lng] as [number, number]);
-  const [mapZoom, setMapZoom] = useState(13);
+  // const [mapZoom, setMapZoom] = useState(13);
 
   // Update state when dialog opens with new initial location
   useEffect(() => {
@@ -184,7 +184,7 @@ export const LocationPickerDialog: React.FC<LocationPickerDialogProps> = ({
           <div className="h-96 w-full rounded-lg overflow-hidden border">
             <MapContainer
               center={mapCenter}
-              zoom={mapZoom}
+              // zoom={mapZoom}
               style={{ height: "100%", width: "100%" }}
               key={`${mapCenter[0]}-${mapCenter[1]}`} // Only re-render when center changes
             >

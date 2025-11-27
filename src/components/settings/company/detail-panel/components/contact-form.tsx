@@ -11,7 +11,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FormInput } from "./form-fields";
-import type { Contact, ContactFormData } from "@/types/contact";
+import type { Contact, LinkContactToEntityBodyData } from "@/types/api/companies";
+
+// Contact form data type - uses API type with id for tracking edits
+type ContactFormData = LinkContactToEntityBodyData & { id?: number };
 
 // Contact form validation schema
 const contactSchema = z.object({

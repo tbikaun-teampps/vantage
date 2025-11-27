@@ -62,9 +62,6 @@ export function AddSectionDialog({
 
   const handleAdd = async () => {
     if (!title.trim() && !selectedTemplate) return;
-
-    console.log("handleAdd: ", questionnaireId, title);
-
     setIsProcessing(true);
     try {
       if (selectedTemplate) {
@@ -77,7 +74,7 @@ export function AddSectionDialog({
         // Create steps for the section
         for (const step of selectedTemplate.steps) {
           const createdStep = await createStep({
-            sectionId: createdSection.id,
+            questionnaire_section_id: createdSection.id,
             title: step.title,
           });
 
@@ -85,7 +82,7 @@ export function AddSectionDialog({
           const questions = getQuestionsByIds(step.questionIds);
           for (const question of questions) {
             await createQuestion({
-              stepId: createdStep.id,
+              questionnaire_step_id: createdStep.id,
               title: question.title,
               context: question.context,
               question_text: question.question_text,

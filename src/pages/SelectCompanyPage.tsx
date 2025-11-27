@@ -9,12 +9,20 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { companyRoutes } from "@/router/routes";
 import {
   IconBuilding,
   IconPlus,
   IconTrash,
   IconPalette,
+  IconDotsVertical,
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { Loader } from "@/components/loader";
@@ -24,7 +32,7 @@ import { DemoBanner } from "@/components/demo-banner";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useProfile } from "@/hooks/useProfile";
 import { AddCompanyForm } from "@/components/forms/add-company-form";
-import { DeleteDialog } from "@/components/settings/company";
+import { DeleteDialog } from "@/components/settings/company/delete-company-dialog";
 import { toast } from "sonner";
 import { SelectCompanyUserMenu } from "@/components/select-company-user-menu";
 import { getCompanies } from "@/lib/api/companies";
@@ -42,7 +50,7 @@ export function SelectCompanyPage() {
   const { data: profile } = useProfile();
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [deletingCompanyId, setDeletingCompanyId] = useState<string | null>(null);
   const [deleteConfirmationText, setDeleteConfirmationText] =
     useState<string>("");
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
@@ -102,7 +110,7 @@ export function SelectCompanyPage() {
       return;
     }
 
-    setIsDeleting(true);
+    setDeletingCompanyId(companyToDelete.id);
     try {
       await deleteCompany(companyToDelete.id);
       toast.success("Company deleted successfully");
@@ -116,7 +124,7 @@ export function SelectCompanyPage() {
           : "An unexpected error occurred while deleting the company"
       );
     } finally {
-      setIsDeleting(false);
+      setDeletingCompanyId(null);
     }
   };
 
@@ -196,10 +204,16 @@ export function SelectCompanyPage() {
                 </h3>
                 <div className="grid gap-3">
                   {companies.map((company) => (
-                    <div key={company.id} className="relative group">
+                    <div
+                      key={company.id}
+                      className={cn(
+                        "relative group transition-opacity",
+                        deletingCompanyId === company.id && "opacity-50 pointer-events-none"
+                      )}
+                    >
                       <Button
                         variant="outline"
-                        className="justify-start p-4 h-auto w-full overflow-hidden"
+                        className="justify-start p-4 h-auto w-full overflow-hidden cursor-pointer"
                         onClick={() => handleCompanySelect(company.id)}
                       >
                         <div className="flex items-center space-x-3 flex-1 pr-16 min-w-0">
@@ -255,26 +269,42 @@ export function SelectCompanyPage() {
                       </Button>
                       {(company.role === "admin" ||
                         company.role === "owner") && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="absolute right-12 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => handleEditBrandingClick(company, e)}
-                          title="Manage Branding"
-                        >
-                          <IconPalette className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {company.role === "owner" && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => handleDeleteClick(company, e)}
-                          disabled={isDeleting}
-                        >
-                          <IconTrash className="w-4 h-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <IconDotsVertical className="h-4 w-4" />
+                              <span className="sr-only">Company actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) =>
+                                handleEditBrandingClick(company, e)
+                              }
+                            >
+                              <IconPalette className="mr-2 h-4 w-4" />
+                              Manage Branding
+                            </DropdownMenuItem>
+                            {company.role === "owner" && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={(e) => handleDeleteClick(company, e)}
+                                  variant="destructive"
+                                  disabled={deletingCompanyId !== null}
+                                >
+                                  <IconTrash className="mr-2 h-4 w-4" />
+                                  Delete Company
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                   ))}
@@ -296,28 +326,14 @@ export function SelectCompanyPage() {
                 <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
                   Actions
                 </h3>
-                <div className="flex flex-col gap-3">
-                  <AddCompanyForm>
-                    <Button className="justify-start p-4 h-auto w-full">
-                      <div className="flex items-center space-x-3">
-                        <IconPlus className="w-4 h-4" />
-                        <span>Create New Company</span>
-                      </div>
-                    </Button>
-                  </AddCompanyForm>
-
-                  {/* <Button
-                  variant="outline"
-                  onClick={handleStartTour}
-                  className="justify-start p-4 h-auto"
-                  data-tour="platform-tour-button"
-                  >
-                  <div className="flex items-center space-x-3">
-                  <IconRocket className="w-4 h-4" />
-                  <span>Take Platform Tour</span>
-                  </div>
-                  </Button> */}
-                </div>
+                <AddCompanyForm>
+                  <Button className="justify-start p-4 h-auto w-full">
+                    <div className="flex items-center space-x-3">
+                      <IconPlus className="w-4 h-4" />
+                      <span>Create New Company</span>
+                    </div>
+                  </Button>
+                </AddCompanyForm>
               </div>
             )}
           </CardContent>
@@ -330,7 +346,7 @@ export function SelectCompanyPage() {
               deleteConfirmationText={deleteConfirmationText}
               setDeleteConfirmationText={setDeleteConfirmationText}
               handleDeleteCompany={handleDeleteCompany}
-              isDeleting={isDeleting}
+              isDeleting={deletingCompanyId !== null}
               companyToDelete={companyToDelete}
             />
             {companyForBranding && (

@@ -9,11 +9,15 @@ import {
   PresiteInterviewsLineChart,
   OnsiteInterviewsLineChart,
 } from "@/components/programs/detail/analytics/interviews-line-chart";
-import type { ProgramDetailResponseData } from "@/types/api/programs";
+import type {
+  GetProgramByIdResponseData,
+  UpdateProgramBodyData,
+} from "@/types/api/programs";
 import { useProgramMeasurements } from "@/hooks/useProgram";
+import { IconChartBar } from "@tabler/icons-react";
 
 interface DetailsTabProps {
-  program: ProgramDetailResponseData;
+  program: GetProgramByIdResponseData;
 }
 
 export function DetailsTab({ program }: DetailsTabProps) {
@@ -25,11 +29,7 @@ export function DetailsTab({ program }: DetailsTabProps) {
   // Fetch program measurements to check if any are actually assigned
   const { data: programMeasurements } = useProgramMeasurements(program?.id);
 
-  const handleProgramUpdate = async (updateData: {
-    name?: string;
-    description?: string;
-    status?: string;
-  }) => {
+  const handleProgramUpdate = async (updateData: UpdateProgramBodyData) => {
     if (program) {
       await updateProgramMutation.mutateAsync({
         programId: program.id,
@@ -70,8 +70,11 @@ export function DetailsTab({ program }: DetailsTabProps) {
       programMeasurements &&
       programMeasurements.length > 0;
     const hasPresiteData =
-      hasMultiplePhases && program.presite_questionnaire_id;
-    const hasOnsiteData = hasMultiplePhases && program.onsite_questionnaire_id;
+      hasMultiplePhases && program.presite_questionnaire_id !== null;
+    const hasOnsiteData =
+      hasMultiplePhases && program.onsite_questionnaire_id !== null;
+
+    const hasAnyData = hasMeasurementsData || hasPresiteData || hasOnsiteData;
 
     // Sort by data likelihood - charts with data first
     if (hasMeasurementsData) {
@@ -102,34 +105,55 @@ export function DetailsTab({ program }: DetailsTabProps) {
       });
     }
 
-    // Add charts without data at the end
-    if (!hasMeasurementsData) {
+    if (!hasAnyData) {
       charts.push({
-        type: "measurements",
+        type: "no-data",
         component: (
-          <ProgramMeasurementsLineChart
-            key="measurements"
-            programId={program.id}
-          />
+          <div className="shadow-none text-center border-dashed border-2 border-border m-4 rounded-lg bg-background">
+            <div className="p-8">
+              <div className="text-center py-8">
+                <IconChartBar className="mx-auto mb-4 h-8 w-8 text-muted-foreground" />
+                <div className="text-muted-foreground text-sm">
+                  Interview and measurement analytics charts will be available
+                  once the program has captured data. Navigate to the{" "}
+                  <strong>Setup</strong> tab to configure questionnaires and
+                  measurements for the program phases or the{" "}
+                  <strong>Manage</strong> tab to start capturing data.
+                </div>
+              </div>
+            </div>
+          </div>
         ),
       });
     }
-    if (!hasPresiteData) {
-      charts.push({
-        type: "presite",
-        component: (
-          <PresiteInterviewsLineChart key="presite" programId={program.id} />
-        ),
-      });
-    }
-    if (!hasOnsiteData) {
-      charts.push({
-        type: "onsite",
-        component: (
-          <OnsiteInterviewsLineChart key="onsite" programId={program.id} />
-        ),
-      });
-    }
+    // // Add charts without data at the end
+    // if (!hasMeasurementsData) {
+    //   charts.push({
+    //     type: "measurements",
+    //     component: (
+    //       <ProgramMeasurementsLineChart
+    //         key="measurements"
+    //         programId={program.id}
+    //       />
+    //     ),
+    //   });
+    // }
+    // if (!hasPresiteData) {
+    //   charts.push({
+    //     type: "presite",
+    //     component: (
+    //       <PresiteInterviewsLineChart key="presite" programId={program.id} />
+    //     ),
+    //   });
+    // }
+    // if (!hasOnsiteData) {
+    //   charts.push({
+    //     type: "onsite",
+    //     component: (
+    //       <OnsiteInterviewsLineChart key="onsite" programId={program.id} />
+    //     ),
+    //   });
+    // }
 
     return charts;
   }, [program, programMeasurements]);
@@ -146,7 +170,7 @@ export function DetailsTab({ program }: DetailsTabProps) {
           {chartPriority.map((chart) => chart.component)}
         </div>
 
-        <div className="mt-8">
+        <div className="px-4">
           <DangerZone
             onDeleteClick={handleDeleteClick}
             isDeleting={deleteProgramMutation.isPending}

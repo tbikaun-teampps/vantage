@@ -8,10 +8,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Plus, Edit3, Trash2 } from "lucide-react";
-import type { Dashboard } from "@/hooks/useDashboardLayouts";
+import type {
+  Dashboard,
+  GetDashboardsResponseData,
+} from "@/types/api/dashboard";
 
 interface DashboardSelectorProps {
-  dashboards: Dashboard[];
+  dashboards: GetDashboardsResponseData;
   currentDashboard: Dashboard | null;
   onSelectDashboard: (dashboardId: number) => void;
   onCreateDashboard: () => void;
@@ -27,7 +30,7 @@ export function DashboardSelector({
   onRenameDashboard,
   onDeleteDashboard,
 }: DashboardSelectorProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
 
   const handleDeleteDashboard = (dashboardId: number, e: React.MouseEvent) => {
     e.stopPropagation();
