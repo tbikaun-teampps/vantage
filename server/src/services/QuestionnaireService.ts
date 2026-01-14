@@ -2083,12 +2083,21 @@ export class QuestionnaireService {
   ): Promise<
     Pick<
       QuestionPart,
-      "id" | "answer_type" | "options" | "order_index" | "text"
+      | "id"
+      | "answer_type"
+      | "options"
+      | "order_index"
+      | "text"
+      | "questionnaire_question_id"
+      | "created_at"
+      | "updated_at"
     >[]
   > {
     const { data, error } = await this.supabase
       .from("questionnaire_question_parts")
-      .select("id, answer_type, options, order_index, text")
+      .select(
+        "id, answer_type, options, order_index, text, questionnaire_question_id, created_at, updated_at"
+      )
       .eq("questionnaire_question_id", questionId)
       .eq("is_deleted", false);
 
