@@ -66,6 +66,9 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
 
   // Update URL when state changes
   const setAssessmentType = (newType: "onsite" | "desktop") => {
+    // Clear filters immediately when assessment type changes to prevent
+    // rendering with stale data (onsite and desktop filters have different shapes)
+    setFilters(null);
     setAssessmentTypeState(newType);
     const params = new URLSearchParams(searchParams.toString());
     if (newType === "onsite") {
@@ -94,6 +97,9 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     const fetchFilters = async () => {
       if (!companyId || !assessmentType) return;
 
+      // Clear old filters immediately to prevent rendering with stale data
+      // (onsite and desktop filters have different shapes)
+      setFilters(null);
       setIsLoadingFilters(true);
       setFilterError(null);
 
