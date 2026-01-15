@@ -28,38 +28,70 @@ export async function flexibleAuthMiddleware(
   // Access the Fastify instance to get config
   const fastify = request.server as FastifyInstance;
 
-  // Verify JWT first to prevent bypass attacks
-  let decoded: jwt.JwtPayload & { role?: string };
+  // Decode the JWT header to check the algorithm (without verification)
+  const tokenParts = token.split(".");
+  if (tokenParts.length !== 3) {
+    return reply.status(401).send({
+      success: false,
+      error: "Invalid token format",
+    });
+  }
+
+  let tokenHeader: { alg?: string };
   try {
-    const verified = jwt.verify(token, fastify.config.SUPABASE_JWT_SIGNING_KEY);
-    if (typeof verified === "string") {
-      return reply.status(401).send({
-        success: false,
-        error: "Invalid token format",
-      });
-    }
-    decoded = verified as jwt.JwtPayload & { role?: string };
-  } catch (error) {
-    // If verification fails, token is invalid/expired/tampered
-    if (error instanceof jwt.TokenExpiredError) {
-      return reply.status(401).send({
-        success: false,
-        error: "Token expired",
-      });
-    }
+    tokenHeader = JSON.parse(Buffer.from(tokenParts[0], "base64url").toString());
+  } catch {
     return reply.status(401).send({
       success: false,
-      error: "Invalid token",
+      error: "Invalid token format",
     });
   }
 
-  if (!decoded || !decoded.role) {
-    return reply.status(401).send({
-      success: false,
-      error: "Invalid token: missing role claim",
-    });
+  // For HS256 tokens (public interview tokens), verify locally with our signing key
+  // For other algorithms (ES256, etc. - standard Supabase tokens), let authMiddleware handle via getUser()
+  if (tokenHeader.alg === "HS256") {
+    // This is likely a public interview token - verify with our signing key
+    let decoded: jwt.JwtPayload & { role?: string };
+    try {
+      const verified = jwt.verify(token, fastify.config.SUPABASE_JWT_SIGNING_KEY, {
+        algorithms: ["HS256"],
+      });
+      if (typeof verified === "string") {
+        return reply.status(401).send({
+          success: false,
+          error: "Invalid token format",
+        });
+      }
+      decoded = verified as jwt.JwtPayload & { role?: string };
+
+      // For public interview tokens, check for the specific role
+      if (decoded.role === "public_interviewee") {
+        // Public interview access - set up request context for interview access
+        request.user = {
+          id: decoded.sub || "",
+          email: decoded.email as string | undefined,
+          role: decoded.role,
+        };
+        // Create a Supabase client with the token for RLS
+        request.supabaseClient = fastify.createSupabaseClient(token);
+        return; // Skip standard auth middleware for public interview tokens
+      }
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        return reply.status(401).send({
+          success: false,
+          error: "Token expired",
+        });
+      }
+      return reply.status(401).send({
+        success: false,
+        error: "Invalid token",
+      });
+    }
   }
 
+  // For standard Supabase tokens (ES256 or other), use the standard auth flow
+  // which validates via Supabase's getUser() API
   await authMiddleware(request, reply);
   await subscriptionTierMiddleware(request, reply);
 }
