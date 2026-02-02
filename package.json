@@ -4,17 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "vite --config client/vite.config.ts",
+    "build": "vite build --config client/vite.config.ts",
+    "preview": "vite preview --config client/vite.config.ts",
     "db:add_demo": "npx tsx ./demo/generate.ts",
     "db:test_add_demo": "DEMO_MODE=true npx tsx ./demo/generate.ts",
     "db:nuke": "npx tsx ./scripts/nuke-db.ts",
     "db:generate-types": "npx tsx ./scripts/generate-db-types.ts",
-    "server:generate-types": "curl -f http://localhost:3000/health && npx openapi-typescript http://localhost:3000/openapi.json -o ./src/types/api/index.d.ts && npx prettier --write ./src/types/api/index.d.ts",
+    "server:generate-types": "curl -f http://localhost:3000/health && npx openapi-typescript http://localhost:3000/openapi.json -o ./client/src/types/api/index.d.ts && npx prettier --write ./client/src/types/api/index.d.ts",
     "knip": "knip",
-    "typecheck": "tsc --noEmit --project tsconfig.src.json",
-    "lint": "eslint --ignore-pattern=dist",
+    "typecheck": "tsc --noEmit --project client/tsconfig.src.json",
+    "lint": "eslint --config client/eslint.config.js --ignore-pattern=dist",
     "lint:fix": "npm run lint -- --fix"
   },
   "dependencies": {
@@ -98,9 +98,9 @@
   },
   "knip": {
     "ignore": [
-      "src/components/ui/**",
-      "src/types/database.ts",
-      "src/types/api/index.d.ts"
+      "client/src/components/ui/**",
+      "client/src/types/database.ts",
+      "client/src/types/api/index.d.ts"
     ]
   }
 }

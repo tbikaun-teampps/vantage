@@ -1,5 +1,5 @@
 // Version management for Vantage application
-import packageJson from "../../package.json";
+import packageJson from "../../../package.json";
 
 const APP_VERSION = packageJson.version;
 const APP_NAME = packageJson.name;
